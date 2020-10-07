@@ -280,10 +280,6 @@ libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
   //  if(variableProperties) options.setArgs("VARIABLEPROPERTIES", "TRUE");
 
   bool stressFormulation;
-  if(ini.extract("problemtype", "stressformulation", stressFormulation))
-    if(stressFormulation) options.setArgs("STRESSFORMULATION", "TRUE");
-
-  bool stressFormulation;
   if(ini.extract("general", "stressformulation", stressFormulation))
     if(stressFormulation) options.setArgs("STRESSFORMULATION", "TRUE");
 
