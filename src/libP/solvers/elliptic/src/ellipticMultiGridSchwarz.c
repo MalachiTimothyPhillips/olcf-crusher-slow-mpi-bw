@@ -501,11 +501,11 @@ void compute_1d_matrices(
       std::cout << "EToB[iface] = " << elliptic->EToB[6 * e + iface] << "\n";
     exit(-1);
   }
-  if(lbc > 0)
+  if(lbc == 0 || lbc == 1)
     row_zero(S,nl,0);
   if(lbc == 1)
     row_zero(S,nl,1);
-  if(rbc > 0)
+  if(rbc == 0 || rbc == 1)
     row_zero(S,nl,nl - 1);
   if(rbc == 1)
     row_zero(S,nl,nl - 2);
