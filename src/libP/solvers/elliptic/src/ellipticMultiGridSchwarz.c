@@ -32,6 +32,7 @@
 #include <string>
 #include <sstream>
 #include <exception>
+#include <functional>
 
 struct ElementLengths
 {
@@ -278,11 +279,26 @@ void compute_1d_stiffness_matrix(
   elliptic_t* elliptic
   )
 {
+#define ORAS 0
   /** build ahat matrix here **/
   // Ah = D^T B D
-
   const int n =  elliptic->mesh->N;
   const int nl = n + 3;
+  const dfloat dh = std::abs(elliptic->mesh->gllz[1] - elliptic->mesh->gllz[0]);
+  const dfloat kmin_l = M_PI / ll;
+  const dfloat kmin_r = M_PI / lr;
+  const dfloat w_l = elliptic->mesh->gllw[n] * ll * 0.5;
+  const dfloat w_r = elliptic->mesh->gllw[0] * lr * 0.5;
+  const dfloat Hl = dh * 0.5 * ll;
+  const dfloat Hr = dh * 0.5 * lr;
+#if ORAS
+  const dfloat robin_l = std::pow(2.0, -1.0/3.0) * std::pow(kmin_l * kmin_l, 1.0/3.0) * std::pow(Hl, -1.0/3.0) * w_l;
+  const dfloat robin_r = std::pow(2.0, -1.0/3.0) * std::pow(kmin_r * kmin_r, 1.0/3.0) * std::pow(Hr, -1.0/3.0) * w_r;
+#else
+  const dfloat robin_l = 0.0;
+  const dfloat robin_r = 0.0;
+#endif
+
   dfloat* ah = (dfloat*) calloc((n + 1) * (n + 1), sizeof(dfloat));
   dfloat* tmp = (dfloat*) calloc((n + 1)* (n + 1), sizeof(dfloat));
   for(int i = 0; i < n + 1; ++i)
@@ -320,13 +336,13 @@ void compute_1d_stiffness_matrix(
     a(0,0) = fac * ah(n - 1,n - 1);
     a(1,0) = fac * ah(n,n - 1);
     a(0,1) = fac * ah(n - 1,n  );
-    a(1,1) = a(1,1) + fac * ah(n,n  );
+    a(1,1) = a(1,1) + fac * ah(n,n  ) + robin_l;
   }else {
     a(0,0) = 1.0;
   }
   if(rbc == 0) {
     fac = 2.0 / lr;
-    a(n + 1,n + 1) = a(n + 1,n + 1) + fac * ah(0,0);
+    a(n + 1,n + 1) = a(n + 1,n + 1) + fac * ah(0,0) + robin_r;
     a(n + 2,n + 1) = fac * ah(1,0);
     a(n + 1,n + 2) = fac * ah(0,1);
     a(n + 2,n + 2) = fac * ah(1,1);
