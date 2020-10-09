@@ -279,7 +279,7 @@ void compute_1d_stiffness_matrix(
   elliptic_t* elliptic
   )
 {
-#define ORAS 0
+#define ORAS 1
   /** build ahat matrix here **/
   // Ah = D^T B D
   const int n =  elliptic->mesh->N;
@@ -287,8 +287,8 @@ void compute_1d_stiffness_matrix(
   const dfloat dh = std::abs(elliptic->mesh->gllz[1] - elliptic->mesh->gllz[0]);
   const dfloat kmin_l = M_PI / ll;
   const dfloat kmin_r = M_PI / lr;
-  const dfloat w_l = elliptic->mesh->gllw[n] * ll * 0.5;
-  const dfloat w_r = elliptic->mesh->gllw[0] * lr * 0.5;
+  const dfloat w_l = elliptic->mesh->gllw[0] * ll * 0.5;
+  const dfloat w_r = elliptic->mesh->gllw[n] * lr * 0.5;
   const dfloat Hl = dh * 0.5 * ll;
   const dfloat Hr = dh * 0.5 * lr;
 #if ORAS
@@ -333,19 +333,19 @@ void compute_1d_stiffness_matrix(
       a(i + 1,j + 1) = fac * ah(i,j);
   if(lbc == 0) {
     fac = 2.0 / ll;
-    a(0,0) = fac * ah(n - 1,n - 1);
+    a(0,0) = fac * ah(n - 1,n - 1) + robin_l;
     a(1,0) = fac * ah(n,n - 1);
     a(0,1) = fac * ah(n - 1,n  );
-    a(1,1) = a(1,1) + fac * ah(n,n  ) + robin_l;
+    a(1,1) = a(1,1) + fac * ah(n,n  );
   }else {
     a(0,0) = 1.0;
   }
   if(rbc == 0) {
     fac = 2.0 / lr;
-    a(n + 1,n + 1) = a(n + 1,n + 1) + fac * ah(0,0) + robin_r;
+    a(n + 1,n + 1) = a(n + 1,n + 1) + fac * ah(0,0);
     a(n + 2,n + 1) = fac * ah(1,0);
     a(n + 1,n + 2) = fac * ah(0,1);
-    a(n + 2,n + 2) = fac * ah(1,1);
+    a(n + 2,n + 2) = fac * ah(1,1) + robin_r;
   }else {
     a(n + 2,n + 2) = 1.0;
   }
