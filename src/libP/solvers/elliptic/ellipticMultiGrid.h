@@ -33,8 +33,6 @@ typedef enum {RICHARDSON = 1,
 typedef enum {JACOBI = 1,
               SCHWARZ_SMOOTH = 3} SmootherType;
 
-#define ORAS = 1
-#define OO2 = 1
 
 class MGLevel : public parAlmond::multigridLevel
 {

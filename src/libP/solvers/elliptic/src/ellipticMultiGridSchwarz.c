@@ -283,6 +283,8 @@ void compute_1d_stiffness_matrix(
   elliptic_t* elliptic
   )
 {
+#define ORAS 1
+#define OO2 1
   /** build ahat matrix here **/
   // Ah = D^T B D
   const int n =  elliptic->mesh->N;
@@ -313,11 +315,11 @@ void compute_1d_stiffness_matrix(
   // q := 2^{-1/5} (k_{min}^2)^{-1/5} H^{3/5}
   // \frac{du}{dx}|_{x=b} + r u(b) = q \frac{d^2 u}{dx^2}|_{x=b}
   //                               = -q f(b)
-#endif
   const dfloat robin_l = std::pow(2.0, -3.0/5.0) * std::pow(kmin_l * kmin_l, 2.0/5.0) * std::pow(Hl, -1.0/5.0) * w_l;
   const dfloat robin_r = std::pow(2.0, -3.0/5.0) * std::pow(kmin_r * kmin_r, 2.0/5.0) * std::pow(Hr, -1.0/5.0) * w_r;
   const dfloat q_l = std::pow(2.0, -1.0/5.0) * std::pow(kmin_l * kmin_l, -1.0/5.0) * std::pow(Hl, 3.0/5.0) * w_l;
   const dfloat q_r = std::pow(2.0, -1.0/5.0) * std::pow(kmin_r * kmin_r, -1.0/5.0) * std::pow(Hr, 3.0/5.0) * w_r;
+#endif
 #else
   const dfloat robin_l = 0.0;
   const dfloat robin_r = 0.0;
@@ -589,8 +591,7 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
     int lbr = -1, rbr = -1, lbs = -1, rbs = -1, lbt = -1, rbt = -1;
     compute_element_boundary_conditions(&lbr,&rbr,&lbs,&rbs,&lbt,&rbt,e,elliptic);
     compute_1d_matrices(Sx,
-                        rhs_multiplier_x,
-                        lr,
+                        lr, rhs_multiplier_x,
                         lbr,
                         rbr,
                         lengths->length_left_x[e],
@@ -600,8 +601,8 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
                         elliptic,
                         "r",
                         Nq_e);
-    compute_1d_matrices(Sy, rhs_multiplier_y,
-                        ls,
+    compute_1d_matrices(Sy,
+                        ls, rhs_multiplier_y,
                         lbs,
                         rbs,
                         lengths->length_left_y[e],
@@ -611,8 +612,8 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
                         elliptic,
                         "s",
                         Nq_e);
-    compute_1d_matrices(Sz, rhs_multiplier_z,
-                        lt,
+    compute_1d_matrices(Sz,
+                        lt, rhs_multiplier_z,
                         lbt,
                         rbt,
                         lengths->length_left_z[e],
@@ -986,25 +987,29 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
     if(options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
       if(mesh->NglobalGatherElements || !overlap)
         fusedFDMKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                       o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_work1, elliptic->ogs->o_invDegree);
+                       o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_rhs_x,o_rhs_y,o_rhs_z,
+                       o_work1, elliptic->ogs->o_invDegree);
 
       oogs::start(o_Su, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) ogs);
 
       if(overlap)
         fusedFDMKernel(Nelements,mesh->NlocalGatherElements,mesh->o_localGatherElementList,
-                       o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_work1, elliptic->ogs->o_invDegree);
+                       o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_rhs_x,o_rhs_y,o_rhs_z,
+                       o_work1, elliptic->ogs->o_invDegree);
 
       oogs::finish(o_Su, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) ogs);
     } else {
       if(mesh->NglobalGatherElements || !overlap)
         fusedFDMKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                       o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
+                       o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_rhs_x,o_rhs_y,o_rhs_z,
+                       o_work1);
 
       oogs::start(o_work2, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) extendedOgs);
 
       if(overlap)
         fusedFDMKernel(Nelements,mesh->NlocalGatherElements,mesh->o_localGatherElementList,
-                       o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
+                       o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_rhs_x,o_rhs_y,o_rhs_z,
+                       o_work1);
 
       oogs::finish(o_work2, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) extendedOgs);
 
