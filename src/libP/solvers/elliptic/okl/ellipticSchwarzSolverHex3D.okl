@@ -178,6 +178,9 @@
                       @restrict const pfloat* S_y,
                       @restrict const pfloat* S_z,
                       @restrict const pfloat* inv_L,
+                      @restrict const pfloat* rhs_x,
+                      @restrict const pfloat* rhs_y,
+                      @restrict const pfloat* rhs_z,
                       @restrict pfloat* u
                       #if p_restrict
                       ,
@@ -198,6 +201,9 @@
     @shared pfloat S_z_eT[p_Nq_e][p_Nq_e];
     @shared pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e];
     @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e];
+    @shared pfloat rhs_x_e[p_Nq_e];
+    @shared pfloat rhs_y_e[p_Nq_e];
+    @shared pfloat rhs_z_e[p_Nq_e];
     @exclusive dlong element;
     for(int k = 0; k < p_Nq_e; ++k) {
       for(int j = 0; j < p_Nq_e; ++j; @inner) {
@@ -253,6 +259,11 @@
         S_x_eT[j][i] = S_x_e[i][j];
         S_y_eT[j][i] = S_y_e[i][j];
         S_z_eT[j][i] = S_z_e[i][j];
+        if(i==0){
+          rhs_x_e[j] = rhs_x[j + element * p_Nq_e];
+          rhs_y_e[j] = rhs_y[j + element * p_Nq_e];
+          rhs_z_e[j] = rhs_z[j + element * p_Nq_e];
+        }
       }
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -262,8 +273,9 @@
           const pfloat* u_e = u + element * p_Nq_e * p_Nq_e * p_Nq_e;
           pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_x_eT[j][l] * work1[k][i][l];
+          for (int l = 0; l < p_Nq_e; l++){
+            value += S_x_eT[j][l] * rhs_x_e[l] * work1[k][i][l];
+          }
           work2[k][j][i] = value;
         }
       }
@@ -276,7 +288,7 @@
           pfloat value = 0.0;
 #pragma unroll
           for (int l = 0; l < p_Nq_e; l++)
-            value += S_y_eT[j][l] * work2[k][i][l];
+            value += S_y_eT[j][l] * rhs_y_e[l] * work2[k][i][l];
           work1[j][i][k] = value;
         }
       }
@@ -289,7 +301,7 @@
           pfloat value = 0.0;
 #pragma unroll
           for (int l = 0; l < p_Nq_e; l++)
-            value += S_z_eT[k][l] * work1[j][i][l];
+            value += S_z_eT[k][l] * rhs_z_e[l] * work1[j][i][l];
           work2[k][j][i] = value * inv_L[v + element * p_Nq_e * p_Nq_e * p_Nq_e];
         }
       }

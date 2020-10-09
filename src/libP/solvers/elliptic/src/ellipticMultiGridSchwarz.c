@@ -52,6 +52,9 @@ struct FDMOperators
   dfloat * Sy;
   dfloat * Sz;
   dfloat * D;
+  dfloat * rhs_x;
+  dfloat * rhs_y;
+  dfloat * rhs_z;
 };
 void harmonic_mean_element_length(
   ElementLengths* lengths,
@@ -270,6 +273,7 @@ void row_zero(
 }
 void compute_1d_stiffness_matrix(
   dfloat * a,
+  dfloat * rhs_multiplier,
   const int lbc,
   const int rbc,
   const double ll,
@@ -279,7 +283,6 @@ void compute_1d_stiffness_matrix(
   elliptic_t* elliptic
   )
 {
-#define ORAS 1
   /** build ahat matrix here **/
   // Ah = D^T B D
   const int n =  elliptic->mesh->N;
@@ -292,12 +295,42 @@ void compute_1d_stiffness_matrix(
   const dfloat Hl = dh * 0.5 * ll;
   const dfloat Hr = dh * 0.5 * lr;
 #if ORAS
+#if !(OO2)
+  // H := \{length of overlap\}
+  // S := \{element length normal to boundary\}
+  // k_{min} := \frac{\pi}{S}
+  // r := 2^{-1/3} (k_{min}^2)^{1/3} H^{-1/3}
+  // \frac{du}{dx}|_{x=b} + r u(b) = 0
   const dfloat robin_l = std::pow(2.0, -1.0/3.0) * std::pow(kmin_l * kmin_l, 1.0/3.0) * std::pow(Hl, -1.0/3.0) * w_l;
   const dfloat robin_r = std::pow(2.0, -1.0/3.0) * std::pow(kmin_r * kmin_r, 1.0/3.0) * std::pow(Hr, -1.0/3.0) * w_r;
+  const dfloat q_l = 0.0;
+  const dfloat q_r = 0.0;
+#else
+  // H := \{length of overlap\}
+  // S := \{element length normal to boundary\}
+  // k_{min} := \frac{\pi}{S}
+  // r := 2^{-3/5} (k_{min}^2)^{2/5} H^{-1/5}
+  // q := 2^{-1/5} (k_{min}^2)^{-1/5} H^{3/5}
+  // \frac{du}{dx}|_{x=b} + r u(b) = q \frac{d^2 u}{dx^2}|_{x=b}
+  //                               = -q f(b)
+#endif
+  const dfloat robin_l = std::pow(2.0, -3.0/5.0) * std::pow(kmin_l * kmin_l, 2.0/5.0) * std::pow(Hl, -1.0/5.0) * w_l;
+  const dfloat robin_r = std::pow(2.0, -3.0/5.0) * std::pow(kmin_r * kmin_r, 2.0/5.0) * std::pow(Hr, -1.0/5.0) * w_r;
+  const dfloat q_l = std::pow(2.0, -1.0/5.0) * std::pow(kmin_l * kmin_l, -1.0/5.0) * std::pow(Hl, 3.0/5.0) * w_l;
+  const dfloat q_r = std::pow(2.0, -1.0/5.0) * std::pow(kmin_r * kmin_r, -1.0/5.0) * std::pow(Hr, 3.0/5.0) * w_r;
 #else
   const dfloat robin_l = 0.0;
   const dfloat robin_r = 0.0;
+  const dfloat q_l = 0.0;
+  const dfloat q_r = 0.0;
 #endif
+
+  for(int i = 0 ; i < nl; ++i){
+    rhs_multiplier[i] = 1.0;
+  }
+
+  if(lbc == 0) rhs_multiplier[0] += -q_l;
+  if(rbc == 0) rhs_multiplier[n] += -q_r;
 
   dfloat* ah = (dfloat*) calloc((n + 1) * (n + 1), sizeof(dfloat));
   dfloat* tmp = (dfloat*) calloc((n + 1)* (n + 1), sizeof(dfloat));
@@ -491,6 +524,7 @@ void solve_generalized_ev(
 void compute_1d_matrices(
   dfloat * S,
   dfloat * lam,
+  dfloat * rhs_multiplier,
   const int lbc,
   const int rbc,
   const double ll,
@@ -503,7 +537,7 @@ void compute_1d_matrices(
   )
 {
   dfloat* b = (dfloat*) calloc(nl * nl, sizeof(dfloat));
-  compute_1d_stiffness_matrix(S,lbc,rbc,ll,lm,lr,e,elliptic);
+  compute_1d_stiffness_matrix(S,rhs_multiplier,lbc,rbc,ll,lm,lr,e,elliptic);
   compute_1d_mass_matrix(b,lbc,rbc,ll,lm,lr,e,elliptic);
   try {
     solve_generalized_ev(S,b,lam,nl);
@@ -536,6 +570,9 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
   op->Sy = (dfloat*) calloc(Nq_e * Nq_e * Nelements,sizeof(dfloat));
   op->Sz = (dfloat*) calloc(Nq_e * Nq_e * Nelements,sizeof(dfloat));
   op->D = (dfloat*) calloc(Np_e * Nelements,sizeof(dfloat));
+  op->rhs_x = (dfloat*) calloc(Nq_e * Nelements, sizeof(dfloat));
+  op->rhs_y = (dfloat*) calloc(Nq_e * Nelements, sizeof(dfloat));
+  op->rhs_z = (dfloat*) calloc(Nq_e * Nelements, sizeof(dfloat));
 
 #define df(a,b) (op->D[((a) + (b) * Np_e)])
   const double eps = 1e-5;
@@ -545,10 +582,14 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
   dfloat* Sx = (dfloat*) calloc(Nq_e * Nq_e,sizeof(dfloat));
   dfloat* Sy = (dfloat*) calloc(Nq_e * Nq_e,sizeof(dfloat));
   dfloat* Sz = (dfloat*) calloc(Nq_e * Nq_e,sizeof(dfloat));
+  dfloat* rhs_multiplier_x = (dfloat*) calloc(Nq_e,sizeof(dfloat));
+  dfloat* rhs_multiplier_y = (dfloat*) calloc(Nq_e,sizeof(dfloat));
+  dfloat* rhs_multiplier_z = (dfloat*) calloc(Nq_e,sizeof(dfloat));
   for(dlong e = 0; e < Nelements; ++e) {
     int lbr = -1, rbr = -1, lbs = -1, rbs = -1, lbt = -1, rbt = -1;
     compute_element_boundary_conditions(&lbr,&rbr,&lbs,&rbs,&lbt,&rbt,e,elliptic);
     compute_1d_matrices(Sx,
+                        rhs_multiplier_x,
                         lr,
                         lbr,
                         rbr,
@@ -559,7 +600,7 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
                         elliptic,
                         "r",
                         Nq_e);
-    compute_1d_matrices(Sy,
+    compute_1d_matrices(Sy, rhs_multiplier_y,
                         ls,
                         lbs,
                         rbs,
@@ -570,7 +611,7 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
                         elliptic,
                         "s",
                         Nq_e);
-    compute_1d_matrices(Sz,
+    compute_1d_matrices(Sz, rhs_multiplier_z,
                         lt,
                         lbt,
                         rbt,
@@ -591,6 +632,12 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
         op->Sy[elem_offset + ij] = Sy[ji];
         op->Sz[elem_offset + ij] = Sz[ji];
       }
+    for(int i = 0; i < Nq_e; ++i){
+      const int elem_offset = Nq_e * e;
+      op->rhs_x[elem_offset + i] = rhs_multiplier_x[i];
+      op->rhs_y[elem_offset + i] = rhs_multiplier_y[i];
+      op->rhs_z[elem_offset + i] = rhs_multiplier_z[i];
+    }
     unsigned l = 0;
     for(int k = 0; k < Nq_e; ++k)
       for(int j = 0; j < Nq_e; ++j)
@@ -610,6 +657,9 @@ void gen_operators(FDMOperators* op, ElementLengths* lengths, elliptic_t* ellipt
   free(Sx);
   free(Sy);
   free(Sz);
+  free(rhs_multiplier_x);
+  free(rhs_multiplier_z);
+  free(rhs_multiplier_y);
 }
 
 mesh_t* create_extended_mesh(elliptic_t* elliptic)
@@ -833,6 +883,9 @@ void MGLevel::build(
   pfloat* casted_Sz = (pfloat*) calloc(Nq_e * Nq_e * Nelements, sizeof(pfloat));
   pfloat* casted_D = (pfloat*) calloc(Np_e * Nelements, sizeof(pfloat));
   pfloat* casted_wts = (pfloat*) calloc(N * N * N * Nelements, sizeof(pfloat));
+  pfloat* casted_rhs_x = (pfloat*) calloc(Nq_e * Nelements, sizeof(pfloat));
+  pfloat* casted_rhs_y = (pfloat*) calloc(Nq_e * Nelements, sizeof(pfloat));
+  pfloat* casted_rhs_z = (pfloat*) calloc(Nq_e * Nelements, sizeof(pfloat));
 
   FDMOperators* op = (FDMOperators*) calloc(1, sizeof(FDMOperators));
   gen_operators(op, lengths, elliptic);
@@ -841,12 +894,20 @@ void MGLevel::build(
     casted_Sy[i] = static_cast < pfloat > (op->Sy[i]);
     casted_Sz[i] = static_cast < pfloat > (op->Sz[i]);
   }
+  for(dlong i = 0 ; i < Nq_e * Nelements; ++i){
+    casted_rhs_x[i] = static_cast<pfloat>(op->rhs_x[i]);
+    casted_rhs_y[i] = static_cast<pfloat>(op->rhs_y[i]);
+    casted_rhs_z[i] = static_cast<pfloat>(op->rhs_z[i]);
+  }
   for(dlong i = 0; i < Np_e * Nelements; ++i)
     casted_D[i] = static_cast < pfloat > (op->D[i]);
   free(op->Sx);
   free(op->Sy);
   free(op->Sz);
   free(op->D);
+  free(op->rhs_x);
+  free(op->rhs_y);
+  free(op->rhs_z);
   free(op);
   free(lengths->length_left_x);
   free(lengths->length_left_y);
@@ -866,12 +927,18 @@ void MGLevel::build(
   o_Sz = mesh->device.malloc  (Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_invL = mesh->device.malloc  (Nlocal_e * sizeof(pfloat));
   o_work1 = mesh->device.malloc  (Nlocal_e * sizeof(pfloat));
+  o_rhs_x = mesh->device.malloc  (Nq_e * Nelements * sizeof(pfloat));
+  o_rhs_y = mesh->device.malloc  (Nq_e * Nelements * sizeof(pfloat));
+  o_rhs_z = mesh->device.malloc  (Nq_e * Nelements * sizeof(pfloat));
   if(!options.compareArgs("MULTIGRID SMOOTHER","RAS"))
     o_work2 = mesh->device.malloc  (Nlocal_e * sizeof(pfloat));
   o_Sx.copyFrom(casted_Sx, Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_Sy.copyFrom(casted_Sy, Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_Sz.copyFrom(casted_Sz, Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_invL.copyFrom(casted_D, Nlocal_e * sizeof(pfloat));
+  o_rhs_x.copyFrom(casted_rhs_x, Nq_e*Nelements * sizeof(pfloat));
+  o_rhs_y.copyFrom(casted_rhs_y, Nq_e*Nelements * sizeof(pfloat));
+  o_rhs_z.copyFrom(casted_rhs_z, Nq_e*Nelements * sizeof(pfloat));
 
   generate_weights();
 
@@ -879,6 +946,9 @@ void MGLevel::build(
   free(casted_Sy);
   free(casted_Sz);
   free(casted_D);
+  free(casted_rhs_x);
+  free(casted_rhs_y);
+  free(casted_rhs_z);
 
   char fileName[BUFSIZ], kernelName[BUFSIZ];
   for (int r = 0; r < 2; r++) {

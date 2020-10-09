@@ -33,6 +33,9 @@ typedef enum {RICHARDSON = 1,
 typedef enum {JACOBI = 1,
               SCHWARZ_SMOOTH = 3} SmootherType;
 
+#define ORAS = 1
+#define OO2 = 1
+
 class MGLevel : public parAlmond::multigridLevel
 {
 public:
@@ -81,6 +84,11 @@ public:
 
   // Eigenvalues
   occa::memory o_invL;
+
+  // Rhs modification
+  occa::memory o_rhs_x;
+  occa::memory o_rhs_y;
+  occa::memory o_rhs_z;
 
   //jacobi data
   occa::memory o_invDiagA;
