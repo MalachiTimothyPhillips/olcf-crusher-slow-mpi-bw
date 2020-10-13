@@ -332,7 +332,7 @@ void compute_1d_stiffness_matrix(
   }
 
   if(lbc == 0) rhs_multiplier[0] += -q_l;
-  if(rbc == 0) rhs_multiplier[n] += -q_r;
+  if(rbc == 0) rhs_multiplier[nl-1] += -q_r;
 
   dfloat* ah = (dfloat*) calloc((n + 1) * (n + 1), sizeof(dfloat));
   dfloat* tmp = (dfloat*) calloc((n + 1)* (n + 1), sizeof(dfloat));
