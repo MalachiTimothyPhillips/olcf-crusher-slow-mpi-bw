@@ -441,6 +441,9 @@ typedef struct {
   occa::memory o_ggeoPfloat; // second order geometric factors
   occa::memory o_projectL2; // local weights for projection.
 
+  // needed to recompute geometric factors on device
+  occa::memory o_gllw;
+
   occa::kernel volumeKernel;
   occa::kernel surfaceKernel;
   occa::kernel updateKernel;
@@ -482,6 +485,8 @@ typedef struct {
   // Boltzmann Specific Kernels
   occa::kernel relaxationKernel;
   occa::kernel pmlRelaxationKernel;
+
+  occa::kernel meshGeometricFactorsKernel;
   
 }mesh_t;
 

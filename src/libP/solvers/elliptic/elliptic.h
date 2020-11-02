@@ -508,6 +508,8 @@ void ellipticZeroMean(elliptic_t* elliptic, occa::memory &o_q);
 
 void ellipticThinOasSetup(elliptic_t* elliptic);
 mesh_t* create_extended_mesh(elliptic_t*);
+
+void recomputeGeometry(elliptic_t* elliptic);
 } // end C Linkage
 
 #endif

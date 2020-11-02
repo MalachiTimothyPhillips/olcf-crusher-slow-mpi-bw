@@ -170,5 +170,8 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
     MPI_Barrier(mesh->comm);
   }
 
+  // ... test ...
+  recomputeGeometry(elliptic);
+
   return elliptic;
 }

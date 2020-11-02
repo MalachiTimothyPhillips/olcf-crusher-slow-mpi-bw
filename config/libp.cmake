@@ -124,6 +124,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/src/ellipticVectors.c
         ${ELLIPTIC_SOURCE_DIR}/src/ellipticWeightedInnerProduct.c
         ${ELLIPTIC_SOURCE_DIR}/src/ellipticWeightedNorm2.c
+        ${ELLIPTIC_SOURCE_DIR}/src/ellipticRecomputeGeometry.c
         ${ELLIPTIC_SOURCE_DIR}/src/ellipticZeroMean.c)
 
 set_source_files_properties(${ELLIPTIC_SOURCES} PROPERTIES LANGUAGE CXX)

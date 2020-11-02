@@ -109,6 +109,8 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   mesh->sgeo = baseElliptic->mesh->sgeo;
   mesh->o_sgeo = baseElliptic->mesh->o_sgeo;
 
+  mesh->o_gllw = baseElliptic->mesh->o_gllw;
+
   // occa stuff
   mesh->device = baseElliptic->mesh->device;
 
@@ -119,6 +121,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   mesh->addScalarKernel = baseElliptic->mesh->addScalarKernel;
   mesh->maskKernel = baseElliptic->mesh->maskKernel;
   mesh->sumKernel = baseElliptic->mesh->sumKernel;
+  mesh->meshGeometricFactorsKernel = baseElliptic->mesh->meshGeometricFactorsKernel;
 #endif
 
   elliptic->mesh = mesh;
@@ -605,6 +608,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
         }
 
     mesh->o_D = mesh->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), mesh->D);
+    mesh->o_gllw = mesh->device.malloc(mesh->Nq * sizeof(dfloat), mesh->gllw);
     mesh->o_Dmatrices = mesh->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), mesh->D);
     mesh->o_Smatrices = mesh->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), DT); // transpose(D)
 

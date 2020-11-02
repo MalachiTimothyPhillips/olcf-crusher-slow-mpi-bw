@@ -32,15 +32,16 @@ SOFTWARE.
 				       @restrict const  dfloat *x,
 				       @restrict const  dfloat *y,
 				       @restrict const  dfloat *z,
-				       @restrict dfloat *vgeo){
+				       @restrict dfloat *vgeo,
+					   @restrict dfloat *vol_arr){
 
   for(dlong e=0;e<Nelements;++e;@outer(0)){  // for all elements
 
     @shared dfloat s_D[p_Nq][p_Nq];
-    @shared dfloat s_tmp[p_Nq][p_Nq][p_Nq];
     @shared dfloat s_x[p_Nq][p_Nq][p_Nq];
     @shared dfloat s_y[p_Nq][p_Nq][p_Nq];
     @shared dfloat s_z[p_Nq][p_Nq][p_Nq];
+	@shared dfloat s_gllw[p_Nq];
     
     for(int j=0;j<p_Nq;++j;@inner(1)){
       for(int i=0;i<p_Nq;++i;@inner(0)){
@@ -90,12 +91,14 @@ SOFTWARE.
           const dfloat Jinv = 1./J;
 
           dfloat JW = J*s_gllw[i]*s_gllw[j]*s_gllw[k];
+		  vol_arr[e*p_Np + k * p_Nq * p_Nq + j * p_Nq + i] = JW;
 	  
           const dfloat rx =  (ys*zt - zs*yt)*Jinv, ry = -(xs*zt - zs*xt)*Jinv, rz =  (xs*yt - ys*xt)*Jinv;
           const dfloat sx = -(yr*zt - zr*yt)*Jinv, sy =  (xr*zt - zr*xt)*Jinv, sz = -(xr*yt - yr*xt)*Jinv;
           const dfloat tx =  (yr*zs - zr*ys)*Jinv, ty = -(xr*zs - zr*xs)*Jinv, tz =  (xr*ys - yr*xs)*Jinv;
 	  
 	  if(option==0){
+        const dlong n = i + j * p_Nq + k *p_Nq * p_Nq;
 	    vgeo[p_Nvgeo*p_Np*e + n + p_Np*p_RXID] = rx;
 	    vgeo[p_Nvgeo*p_Np*e + n + p_Np*p_RYID] = ry;
 	    vgeo[p_Nvgeo*p_Np*e + n + p_Np*p_RZID] = rz;
@@ -113,6 +116,7 @@ SOFTWARE.
 	    vgeo[p_Nvgeo*p_Np*e + n + p_Np*p_IJWID] = 1.f/JW;
 	  }
 	  if(option==1){
+        const dlong n = i + j * p_Nq + k *p_Nq * p_Nq;
 	    vgeo[p_Nggeo*p_Np*e + n + p_Np*p_G00ID] = JW*(rx*rx+ry*ry+rz*rz);
 	    vgeo[p_Nggeo*p_Np*e + n + p_Np*p_G01ID] = JW*(rx*sx+ry*sy+rz*sz);
 	    vgeo[p_Nggeo*p_Np*e + n + p_Np*p_G02ID] = JW*(rx*tx+ry*ty+rz*tz);

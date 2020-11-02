@@ -508,6 +508,10 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
         mesh->device.buildKernel(DHOLMES "/okl/sum.okl",
                                  "sum",
                                  kernelInfo);
+      mesh->meshGeometricFactorsKernel =
+        mesh->device.buildKernel(DHOLMES "/okl/meshGeometricFactorsHex3D.okl",
+                                 "meshGeometricFactorsHex3D",
+                                 kernelInfo);
 
       elliptic->fillKernel =
         mesh->device.buildKernel(DHOLMES "/okl/fill.okl",
