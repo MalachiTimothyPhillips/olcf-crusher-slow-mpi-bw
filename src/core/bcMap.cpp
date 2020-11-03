@@ -23,7 +23,8 @@ static std::map<string, int> vBcTextToID = {
   {"zerogradient", 3},
   {"zeroxvalue/zerogradient", 4},
   {"zeroyvalue/zerogradient", 5},
-  {"zerozvalue/zerogradient", 6}
+  {"zerozvalue/zerogradient", 6},
+  {"movingmesh", 7},
 };
 
 static std::map<int, string> vBcIDToText = {
@@ -33,7 +34,8 @@ static std::map<int, string> vBcIDToText = {
   {3, "zeroGradient"           },
   {4, "zeroXValue/zeroGradient"},
   {5, "zeroYValue/zeroGradient"},
-  {6, "zeroZValue/zeroGradient"}
+  {6, "zeroZValue/zeroGradient"},
+  {7, "movingMesh"},
 };
 
 static std::map<string, int> sBcTextToID = {
@@ -62,6 +64,7 @@ static void v_setup(string field, std::vector<std::string> slist)
     if (key.compare("wall") == 0) key = "zerovalue";
     if (key.compare("inlet") == 0) key = "fixedvalue";
     if (key.compare("v") == 0) key = "fixedvalue";
+    if (key.compare("mv") == 0) key = "movingmesh";
     if (key.compare("outlet") == 0) key = "zerogradient";
     if (key.compare("outflow") == 0) key = "zerogradient";
     if (key.compare("o") == 0) key = "zerogradient";
@@ -156,6 +159,7 @@ int type(int bid, string field)
     if (bcID == 4) return DIRICHLET;
     if (bcID == 5) return NEUMANN;
     if (bcID == 6) return NEUMANN;
+    if (bcID == 7) return DIRICHLET;
   } else if (field.compare("y-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) return DIRICHLET;
@@ -164,6 +168,7 @@ int type(int bid, string field)
     if (bcID == 4) return NEUMANN;
     if (bcID == 5) return DIRICHLET;
     if (bcID == 6) return NEUMANN;
+    if (bcID == 7) return DIRICHLET;
   } else if (field.compare("z-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) return DIRICHLET;
@@ -172,6 +177,7 @@ int type(int bid, string field)
     if (bcID == 4) return NEUMANN;
     if (bcID == 5) return NEUMANN;
     if (bcID == 6) return DIRICHLET;
+    if (bcID == 7) return DIRICHLET;
   } else if (field.compare("pressure") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) return NEUMANN;
@@ -180,6 +186,7 @@ int type(int bid, string field)
     if (bcID == 4) return NEUMANN;
     if (bcID == 5) return NEUMANN;
     if (bcID == 6) return NEUMANN;
+    if (bcID == 7) return NEUMANN;
   } else if (field.compare(0, 6, "scalar") == 0) {
     const int bcID = bToBc[{field, bid - 1}];
     if (bcID == 1) return DIRICHLET;
