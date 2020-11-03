@@ -94,6 +94,8 @@ void setDefaultSettings(libParanumal::setupAide &options, string casename, int r
   options.setArgs("PRESSURE PARALMOND LPSCN ORDERING", "MAX");
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
+  options.setArgs("MOVING MESH", "FALSE");
+  options.setArgs("MOVING MESH TYPE", "INVALID");
 }
 
 libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
@@ -275,6 +277,11 @@ libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
   string meshPartitioner; 
   if(ini.extract("mesh", "partitioner", meshPartitioner))
     options.setArgs("MESH PARTITIONER", meshPartitioner);
+  string meshMotion; 
+  if(ini.extract("mesh", "motion", meshMotion)){
+    options.setArgs("MOVING MESH TYPE", meshMotion);
+    options.setArgs("MOVING MESH", "TRUE");
+  }
 
   //bool variableProperties;
   //if(ini.extract("general", "variableproperties", variableProperties))

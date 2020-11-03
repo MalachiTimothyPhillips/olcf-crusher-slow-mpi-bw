@@ -19,6 +19,7 @@ typedef struct
   elliptic_t* wSolver;
   elliptic_t* uvwSolver;
   elliptic_t* pSolver;
+  elliptic_t* meshSolver;
 
   cds_t* cds;
 

@@ -318,6 +318,8 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
   if (ins->flow) {
     if (mesh->rank == 0) printf("==================VELOCITY SETUP=========================\n");
 
+    const bool meshMotion = options.compareArgs("MESH MOTION", "TRUE");
+
     ins->velTOL  = 1E-6;
     ins->uvwSolver = NULL;
 
@@ -329,6 +331,8 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
 
     if(options.compareArgs("VELOCITY BLOCK SOLVER", "TRUE"))
       ins->uvwSolver = new elliptic_t();
+    if(meshMotion)
+      ins->meshSolver = new elliptic_t();
 
     int* uvwBCType = (int*) calloc(3 * NBCType, sizeof(int));
     int* uBCType = uvwBCType + 0 * NBCType;
@@ -368,6 +372,28 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
 
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * ins->fieldOffset; i++) ins->ellipticCoeff[i] = 1;
+
+    if(ins->meshSolver){
+      ins->meshSolver->blockSolver = 1;
+      ins->meshSolver->stressForm = 0;
+      ins->meshSolver->Nfields = ins->NVfields;
+      ins->meshSolver->Ntotal = ins->fieldOffset;
+      ins->meshSolver->wrk = scratch + ins->ellipticWrkOffset;
+      ins->meshSolver->o_wrk = o_scratch.slice(ins->ellipticWrkOffset * sizeof(dfloat));
+      ins->meshSolver->mesh = mesh;
+      ins->meshSolver->options = ins->vOptions;
+      ins->meshSolver->dim = ins->dim;
+      ins->meshSolver->elementType = ins->elementType;
+      ins->meshSolver->NBCType = NBCType;
+      ins->meshSolver->BCType = (int*) calloc(ins->NVfields * NBCType,sizeof(int));
+      memcpy(ins->meshSolver->BCType,uvwBCType,ins->NVfields * NBCType * sizeof(int));
+      ins->meshSolver->var_coeff = ins->var_coeff;
+      ins->meshSolver->lambda = ins->ellipticCoeff;
+      ins->meshSolver->o_lambda = ins->o_ellipticCoeff;
+      ins->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
+
+      ellipticSolveSetup(ins->meshSolver, kernelInfoV);
+    }
 
     if(ins->uvwSolver) {
       ins->uvwSolver->blockSolver = 1;
