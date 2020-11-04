@@ -94,8 +94,23 @@ void setDefaultSettings(libParanumal::setupAide &options, string casename, int r
   options.setArgs("PRESSURE PARALMOND LPSCN ORDERING", "MAX");
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
+
+  // Moving mesh solver settings
   options.setArgs("MOVING MESH", "FALSE");
   options.setArgs("MOVING MESH TYPE", "INVALID");
+  options.setArgs("MESH VISCOSITY", to_string_f(0.0));
+
+  // Since the mesh velocity solver is currently hard-coded
+  // to be a block solver, we cannot support residual projection
+  // in the mesh solver at the present time.
+  options.setArgs("MESH RESIDUAL PROJECTION", "FALSE");
+  options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "8");
+  options.setArgs("MESH RESIDUAL PROJECTION START", "5");
+  options.setArgs("MESH VELOCITY BLOCK SOLVER", "TRUE");
+  options.setArgs("MESH VELOCITY KRYLOV SOLVER", "PCG");
+  options.setArgs("MESH VELOCITY BASIS", "NODAL");
+  options.setArgs("MESH VELOCITY PRECONDITIONER", "JACOBI");
+  options.setArgs("MESH VELOCITY DISCRETIZATION", "CONTINUOUS");
 }
 
 libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
@@ -282,6 +297,17 @@ libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
     options.setArgs("MOVING MESH TYPE", meshMotion);
     options.setArgs("MOVING MESH", "TRUE");
   }
+  double mesh_residualTol;
+  if(ini.extract("mesh", "residualtol", mesh_residualTol) ||
+     ini.extract("mesh", "residualtolerance", mesh_residualTol))
+    options.setArgs("MESH VELOCITY SOLVER TOLERANCE", to_string_f(mesh_residualTol));
+  if(ini.extract("mesh", "viscosity", sbuf)) {
+    int err = 0;
+    double viscosity = te_interp(sbuf.c_str(), &err);
+    if(err) exit("Invalid expression for viscosity!", EXIT_FAILURE);
+    if(viscosity < 0) viscosity = fabs(1 / viscosity);
+    options.setArgs("MESH VISCOSITY", to_string_f(viscosity));
+  }
 
   //bool variableProperties;
   //if(ini.extract("general", "variableproperties", variableProperties))
@@ -296,7 +322,7 @@ libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
     // PRESSURE
     double p_residualTol;
     if(ini.extract("pressure", "residualtol", p_residualTol) ||
-       ini.extract("pressure", "residualtoltolerance", p_residualTol))
+       ini.extract("pressure", "residualtolerance", p_residualTol))
       options.setArgs("PRESSURE SOLVER TOLERANCE", to_string_f(p_residualTol));
     else
       exit("Cannot find mandatory parameter PRESSURE::residualTol!", EXIT_FAILURE);
@@ -494,7 +520,7 @@ libParanumal::setupAide parRead(std::string &setupFile, MPI_Comm comm)
 
     double v_residualTol;
     if(ini.extract("velocity", "residualtol", v_residualTol) ||
-       ini.extract("velocity", "residualtoltolerance", v_residualTol))
+       ini.extract("velocity", "residualtolerance", v_residualTol))
       options.setArgs("VELOCITY SOLVER TOLERANCE", to_string_f(v_residualTol));
     else
     if(flow) exit("Cannot find mandatory parameter VELOCITY::residualTol!", EXIT_FAILURE);

@@ -33,7 +33,7 @@ typedef struct
 
   int Nscalar;
   setupAide options;
-  setupAide vOptions, pOptions;
+  setupAide vOptions, pOptions, meshOptions;
 
   // INS SOLVER OCCA VARIABLES
   int NVfields, NTfields;
@@ -59,8 +59,8 @@ typedef struct
   int isOutputStep;
   int outputForceStep;
 
-  int NiterU, NiterV, NiterW, NiterP;
-  dfloat presTOL, velTOL;
+  int NiterU, NiterV, NiterW, NiterP, NiterMeshSolve;
+  dfloat presTOL, velTOL, meshTOL;
 
   dfloat* U, * P;
   dfloat* BF, * FU;

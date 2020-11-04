@@ -57,6 +57,7 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
   }
 
   occa::properties kernelInfoV  = kernelInfo;
+  occa::properties kernelInfoMesh  = kernelInfo;
   occa::properties kernelInfoP  = kernelInfo;
   occa::properties kernelInfoS  = kernelInfo;
 
@@ -370,10 +371,34 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
     ins->vOptions.setArgs("DEBUG ENABLE OGS", "1");
     ins->vOptions.setArgs("DEBUG ENABLE REDUCTIONS", "1");
 
+    ins->meshOptions = options;
+    ins->meshOptions.setArgs("KRYLOV SOLVER",        options.getArgs("MESH VELOCITY KRYLOV SOLVER"));
+    ins->meshOptions.setArgs("SOLVER TOLERANCE",     options.getArgs("MESH VELOCITY SOLVER TOLERANCE"));
+    ins->meshOptions.setArgs("DISCRETIZATION",       options.getArgs("MESH VELOCITY DISCRETIZATION"));
+    ins->meshOptions.setArgs("BASIS",                options.getArgs("MESH VELOCITY BASIS"));
+    ins->meshOptions.setArgs("PRECONDITIONER",       options.getArgs("MESH VELOCITY PRECONDITIONER"));
+    ins->meshOptions.setArgs("RESIDUAL PROJECTION",       options.getArgs("MESH VELOCITY RESIDUAL PROJECTION"));
+    ins->meshOptions.setArgs("RESIDUAL PROJECTION VECTORS",       options.getArgs("MESH VELOCITY RESIDUAL PROJECTION VECTORS"));
+    ins->meshOptions.setArgs("RESIDUAL PROJECTION START",       options.getArgs("MESH VELOCITY RESIDUAL PROJECTION START"));
+    ins->meshOptions.setArgs("MULTIGRID COARSENING", options.getArgs("MESH VELOCITY MULTIGRID COARSENING"));
+    ins->meshOptions.setArgs("MULTIGRID SMOOTHER",   options.getArgs("MESH VELOCITY MULTIGRID SMOOTHER"));
+    ins->meshOptions.setArgs("MULTIGRID CHEBYSHEV DEGREE",
+                          options.getArgs("MESH VELOCITY MULTIGRID CHEBYSHEV DEGREE"));
+    ins->meshOptions.setArgs("PARALMOND CYCLE",      options.getArgs("MESH VELOCITY PARALMOND CYCLE"));
+    ins->meshOptions.setArgs("PARALMOND SMOOTHER",   options.getArgs("MESH VELOCITY PARALMOND SMOOTHER"));
+    ins->meshOptions.setArgs("PARALMOND PARTITION",  options.getArgs("MESH VELOCITY PARALMOND PARTITION"));
+    ins->meshOptions.setArgs("PARALMOND CHEBYSHEV DEGREE",
+                          options.getArgs("MESH VELOCITY PARALMOND CHEBYSHEV DEGREE"));
+    ins->meshOptions.setArgs("PARALMOND AGGREGATION STRATEGY",
+                          options.getArgs("MESH VELOCITY PARALMOND AGGREGATION STRATEGY"));
+    ins->meshOptions.setArgs("DEBUG ENABLE OGS", "1");
+    ins->meshOptions.setArgs("DEBUG ENABLE REDUCTIONS", "1");
+
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * ins->fieldOffset; i++) ins->ellipticCoeff[i] = 1;
 
     if(ins->meshSolver){
+      ins->meshTOL = 1E-4;
       ins->meshSolver->blockSolver = 1;
       ins->meshSolver->stressForm = 0;
       ins->meshSolver->Nfields = ins->NVfields;
@@ -381,7 +406,7 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
       ins->meshSolver->wrk = scratch + ins->ellipticWrkOffset;
       ins->meshSolver->o_wrk = o_scratch.slice(ins->ellipticWrkOffset * sizeof(dfloat));
       ins->meshSolver->mesh = mesh;
-      ins->meshSolver->options = ins->vOptions;
+      ins->meshSolver->options = ins->meshOptions;
       ins->meshSolver->dim = ins->dim;
       ins->meshSolver->elementType = ins->elementType;
       ins->meshSolver->NBCType = NBCType;
@@ -392,7 +417,7 @@ ins_t* insSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
       ins->meshSolver->o_lambda = ins->o_ellipticCoeff;
       ins->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
 
-      ellipticSolveSetup(ins->meshSolver, kernelInfoV);
+      ellipticSolveSetup(ins->meshSolver, kernelInfoMesh);
     }
 
     if(ins->uvwSolver) {
