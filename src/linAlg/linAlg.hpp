@@ -107,7 +107,7 @@ public:
   dfloat max(const dlong N, occa::memory& o_a, MPI_Comm _comm);
 
   // ||o_a||_2
-  //dfloat norm2(const dlong N, occa::memory& o_a, MPI_Comm _comm);
+  dfloat norm2(const dlong N, occa::memory& o_a, MPI_Comm _comm);
 
   // o_x.o_y
   dfloat innerProd(const dlong N, occa::memory& o_x, occa::memory& o_y,

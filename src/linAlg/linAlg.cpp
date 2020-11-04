@@ -268,7 +268,6 @@ dfloat linAlg_t::max(const dlong N, occa::memory& o_a, MPI_Comm _comm) {
 }
 
 // ||o_a||_2
-/*
 dfloat linAlg_t::norm2(const dlong N, occa::memory& o_a, MPI_Comm _comm) {
   int Nblock = (N+blocksize-1)/blocksize;
   Nblock = (Nblock>blocksize) ? blocksize : Nblock; //limit to blocksize entries
@@ -282,12 +281,12 @@ dfloat linAlg_t::norm2(const dlong N, occa::memory& o_a, MPI_Comm _comm) {
     norm += scratch[n];
   }
 
-  dfloat globalnorm = 0;
-  MPI_Allreduce(&norm, &globalnorm, 1, MPI_DFLOAT, MPI_SUM, _comm);
+  dfloat globalnorm = norm;
+  if (_comm != MPI_COMM_NULL) 
+    MPI_Allreduce(&norm, &globalnorm, 1, MPI_DFLOAT, MPI_SUM, _comm);
 
   return sqrt(globalnorm);
 }
-*/
 
 // o_x.o_y
 dfloat linAlg_t::innerProd(const dlong N, occa::memory& o_x, occa::memory& o_y,

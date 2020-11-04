@@ -263,6 +263,7 @@ typedef struct
   int* levels;
 
   ResidualProjection* residualProjection;
+  MovingMeshManager* meshManager;
 }elliptic_t;
 
 #include "ellipticMultiGrid.h"

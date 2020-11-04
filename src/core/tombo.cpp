@@ -280,39 +280,7 @@ occa::memory velocitySolve(ins_t* ins, dfloat time)
 // see ptbgeom for an example of what steps are needed
 occa::memory meshSolve(ins_t* ins, dfloat time)
 {
-  // elastic material constants
-  double vnu = 0.0;
-  const double eps = 1e-8;
-  ins->meshOptions.getArgs("MESH VISCOSITY", vnu);
-  if(std::abs(vnu) < eps)
-    vnu = 0.4;
-  vnu = std::abs(vnu);
-  vnu = std::min(0.499,vnu);
-  const double Ce = 1.0 / ( 1.0 + vnu);
-  const double C2 = vnu * Ce / (1.0 - 2.0 * vnu);
-  const double C3 = 0.5 * Ce;
-
-  // call to ibdgeom here, e.g.
-
-  // fill arrays here...
-
-  const double eps = 1e-12;
-
-  // TODO: fill out rest...
-  dfloat diff = ellipticWeightedInnerProduct(ins->meshSolver,
-    ins->meshSolver->o_invDegree, ins->meshSolver->);
-  MPI_Allreduce(MPI_IN_PLACE, &diff, 1, MPI_DFLOAT, MPI_MAX, ins->mesh->comm);
-
-  if(diff < eps){
-    return; // mesh solve not needed
-  }
-  
-
-  ellipticOperator(ins->meshSolver, ins->o_wrk0, ins->o_wrk3, dfloatString);
-  ins->linAlg->scale(ins->meshSolver->Ntotal, -1.0, ins->o_wrk3);
-
-  ins->NiterMeshSolve = ellipticSolve(ins->meshSolver, ins->meshTOL, ins->o_wrk3, ins->o_wrk0);
-  return ins->o_wrk0;
+  return ins->meshSolver->meshManager->meshSolve(ins,time);
 }
 
 } // namespace
