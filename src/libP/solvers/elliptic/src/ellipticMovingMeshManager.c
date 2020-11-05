@@ -30,6 +30,20 @@
 MovingMeshManager::MovingMeshManager(elliptic_t* meshSolver)
 {
 }
+void MovingMeshManager::update_system(elliptic_t * elliptic)
+{
+  // TODO: implement
+}
+void MovingMeshManager::move_boundary(elliptic_t * elliptic)
+{
+  linAlg->fill(Ntotal*ndim, 0.0, o_Rn);
+  // TODO:
+  // o_Un has to be filled here, which comes from nek5000 area3
+  // What's the nekRS equivalent?
+  area3();
+  updateFaceVectorKernel(Nelements, Nfaces, o_Rn, o_Un);
+
+}
 void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
 {
   // elastic material constants
@@ -52,7 +66,7 @@ void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
 
   const double toleranceForMeshSolve = 1e-12;
 
-  cartesionVectorDotProdKernel(Nlocal, o_W, o_wrk);
+  cartesianVectorDotProdKernel(Nlocal, o_W, o_wrk);
   const dfloat maxDiffPos = sqrt(linAlg->max(Nlocal, o_wrk, ins->mesh->comm));
 
   if(maxDiffPos < toleranceForMeshSolve){

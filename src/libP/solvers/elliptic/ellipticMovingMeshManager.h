@@ -46,6 +46,8 @@ private:
   /** data **/
   dlong Nlocal;
   dlong fieldOffset;
+  dlong Nelements;
+  dlong Nfaces;
   oogs* oogs;
   linAlg_t* linAlg;
 
@@ -61,6 +63,17 @@ private:
   occa::memory o_wy;
   occa::memory o_wz;
 
+  occa::memory o_Un;
+  occa::memory o_Unx;
+  occa::memory o_Uny;
+  occa::memory o_Unz;
+
+  occa::memory o_Rn;
+  occa::memory o_Rnx;
+  occa::memory o_Rny;
+  occa::memory o_Rnz;
+  
+  occa::memory o_WV;
   occa::memory o_wvx; // not sure if needed
   occa::memory o_wvy;
   occa::memory o_wvz;
@@ -74,9 +87,13 @@ private:
   occa::memory & o_wrk;
 
   /** kernels **/
+  occa::kernel updateFaceVectorKernel;
   occa::kernel cartesianVectorDotProdKernel;
 
   /** helpers **/
+  void update_system(elliptic_t* elliptic);
+  void move_boundary(elliptic_t* elliptic);
+  void area3();
 };
 
 #endif
