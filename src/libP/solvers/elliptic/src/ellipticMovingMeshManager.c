@@ -42,10 +42,29 @@ void MovingMeshManager::move_boundary(elliptic_t * elliptic)
   // What's the nekRS equivalent?
   area3();
   updateFaceVectorKernel(Nelements, Nfaces, o_Rn, o_Un);
+  oogs::startFinish(o_Rn, ndim, 0, ogsDfloat, ogsAdd, oogs);
+  unitVecKernel(Ntotal, o_Rn);
+
+  linAlg->fill(Ntotal * ndim, 0.0, o_W);
+  linAlg->fill(Ntotal * ndim, 0.0, o_Wt);
+
+  constexpr int nsweep = 2;
+  for(int sweep = 0 ; sweep < nsweep; ++sweep){
+
+    // Need the velocity...
+    scaleFaceKernel(Nelements, Nfaces, o_wvx, o_wvy, o_wvz);
+
+    const char* opType = (sweep == 0) ? ogsMax : ogsMin;
+    oogs::startFinish(o_Rn, ndim, 0, ogsDfloat, opType, oogs);
+  }
+
+
 
 }
-void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
+void MovingMeshManager::meshSolve(ins_t* ins, dfloat time, occa::memory o_Utmp)
 {
+  o_U = o_Utmp;
+
   // elastic material constants
   double vnu = 0.0;
   const double eps = 1e-8;
@@ -88,8 +107,4 @@ void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
   linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wx);
   linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wy);
   linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wz);
-
-  o_solution.copyFrom(o_W, ndim*Ntotal*sizeof(dfloat));
-  
-  return o_solution;
 }

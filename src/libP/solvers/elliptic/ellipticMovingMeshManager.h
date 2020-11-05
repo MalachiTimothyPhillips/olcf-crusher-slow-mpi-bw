@@ -38,7 +38,7 @@ class MovingMeshManager final
 {
 public:
   MovingMeshManager(elliptic_t* meshSolver);
-  occa::memory meshSolve(ins_t* ins, dfloat time);
+  void meshSolve(ins_t* ins, dfloat time, occa::memory o_Utmp);
 private:
 
   int ndim;
@@ -63,6 +63,8 @@ private:
   occa::memory o_wy;
   occa::memory o_wz;
 
+  occa::memory o_V; // velocities
+
   occa::memory o_Un;
   occa::memory o_Unx;
   occa::memory o_Uny;
@@ -78,6 +80,11 @@ private:
   occa::memory o_wvy;
   occa::memory o_wvz;
 
+  occa::memory o_Wt;
+  occa::memory o_wtx; // not sure if needed
+  occa::memory o_wty;
+  occa::memory o_wtz;
+
   // slices of meshSolver->o_lambda
   occa::memory o_h1;
   occa::memory o_h2;
@@ -89,6 +96,8 @@ private:
   /** kernels **/
   occa::kernel updateFaceVectorKernel;
   occa::kernel cartesianVectorDotProdKernel;
+  occa::kernel unitVecKernel;
+  occa::kernel scaleFaceKernel;
 
   /** helpers **/
   void update_system(elliptic_t* elliptic);

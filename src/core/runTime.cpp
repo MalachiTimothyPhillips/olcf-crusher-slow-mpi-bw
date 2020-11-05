@@ -383,6 +383,10 @@ void fluidSolve(ins_t* ins, dfloat time, dfloat dt, occa::memory o_U)
   occa::memory o_Unew = tombo::velocitySolve(ins, time + dt);
   o_U.copyFrom(o_Unew, ins->NVfields * ins->fieldOffset * sizeof(dfloat));
   timer::toc("velocitySolve");
+
+  timer::tic("meshVelocitySolve", 1);
+  tombo::meshSolve(ins, time + dt, o_Unew);
+  timer::toc("meshVelocitySolve");
 }
 
 occa::memory velocityStrongSubCycle(ins_t* ins, dfloat time, occa::memory o_U)
