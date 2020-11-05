@@ -37,10 +37,11 @@
 class MovingMeshManager final
 {
 public:
+  MovingMeshManager(elliptic_t* meshSolver);
   occa::memory meshSolve(ins_t* ins, dfloat time);
 private:
 
-  static constexpr ndim = 3;
+  int ndim;
   
   /** data **/
   dlong Nlocal;
@@ -48,18 +49,34 @@ private:
   oogs* oogs;
   linAlg_t* linAlg;
 
+  /** ugly bit of state used for initialization **/
+  bool velocitiesInitialized;
+
   /** memory **/
-  occa::memory o_meshVelocity;
-  occa::memory o_normal;
+  // TODO: optimize for memory later...
+
+  // Persistent memory (likely will need to keep a version here)
+  occa::memory o_W;
+  occa::memory o_wx; // slices of o_W corresponding to the correct component
+  occa::memory o_wy;
+  occa::memory o_wz;
+
+  occa::memory o_wvx; // not sure if needed
+  occa::memory o_wvy;
+  occa::memory o_wvz;
+
+  // slices of meshSolver->o_lambda
+  occa::memory o_h1;
+  occa::memory o_h2;
+
+  // References to weights, scratch space
   occa::memory & o_invDegree;
+  occa::memory & o_wrk;
 
   /** kernels **/
-  occa::kernel extractFaceKernel;
-  occa::kernel scaleFaceKernel;
+  occa::kernel cartesianVectorDotProdKernel;
 
-  /** helper functions **/
-  void move_boundary(elliptic_t*);
-  void updmsys(elliptic_t*);
+  /** helpers **/
 };
 
 #endif

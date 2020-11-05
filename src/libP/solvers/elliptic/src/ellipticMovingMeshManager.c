@@ -27,6 +27,9 @@
 #include "ellipticMovingMeshManager.h"
 #include <iostream>
 #include <timer.hpp>
+MovingMeshManager::MovingMeshManager(elliptic_t* meshSolver)
+{
+}
 void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
 {
   // elastic material constants
@@ -41,64 +44,38 @@ void MovingMeshManager::meshSolve(ins_t* ins, dfloat time)
   const double C2 = vnu * Ce / (1.0 - 2.0 * vnu);
   const double C3 = 0.5 * Ce;
 
-  updmsys(ins->meshSolver);
+  update_system(ins->meshSolver);
   move_boundary(ins->meshSolver);
 
-  linAlg->fill(ins->meshSolver->Ntotal, C2, ins->meshSolver->o_lambda);
-  occa::memory h2 = ins->meshSolver->o_lambda + ins->fieldOffset * sizeof(dfloat);
-  linAlg->fill(ins->meshSolver->Ntotal, C3, h2);
+  linAlg->fill(ins->meshSolver->Ntotal, C2, o_h1);
+  linAlg->fill(ins->meshSolver->Ntotal, C3, o_h2);
 
-  const double eps = 1e-12;
+  const double toleranceForMeshSolve = 1e-12;
 
-  // TODO: fill out rest...
-  dfloat diff = ellipticWeightedInnerProduct(ins->meshSolver,
-    ins->meshSolver->o_invDegree, ins->meshSolver->);
-  MPI_Allreduce(MPI_IN_PLACE, &diff, 1, MPI_DFLOAT, MPI_MAX, ins->mesh->comm);
+  cartesionVectorDotProdKernel(Nlocal, o_W, o_wrk);
+  const dfloat maxDiffPos = sqrt(linAlg->max(Nlocal, o_wrk, ins->mesh->comm));
 
-  if(diff < eps){
-    return; // mesh solve not needed
+  if(maxDiffPos < toleranceForMeshSolve){
+    return;
   }
+  // nek5000 changes the mesh tolerances based on TOLAB * maxDiffPos * sqrt(min(lambda(A))),
+  // but I don't want to do that.
+
+  occa::memory & o_AW = ins->o_wrk3;
+
+  ellipticOperator(ins->meshSolver, o_W, o_AW, dfloatString);
+  ins->linAlg->scale(ins->meshSolver->Ntotal*ndim, -1.0, o_AW);
+
+  occa::memory & o_solution = ins->o_wrk0;
+  ins->NiterMeshSolve = ellipticSolve(ins->meshSolver, ins->meshTOL, o_AW, o_solution);
+  ins->meshSolver->scaledAdd(Nlocal, fieldOffset, 1.0, o_solution, 1.0,o_W);
+  oogs::startFinish(o_W, ndim, 0, ogsDfloat, ogsAdd, oogs);
+
+  linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wx);
+  linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wy);
+  linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wz);
+
+  o_solution.copyFrom(o_W, ndim*Ntotal*sizeof(dfloat));
   
-
-  ellipticOperator(ins->meshSolver, ins->o_wrk0, ins->o_wrk3, dfloatString);
-  ins->linAlg->scale(ins->meshSolver->Ntotal*ndim, -1.0, ins->o_wrk3);
-
-  ins->NiterMeshSolve = ellipticSolve(ins->meshSolver, ins->meshTOL, ins->o_wrk3, ins->o_wrk0);
-  // add in solution
-  // dsavg the solution
-  return ins->o_wrk0;
-}
-void MovingMeshManager::updmsys(elliptic_t* elliptic)
-{
-}
-void MovingMeshManager::move_boundary(elliptic_t* elliptic)
-{
-  extractFaceKernel(Nlocal, fieldOffset, o_meshVelocity, o_normal);
-  oogs::startFinish(o_normal, ndim, 0, ogsDfloat, ogsAdd, oogs);
-  const dfloat norm2 = linAlg->norm2(elliptic, o_normal, MPI_COMM_NULL);
-  linAlg->scale(Ntotal*ndim, 1.0/norm2, o_normal);
-  constexpr int nsweep = 2;
-  for(int sweep = 0; sweep < nsweep; sweep++)
-  {
-    scaleFaceKernel(Ntotal*ndim, o_normal);
-    oogs::startFinish(o_normal, ndim, 0, ogsDfloat, ogsAdd, oogs);
-    for(int dim = 0 ; dim < ndim; ++dim){
-      occa::memory o_slice = o_normal + dim * fieldOffset * sizeof(dfloat);
-      linAlg->axmy(Ntotal, 1.0, o_invDegree, o_slice);
-    }
-    // TODO: opcopy on istep0
-    // TODO: stuff for conjugateHeatTransfer problem
-    // some other logical stuff related to symmetry boundary conditions, fix b.c.?
-
-    if(sweep == 0){
-      oogs::startFinish(o_normal, ndim, 0, ogsDfloat, ogsMax, oogs);
-    } else{
-      oogs::startFinish(o_normal, ndim, 0, ogsDfloat, ogsMin, oogs);
-    }
-
-    // wx += wvx, wy += wvy, wz += wvz
-    linAlg->axpby(Ntotal*ndim, 1.0, ..., 1.0, o_meshVelocity);
-  }
-
-
+  return o_solution;
 }
