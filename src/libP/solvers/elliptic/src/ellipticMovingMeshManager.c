@@ -34,6 +34,7 @@ void MovingMeshManager::update_system(elliptic_t * elliptic)
 {
   // TODO: implement
 }
+void MovingMeshManager::area3(){}
 void MovingMeshManager::move_boundary(elliptic_t * elliptic)
 {
   linAlg->fill(Ntotal*ndim, 0.0, o_Rn);
@@ -49,17 +50,29 @@ void MovingMeshManager::move_boundary(elliptic_t * elliptic)
   linAlg->fill(Ntotal * ndim, 0.0, o_Wt);
 
   constexpr int nsweep = 2;
+  occa::memory o_vx = o_U + 0 * Ntotal * sizeof(dfloat);
+  occa::memory o_vy = o_U + 1 * Ntotal * sizeof(dfloat);
+  occa::memory o_vz = o_U + 2 * Ntotal * sizeof(dfloat);
   for(int sweep = 0 ; sweep < nsweep; ++sweep){
+    scaleFaceKernel(Nelements, Nfaces, o_wvx, o_wvy, o_wvz, o_vx, o_vy, o_vz);
+    oogs::startFinish(o_WV, ndim, 0, ogsDfloat, opType, oogs);
+    linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wvx);
+    linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wvy);
+    linAlg->axmy(Ntotal, 1.0, o_invDegree, o_wvz);
 
-    // Need the velocity...
-    scaleFaceKernel(Nelements, Nfaces, o_wvx, o_wvy, o_wvz);
+    if(!initialized)
+      o_W.copyFrom(o_WV, Ntotal * ndim * sizeof(dfloat));
+
+    // TODO: some additional stuff for conjugate ht transfer
+    // TODO: symmetry boundary condition
+    // TODO: fix boundary condition
 
     const char* opType = (sweep == 0) ? ogsMax : ogsMin;
-    oogs::startFinish(o_Rn, ndim, 0, ogsDfloat, opType, oogs);
+    oogs::startFinish(o_V, ndim, 0, ogsDfloat, opType, oogs);
   }
 
-
-
+  //TODO: mask and add solution back in
+  initialized = true;
 }
 void MovingMeshManager::meshSolve(ins_t* ins, dfloat time, occa::memory o_Utmp)
 {

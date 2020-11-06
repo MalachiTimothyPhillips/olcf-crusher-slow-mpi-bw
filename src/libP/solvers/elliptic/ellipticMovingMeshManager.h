@@ -50,6 +50,7 @@ private:
   dlong Nfaces;
   oogs* oogs;
   linAlg_t* linAlg;
+  bool initialized;
 
   /** ugly bit of state used for initialization **/
   bool velocitiesInitialized;
