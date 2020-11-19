@@ -429,7 +429,7 @@ void mkSIZE(int lx1, int lxd, int lelt, int lelg, int ldim, int lpmin, int ldimt
   fflush(stdout);
 }
 
-int buildNekInterface(const char* casename, int ldimt, int N, int np)
+int buildNekInterface(const char* casename, int ldimt, int N, int cubN, int np)
 {
   printf("loading nek ... "); fflush(stdout);
   double tStart = MPI_Wtime();
@@ -441,6 +441,8 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np)
   const char* cache_dir = getenv("NEKRS_CACHE_DIR");
   const char* nekInterface_dir = getenv("NEKRS_NEKINTERFACE_DIR");
   const char* nek5000_dir = getenv("NEKRS_NEK5000_DIR");
+  const char* nekSetReallxd = getenv("NEKRS_SET_NEK5000_LXD");
+  const int lxd = nekSetReallxd ? cubN + 1 : 1;
 
   FILE* fp;
   int retval;
@@ -459,7 +461,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np)
   sscanf(buf, "%5s %9d %1d %9d", ver, &nelgt, &ndim, &nelgv);
   int lelt = nelgt / np + 3;
   if(lelt > nelgt) lelt = nelgt;
-  mkSIZE(N + 1, 1, lelt, nelgt, ndim, np, ldimt);
+  mkSIZE(N + 1, lxd, lelt, nelgt, ndim, np, ldimt);
 
   // Copy case.usr file to cache_dir
   sprintf(buf,"%s.usr",casename);

@@ -54,7 +54,7 @@ nrs_t* nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
 
     int npTarget = size;
     if (buildOnly) nrs->options.getArgs("NP TARGET", npTarget);
-    if (rank == 0) buildNekInterface(casename.c_str(), mymax(1, nrs->Nscalar), N, npTarget);
+    if (rank == 0) buildNekInterface(casename.c_str(), mymax(1, nrs->Nscalar), N, cubN, npTarget);
     MPI_Barrier(comm);
     if (!buildOnly) {
       nek_setup(comm, nrs->options, nrs);
