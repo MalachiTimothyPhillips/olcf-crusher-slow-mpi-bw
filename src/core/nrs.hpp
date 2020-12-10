@@ -229,5 +229,7 @@ static std::vector<std::string> serializeString(const std::string sin)
   }
   return slist;
 }
+occa::memory velocityStrongSubCycle(nrs_t* nrs, dfloat time,
+                                    occa::memory o_U);
 
 #endif
