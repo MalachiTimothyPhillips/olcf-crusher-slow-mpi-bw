@@ -321,7 +321,7 @@ void set_function_handles(const char* session_in,int verbose)
 #undef load_or_noop
 }
 
-void mkSIZE(int lx1, int lxd, int lelt, int lelg, int ldim, int lpmin, int ldimt)
+void mkSIZE(int lx1, int lxd, int lelt, int lelg, int ldim, int lpmin, int ldimt, int lorder)
 {
   //printf("generating SIZE file ... "); fflush(stdout);
 
@@ -373,7 +373,7 @@ void mkSIZE(int lx1, int lxd, int lelt, int lelg, int ldim, int lpmin, int ldimt
     else if(strstr(line, "parameter (lgmres=") != NULL)
       sprintf(line, "      parameter (lgmres=%d)\n", 1);
     else if(strstr(line, "parameter (lorder=") != NULL)
-      sprintf(line, "      parameter (lorder=%d)\n", 1);
+      sprintf(line, "      parameter (lorder=%d)\n", lorder);
     else if(strstr(line, "parameter (lhis=") != NULL)
       sprintf(line, "      parameter (lhis=%d)\n", 100000);
     else if(strstr(line, "parameter (lelr=") != NULL)
@@ -429,7 +429,7 @@ void mkSIZE(int lx1, int lxd, int lelt, int lelg, int ldim, int lpmin, int ldimt
   fflush(stdout);
 }
 
-int buildNekInterface(const char* casename, int ldimt, int N, int cubN, int np)
+int buildNekInterface(const char* casename, int ldimt, int N, int cubN, int order, int np)
 {
   printf("loading nek ... "); fflush(stdout);
   double tStart = MPI_Wtime();
@@ -443,6 +443,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int cubN, int np)
   const char* nek5000_dir = getenv("NEKRS_NEK5000_DIR");
   const char* nekSetReallxd = getenv("NEKRS_SET_NEK5000_LXD");
   const int lxd = nekSetReallxd ? cubN + 1 : 1;
+  const int lorder = nekSetReallxd ? order : 1;
 
   FILE* fp;
   int retval;
@@ -461,7 +462,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int cubN, int np)
   sscanf(buf, "%5s %9d %1d %9d", ver, &nelgt, &ndim, &nelgv);
   int lelt = nelgt / np + 3;
   if(lelt > nelgt) lelt = nelgt;
-  mkSIZE(N + 1, lxd, lelt, nelgt, ndim, np, ldimt);
+  mkSIZE(N + 1, lxd, lelt, nelgt, ndim, np, ldimt, lorder);
 
   // Copy case.usr file to cache_dir
   sprintf(buf,"%s.usr",casename);

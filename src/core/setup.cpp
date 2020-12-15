@@ -34,6 +34,17 @@ nrs_t* nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
   nrs->options.getArgs("MESH DIMENSION", nrs->dim);
   nrs->options.getArgs("ELEMENT TYPE", nrs->elementType);
 
+  if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO1")) {
+    nrs->Nstages = 1;
+    nrs->temporalOrder = 1;
+  } else if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO2")) {
+    nrs->Nstages = 2;
+    nrs->temporalOrder = 2;
+  } else if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO3")) {
+    nrs->Nstages = 3;
+    nrs->temporalOrder = 3;
+  }
+
   nrs->flow = 1;
   if(nrs->options.compareArgs("VELOCITY", "FALSE")) nrs->flow = 0;
   if(nrs->options.compareArgs("VELOCITY SOLVER", "NONE")) nrs->flow = 0;
@@ -54,7 +65,7 @@ nrs_t* nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
 
     int npTarget = size;
     if (buildOnly) nrs->options.getArgs("NP TARGET", npTarget);
-    if (rank == 0) buildNekInterface(casename.c_str(), mymax(1, nrs->Nscalar), N, cubN, npTarget);
+    if (rank == 0) buildNekInterface(casename.c_str(), mymax(1, nrs->Nscalar), N, cubN, nrs->temporalOrder, npTarget);
     MPI_Barrier(comm);
     if (!buildOnly) {
       nek_setup(comm, nrs->options, nrs);
@@ -104,17 +115,6 @@ nrs_t* nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, int buil
   nrs->extbdfB = (dfloat*) calloc(3, sizeof(dfloat));
   nrs->extbdfC = (dfloat*) calloc(3, sizeof(dfloat));
   nrs->extC = (dfloat*) calloc(3, sizeof(dfloat));
-
-  if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO1")) {
-    nrs->Nstages = 1;
-    nrs->temporalOrder = 1;
-  } else if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO2")) {
-    nrs->Nstages = 2;
-    nrs->temporalOrder = 2;
-  } else if (nrs->options.compareArgs("TIME INTEGRATOR", "TOMBO3")) {
-    nrs->Nstages = 3;
-    nrs->temporalOrder = 3;
-  }
 
   dfloat mue = 1;
   dfloat rho = 1;
