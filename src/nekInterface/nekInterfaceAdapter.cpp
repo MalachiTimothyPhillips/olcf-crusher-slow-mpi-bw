@@ -6,6 +6,9 @@
 #include "io.hpp"
 
 nekdata_private nekData;
+namespace eig{
+int kmax = 0;
+}
 static int rank;
 static setupAide* options;
 static nrs_t* nrs;
@@ -104,11 +107,12 @@ void nek_outfld(const char* suffix, dfloat t, int coords, int FP64,
 
   timer::tic("checkpointing", 1);
 
-  if(coords)
+  if(coords){
     nrs->mesh->o_x.copyTo(nekData.xm1, Nlocal * sizeof(dfloat));
     nrs->mesh->o_y.copyTo(nekData.ym1, Nlocal * sizeof(dfloat));
     nrs->mesh->o_z.copyTo(nekData.zm1, Nlocal * sizeof(dfloat));
     xo = 1;
+  }
   if(o_u.ptr()) {
     occa::memory o_vx = o_u + 0 * nrs->fieldOffset * sizeof(dfloat);
     occa::memory o_vy = o_u + 1 * nrs->fieldOffset * sizeof(dfloat);
@@ -377,7 +381,7 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
     else if(strstr(line, "parameter (lpmin=") != NULL)
       sprintf(line, "      parameter (lpmin=%d)\n", lpmin);
     else if(strstr(line, "parameter (ldimt=") != NULL)
-      sprintf(line, "      parameter (ldimt=%d)\n", ldimt);
+      sprintf(line, "      parameter (ldimt=%d)\n", 30); // bodge
     else if(strstr(line, "parameter (mxprev=") != NULL)
       sprintf(line, "      parameter (mxprev=%d)\n", 1);
     else if(strstr(line, "parameter (lgmres=") != NULL)

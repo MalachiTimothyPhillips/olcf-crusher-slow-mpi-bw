@@ -55,7 +55,7 @@ void nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, nrs_t *nrs
     int err = 0;
     int npTarget = size;
     if (buildOnly) nrs->options.getArgs("NP TARGET", npTarget);
-    if (rank == 0) err = buildNekInterface(casename.c_str(), mymax(5, nrs->Nscalar), N, npTarget);
+    if (rank == 0) err = buildNekInterface(casename.c_str(), mymax(eig::kmax, mymax(5, nrs->Nscalar)), N, npTarget);
     MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, comm);
     if (err) ABORT(EXIT_FAILURE);; 
 

@@ -196,6 +196,7 @@ set(SRC
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
+    src/plugins/eigenvalues.cpp
     src/udf/udf.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
     ${MESH_SOURCES}
