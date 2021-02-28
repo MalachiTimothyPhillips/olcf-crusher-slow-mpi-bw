@@ -86,7 +86,10 @@ void setup(nrs_t* nrs, int _Nmax)
   VR  = new dfloat[k * k];
 
 }
-void compute_eigs(nrs_t* nrs)
+
+// mode 0: no smoother
+// mode 1: smoother
+static void compute_eigs_impl(nrs_t* nrs, int mode)
 {
   elliptic_t* elliptic = nrs->pSolver; // only consider pressure solver
   mesh_t* mesh = elliptic->mesh;
@@ -110,7 +113,8 @@ void compute_eigs(nrs_t* nrs)
     //this->Ax(o_V[j],o_AVx);
     ellipticOperator(elliptic,o_V[j],o_AVx,dfloatString);
     elliptic->copyDfloatToPfloatKernel(M, o_AVxPfloat, o_AVx);
-    fineLevel->smoother(o_AVxPfloat, o_VxPfloat, true);
+    if(mode) fineLevel->smoother(o_AVxPfloat, o_VxPfloat, true);
+    else o_VxPfloat.copyFrom(o_AVxPfloat, M * sizeof(pfloat));
     elliptic->copyPfloatToDPfloatKernel(M, o_VxPfloat, o_V[j + 1]);
 
     // modified Gram-Schmidth
@@ -176,6 +180,10 @@ void compute_eigs(nrs_t* nrs)
         &nrs->o_P,
         &o_eigVecs,
         k);
-  
+}
+void compute_eigs(nrs_t* nrs)
+{
+  compute_eigs_impl(nrs, 0); // eigs A only
+  compute_eigs_impl(nrs, 1); // eigs SA
 }
 }
