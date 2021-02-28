@@ -5,6 +5,7 @@
 #include <math.h>
 #include "udf.hpp"
 #include "casedata.h"
+#include "plugins/eigenvalues.hpp"
 
 #include "ci.inc"
 
@@ -50,12 +51,18 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 void UDF_Setup(nrs_t *nrs)
 {
   udf.sEqnSource = &userq;
+  const int kmax = 20;
+  eig::setup(nrs,kmax);
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
   mesh_t *mesh = nrs->mesh;
   cds_t *cds = nrs->cds;
+
+  if(tstep == 10){
+    eig::compute_eigs(nrs);
+  }
 
   if (tstep <= 5) {
     exactUVWPKernel(nrs->Nlocal, time, mesh->o_x, mesh->o_y, mesh->o_z, nrs->fieldOffset, nrs->o_P, nrs->o_U);
