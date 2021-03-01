@@ -88,7 +88,7 @@ void setup(nrs_t* nrs, int _Nmax)
 }
 
 // mode 0: no smoother
-// mode 1: smoother
+// mode 1: smooth (e.g., Chebyshev smoother)
 static void compute_eigs_impl(nrs_t* nrs, int mode)
 {
   elliptic_t* elliptic = nrs->pSolver; // only consider pressure solver
@@ -113,7 +113,7 @@ static void compute_eigs_impl(nrs_t* nrs, int mode)
     //this->Ax(o_V[j],o_AVx);
     ellipticOperator(elliptic,o_V[j],o_AVx,dfloatString);
     elliptic->copyDfloatToPfloatKernel(M, o_AVxPfloat, o_AVx);
-    if(mode) fineLevel->smoother(o_AVxPfloat, o_VxPfloat, true);
+    if(mode) fineLevel->smooth(o_AVxPfloat, o_VxPfloat, true);
     else o_VxPfloat.copyFrom(o_AVxPfloat, M * sizeof(pfloat));
     elliptic->copyPfloatToDPfloatKernel(M, o_VxPfloat, o_V[j + 1]);
 
@@ -146,10 +146,10 @@ static void compute_eigs_impl(nrs_t* nrs, int mode)
 
   double rho = 0.;
 
-  std::cout << "Eigs are:\n";
+  if(mesh->rank == 0) std::cout << "Eigs are:\n";
   for(int i = 0; i < k; i++) {
     double rho_i  = sqrt(WR[i] * WR[i] + WI[i] * WI[i]);
-    std::cout << "\t" << rho_i << "\n";
+    if(mesh->rank == 0) std::cout << "\t" << rho_i << "\n";
 
     if(rho < rho_i)
       rho = rho_i;
