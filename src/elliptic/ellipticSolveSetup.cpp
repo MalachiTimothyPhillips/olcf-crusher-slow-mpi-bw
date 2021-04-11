@@ -72,7 +72,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   dlong NthreadsUpdatePCG = BLOCKSIZE;
   dlong NblocksUpdatePCG = mymin((Nlocal + NthreadsUpdatePCG - 1) / NthreadsUpdatePCG, 160);
   if(options.compareArgs("KRYLOV SOLVER", "PGMRES")){
-    initializeGmresData(elliptic);
+    initializeGmresData(elliptic, kernelInfo);
     string install_dir;
     install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
     const string oklpath = install_dir + "/okl/elliptic/";
@@ -82,6 +82,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
     occa::properties gmresKernelInfo = kernelInfo;
     if(serial) gmresKernelInfo["okl/enabled"] = false;
     gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
+    gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
     elliptic->updatePGMRESSolutionKernel =
       elliptic->mesh->device.buildKernel(filename,
                                "updatePGMRESSolution",

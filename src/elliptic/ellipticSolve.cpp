@@ -72,7 +72,7 @@ int ellipticSolve(elliptic_t* elliptic,
     else if(options.compareArgs("KRYLOV SOLVER", "PGMRES"))
       Niter = pgmres (elliptic, o_r, o_x, tol, maxIter);
     else{
-      if(elliptic->mesh.rank == 0) printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER"));
+      if(elliptic->mesh->rank == 0) printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER"));
       ABORT(EXIT_FAILURE);
     }
   }else{

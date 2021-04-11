@@ -36,6 +36,7 @@
 #include "mesh3D.h"
 #include "parAlmond.hpp"
 #include "ellipticPrecon.h"
+#include "platform.hpp"
 
 #include "timer.hpp"
 #define ELLIPTIC_ENABLE_TIMER
@@ -44,7 +45,7 @@ class ResidualProjection;
 class elliptic_t;
 
 struct GmresData{
-  GmresData(elliptic_t*);
+  GmresData(elliptic_t*, occa::properties&);
   int restart;
   int flexible;
   deviceVector_t o_V;
@@ -324,6 +325,7 @@ int pgmres      (elliptic_t* elliptic,
               occa::memory &o_x,
               const dfloat tol,
               const int MAXIT);
+void initializeGmresData(elliptic_t*, occa::properties&);
 int pbicgstab(elliptic_t* elliptic,
               dfloat lambda,
               occa::memory &o_r,
