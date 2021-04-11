@@ -251,7 +251,7 @@ void nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, nrs_t *nrs
 
   nrs->linAlg = new linAlg_t(mesh->device, kernelInfo, mesh->comm);
 
-  meshParallelGatherScatterSetup(mesh, nrs->Nlocal, mesh->globalIds, mesh->comm, 0);
+  meshParallelGatherScatterSetup(mesh, nrs->Nlocal, mesh->globalIds, mesh->comm, options, 0);
   oogs_mode oogsMode = OOGS_AUTO; 
   if(nrs->options.compareArgs("THREAD MODEL", "SERIAL")) oogsMode = OOGS_DEFAULT;
   nrs->gsh = oogs::setup(mesh->ogs, nrs->NVfields, nrs->fieldOffset, ogsDfloat, NULL, oogsMode);
@@ -919,7 +919,7 @@ static cds_t* cdsSetup(nrs_t* nrs, mesh_t* mesh, setupAide options, occa::proper
   cds->gsh = nrs->gsh;
   
   if(nrs->cht) {
-    meshParallelGatherScatterSetup(mesh, cds->Nlocal, mesh->globalIds, mesh->comm, 0);
+    meshParallelGatherScatterSetup(mesh, cds->Nlocal, mesh->globalIds, mesh->comm, options, 0);
     oogs_mode oogsMode = OOGS_AUTO; 
     if(options.compareArgs("THREAD MODEL", "SERIAL")) oogsMode = OOGS_DEFAULT;
     cds->gshT = oogs::setup(mesh->ogs, 1, cds->fieldOffset, ogsDfloat, NULL, oogsMode);

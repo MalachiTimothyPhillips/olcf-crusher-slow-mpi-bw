@@ -34,6 +34,7 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
                                     dlong N,
                                     hlong* globalIds,
                                     MPI_Comm &comm,
+                                    setupAide options,
                                     int verbose)
 {
   int rank, size;
@@ -53,16 +54,22 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
   ogsGatherScatter(minRank, ogsInt, ogsMin, mesh->ogs); //minRank[n] contains the smallest rank taking part in the gather of node n
   ogsGatherScatter(maxRank, ogsInt, ogsMax, mesh->ogs); //maxRank[n] contains the largest rank taking part in the gather of node n
 
+  int overlap = 0;
+  options.compareArgs("ENABLE OVERLAP", "TRUE"); overlap = 1;
+
   // count elements that contribute to global C0 gather-scatter
   dlong globalCount = 0;
   dlong localCount = 0;
   for(dlong e = 0; e < mesh->Nelements; ++e) {
-    int isHalo = 0;
-    for(int n = 0; n < mesh->Np; ++n) {
-      dlong id = e * mesh->Np + n;
-      if ((minRank[id] != rank) || (maxRank[id] != rank)) {
-        isHalo = 1;
-        break;
+    int isHalo = 1;
+    if(overlap) {
+      isHalo = 0;
+      for(int n = 0; n < mesh->Np; ++n) {
+        dlong id = e * mesh->Np + n;
+        if ((minRank[id] != rank) || (maxRank[id] != rank)) {
+          isHalo = 1;
+          break;
+        }
       }
     }
     globalCount += isHalo;
@@ -76,12 +83,15 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
   localCount = 0;
 
   for(dlong e = 0; e < mesh->Nelements; ++e) {
-    int isHalo = 0;
-    for(int n = 0; n < mesh->Np; ++n) {
-      dlong id = e * mesh->Np + n;
-      if ((minRank[id] != rank) || (maxRank[id] != rank)) {
-        isHalo = 1;
-        break;
+      int isHalo = 1;
+      if(overlap) {
+      isHalo = 0;
+      for(int n = 0; n < mesh->Np; ++n) {
+        dlong id = e * mesh->Np + n;
+        if ((minRank[id] != rank) || (maxRank[id] != rank)) {
+          isHalo = 1;
+          break;
+        }
       }
     }
     if(isHalo)
