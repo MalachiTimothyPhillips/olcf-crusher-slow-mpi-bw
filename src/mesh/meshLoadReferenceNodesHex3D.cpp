@@ -69,7 +69,9 @@ void meshLoadReferenceNodesHex3D(mesh3D* mesh, int N, int cubN)
   // cubN+1 point Gauss-Legendre quadrature
   mesh->cubr = (dfloat*) malloc(mesh->cubNq * sizeof(dfloat));
   mesh->cubw = (dfloat*) malloc(mesh->cubNq * sizeof(dfloat));
-  JacobiGLL(mesh->cubNq - 1, mesh->cubr, mesh->cubw);
+
+  //JacobiGLL(mesh->cubNq - 1, mesh->cubr, mesh->cubw);
+  JacobiGQ(0, 0, mesh->cubNq - 1, mesh->cubr, mesh->cubw);
 
   mesh->cubInterp = (dfloat*) calloc(mesh->Nq * mesh->cubNq, sizeof(dfloat));
   InterpolationMatrix1D(mesh->N, mesh->Nq, mesh->r, mesh->cubNq, mesh->cubr, mesh->cubInterp); //uses the fact that r = gllz for 1:Nq
