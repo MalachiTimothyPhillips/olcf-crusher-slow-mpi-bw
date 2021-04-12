@@ -55,7 +55,7 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
   ogsGatherScatter(maxRank, ogsInt, ogsMax, mesh->ogs); //maxRank[n] contains the largest rank taking part in the gather of node n
 
   int overlap = 0;
-  options.compareArgs("ENABLE OVERLAP", "TRUE"); overlap = 1;
+  if(options.compareArgs("ENABLE OVERLAP", "TRUE")) overlap = 1;
 
   // count elements that contribute to global C0 gather-scatter
   dlong globalCount = 0;
@@ -83,8 +83,8 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
   localCount = 0;
 
   for(dlong e = 0; e < mesh->Nelements; ++e) {
-      int isHalo = 1;
-      if(overlap) {
+    int isHalo = 1;
+    if(overlap) {
       isHalo = 0;
       for(int n = 0; n < mesh->Np; ++n) {
         dlong id = e * mesh->Np + n;
