@@ -36,13 +36,32 @@
 #include "mesh3D.h"
 #include "parAlmond.hpp"
 #include "ellipticPrecon.h"
+#include "platform.hpp"
 
 #include "timer.hpp"
 #define ELLIPTIC_ENABLE_TIMER
 
 class ResidualProjection;
+class elliptic_t;
 
-typedef struct
+struct GmresData{
+  GmresData(elliptic_t*, occa::properties&);
+  int restart;
+  int flexible;
+  deviceVector_t o_V;
+  deviceVector_t o_Z;
+  occa::memory o_y;
+  occa::memory o_scratch;
+  occa::memory h_scratch;
+  dfloat* y;
+  dfloat* H;
+  dfloat* sn;
+  dfloat* cs;
+  dfloat* s;
+  dfloat* scratch;
+};
+
+struct elliptic_t
 {
   int dim;
   int elementType; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
@@ -175,6 +194,11 @@ typedef struct
   occa::kernel partialIpdgKernel;
   occa::kernel rhsBCIpdgKernel;
 
+  occa::kernel updatePGMRESSolutionKernel;
+  occa::kernel fusedGramSchmidtKernel;
+  occa::kernel fusedGramSchmidtLastIterKernel;
+  occa::kernel fusedResidualAndNormKernel;
+
   dfloat resNormFactor;
 
   // combined PCG update step
@@ -259,7 +283,8 @@ typedef struct
   int* levels;
 
   ResidualProjection* residualProjection;
-}elliptic_t;
+  GmresData* gmresData;
+};
 
 #include "ellipticMultiGrid.h"
 #include "ellipticResidualProjection.h"
@@ -295,6 +320,12 @@ int pcg      (elliptic_t* elliptic,
               occa::memory &o_x,
               const dfloat tol,
               const int MAXIT);
+int pgmres      (elliptic_t* elliptic,
+              occa::memory &o_r,
+              occa::memory &o_x,
+              const dfloat tol,
+              const int MAXIT);
+void initializeGmresData(elliptic_t*, occa::properties&);
 int pbicgstab(elliptic_t* elliptic,
               dfloat lambda,
               occa::memory &o_r,

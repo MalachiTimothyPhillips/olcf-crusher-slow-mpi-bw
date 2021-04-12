@@ -71,6 +71,43 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
 
   dlong NthreadsUpdatePCG = BLOCKSIZE;
   dlong NblocksUpdatePCG = mymin((Nlocal + NthreadsUpdatePCG - 1) / NthreadsUpdatePCG, 160);
+  if(options.compareArgs("KRYLOV SOLVER", "PGMRES")){
+    initializeGmresData(elliptic, kernelInfo);
+    string install_dir;
+    install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+    const string oklpath = install_dir + "/okl/elliptic/";
+    string filename;
+
+    filename = serial ? oklpath + "ellipticUpdatePGMRES.c" : oklpath + "ellipticUpdatePGMRES.okl";
+    occa::properties gmresKernelInfo = kernelInfo;
+    if(serial) gmresKernelInfo["okl/enabled"] = false;
+    gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
+    gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
+    elliptic->updatePGMRESSolutionKernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "updatePGMRESSolution",
+                               gmresKernelInfo);
+    filename = serial ? oklpath + "ellipticFusedResidualAndNorm.c" : oklpath + "ellipticFusedResidualAndNorm.okl";
+    elliptic->fusedResidualAndNormKernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "fusedResidualAndNorm",
+                               gmresKernelInfo);
+    filename = serial? oklpath + "ellipticFusedGramSchmidt.c" : oklpath + "ellipticFusedGramSchmidt.okl";
+    gmresKernelInfo["defines/" "p_lastIter"] = 0;
+    elliptic->fusedGramSchmidtKernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "fusedGramSchmidt",
+                               gmresKernelInfo);
+    gmresKernelInfo["defines/" "p_lastIter"] = 1;
+    elliptic->fusedGramSchmidtLastIterKernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "fusedGramSchmidt",
+                               gmresKernelInfo);
+  }
+
+  elliptic->p    = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
+  elliptic->z    = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
+  elliptic->Ap   = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
 
   elliptic->NthreadsUpdatePCG = NthreadsUpdatePCG;
   elliptic->NblocksUpdatePCG = NblocksUpdatePCG;

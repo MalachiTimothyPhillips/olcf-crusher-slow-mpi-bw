@@ -180,6 +180,7 @@ set(SRC
     src/core/filter.cpp
     src/core/bcMap.cpp
     src/core/setup.cpp
+    src/core/platform.cpp
     src/timeStepper/runTime.cpp
     src/lns/tombo.cpp
     src/cds/cds.cpp
@@ -201,6 +202,7 @@ set(SRC
     src/linearSolver/NBFPCG.cpp
     src/linearSolver/NBPCG.cpp
     src/linearSolver/PCG.cpp
+    src/linearSolver/PGMRES.cpp
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
     ${ELLIPTIC_SOURCES}

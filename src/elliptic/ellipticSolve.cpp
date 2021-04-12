@@ -40,6 +40,13 @@ int ellipticSolve(elliptic_t* elliptic,
 
   elliptic->resNormFactor = 1 / (elliptic->Nfields * mesh->volume);
 
+  if(options.compareArgs("KRYLOV SOLVER", "PGMRES")){
+    elliptic->o_rtmp.copyFrom(o_r, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
+    if(elliptic->allNeumann) ellipticZeroMean(elliptic, elliptic->o_rtmp);
+    oogs::startFinish(elliptic->o_rtmp, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
+    if(elliptic->Nmasked) mesh->maskKernel(elliptic->Nmasked, elliptic->o_maskIds, elliptic->o_rtmp);
+  }
+
   if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "JACOBI"))
     ellipticUpdateJacobi(elliptic);
 
@@ -60,7 +67,14 @@ int ellipticSolve(elliptic_t* elliptic,
 
   dlong Niter;
   if(!options.compareArgs("KRYLOV SOLVER", "NONBLOCKING")) {
-    Niter = pcg (elliptic, o_r, o_x, tol, maxIter);
+    if(options.compareArgs("KRYLOV SOLVER", "PCG"))
+      Niter = pcg (elliptic, o_r, o_x, tol, maxIter);
+    else if(options.compareArgs("KRYLOV SOLVER", "PGMRES"))
+      Niter = pgmres (elliptic, o_r, o_x, tol, maxIter);
+    else{
+      if(elliptic->mesh->rank == 0) printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER"));
+      ABORT(EXIT_FAILURE);
+    }
   }else{
     printf("NONBLOCKING Krylov solvers currently not supported!");
     ABORT(EXIT_FAILURE);
