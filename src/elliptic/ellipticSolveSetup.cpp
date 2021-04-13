@@ -81,11 +81,12 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
         string filename;
 
         occa::properties gmresKernelInfo = kernelInfo;
-        if(serial) gmresKernelInfo["okl/enabled"] = false;
         gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
         gmresKernelInfo["defines/" "p_Nfields"] = elliptic->Nfields;
         gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
         gmresKernelInfo["defines/" "p_threadBlockSize"] = BLOCKSIZE;
+        occa::properties serialKernelInfo = gmresKernelInfo;
+        if(serial) serialKernelInfo["okl/enabled"] = false;
         filename = oklpath + "ellipticGramSchmidtOrthogonalization.okl";
         elliptic->gramSchmidtOrthogonalizationKernel =
           elliptic->mesh->device.buildKernel(filename,
@@ -100,23 +101,25 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
         elliptic->updatePGMRESSolutionKernel =
           elliptic->mesh->device.buildKernel(filename,
                                    "updatePGMRESSolution",
-                                   gmresKernelInfo);
+                                   serialKernelInfo);
         filename = serial ? oklpath + "ellipticFusedResidualAndNorm.c" : oklpath + "ellipticFusedResidualAndNorm.okl";
         elliptic->fusedResidualAndNormKernel =
           elliptic->mesh->device.buildKernel(filename,
                                    "fusedResidualAndNorm",
-                                   gmresKernelInfo);
+                                   serialKernelInfo);
         filename = serial? oklpath + "ellipticFusedGramSchmidt.c" : oklpath + "ellipticFusedGramSchmidt.okl";
         gmresKernelInfo["defines/" "p_lastIter"] = 0;
+        serialKernelInfo["defines/" "p_lastIter"] = 0;
         elliptic->fusedGramSchmidtKernel =
           elliptic->mesh->device.buildKernel(filename,
                                    "fusedGramSchmidt",
-                                   gmresKernelInfo);
+                                   serialKernelInfo);
         gmresKernelInfo["defines/" "p_lastIter"] = 1;
+        serialKernelInfo["defines/" "p_lastIter"] = 1;
         elliptic->fusedGramSchmidtLastIterKernel =
           elliptic->mesh->device.buildKernel(filename,
                                    "fusedGramSchmidt",
-                                   gmresKernelInfo);
+                                   serialKernelInfo);
       }
       MPI_Barrier(elliptic->mesh->comm);
     }
