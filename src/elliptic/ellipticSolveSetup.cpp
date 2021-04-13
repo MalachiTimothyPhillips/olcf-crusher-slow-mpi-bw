@@ -73,48 +73,53 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   dlong NblocksUpdatePCG = mymin((Nlocal + NthreadsUpdatePCG - 1) / NthreadsUpdatePCG, 160);
   if(options.compareArgs("KRYLOV SOLVER", "PGMRES")){
     initializeGmresData(elliptic, kernelInfo);
-    string install_dir;
-    install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-    const string oklpath = install_dir + "/okl/elliptic/";
-    string filename;
+    for (int r = 0; r < 2; r++) {
+      if ((r == 0 && mesh->rank == 0) || (r == 1 && mesh->rank > 0)) {
+        string install_dir;
+        install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+        const string oklpath = install_dir + "/okl/elliptic/";
+        string filename;
 
-    occa::properties gmresKernelInfo = kernelInfo;
-    if(serial) gmresKernelInfo["okl/enabled"] = false;
-    gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
-    gmresKernelInfo["defines/" "p_Nfields"] = elliptic->Nfields;
-    gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
-    gmresKernelInfo["defines/" "p_threadBlockSize"] = BLOCKSIZE;
-    filename = oklpath + "ellipticGramSchmidtOrthogonalization.okl";
-    elliptic->gramSchmidtOrthogonalizationKernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "gramSchmidtOrthogonalization",
-                               gmresKernelInfo);
-    filename = oklpath + "ellipticResidualProjection.okl";
-    elliptic->multiWeightedInnerProduct2Kernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "multiWeightedInnerProduct2",
-                               gmresKernelInfo);
-    filename = serial ? oklpath + "ellipticUpdatePGMRES.c" : oklpath + "ellipticUpdatePGMRES.okl";
-    elliptic->updatePGMRESSolutionKernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "updatePGMRESSolution",
-                               gmresKernelInfo);
-    filename = serial ? oklpath + "ellipticFusedResidualAndNorm.c" : oklpath + "ellipticFusedResidualAndNorm.okl";
-    elliptic->fusedResidualAndNormKernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "fusedResidualAndNorm",
-                               gmresKernelInfo);
-    filename = serial? oklpath + "ellipticFusedGramSchmidt.c" : oklpath + "ellipticFusedGramSchmidt.okl";
-    gmresKernelInfo["defines/" "p_lastIter"] = 0;
-    elliptic->fusedGramSchmidtKernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "fusedGramSchmidt",
-                               gmresKernelInfo);
-    gmresKernelInfo["defines/" "p_lastIter"] = 1;
-    elliptic->fusedGramSchmidtLastIterKernel =
-      elliptic->mesh->device.buildKernel(filename,
-                               "fusedGramSchmidt",
-                               gmresKernelInfo);
+        occa::properties gmresKernelInfo = kernelInfo;
+        if(serial) gmresKernelInfo["okl/enabled"] = false;
+        gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
+        gmresKernelInfo["defines/" "p_Nfields"] = elliptic->Nfields;
+        gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
+        gmresKernelInfo["defines/" "p_threadBlockSize"] = BLOCKSIZE;
+        filename = oklpath + "ellipticGramSchmidtOrthogonalization.okl";
+        elliptic->gramSchmidtOrthogonalizationKernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "gramSchmidtOrthogonalization",
+                                   gmresKernelInfo);
+        filename = oklpath + "ellipticResidualProjection.okl";
+        elliptic->multiWeightedInnerProduct2Kernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "multiWeightedInnerProduct2",
+                                   gmresKernelInfo);
+        filename = serial ? oklpath + "ellipticUpdatePGMRES.c" : oklpath + "ellipticUpdatePGMRES.okl";
+        elliptic->updatePGMRESSolutionKernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "updatePGMRESSolution",
+                                   gmresKernelInfo);
+        filename = serial ? oklpath + "ellipticFusedResidualAndNorm.c" : oklpath + "ellipticFusedResidualAndNorm.okl";
+        elliptic->fusedResidualAndNormKernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "fusedResidualAndNorm",
+                                   gmresKernelInfo);
+        filename = serial? oklpath + "ellipticFusedGramSchmidt.c" : oklpath + "ellipticFusedGramSchmidt.okl";
+        gmresKernelInfo["defines/" "p_lastIter"] = 0;
+        elliptic->fusedGramSchmidtKernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "fusedGramSchmidt",
+                                   gmresKernelInfo);
+        gmresKernelInfo["defines/" "p_lastIter"] = 1;
+        elliptic->fusedGramSchmidtLastIterKernel =
+          elliptic->mesh->device.buildKernel(filename,
+                                   "fusedGramSchmidt",
+                                   gmresKernelInfo);
+      }
+      MPI_Barrier(elliptic->mesh->comm);
+    }
   }
 
   elliptic->p    = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
