@@ -78,11 +78,23 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
     const string oklpath = install_dir + "/okl/elliptic/";
     string filename;
 
-    filename = serial ? oklpath + "ellipticUpdatePGMRES.c" : oklpath + "ellipticUpdatePGMRES.okl";
     occa::properties gmresKernelInfo = kernelInfo;
     if(serial) gmresKernelInfo["okl/enabled"] = false;
     gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
+    gmresKernelInfo["defines/" "p_Nfields"] = elliptic->Nfields;
     gmresKernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
+    gmresKernelInfo["defines/" "p_threadBlockSize"] = BLOCKSIZE;
+    filename = oklpath + "ellipticGramSchmidtOrthogonalization.okl";
+    elliptic->gramSchmidtOrthogonalizationKernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "gramSchmidtOrthogonalization",
+                               gmresKernelInfo);
+    filename = oklpath + "ellipticResidualProjection.okl";
+    elliptic->multiWeightedInnerProduct2Kernel =
+      elliptic->mesh->device.buildKernel(filename,
+                               "multiWeightedInnerProduct2",
+                               gmresKernelInfo);
+    filename = serial ? oklpath + "ellipticUpdatePGMRES.c" : oklpath + "ellipticUpdatePGMRES.okl";
     elliptic->updatePGMRESSolutionKernel =
       elliptic->mesh->device.buildKernel(filename,
                                "updatePGMRESSolution",

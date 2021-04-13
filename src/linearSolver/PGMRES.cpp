@@ -53,7 +53,7 @@ GmresData::GmresData(elliptic_t* elliptic, occa::properties& kernelInfo)
   s = (dfloat *) calloc(restart+1, sizeof(dfloat));
   const dlong Nlocal = elliptic->mesh->Nelements * elliptic->mesh->Np;
   int Nblock = (Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
-  const dlong Nbytes = Nblock * sizeof(dfloat);
+  const dlong Nbytes = restart * Nblock * sizeof(dfloat);
   //pinned scratch buffer
   {
     occa::properties props = kernelInfo;
@@ -139,6 +139,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
   deviceVector_t& o_V = elliptic->gmresData->o_V;
   deviceVector_t& o_Z = elliptic->gmresData->o_Z;
 
+  occa::memory& o_y = elliptic->gmresData->o_y;
+
   dfloat* y = elliptic->gmresData->y;
   dfloat* H = elliptic->gmresData->H;
   dfloat* sn = elliptic->gmresData->sn;
@@ -153,8 +155,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
   const bool serial = mesh->device.mode() == "Serial" || mesh->device.mode() == "OpenMP";
   const dlong Nlocal = elliptic->mesh->Nelements * elliptic->mesh->Np;
 
-  int Nblock = (Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
-  const dlong Nbytes = Nblock * sizeof(dfloat);
+  //int Nblock = (Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
+  //const dlong Nbytes = Nblock * sizeof(dfloat);
 
   dfloat rdotr = ellipticWeightedNorm2(elliptic, o_weight, o_r) * elliptic->resNormFactor;
   rdotr = sqrt(rdotr);
@@ -185,63 +187,41 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       // w := A z
       ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
 
-      dfloat hki = ellipticWeightedInnerProduct(elliptic, o_weight, o_w, o_V.at(0));
-
-      // H(k,i) = hki
-      H[0 + i*(restart+1)] = hki;
-
-      for(int k=0; k<=i-1; ++k){
-        // w = w - hki*V[k]
-        elliptic->fusedGramSchmidtKernel(
-          Nblock,
-          Nlocal,
-          elliptic->Ntotal,
-          hki,
-          elliptic->o_invDegree,
-          o_V.at(k),
-          o_V.at(k+1),
-          o_w,
-          elliptic->gmresData->o_scratch
-        );
-
-        if(serial){
-          hki = *((dfloat*) elliptic->gmresData->o_scratch.ptr());
-        } else{
-          hki = 0;
-          elliptic->gmresData->o_scratch.copyTo(elliptic->gmresData->scratch, Nbytes);
-          for(dlong n=0;n<Nblock;++n)
-            hki += elliptic->gmresData->scratch[n];
-        }
-
-        MPI_Allreduce(MPI_IN_PLACE, &hki, 1, MPI_DFLOAT, MPI_SUM, mesh->comm);
-        
-        // H(k,i) = hki
-        H[(k+1) + i*(restart+1)] = hki;
-
+      elliptic->multiWeightedInnerProduct2Kernel(
+        Nlocal,
+        elliptic->Ntotal, elliptic->Nblock,
+        (i+1),
+        0, elliptic->o_invDegree, o_V, o_w, elliptic->gmresData->o_scratch);
+      elliptic->gmresData->o_scratch.copyTo(
+        elliptic->gmresData->scratch,
+        sizeof(dfloat) * (i+1) * elliptic->Nblock);
+      for(dlong k = 0; k < i+1; ++k) {
+        dfloat accum = 0.0;
+        for(dlong n = 0; n < elliptic->Nblock; ++n)
+          accum += elliptic->gmresData->scratch[n + k * elliptic->Nblock];
+        y[k] = accum;
       }
-
-      elliptic->fusedGramSchmidtLastIterKernel(
-        Nblock,
+      MPI_Allreduce(MPI_IN_PLACE, y, i+1, MPI_DFLOAT, MPI_SUM, elliptic->mesh->comm);
+      for(int k = 0 ; k <=i; ++k)
+        H[k + i*(restart+1)] = y[k];
+      o_y.copyFrom(y, (i+1)*sizeof(dfloat));
+      elliptic->gramSchmidtOrthogonalizationKernel(
+        elliptic->Nblock,
         Nlocal,
         elliptic->Ntotal,
-        hki,
-        elliptic->o_invDegree,
-        o_V.at(i),
-        o_z, // dummy arg
+        (i+1),
+        o_weight,
+        o_y,
+        o_V,
         o_w,
-        elliptic->gmresData->o_scratch
-      );
-
+        elliptic->gmresData->o_scratch);
       dfloat nw = 0.0;
-      if(serial){
-        nw = *((dfloat*) elliptic->gmresData->o_scratch.ptr());
-      } else{
-        elliptic->gmresData->o_scratch.copyTo(elliptic->gmresData->scratch, Nbytes);
-        for(dlong n=0;n<Nblock;++n)
-          nw += elliptic->gmresData->scratch[n];
-      }
-
-      MPI_Allreduce(MPI_IN_PLACE, &nw, 1, MPI_DFLOAT, MPI_SUM, mesh->comm);
+      elliptic->gmresData->o_scratch.copyTo(
+        elliptic->gmresData->scratch,
+        sizeof(dfloat) * elliptic->Nblock);
+      for(int k = 0; k < elliptic->Nblock; ++k)
+        nw += elliptic->gmresData->scratch[k];
+      MPI_Allreduce(MPI_IN_PLACE, &nw, 1, MPI_DFLOAT, MPI_SUM, elliptic->mesh->comm);
       nw = sqrt(nw);
 
       // H(i+1,i) = ||w||_2
@@ -300,7 +280,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
     ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
 
     elliptic->fusedResidualAndNormKernel(
-      Nblock,
+      elliptic->Nblock,
       Nlocal,
       elliptic->Ntotal,
       elliptic->o_invDegree,
@@ -314,8 +294,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       nr = *((dfloat*) elliptic->gmresData->o_scratch.ptr());
     } else {
       nr = 0.0;
-      elliptic->gmresData->o_scratch.copyTo(elliptic->gmresData->scratch, Nbytes);
-      for(dlong n=0;n<Nblock;++n)
+      elliptic->gmresData->o_scratch.copyTo(elliptic->gmresData->scratch, elliptic->Nblock * sizeof(dfloat));
+      for(dlong n=0;n<elliptic->Nblock;++n)
         nr += elliptic->gmresData->scratch[n];
     }
 

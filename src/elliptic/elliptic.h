@@ -199,6 +199,9 @@ struct elliptic_t
   occa::kernel fusedGramSchmidtLastIterKernel;
   occa::kernel fusedResidualAndNormKernel;
 
+  occa::kernel gramSchmidtOrthogonalizationKernel;
+  occa::kernel multiWeightedInnerProduct2Kernel;
+
   dfloat resNormFactor;
 
   // combined PCG update step
