@@ -139,6 +139,11 @@ typedef struct
   // indices of vertex nodes
   int* vertexNodes;
 
+  // indices of edge nodes
+  int* edgeNodes;
+
+  int NedgeNodes;
+
   // quad specific quantity
   int Nq, NqP, NpP;
 
