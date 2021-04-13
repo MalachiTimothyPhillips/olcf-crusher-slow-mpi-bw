@@ -8,7 +8,7 @@
 #include "ogsInterface.h"
 
 //#define DISABLE_OOGS
-#define OGS_ENABLE_TIMER
+//#define OGS_ENABLE_TIMER
 
 #ifdef OGS_ENABLE_TIMER
 #include "timer.hpp"
