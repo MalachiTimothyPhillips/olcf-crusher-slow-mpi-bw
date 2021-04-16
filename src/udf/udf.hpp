@@ -25,6 +25,7 @@ typedef void (* udfproperties)(nrs_t* nrs, dfloat time, occa::memory o_U,
                                occa::memory o_S, occa::memory o_UProp,
                                occa::memory o_SProp);
 typedef void (* udfdiv)(nrs_t* nrs, dfloat time, occa::memory o_div);
+typedef void (* udfAVM)(nrs_t* nrs, dfloat time, const int scalarIndex, occa::memory o_S, occa::memory o_FS);
 typedef int (* udfconv)(nrs_t* nrs, int stage);
 
 struct UDF
@@ -37,6 +38,7 @@ struct UDF
   udfsEqnSource sEqnSource;
   udfproperties properties;
   udfdiv div;
+  udfAVM avm;
   udfconv converged;
 };
 

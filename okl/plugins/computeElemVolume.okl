@@ -1,0 +1,150 @@
+/*
+
+   The MIT License (MIT)
+
+   Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus
+
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+
+   The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
+
+ */
+
+@kernel void computeElemVolume(const dlong Nelements,
+                              @restrict const dfloat* massMatrix,
+                              @restrict dfloat* volume)
+{
+  for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
+    @shared dfloat s_volume[p_blockSize];
+
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int id = i + j * p_Nq;
+        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq){
+          s_volume[k] = 0.0;
+        }
+      }
+    }
+
+    @barrier("local");
+
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+#pragma unroll p_Nq
+        for(int k = 0; k < p_Nq; ++k) {
+          const int tid = j * p_Nq + i;
+          s_volume[tid] += massMatrix[e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i];
+        }
+      }
+    }
+    @barrier("local");
+    // reduce p_Nq * p_Nq to single value
+    #if p_blockSize > 512
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 512){
+          s_volume[t] += s_volume[t+512];
+        }
+      }
+    }
+    @barrier("local");
+    #endif
+    #if p_blockSize > 256
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 256){
+          s_volume[t] += s_volume[t+256];
+        }
+      }
+    }
+    @barrier("local");
+    #endif
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 128){
+          s_volume[t] += s_volume[t+128];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 64){
+          s_volume[t] += s_volume[t+64];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 32){
+          s_volume[t] += s_volume[t+32];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 16){
+          s_volume[t] += s_volume[t+16];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 8){
+          s_volume[t] += s_volume[t+8];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 4){
+          s_volume[t] += s_volume[t+4];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 2){
+          s_volume[t] += s_volume[t+2];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 1){
+          volume[e] = s_volume[0] + s_volume[1];
+        }
+      }
+    }
+  }
+}

@@ -902,6 +902,17 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   cds->o_coeffSubEXT = nrs->o_coeffSubEXT;
 
   cds->o_usrwrk = &(nrs->o_usrwrk);
+  if(platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
+  {
+    const dlong Nmodes = mesh->N + 1;
+    const dlong Nbytes = Nmodes * Nmodes * sizeof(dfloat);
+    cds->o_filterMT = platform->device.malloc(cds->NSfields * Nmodes * Nmodes, sizeof(dfloat));
+    for(int s = 0; s < cds->NSfields; ++s){
+      cds->filterS[s] = nrs->filterS;
+      cds->o_filterMT.copyFrom(nrs->o_filterMT, Nbytes, s * Nbytes);
+      cds->mesh[s] = mesh;
+    }
+  }
 
   cds->vFieldOffset = nrs->fieldOffset;
   cds->fieldOffset[0]  = nrs->fieldOffset;
@@ -1005,6 +1016,11 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
  
     cds->options[is] = options;
 
+    cds->options[is].setArgs("ARTIFICIAL VISCOSITY", options.getArgs("SCALAR" + sid + " ARTIFICIAL VISCOSITY"));
+    cds->options[is].setArgs("AVM LAMBDA", options.getArgs("SCALAR" + sid + " AVM LAMBDA"));
+    cds->options[is].setArgs("FILTER STABILIZATION", options.getArgs("SCALAR" + sid + " FILTER STABILIZATION"));
+    cds->options[is].setArgs("HPFRT STRENGTH", options.getArgs("SCALAR" + sid + " HPFRT STRENGTH"));
+    cds->options[is].setArgs("HPFRT MODES", options.getArgs("SCALAR" + sid + " HPFRT MODES"));
     cds->options[is].setArgs("KRYLOV SOLVER", options.getArgs("SCALAR" + sid + " KRYLOV SOLVER"));
     cds->options[is].setArgs("PGMRES RESTART", options.getArgs("SCALAR" + sid + " PGMRES RESTART"));
     cds->options[is].setArgs("DISCRETIZATION", options.getArgs("SCALAR DISCRETIZATION"));

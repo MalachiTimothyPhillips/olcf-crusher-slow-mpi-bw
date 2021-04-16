@@ -208,6 +208,7 @@ set(SRC
     src/linAlg/matrixTranspose.cpp
     src/linAlg/matrixRightSolve.cpp
     src/plugins/avg.cpp
+    src/plugins/avm.cpp
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp

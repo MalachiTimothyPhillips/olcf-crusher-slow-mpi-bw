@@ -255,11 +255,17 @@ void makeq(nrs_t* nrs, dfloat time, int tstep, occa::memory o_FS, occa::memory o
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
 
+    if(udf.avm) {
+      platform->timer.tic("udfAVM", 1);
+      udf.avm(nrs, time, is, cds->o_S, o_FS);
+      platform->timer.toc("udfAVM");
+    }
     if(cds->options[is].compareArgs("FILTER STABILIZATION", "RELAXATION"))
       cds->filterRTKernel(
         cds->meshV->Nelements,
-        nrs->o_filterMT,
-        nrs->filterS,
+        is,
+        cds->o_filterMT,
+        cds->filterS[is],
         isOffset,
         cds->o_rho,
         cds->o_S,
