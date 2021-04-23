@@ -132,7 +132,7 @@
 #pragma unroll p_Nq
         for(int k = 0; k < p_Nq; ++k) {
           const int tid = j * p_Nq + i;
-          const dlong id = e * p_Np + k * p_Np + j * p_Nq * p_Nq + i;
+          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
           const dfloat unfilteredVal = r_U[k];
           const dfloat filteredDiff = unfilteredVal - r_Un[k];
           FU[id] = r_Un[k]; // filtered content

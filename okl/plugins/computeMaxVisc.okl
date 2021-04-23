@@ -26,11 +26,10 @@
 
 @kernel void computeMaxVisc(const dlong Nelements,
                             const dlong fieldOffset,
-                            const dfloat hmax,
                             const dfloat c1,
                             const dfloat c2,
                             const dfloat Sinf,
-                            @restrict const dfloat* elemVol,
+                            @restrict const dfloat* elementLengths,
                             @restrict const dfloat* U,
                             @restrict const dfloat* convFilteredS,
                             @restrict dfloat* maxdFdS)
@@ -43,10 +42,10 @@
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-        he = cbrt(elemVol[e]);
+        he = elementLengths[e];
         const int id = i + j * p_Nq;
         for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq){
-          s_maxdFdS[k] = -9e30;
+          s_maxdFdS[k] = -1e8;
         }
       }
     }
@@ -62,10 +61,11 @@
           const dfloat Uz = U[id + 2 * fieldOffset];
           const dfloat r = convFilteredS[id];
           const dfloat Umax = sqrt(Ux*Ux + Uy*Uy + Uz*Uz);
-          dfloat visc_max = c2 * hmax * Umax;
+          dfloat visc_max = c2 * he * Umax;
           dfloat tentative = c1 * he * he * abs(r) * Sinf;
           // visc_max = min(visc_max, tenative)
           visc_max = (visc_max < tentative) ? visc_max : tentative;
+          //printf("e = %d, (i,j,k) = (%d, %d, %d), visc_max = %f\n", e, i, j, k, visc_max);
 
           // s_maxdFdS = max(s_maxdFdS, visc_max)
           s_maxdFdS[tid] = (s_maxdFdS[tid] > visc_max) ? 
@@ -179,6 +179,7 @@
         if(t < 1){
           maxdFdS[e] = (s_maxdFdS[0] > s_maxdFdS[1]) ?
             s_maxdFdS[0] : s_maxdFdS[1];
+          //printf("e = %d, visc = %f\n", e, maxdFdS[e]);
         }
       }
     }

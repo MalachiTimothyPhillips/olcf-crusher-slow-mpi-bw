@@ -24,41 +24,70 @@
 
  */
 
-@kernel void computeElemVolume(const dlong Nelements,
-                              @restrict const dfloat* massMatrix,
-                              @restrict dfloat* volume)
+@kernel void computeLengthScale(const dlong Nelements,
+                            @restrict const dfloat* x,
+                            @restrict const dfloat* y,
+                            @restrict const dfloat* z,
+                            @restrict dfloat* maxLength)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
-    @shared dfloat s_volume[p_blockSize];
+    
+    @shared dfloat s_maxLength[p_blockSize];
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-        const int id = i + j * p_Nq;
-        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq){
-          s_volume[k] = 0.0;
-        }
+        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq) s_maxLength[k] = -1e8;
       }
     }
 
     @barrier("local");
 
-    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
-      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-#pragma unroll p_Nq
-        for(int k = 0; k < p_Nq; ++k) {
-          const int tid = j * p_Nq + i;
-          s_volume[tid] += massMatrix[e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i];
+    for(int k = 0 ; k < p_Nq; ++k; @inner(1)){
+      for(int j = 0 ; j < p_Nq; ++j; @inner(0)){
+        if( k < (p_Nq-1) && j < (p_Nq-1)){
+          #pragma unroll
+          for(int i = 0 ; i < p_Nq-1; ++i){
+            const dlong tid = k * p_Nq + j;
+            int id1 = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + (i+1);
+            int id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dfloat dx = x[id1] - x[id];
+            dfloat dy = y[id1] - y[id];
+            dfloat dz = z[id1] - z[id];
+            dfloat d2 = dx*dx + dy*dy + dz*dz;
+
+            id1 = e * p_Np + k * p_Nq * p_Nq + (j+1) * p_Nq + i;
+            id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dx = x[id1] - x[id];
+            dy = y[id1] - y[id];
+            dz = z[id1] - z[id];
+            dfloat tmp = dx*dx + dy*dy + dz*dz;
+            d2 = (d2 > tmp) ? d2 : tmp;
+
+            id1 = e * p_Np + (k+1) * p_Nq * p_Nq + j * p_Nq + i;
+            id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dx = x[id1] - x[id];
+            dy = y[id1] - y[id];
+            dz = z[id1] - z[id];
+            tmp = dx*dx + dy*dy + dz*dz;
+            d2 = (d2 > tmp) ? d2 : tmp;
+            s_maxLength[tid] = (s_maxLength[tid] > d2) ? s_maxLength[tid] : d2;
+          }
         }
       }
     }
+
+
+    // max reduction
     @barrier("local");
+
     // reduce p_Nq * p_Nq to single value
     #if p_blockSize > 512
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 512){
-          s_volume[t] += s_volume[t+512];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+512]) ?
+            s_maxLength[t] : s_maxLength[t+512];
         }
       }
     }
@@ -69,7 +98,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 256){
-          s_volume[t] += s_volume[t+256];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+256]) ?
+            s_maxLength[t] : s_maxLength[t+256];
         }
       }
     }
@@ -79,7 +109,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 128){
-          s_volume[t] += s_volume[t+128];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+128]) ?
+            s_maxLength[t] : s_maxLength[t+128];
         }
       }
     }
@@ -88,7 +119,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 64){
-          s_volume[t] += s_volume[t+64];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+64]) ?
+            s_maxLength[t] : s_maxLength[t+64];
         }
       }
     }
@@ -97,7 +129,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 32){
-          s_volume[t] += s_volume[t+32];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+32]) ?
+            s_maxLength[t] : s_maxLength[t+32];
         }
       }
     }
@@ -106,7 +139,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 16){
-          s_volume[t] += s_volume[t+16];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+16]) ?
+            s_maxLength[t] : s_maxLength[t+16];
         }
       }
     }
@@ -115,7 +149,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 8){
-          s_volume[t] += s_volume[t+8];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+8]) ?
+            s_maxLength[t] : s_maxLength[t+8];
         }
       }
     }
@@ -124,7 +159,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 4){
-          s_volume[t] += s_volume[t+4];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+4]) ?
+            s_maxLength[t] : s_maxLength[t+4];
         }
       }
     }
@@ -133,7 +169,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 2){
-          s_volume[t] += s_volume[t+2];
+          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+2]) ?
+            s_maxLength[t] : s_maxLength[t+2];
         }
       }
     }
@@ -142,7 +179,10 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 1){
-          volume[e] = s_volume[0] + s_volume[1];
+          const dfloat maxLe = (s_maxLength[0] > s_maxLength[1]) ?
+            s_maxLength[0] : s_maxLength[1];
+          
+          maxLength[e] = sqrt(maxLe);
         }
       }
     }

@@ -23,143 +23,25 @@
 
  */
 // computes:
-//   \eps [\nabla \cdot (\nu (x) \nabla S)]
-// and adds to FS
+//   viscosity += eps \nu(x)
 @kernel void applyAVM(const dlong Nelements,
-                                    @restrict const dfloat*  vgeo,
-                                    @restrict const dfloat*  D,
                                     const dlong scalarOffset,
                                     const dlong scalarIdx,
-                                    const dfloat eps,
-                                    @restrict const dfloat* rho, 
+                                    @restrict const dfloat* eps,
                                     @restrict const dfloat*  nu,
-                                    @restrict const dfloat*  S,
-                                    @restrict dfloat*  FS)
+                                    @restrict dfloat*  viscosity)
 {
-  for(dlong e = 0; e < Nelements; e++; @outer(0)) { // for all elements
-
-    @shared dfloat s_S[p_Nq][p_Nq];
-    @exclusive dfloat s_Sloc[p_Nq];
-
-    @shared dfloat s_Sx[p_Nq][p_Nq];
-    @shared dfloat s_Sy[p_Nq][p_Nq];
-    @shared dfloat s_Sz[p_Nq][p_Nq];
-    @shared dfloat s_D[p_Nq][p_Nq];
-
-    @exclusive dfloat r_Sx[p_Nq];
-    @exclusive dfloat r_Sy[p_Nq];
-    @exclusive dfloat r_Sz[p_Nq];
-
-    #pragma unroll p_Nq
+  for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
     for(int k = 0; k < p_Nq; ++k){
-      for(int j = 0; j < p_Nq; ++j; @inner(1)){
-        for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
-
-          s_S[j][i]  = S[id + scalarOffset];
-
-          if(k == 0){
-            s_D[j][i] = D[j * p_Nq + i];
-            #pragma unroll p_Nq
-            for(int l = 0 ; l < p_Nq; ++l){
-              const dlong other_id = e * p_Np + l * p_Nq * p_Nq + j * p_Nq + i;
-              s_Sloc[l] = S[other_id + scalarOffset];
-            }
-          }
-        }
-      }
-  
-
-    // Make sure all node data is loaded into @shared
-    @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1)) {
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-          const dlong gid = e * p_Np * p_Nvgeo + k * p_Nq * p_Nq + j * p_Nq + i;
-          const dfloat drdx = vgeo[gid + p_RXID * p_Np];
-          const dfloat drdy = vgeo[gid + p_RYID * p_Np];
-          const dfloat drdz = vgeo[gid + p_RZID * p_Np];
-          const dfloat dsdx = vgeo[gid + p_SXID * p_Np];
-          const dfloat dsdy = vgeo[gid + p_SYID * p_Np];
-          const dfloat dsdz = vgeo[gid + p_SZID * p_Np];
-          const dfloat dtdx = vgeo[gid + p_TXID * p_Np];
-          const dfloat dtdy = vgeo[gid + p_TYID * p_Np];
-          const dfloat dtdz = vgeo[gid + p_TZID * p_Np];
-
-          // compute 'r' and 's' derivatives of (q_m) at node n
-          dfloat dpdr  = 0.f, dpds  = 0.f, dpdt  = 0.f;
-
-#pragma unroll p_Nq
-          for(int n = 0; n < p_Nq; ++n) {
-            const dfloat Dr = s_D[i][n];
-            const dfloat Ds = s_D[j][n];
-            const dfloat Dt = s_D[k][n];
-
-            dpdr += Dr * s_S[j][n];
-            dpds += Ds * s_S[n][i];
-            dpdt += Dt * s_Sloc[n];
-          }
-
-          const dfloat visc = nu[scalarIdx * p_Np + k * p_Nq * p_Nq + j * p_Nq + i];
-
-          s_Sx[j][i] = visc * (drdx * dpdr + dsdx * dpds + dtdx * dpdt);
-          s_Sy[j][i] = visc * (drdy * dpdr + dsdy * dpds + dtdy * dpdt);
-          s_Sz[j][i] = visc * (drdz * dpdr + dsdz * dpds + dtdz * dpdt);
-          r_Sx[k] = s_Sx[j][i];
-          r_Sy[k] = s_Sy[j][i];
-          r_Sz[k] = s_Sz[j][i];
+          const dlong point = k * p_Nq * p_Nq + j * p_Nq + i;
+          const dlong id = e * p_Np + point;
+          viscosity[id + scalarOffset] += 
+            eps[e] * nu[point + scalarIdx * p_Np];
         }
       }
       @barrier("local");
-    } // k-loop
-
-    #pragma unroll
-    for(int k = 0; k < p_Nq; ++k){
-
-      @barrier("local");
-
-      for(int j = 0; j < p_Nq; ++j; @inner(1)) {
-        for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-          const dlong gid = e * p_Np * p_Nvgeo + k * p_Nq * p_Nq + j * p_Nq + i;
-          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
-          const dfloat drdx = vgeo[gid + p_RXID * p_Np];
-          const dfloat drdy = vgeo[gid + p_RYID * p_Np];
-          const dfloat drdz = vgeo[gid + p_RZID * p_Np];
-          const dfloat dsdx = vgeo[gid + p_SXID * p_Np];
-          const dfloat dsdy = vgeo[gid + p_SYID * p_Np];
-          const dfloat dsdz = vgeo[gid + p_SZID * p_Np];
-          const dfloat dtdx = vgeo[gid + p_TXID * p_Np];
-          const dfloat dtdy = vgeo[gid + p_TYID * p_Np];
-          const dfloat dtdz = vgeo[gid + p_TZID * p_Np];
-          const dfloat rhoM = rho[id + scalarOffset];
-
-          dfloat duxdr  = 0.f, duxds  = 0.f, duxdt  = 0.f;
-          dfloat duydr  = 0.f, duyds  = 0.f, duydt  = 0.f;
-          dfloat duzdr  = 0.f, duzds  = 0.f, duzdt  = 0.f;
-
-#pragma unroll p_Nq
-          for(int n = 0; n < p_Nq; ++n) {
-            const dfloat Dr = s_D[i][n];
-            const dfloat Ds = s_D[j][n];
-            const dfloat Dt = s_D[k][n];
-
-            duxdr += Dr * s_Sx[j][n];
-            duxds += Ds * s_Sx[n][i];
-            duxdt += Dt * r_Sx[n];
-
-            duydr += Dr * s_Sy[j][n];
-            duyds += Ds * s_Sy[n][i];
-            duydt += Dt * r_Sy[n];
-
-            duzdr += Dr * s_Sz[j][n];
-            duzds += Ds * s_Sz[n][i];
-            duzdt += Dt * r_Sz[n];
-          }
-
-          FS[id + scalarOffset]  += eps * rhoM * ((drdx * duxdr + dsdx * duxds + dtdx * duxdt);
-           + (drdy * duydr + dsdy * duyds + dtdy * duydt);
-           + (drdz * duzdr + dsdz * duzds + dtdz * duzdt));
-        }
-      }
     }
   }
 }
