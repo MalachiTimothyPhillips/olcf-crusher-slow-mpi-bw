@@ -366,8 +366,7 @@ dfloat computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::
   const dfloat p = mesh->N;
   const dfloat logReferenceSensor = -4.0 * std::log(p);
 
-  //const dfloat rampParameter = 1.0;
-  const dfloat rampParameter = 10.0;
+  const dfloat rampParameter = 1.0;
 
   // maximum element size
   computeElemVolumeKernel(

@@ -4,6 +4,7 @@
 #include <math.h>
 #include "udf.hpp"
 #include "plugins/lowMach.hpp"
+#include "plugins/avm.hpp"
 #
 #include "ci.inc"
 #include "casedata.h"
@@ -14,6 +15,11 @@ static occa::kernel userVpKernel;
 void qtl(nrs_t* nrs, dfloat time, occa::memory o_div)
 {
   lowMach::qThermalIdealGasSingleComponent(time, o_div);
+}
+
+void userAVM(nrs_t* nrs, dfloat time, int scalarIndex, occa::memory o_S, occa::memory o_FS)
+{
+  avm::applyAVM(nrs, time, scalarIndex, o_S, o_FS);
 }
 
 
@@ -56,6 +62,10 @@ void UDF_Setup(nrs_t *nrs)
 
   lowMach::setup(nrs, P_GAMMA);
   udf.div = &qtl;
+
+  avm::filterSetup(nrs);
+  udf.avm = &userAVM;
+
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
