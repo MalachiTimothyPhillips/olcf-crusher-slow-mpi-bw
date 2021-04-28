@@ -28,15 +28,15 @@
                             @restrict const dfloat* x,
                             @restrict const dfloat* y,
                             @restrict const dfloat* z,
-                            @restrict dfloat* maxLength)
+                            @restrict dfloat* minLength)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
     
-    @shared dfloat s_maxLength[p_blockSize];
+    @shared dfloat s_minLength[p_blockSize];
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq) s_maxLength[k] = -1e8;
+        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq) s_minLength[k] = 1e8;
       }
     }
 
@@ -61,7 +61,7 @@
             dy = y[id1] - y[id];
             dz = z[id1] - z[id];
             dfloat tmp = dx*dx + dy*dy + dz*dz;
-            d2 = (d2 > tmp) ? d2 : tmp;
+            d2 = (d2 < tmp) ? d2 : tmp;
 
             id1 = e * p_Np + (k+1) * p_Nq * p_Nq + j * p_Nq + i;
             id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
@@ -69,15 +69,15 @@
             dy = y[id1] - y[id];
             dz = z[id1] - z[id];
             tmp = dx*dx + dy*dy + dz*dz;
-            d2 = (d2 > tmp) ? d2 : tmp;
-            s_maxLength[tid] = (s_maxLength[tid] > d2) ? s_maxLength[tid] : d2;
+            d2 = (d2 < tmp) ? d2 : tmp;
+            s_minLength[tid] = (s_minLength[tid] < d2) ? s_minLength[tid] : d2;
           }
         }
       }
     }
 
 
-    // max reduction
+    // min reduction
     @barrier("local");
 
     // reduce p_Nq * p_Nq to single value
@@ -86,8 +86,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 512){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+512]) ?
-            s_maxLength[t] : s_maxLength[t+512];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+512]) ?
+            s_minLength[t] : s_minLength[t+512];
         }
       }
     }
@@ -98,8 +98,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 256){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+256]) ?
-            s_maxLength[t] : s_maxLength[t+256];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+256]) ?
+            s_minLength[t] : s_minLength[t+256];
         }
       }
     }
@@ -109,8 +109,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 128){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+128]) ?
-            s_maxLength[t] : s_maxLength[t+128];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+128]) ?
+            s_minLength[t] : s_minLength[t+128];
         }
       }
     }
@@ -119,8 +119,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 64){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+64]) ?
-            s_maxLength[t] : s_maxLength[t+64];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+64]) ?
+            s_minLength[t] : s_minLength[t+64];
         }
       }
     }
@@ -129,8 +129,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 32){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+32]) ?
-            s_maxLength[t] : s_maxLength[t+32];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+32]) ?
+            s_minLength[t] : s_minLength[t+32];
         }
       }
     }
@@ -139,8 +139,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 16){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+16]) ?
-            s_maxLength[t] : s_maxLength[t+16];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+16]) ?
+            s_minLength[t] : s_minLength[t+16];
         }
       }
     }
@@ -149,8 +149,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 8){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+8]) ?
-            s_maxLength[t] : s_maxLength[t+8];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+8]) ?
+            s_minLength[t] : s_minLength[t+8];
         }
       }
     }
@@ -159,8 +159,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 4){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+4]) ?
-            s_maxLength[t] : s_maxLength[t+4];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+4]) ?
+            s_minLength[t] : s_minLength[t+4];
         }
       }
     }
@@ -169,8 +169,8 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 2){
-          s_maxLength[t] = (s_maxLength[t] > s_maxLength[t+2]) ?
-            s_maxLength[t] : s_maxLength[t+2];
+          s_minLength[t] = (s_minLength[t] < s_minLength[t+2]) ?
+            s_minLength[t] : s_minLength[t+2];
         }
       }
     }
@@ -179,10 +179,10 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 1){
-          const dfloat maxLe = (s_maxLength[0] > s_maxLength[1]) ?
-            s_maxLength[0] : s_maxLength[1];
+          const dfloat minLe = (s_minLength[0] < s_minLength[1]) ?
+            s_minLength[0] : s_minLength[1];
           
-          maxLength[e] = sqrt(maxLe);
+          minLength[e] = sqrt(minLe);
         }
       }
     }

@@ -26,12 +26,12 @@
 
 @kernel void filterScalarNorm(const dlong Nelements,
                               const dlong is,
-                              @restrict const dfloat* fMT,
                               const dlong offset,
+                              @restrict const dfloat* fMT,
+                              const dfloat sensorSensitivity,
+                              const dfloat p,
                               @restrict const dfloat* U,
-                              @restrict dfloat* FU, // filtered result
-                              @restrict dfloat* filteredNorm,
-                              @restrict dfloat* unfilteredNorm)
+                              @restrict dfloat* logShockSensor)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
     @shared dfloat s_U[p_Nq][p_Nq];
@@ -135,7 +135,6 @@
           const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
           const dfloat unfilteredVal = r_U[k];
           const dfloat filteredDiff = unfilteredVal - r_Un[k];
-          FU[id] = r_Un[k]; // filtered content
 
           s_filtered[tid] += filteredDiff * filteredDiff;
           s_unfiltered[tid] += unfilteredVal*unfilteredVal;
@@ -242,8 +241,13 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 1){
-          filteredNorm[e] = s_filtered[0] + s_filtered[1];
-          unfilteredNorm[e] = s_unfiltered[0] + s_unfiltered[1];
+          const dfloat filteredNorm = s_filtered[0] + s_filtered[1];
+          const dfloat unfilteredNorm = s_unfiltered[0] + s_unfiltered[1];
+          const dfloat S = filteredNorm / unfilteredNorm;
+          const dfloat Ftmp = p * p * p * p * sensorSensitivity * S;
+          const dfloat F = (1 < Ftmp) ? 1 : Ftmp;
+          logShockSensor[e] = log(F);
+
         }
       }
     }

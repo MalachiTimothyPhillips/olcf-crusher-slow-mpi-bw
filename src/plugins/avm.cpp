@@ -152,7 +152,9 @@ void filterSetup(nrs_t *nrs,
     {
       dfloat* visc = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
       for(int point = 0 ; point < mesh->Np; ++point){
-        visc[point] = viscosity(mesh->r[point], s);
+        visc[point]  = viscosity(mesh->r[point], s);
+        visc[point] *= viscosity(mesh->s[point], s);
+        visc[point] *= viscosity(mesh->t[point], s);
       }
       o_artVisc.copyFrom(visc, mesh->Np * sizeof(dfloat), s * mesh->Np * sizeof(dfloat));
       free(visc);
@@ -320,59 +322,25 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
   mesh_t* mesh = cds->mesh[scalarIndex];
   int Nblock = (cds->mesh[0]->Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
 
-  occa::memory& o_filteredField = platform->o_mempool.slice0;
-  occa::memory& o_convFilteredField = platform->o_mempool.slice1;
-  occa::memory& o_ones = platform->o_mempool.slice2;
-  occa::memory& o_wrk = platform->o_mempool.slice3;
-
-  occa::memory& o_scratch0 = platform->o_mempool.slice4;
-  occa::memory& o_scratch1 = platform->o_mempool.slice5;
+  occa::memory& o_logShockSensor = platform->o_mempool.slice0;
+  occa::memory& o_elementLengths = platform->o_mempool.slice1;
 
   // artificial viscosity magnitude
-  occa::memory o_epsilon = platform->o_mempool.slice6;
+  occa::memory o_epsilon = platform->o_mempool.slice2;
 
-  platform->linAlg->fill(nrs->fieldOffset, 1.0, o_ones);
-  platform->linAlg->fill(nrs->fieldOffset, 0.0, o_scratch0);
-  platform->linAlg->fill(nrs->fieldOffset, 0.0, o_scratch1);
+  const dfloat p = mesh->N;
   
   filterScalarNormKernel(
     mesh->Nelements,
     scalarIndex,
-    cds->o_filterMT,
     cds->fieldOffsetScan[scalarIndex],
+    cds->o_filterMT,
+    sensorSensitivity,
+    p,
     o_S,
-    o_filteredField,
-    o_scratch0, // ||S_p - S_p_1||_2^2 (norm squared HPF result, per element)
-    o_scratch1 // ||S_p||_2^2 (norm squared unfiltered result, per element)
+    o_logShockSensor
   );
 
-  dfloat* normSquaredHPF = platform->mempool.slice0;
-  dfloat* normSquaredUnfiltered = platform->mempool.slice1;
-  dfloat* logShockSensor = platform->mempool.slice2;
-  dfloat* elementLengths = platform->mempool.slice3;
-  dfloat* epsilons = platform->mempool.slice4;
-  dfloat* maxViscs = platform->mempool.slice5;
-  dfloat* maxElemLengths = platform->mempool.slice6;
-
-  o_scratch0.copyTo(
-    normSquaredHPF,
-    sizeof(dfloat) * mesh->Nelements);
-  o_scratch1.copyTo(
-    normSquaredUnfiltered,
-    sizeof(dfloat) * mesh->Nelements);
-  
-  for(dlong e = 0 ; e < mesh->Nelements; ++e){
-    // eq (58), on a per-element basis!
-    const dfloat shockSensor = normSquaredHPF[e] / normSquaredUnfiltered[e];
-  
-    const dfloat p = mesh->N;
-    const dfloat F = std::min(1.0,
-      sensorSensitivity * std::pow(p, 4.0) * shockSensor
-    );
-  
-    // eq (63)
-    logShockSensor[e] = std::log(F);
-  }
   // see footnote after eq 63
   const dfloat logReferenceSensor = -2.0;
 
@@ -383,98 +351,31 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
     mesh->o_x,
     mesh->o_y,
     mesh->o_z,
-    o_scratch0 // <- min element lengths
+    o_elementLengths // <- min element lengths
   );
 
-  o_scratch0.copyTo(elementLengths, mesh->Nelements * sizeof(dfloat));
-
-  const dlong cubatureOffset = std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
-
-  // convect filtered field (do not multiply by rho!)
-  if(cds->options[scalarIndex].compareArgs("ADVECTION TYPE", "CUBATURE"))
-    cds->advectionStrongCubatureVolumeKernel(
-      cds->meshV->Nelements,
-      mesh->o_vgeo,
-      mesh->o_cubDiffInterpT,
-      mesh->o_cubInterpT,
-      mesh->o_cubProjectT,
-      cds->vFieldOffset,
-      0,
-      cubatureOffset,
-      o_filteredField,
-      cds->o_Urst,
-      o_ones, // kernel include the rhoM weighting, which we don't need
-      o_convFilteredField);
-  else
-    cds->advectionStrongVolumeKernel(
-      cds->meshV->Nelements,
-      mesh->o_D,
-      cds->vFieldOffset,
-      0,
-      o_filteredField,
-      cds->o_Urst,
-      o_ones,
-      o_convFilteredField);
-
-  occa::memory o_S_slice = o_S + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
-  dfloat Savg = platform->linAlg->weightedNorm2(
-    mesh->Nelements * mesh->Np,
-    o_ones,
-    o_S_slice,
-    platform->comm.mpiComm);
-
-  Savg /= sqrt(mesh->volume);
-
-  // o_wrk = Savg - o_S[scalarIndex]
-  platform->linAlg->axpbyz(
-    nrs->fieldOffset,
-    Savg, o_ones,
-    -1.0, o_S_slice,
-    o_wrk
-  );
-
-  dfloat Sinf = 1.0;
-  if(Savg > 0){
-    Sinf = platform->linAlg->max(mesh->Nelements * mesh->Np, o_wrk, platform->comm.mpiComm);
+#define DEBUG
+#ifdef DEBUG
+  dfloat* elemLengths = platform->mempool.slice0;
+  o_elementLengths.copyTo(elemLengths, mesh->Nelements * sizeof(dfloat));
+  dfloat minLength = 1e8;
+  for(dlong e = 0 ; e < mesh->Nelements; ++e){
+    minLength = (minLength < elemLengths[e]) ? minLength : elemLengths[e];
   }
-
-  Sinf = 1.0 / Sinf;
-
-  // constants from nek5000
-  dfloat c1 = 1.0;
-  cds->options[scalarIndex].getArgs("COEFF0 AVM", c1);
-  dfloat c2 = 0.5;
-  cds->options[scalarIndex].getArgs("COEFF1 AVM", c2);
+  MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MIN, platform->comm.mpiComm);
+  printf("min GLL spacing: %f\n", minLength);
+#endif
 
   computeMaxViscKernel(
     mesh->Nelements,
     nrs->fieldOffset,
-    c1,
-    c2,
-    Sinf,
-    o_scratch0, // h_e
+    logReferenceSensor,
+    rampParameter,
+    o_elementLengths, // h_e
     cds->o_U,
-    o_convFilteredField,
-    o_scratch1 // max(|df/du|) <- max visc
+    o_logShockSensor,
+    o_epsilon // max(|df/du|) <- max visc
   );
-
-  o_scratch1.copyTo(maxViscs, mesh->Nelements * sizeof(dfloat)); // <- max visc
-
-  for(dlong e = 0 ; e < mesh->Nelements; ++e){
-    const dfloat epsMax = maxViscs[e];
-    if(logShockSensor[e] < (logReferenceSensor - rampParameter)){
-      epsilons[e] = 0.0;
-    } else
-    if ((logReferenceSensor - rampParameter) <= logShockSensor[e] &&
-        (logReferenceSensor + rampParameter) >= logShockSensor[e]){
-      epsilons[e] = 0.5 * epsMax * (1 + std::sin(M_PI * (logShockSensor[e] - logReferenceSensor) / (2.0 * rampParameter)));
-    }
-    else {
-      epsilons[e] = epsMax;
-    }
-  }
-
-  o_epsilon.copyFrom(epsilons, mesh->Nelements * sizeof(dfloat));
 
   return o_epsilon;
 
@@ -499,8 +400,29 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
     scalarIndex,
     o_eps,
     o_artVisc,
-    cds->o_diff
+    //cds->o_diff
+    o_avm
   );
+
+  platform->linAlg->axpby(
+    mesh->Nlocal,
+    1.0,
+    o_avm,
+    1.0,
+    cds->o_diff,
+    0,
+    cds->fieldOffsetScan[scalarIndex]
+  );
+
+  if(nrs->isOutputStep && 1)
+  {
+    writeFld(
+      "avm", time, 1, 1,
+      &nrs->o_U,
+      &nrs->o_P,
+      &o_avm,
+      1);
+  }
 }
 
 } // namespace

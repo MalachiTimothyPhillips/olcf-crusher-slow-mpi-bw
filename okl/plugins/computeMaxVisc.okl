@@ -26,23 +26,24 @@
 
 @kernel void computeMaxVisc(const dlong Nelements,
                             const dlong fieldOffset,
-                            const dfloat c1,
-                            const dfloat c2,
-                            const dfloat Sinf,
+                            const dfloat logReferenceSensor,
+                            const dfloat rampParameter,
                             @restrict const dfloat* elementLengths,
                             @restrict const dfloat* U,
-                            @restrict const dfloat* convFilteredS,
-                            @restrict dfloat* maxdFdS)
+                            @restrict const dfloat* logShockSensor,
+                            @restrict dfloat* epsilons)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
     
     @exclusive dfloat he;
+    @exclusive dfloat logSensor;
     
     @shared dfloat s_maxdFdS[p_blockSize];
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         he = elementLengths[e];
+        logSensor = logShockSensor[e];
         const int id = i + j * p_Nq;
         for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq){
           s_maxdFdS[k] = -1e8;
@@ -59,13 +60,8 @@
           const dfloat Ux = U[id + 0 * fieldOffset];
           const dfloat Uy = U[id + 1 * fieldOffset];
           const dfloat Uz = U[id + 2 * fieldOffset];
-          const dfloat r = convFilteredS[id];
           const dfloat Umax = sqrt(Ux*Ux + Uy*Uy + Uz*Uz);
-          dfloat visc_max = c2 * he * Umax;
-          dfloat tentative = c1 * he * he * abs(r) * Sinf;
-          // visc_max = min(visc_max, tenative)
-          visc_max = (visc_max < tentative) ? visc_max : tentative;
-          //printf("e = %d, (i,j,k) = (%d, %d, %d), visc_max = %f\n", e, i, j, k, visc_max);
+          dfloat visc_max = 0.5 * he * Umax;
 
           // s_maxdFdS = max(s_maxdFdS, visc_max)
           s_maxdFdS[tid] = (s_maxdFdS[tid] > visc_max) ? 
@@ -177,9 +173,13 @@
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
         const int t = j * p_Nq + i;
         if(t < 1){
-          maxdFdS[e] = (s_maxdFdS[0] > s_maxdFdS[1]) ?
+          const dfloat maxVisc = (s_maxdFdS[0] > s_maxdFdS[1]) ?
             s_maxdFdS[0] : s_maxdFdS[1];
-          //printf("e = %d, visc = %f\n", e, maxdFdS[e]);
+          if(logSensor < (logReferenceSensor - rampParameter)){
+            epsilons[e] = 0.0;
+          } else {
+            epsilons[e] = maxVisc;
+          }
         }
       }
     }
