@@ -191,7 +191,8 @@ set(SRC
     src/core/utils/tinyexpr.c
     src/core/setupAide.cpp
     src/core/cfl.cpp
-    src/core/filter.cpp
+    src/core/regularization/filter.cpp
+    src/core/regularization/avm.cpp
     src/core/bcMap.cpp
     src/core/setup.cpp
     src/timeStepper/timeStepper.cpp

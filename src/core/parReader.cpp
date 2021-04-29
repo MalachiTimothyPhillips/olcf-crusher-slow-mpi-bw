@@ -610,9 +610,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     options.setArgs("SCALAR00 HPFRT STRENGTH",
                     options.getArgs("HPFRT STRENGTH"));
     options.setArgs("SCALAR00 HPFRT MODES", options.getArgs("HPFRT MODES"));
-    options.setArgs("SCALAR00 AVM LAMBDA", to_string_f(100.0));
     options.setArgs("SCALAR00 SENSOR SENSITIVITY", to_string_f(1.0));
-    options.setArgs("SCALAR00 ARTIFICIAL VISCOSITY", "GAUSSIAN");
 
     string filtering;
     par->extract("temperature", "filtering", filtering);
@@ -737,9 +735,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
                     options.getArgs("HPFRT STRENGTH"));
     options.setArgs("SCALAR" + sidPar + " HPFRT MODES",
                     options.getArgs("HPFRT MODES"));
-    options.setArgs("SCALAR" + sidPar + " AVM LAMBDA", to_string_f(100.0));
     options.setArgs("SCALAR" + sidPar + " SENSOR SENSITIVITY", to_string_f(1.0));
-    options.setArgs("SCALAR" + sidPar + " ARTIFICIAL VISCOSITY", "GAUSSIAN");
 
     string filtering;
     par->extract("scalar" + sidPar, "filtering", filtering);

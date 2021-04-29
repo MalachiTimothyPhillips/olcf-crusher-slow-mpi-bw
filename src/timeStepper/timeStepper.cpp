@@ -151,17 +151,7 @@ void step(nrs_t* nrs, dfloat time, dfloat dt, int tstep)
     if(nrs->Nscalar)
       scalarSolve(nrs, timeNew, cds->o_S, stage); 
 
-    if(udf.properties) {
-      platform->timer.tic("udfProperties", 1);
-      occa::memory o_S = platform->o_mempool.slice0;
-      occa::memory o_SProp = platform->o_mempool.slice0;
-      if(nrs->Nscalar) {
-        o_S = cds->o_S;
-        o_SProp = cds->o_prop;
-      }
-      udf.properties(nrs, timeNew, nrs->o_U, o_S, nrs->o_prop, o_SProp);
-      platform->timer.toc("udfProperties");
-    }
+    evaluateProperties(nrs, timeNew, false);
 
     if(udf.div){
       linAlg_t* linAlg = platform->linAlg;

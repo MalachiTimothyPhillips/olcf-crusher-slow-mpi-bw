@@ -6,6 +6,8 @@
 #include "bcMap.hpp"
 #include <vector>
 #include <map>
+#include "regularization/filter.hpp"
+#include "regularization/avm.hpp"
 
 namespace{
 cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties &kernelInfoBC);
@@ -324,8 +326,21 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_EToB = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToB);
   nrs->o_VmapB = device.malloc(mesh->Nelements * mesh->Np * sizeof(int), nrs->VmapB);
 
-  if(platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
-    filterSetup(nrs);
+  if(platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION")){
+
+    dfloat filterS;
+    platform->options.getArgs("HPFRT STRENGTH", filterS);
+    filterS = -1.0 * fabs(filterS);
+    nrs->filterS = filterS;
+
+    dfloat* A = filterSetup(nrs->meshV, nrs->filterNc);
+
+    const dlong Nmodes = nrs->meshV->N + 1;
+
+    nrs->o_filterMT = platform->device.malloc(Nmodes * Nmodes * sizeof(dfloat), A);
+
+    free(A);
+  }
 
   // build kernels
   string fileName, kernelName;
@@ -902,17 +917,6 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   cds->o_coeffSubEXT = nrs->o_coeffSubEXT;
 
   cds->o_usrwrk = &(nrs->o_usrwrk);
-  if(platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
-  {
-    const dlong Nmodes = mesh->N + 1;
-    const dlong Nbytes = Nmodes * Nmodes * sizeof(dfloat);
-    cds->o_filterMT = platform->device.malloc(cds->NSfields * Nmodes * Nmodes, sizeof(dfloat));
-    for(int s = 0; s < cds->NSfields; ++s){
-      cds->filterS[s] = nrs->filterS;
-      cds->o_filterMT.copyFrom(nrs->o_filterMT, Nbytes, s * Nbytes);
-      cds->mesh[s] = mesh;
-    }
-  }
 
   cds->vFieldOffset = nrs->fieldOffset;
   cds->fieldOffset[0]  = nrs->fieldOffset;
@@ -958,6 +962,9 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   cds->sdt = nrs->sdt;
 
   cds->prop = (dfloat*) calloc(2 * cds->fieldOffsetSum,sizeof(dfloat));
+
+
+
   for(int is = 0; is < cds->NSfields; is++) {
     std::stringstream ss;
     ss << std::setfill('0') << std::setw(2) << is;
@@ -1016,12 +1023,9 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
  
     cds->options[is] = options;
 
-    cds->options[is].setArgs("ARTIFICIAL VISCOSITY", options.getArgs("SCALAR" + sid + " ARTIFICIAL VISCOSITY"));
-    cds->options[is].setArgs("AVM LAMBDA", options.getArgs("SCALAR" + sid + " AVM LAMBDA"));
     cds->options[is].setArgs("SENSOR SENSITIVITY", options.getArgs("SCALAR" + sid + " SENSOR SENSITIVITY"));
     cds->options[is].setArgs("FILTER STABILIZATION", options.getArgs("SCALAR" + sid + " FILTER STABILIZATION"));
-    cds->options[is].setArgs("COEFF0 AVM", options.getArgs("SCALAR" + sid + " COEFF0 AVM"));
-    cds->options[is].setArgs("COEFF1 AVM", options.getArgs("SCALAR" + sid + " COEFF1 AVM"));
+    cds->options[is].setArgs("COEFF AVM", options.getArgs("SCALAR" + sid + " COEFF AVM"));
     cds->options[is].setArgs("HPFRT STRENGTH", options.getArgs("SCALAR" + sid + " HPFRT STRENGTH"));
     cds->options[is].setArgs("HPFRT MODES", options.getArgs("SCALAR" + sid + " HPFRT MODES"));
     cds->options[is].setArgs("KRYLOV SOLVER", options.getArgs("SCALAR" + sid + " KRYLOV SOLVER"));
@@ -1067,6 +1071,39 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     cds->o_EToB[is] = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int), EToB);
     cds->o_mapB[is] = device.malloc(mesh->Nelements * mesh->Np * sizeof(int), mapB);
   }
+
+  bool scalarFilteringEnabled = false;
+  bool avmEnabled = false;
+  {
+    for(int is = 0; is < cds->NSfields; is++) {
+      if(!cds->options[is].compareArgs("FILTER STABILIZATION", "NONE")) scalarFilteringEnabled = true;
+      if(cds->options[is].compareArgs("FILTER STABILIZATION", "AVM")) avmEnabled = true;
+    }
+  }
+
+  if(scalarFilteringEnabled)
+  {
+    const dlong Nmodes = cds->mesh[0]->N + 1;
+    cds->o_filterMT = platform->device.malloc(cds->NSfields * Nmodes * Nmodes, sizeof(dfloat));
+    for(int is = 0; is < cds->NSfields; is++)
+    {
+      int filterNc;
+      cds->options[is].getArgs("HPFRT MODES", filterNc);
+      dfloat filterS;
+      cds->options[is].getArgs("HPFRT STRENGTH". filterS);
+      filterS = -1.0 * fabs(filterS);
+      cds->filterS[is] = filterS;
+
+      dfloat* A = filterSetup(cds->mesh[is], filterNc);
+
+      const dlong Nmodes = cds->mesh[is]->N + 1;
+      cds->o_filterMT.copyFrom(A, Nmodes * Nmodes * sizeof(dfloat), is * Nmodes * Nmodes * sizeof(dfloat));
+
+      free(A);
+    }
+  }
+
+  if(avmEnabled) avm::setup(cds, (udf.properties != nullptr));
 
   // build kernels
   occa::properties kernelInfo = *nrs->kernelInfo;
