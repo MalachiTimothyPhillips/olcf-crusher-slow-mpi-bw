@@ -29,7 +29,6 @@
                             const dfloat logReferenceSensor,
                             const dfloat rampParameter,
                             const dfloat coeff,
-                            const dfloat maxU,
                             @restrict const dfloat* elementLengths,
                             @restrict const dfloat* U,
                             @restrict const dfloat* logShockSensor,

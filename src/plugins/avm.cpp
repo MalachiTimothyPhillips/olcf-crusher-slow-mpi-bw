@@ -14,7 +14,6 @@ static occa::kernel filterScalarNormKernel;
 static occa::kernel applyAVMKernel;
 static occa::kernel computeMaxViscKernel;
 static occa::kernel computeLengthScaleKernel;
-static occa::kernel velMagKernel;
 
 static occa::memory o_artVisc;
 static occa::memory o_diffOld; // diffusion from initial state
@@ -69,11 +68,6 @@ void compileKernels(nrs_t* nrs)
   computeLengthScaleKernel =
     platform->device.buildKernel(filename,
                              "computeLengthScale",
-                             info);
-  filename = oklpath + "velMag.okl";
-  velMagKernel =
-    platform->device.buildKernel(filename,
-                             "velMag",
                              info);
 }
 
@@ -362,37 +356,6 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
     o_elementLengths // <- min element lengths
   );
 
-#define DEBUG
-#ifdef DEBUG
-  dfloat* elemLengths = platform->mempool.slice0;
-  o_elementLengths.copyTo(elemLengths, mesh->Nelements * sizeof(dfloat));
-  dfloat minLength = 1e8;
-  for(dlong e = 0 ; e < mesh->Nelements; ++e){
-    minLength = (minLength < elemLengths[e]) ? minLength : elemLengths[e];
-  }
-  MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MIN, platform->comm.mpiComm);
-  //printf("min GLL spacing: %f\n", minLength);
-
-  //dfloat* elemLengths = platform->mempool.slice0;
-  //o_elementLengths.copyTo(elemLengths, mesh->Nelements * sizeof(dfloat));
-  //dfloat minLength = -1e8;
-  //for(dlong e = 0 ; e < mesh->Nelements; ++e){
-  //  minLength = (minLength > elemLengths[e]) ? minLength : elemLengths[e];
-  //}
-  //MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
-  //printf("max GLL spacing: %f\n", minLength);
-#endif
-
-  auto& o_scratch0 = platform->o_mempool.slice0;
-  velMagKernel(
-    mesh->Nlocal,
-    nrs->fieldOffset,
-    nrs->o_U,
-    o_scratch0
-  );
-
-  const dfloat maxU = platform->linAlg->max(mesh->Nlocal, o_scratch0, platform->comm.mpiComm);
-
   dfloat coeff = 0.5;
   cds->options[scalarIndex].getArgs("COEFF0 AVM", coeff);
   if(platform->comm.mpiRank == 0) printf("coeff = %f\n", coeff);
@@ -403,7 +366,6 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
     logReferenceSensor,
     rampParameter,
     coeff,
-    maxU,
     o_elementLengths, // h_e
     cds->o_U,
     o_logShockSensor,
@@ -426,40 +388,8 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
     scalarOffset,
     scalarIndex,
     o_eps,
-    o_artVisc,
     o_avm
   );
-
-  const dfloat maxVisc = platform->linAlg->max(
-    mesh->Nlocal,
-    o_avm,
-    platform->comm.mpiComm
-  );
-  //printf("vismx: %f\n", maxVisc);
-
-  //platform->linAlg->axpby(
-  //  mesh->Nlocal,
-  //  1.0,
-  //  o_avm,
-  //  1.0,
-  //  cds->o_diff,
-  //  0,
-  //  cds->fieldOffsetScan[scalarIndex]
-  //);
-
-  if(nrs->isOutputStep && 1)
-  {
-    writeFld(
-      "avm", time, 1, 1,
-      &nrs->o_U,
-      &nrs->o_P,
-      &o_avm,
-      1);
-
-    // compare to n5k results
-    //nek::ocopyToNek(time, 1); // whatever
-    //nek::userchk();
-  }
 }
 
 } // namespace
