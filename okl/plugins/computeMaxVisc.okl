@@ -28,6 +28,8 @@
                             const dlong fieldOffset,
                             const dfloat logReferenceSensor,
                             const dfloat rampParameter,
+                            const dfloat coeff,
+                            const dfloat maxU,
                             @restrict const dfloat* elementLengths,
                             @restrict const dfloat* U,
                             @restrict const dfloat* logShockSensor,
@@ -63,7 +65,8 @@
           const dfloat Uz = U[id + 2 * fieldOffset];
           const dfloat Umax = sqrt(Ux*Ux + Uy*Uy + Uz*Uz);
           //printf("i, h0max, vmax: %d, %f, %f\n", printIdx, he, Umax);
-          dfloat visc_max = 0.5 * he * Umax;
+          dfloat visc_max = coeff * he * Umax;
+          //dfloat visc_max = coeff * he * maxU;
 
           // s_maxdFdS = max(s_maxdFdS, visc_max)
           s_maxdFdS[tid] = (s_maxdFdS[tid] > visc_max) ? 
@@ -179,8 +182,11 @@
             s_maxdFdS[0] : s_maxdFdS[1];
           if(logSensor < (logReferenceSensor - rampParameter)){
             epsilons[e] = 0.0;
-          } else {
+          } if(logSensor > (logReferenceSensor + rampParameter)) {
             epsilons[e] = maxVisc;
+          } else {
+            epsilons[e] = 0.5 * maxVisc * (1.0 + sin((M_PI*(logSensor-logReferenceSensor))/(2 * rampParameter)));
+            //epsilons[e] = maxVisc;
           }
         }
       }

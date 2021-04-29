@@ -246,7 +246,7 @@
           const dfloat S = filteredNorm / unfilteredNorm;
           const dfloat Ftmp = p * p * p * p * sensorSensitivity * S;
           const dfloat F = (1 < Ftmp) ? 1 : Ftmp;
-          logShockSensor[e] = log(F);
+          logShockSensor[e] = log10(F);
 
         }
       }

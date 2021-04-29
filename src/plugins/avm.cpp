@@ -14,6 +14,7 @@ static occa::kernel filterScalarNormKernel;
 static occa::kernel applyAVMKernel;
 static occa::kernel computeMaxViscKernel;
 static occa::kernel computeLengthScaleKernel;
+static occa::kernel velMagKernel;
 
 static occa::memory o_artVisc;
 static occa::memory o_diffOld; // diffusion from initial state
@@ -69,6 +70,11 @@ void compileKernels(nrs_t* nrs)
     platform->device.buildKernel(filename,
                              "computeLengthScale",
                              info);
+  filename = oklpath + "velMag.okl";
+  velMagKernel =
+    platform->device.buildKernel(filename,
+                             "velMag",
+                             info);
 }
 
 void filterSetup(nrs_t* nrs, bool userSetProperties)
@@ -80,7 +86,7 @@ void filterSetup(nrs_t* nrs, bool userSetProperties)
     return std::pow(base, lambda);
   };
   const dfloat machine_eps = std::numeric_limits<dfloat>::epsilon();
-  const dfloat alpha = -1.0 * std::log(machine_eps);
+  const dfloat alpha = -1.0 * std::log10(machine_eps);
   // eq (56)
   auto superGaussian = [alpha] (const dfloat x, const dfloat lambda)
   {
@@ -156,6 +162,7 @@ void filterSetup(nrs_t *nrs,
         visc[point]  = viscosity(mesh->r[point], s);
         visc[point] *= viscosity(mesh->s[point], s);
         visc[point] *= viscosity(mesh->t[point], s);
+        visc[point] = cbrt(visc[point]);
       }
       o_artVisc.copyFrom(visc, mesh->Np * sizeof(dfloat), s * mesh->Np * sizeof(dfloat));
       free(visc);
@@ -376,12 +383,27 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
   //printf("max GLL spacing: %f\n", minLength);
 #endif
 
-  printf("using coeff = %f\n", coeff);
+  auto& o_scratch0 = platform->o_mempool.slice0;
+  velMagKernel(
+    mesh->Nlocal,
+    nrs->fieldOffset,
+    nrs->o_U,
+    o_scratch0
+  );
+
+  const dfloat maxU = platform->linAlg->max(mesh->Nlocal, o_scratch0, platform->comm.mpiComm);
+
+  dfloat coeff = 0.5;
+  cds->options[scalarIndex].getArgs("COEFF0 AVM", coeff);
+  if(platform->comm.mpiRank == 0) printf("coeff = %f\n", coeff);
+
   computeMaxViscKernel(
     mesh->Nelements,
     nrs->fieldOffset,
     logReferenceSensor,
     rampParameter,
+    coeff,
+    maxU,
     o_elementLengths, // h_e
     cds->o_U,
     o_logShockSensor,
@@ -404,6 +426,7 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
     scalarOffset,
     scalarIndex,
     o_eps,
+    o_artVisc,
     o_avm
   );
 
