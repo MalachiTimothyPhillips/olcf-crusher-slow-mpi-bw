@@ -22,13 +22,10 @@
    SOFTWARE.
 
  */
-// computes:
-//   viscosity += eps \nu(x)
 @kernel void applyAVM(const dlong Nelements,
                                     const dlong scalarOffset,
                                     const dlong scalarIdx,
                                     @restrict const dfloat* eps,
-                                    @restrict const dfloat*  nu,
                                     @restrict dfloat*  viscosity)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
@@ -37,10 +34,7 @@
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
           const dlong point = k * p_Nq * p_Nq + j * p_Nq + i;
           const dlong id = e * p_Np + point;
-          //viscosity[id + scalarOffset] = 
-          //  eps[e] * nu[point + scalarIdx * p_Np];
-          viscosity[id + scalarOffset] = 
-            eps[e];
+          viscosity[id + scalarOffset] = eps[e];
         }
       }
       @barrier("local");

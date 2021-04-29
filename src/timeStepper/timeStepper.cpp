@@ -255,7 +255,8 @@ void makeq(nrs_t* nrs, dfloat time, int tstep, occa::memory o_FS, occa::memory o
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
 
-    if(cds->options[is].compareArgs("FILTER STABILIZATION", "RELAXATION"))
+    if(cds->options[is].compareArgs("FILTER STABILIZATION", "RELAXATION")){
+      if(platform->comm.mpiRank == 0) printf("Calling scalar filter relaxation!\n");
       cds->filterRTKernel(
         cds->meshV->Nelements,
         is,
@@ -265,6 +266,7 @@ void makeq(nrs_t* nrs, dfloat time, int tstep, occa::memory o_FS, occa::memory o
         cds->o_rho,
         cds->o_S,
         o_FS);
+    }
     const int movingMesh = cds->options[is].compareArgs("MOVING MESH", "TRUE");
     if(movingMesh && !cds->Nsubsteps){
       cds->advectMeshVelocityKernel(

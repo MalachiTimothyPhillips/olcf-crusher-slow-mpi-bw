@@ -364,7 +364,7 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
     minLength = (minLength < elemLengths[e]) ? minLength : elemLengths[e];
   }
   MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MIN, platform->comm.mpiComm);
-  printf("min GLL spacing: %f\n", minLength);
+  //printf("min GLL spacing: %f\n", minLength);
 
   //dfloat* elemLengths = platform->mempool.slice0;
   //o_elementLengths.copyTo(elemLengths, mesh->Nelements * sizeof(dfloat));
@@ -403,7 +403,6 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
     scalarOffset,
     scalarIndex,
     o_eps,
-    o_artVisc,
     o_avm
   );
 
@@ -412,7 +411,7 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
     o_avm,
     platform->comm.mpiComm
   );
-  printf("vismx: %f\n", maxVisc);
+  //printf("vismx: %f\n", maxVisc);
 
   //platform->linAlg->axpby(
   //  mesh->Nlocal,
@@ -424,7 +423,7 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
   //  cds->fieldOffsetScan[scalarIndex]
   //);
 
-  if(nrs->isOutputStep && 0)
+  if(nrs->isOutputStep && 1)
   {
     writeFld(
       "avm", time, 1, 1,
