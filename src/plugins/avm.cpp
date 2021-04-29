@@ -376,6 +376,7 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
   //printf("max GLL spacing: %f\n", minLength);
 #endif
 
+  printf("using coeff = %f\n", coeff);
   computeMaxViscKernel(
     mesh->Nelements,
     nrs->fieldOffset,
