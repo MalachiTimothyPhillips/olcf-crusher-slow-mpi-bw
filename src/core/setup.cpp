@@ -2,12 +2,11 @@
 #include "meshSetup.hpp"
 #include "nekInterfaceAdapter.hpp"
 #include "udf.hpp"
-#include "filter.hpp"
 #include "bcMap.hpp"
 #include <vector>
 #include <map>
-#include "regularization/filter.hpp"
-#include "regularization/avm.hpp"
+#include "filter.hpp"
+#include "avm.hpp"
 
 namespace{
 cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties &kernelInfoBC);
@@ -1090,7 +1089,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
       int filterNc;
       cds->options[is].getArgs("HPFRT MODES", filterNc);
       dfloat filterS;
-      cds->options[is].getArgs("HPFRT STRENGTH". filterS);
+      cds->options[is].getArgs("HPFRT STRENGTH", filterS);
       filterS = -1.0 * fabs(filterS);
       cds->filterS[is] = filterS;
 

@@ -2,6 +2,13 @@
 #include "filter.hpp"
 
 namespace {
+dfloat filterFactorial(int n)
+{
+  if(n == 0)
+    return 1;
+  else
+    return n * filterFactorial(n - 1);
+}
 // low Pass
 void filterFunctionRelaxation1D(int Nmodes, int Nc, dfloat* A)
 {
@@ -13,16 +20,6 @@ void filterFunctionRelaxation1D(int Nmodes, int Nc, dfloat* A)
   for (int k = k0; k < Nmodes; k++) {
     dfloat amp = ((k + 1.0 - k0) * (k + 1.0 - k0)) / (Nc * Nc);
     A[k + Nmodes * k] = 1.0 - amp;
-  }
-}
-
-void filterVandermonde1D(int N, int Np, dfloat* r, dfloat* V)
-{
-  int sk = 0;
-  for(int i = 0; i <= N; i++) {
-    for(int n = 0; n < Np; n++)
-      V[n * Np + sk] = filterJacobiP(r[n],0,0,i);
-    sk++;
   }
 }
 
@@ -74,16 +71,20 @@ dfloat filterJacobiP(dfloat a, dfloat alpha, dfloat beta, int N)
   return pN;
 }
 
-dfloat filterFactorial(int n)
+void filterVandermonde1D(int N, int Np, dfloat* r, dfloat* V)
 {
-  if(n == 0)
-    return 1;
-  else
-    return n * filterFactorial(n - 1);
-}
+  int sk = 0;
+  for(int i = 0; i <= N; i++) {
+    for(int n = 0; n < Np; n++)
+      V[n * Np + sk] = filterJacobiP(r[n],0,0,i);
+    sk++;
+  }
 }
 
-double* filterSetup(mesh_t* mesh, const filterNc)
+
+}
+
+double* filterSetup(mesh_t* mesh, const dlong filterNc)
 {
 
   // Construct Filter Function

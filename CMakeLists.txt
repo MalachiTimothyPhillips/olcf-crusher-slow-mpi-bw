@@ -191,8 +191,8 @@ set(SRC
     src/core/utils/tinyexpr.c
     src/core/setupAide.cpp
     src/core/cfl.cpp
-    src/core/regularization/filter.cpp
-    src/core/regularization/avm.cpp
+    src/regularization/filter.cpp
+    src/regularization/avm.cpp
     src/core/bcMap.cpp
     src/core/setup.cpp
     src/timeStepper/timeStepper.cpp
@@ -209,7 +209,6 @@ set(SRC
     src/linAlg/matrixTranspose.cpp
     src/linAlg/matrixRightSolve.cpp
     src/plugins/avg.cpp
-    src/plugins/avm.cpp
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
@@ -246,6 +245,7 @@ target_include_directories(nekrs-lib
   src/lib
   src/io
   src/udf
+  src/regularization
   src/linAlg
   src/timeStepper
   src/lns

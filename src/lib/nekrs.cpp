@@ -10,7 +10,6 @@
 #include "platform.hpp"
 #include "nrssys.hpp"
 #include "linAlg.hpp"
-#include "regularization/avm.hpp"
 
 // extern variable from nrssys.hpp
 platform_t* platform;
@@ -412,35 +411,4 @@ static void setOccaVars(string dir)
     occa::env::OCCA_DIR = install_dir + "/";
 
   occa::env::OCCA_INSTALL_DIR = occa::env::OCCA_DIR;
-}
-void evaluateProperties(nrs_t* nrs, const double timeNew, const bool copyToHost)
-{
-  if(udf.properties) {
-    platform->timer.tic("udfProperties", 1);
-    occa::memory o_S = platform->o_mempool.slice0;
-    occa::memory o_SProp = platform->o_mempool.slice0;
-    if(nrs->Nscalar) {
-      o_S = cds->o_S;
-      o_SProp = cds->o_prop;
-    }
-    udf.properties(nrs, timeNew, nrs->o_U, o_S, nrs->o_prop, o_SProp);
-    platform->timer.toc("udfProperties");
-
-    if(nrs->Nscalar){
-      cds_t* cds = nrs->cds;
-      for(int is = 0 ; is < cds->NSfields; ++is){
-        if(cds->options.compareArgs("FILTER STABILIZATION", "AVM")){
-          platform->timer.toc("avm");
-          avm::apply(cds, timeNew, is, o_S);
-          platform->timer.toc("avm");
-        }
-      }
-    }
-
-
-    if(copyToHost){
-      nrs->o_prop.copyTo(nrs->prop);
-      if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
-    }
-  }
 }
