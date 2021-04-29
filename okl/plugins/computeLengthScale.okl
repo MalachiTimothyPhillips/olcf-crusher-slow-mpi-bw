@@ -24,6 +24,172 @@
 
  */
 
+#if 1
+@kernel void computeLengthScale(const dlong Nelements,
+                            @restrict const dfloat* x,
+                            @restrict const dfloat* y,
+                            @restrict const dfloat* z,
+                            @restrict dfloat* minLength)
+{
+  for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
+    
+    @shared dfloat s_minLength[p_blockSize];
+
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq) s_minLength[k] = -1e8;
+      }
+    }
+
+    @barrier("local");
+
+    for(int k = 0 ; k < p_Nq; ++k; @inner(1)){
+      for(int j = 0 ; j < p_Nq; ++j; @inner(0)){
+        if( k < (p_Nq-1) && j < (p_Nq-1)){
+          #pragma unroll
+          for(int i = 0 ; i < p_Nq-1; ++i){
+            const dlong tid = k * p_Nq + j;
+            int id1 = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + (i+1);
+            int id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dfloat dx = x[id1] - x[id];
+            dfloat dy = y[id1] - y[id];
+            dfloat dz = z[id1] - z[id];
+            dfloat d2 = dx*dx + dy*dy + dz*dz;
+
+            id1 = e * p_Np + k * p_Nq * p_Nq + (j+1) * p_Nq + i;
+            id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dx = x[id1] - x[id];
+            dy = y[id1] - y[id];
+            dz = z[id1] - z[id];
+            dfloat tmp = dx*dx + dy*dy + dz*dz;
+            d2 = (d2 > tmp) ? d2 : tmp;
+
+            id1 = e * p_Np + (k+1) * p_Nq * p_Nq + j * p_Nq + i;
+            id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+            dx = x[id1] - x[id];
+            dy = y[id1] - y[id];
+            dz = z[id1] - z[id];
+            tmp = dx*dx + dy*dy + dz*dz;
+            d2 = (d2 > tmp) ? d2 : tmp;
+            s_minLength[tid] = (s_minLength[tid] > d2) ? s_minLength[tid] : d2;
+          }
+        }
+      }
+    }
+
+
+    // min reduction
+    @barrier("local");
+
+    // reduce p_Nq * p_Nq to single value
+    #if p_blockSize > 512
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 512){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+512]) ?
+            s_minLength[t] : s_minLength[t+512];
+        }
+      }
+    }
+    @barrier("local");
+    #endif
+    #if p_blockSize > 256
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 256){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+256]) ?
+            s_minLength[t] : s_minLength[t+256];
+        }
+      }
+    }
+    @barrier("local");
+    #endif
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 128){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+128]) ?
+            s_minLength[t] : s_minLength[t+128];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 64){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+64]) ?
+            s_minLength[t] : s_minLength[t+64];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 32){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+32]) ?
+            s_minLength[t] : s_minLength[t+32];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 16){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+16]) ?
+            s_minLength[t] : s_minLength[t+16];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 8){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+8]) ?
+            s_minLength[t] : s_minLength[t+8];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 4){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+4]) ?
+            s_minLength[t] : s_minLength[t+4];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 2){
+          s_minLength[t] = (s_minLength[t] > s_minLength[t+2]) ?
+            s_minLength[t] : s_minLength[t+2];
+        }
+      }
+    }
+    @barrier("local");
+    for(int j = 0; j < p_Nq; ++j; @inner(1)) {
+      for(int i = 0; i < p_Nq; ++i; @inner(0)) {
+        const int t = j * p_Nq + i;
+        if(t < 1){
+          const dfloat minLe = (s_minLength[0] > s_minLength[1]) ?
+            s_minLength[0] : s_minLength[1];
+          
+          minLength[e] = sqrt(minLe);
+        }
+      }
+    }
+  }
+}
+#else
 @kernel void computeLengthScale(const dlong Nelements,
                             @restrict const dfloat* x,
                             @restrict const dfloat* y,
@@ -188,3 +354,4 @@
     }
   }
 }
+#endif

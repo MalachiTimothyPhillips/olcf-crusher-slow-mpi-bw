@@ -2,6 +2,7 @@
 #include "avm.hpp"
 #include <string>
 #include <functional>
+#include "nekInterfaceAdapter.hpp"
 
 /**
  * C_0^{\infty} artificial viscosity method (https://arxiv.org/pdf/1810.02152.pdf)
@@ -364,6 +365,15 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
   }
   MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MIN, platform->comm.mpiComm);
   printf("min GLL spacing: %f\n", minLength);
+
+  //dfloat* elemLengths = platform->mempool.slice0;
+  //o_elementLengths.copyTo(elemLengths, mesh->Nelements * sizeof(dfloat));
+  //dfloat minLength = -1e8;
+  //for(dlong e = 0 ; e < mesh->Nelements; ++e){
+  //  minLength = (minLength > elemLengths[e]) ? minLength : elemLengths[e];
+  //}
+  //MPI_Allreduce(MPI_IN_PLACE, &minLength, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
+  //printf("max GLL spacing: %f\n", minLength);
 #endif
 
   computeMaxViscKernel(
@@ -381,40 +391,40 @@ occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, 
 
 }
 
-void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S)
+void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S, occa::memory o_avm)
 {
   cds_t* cds = nrs->cds;
-  // restore diffusivity to original state, if applicable
-  if(!setProp) cds->o_diff.copyFrom(o_diffOld,
-    cds->fieldOffset[scalarIndex] * sizeof(dfloat),
-    cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat),
-    cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat)
-  );
   mesh_t* mesh = cds->mesh[scalarIndex];
   const dlong scalarOffset = cds->fieldOffsetScan[scalarIndex];
   occa::memory o_eps = computeEps(nrs, time, scalarIndex, o_S);
-  occa::memory o_avm = platform->o_mempool.slice0;
+  platform->linAlg->fill(nrs->fieldOffset, 0.0, o_avm);
   applyAVMKernel(
     mesh->Nelements,
     scalarOffset,
     scalarIndex,
     o_eps,
     o_artVisc,
-    //cds->o_diff
     o_avm
   );
 
-  platform->linAlg->axpby(
+  const dfloat maxVisc = platform->linAlg->max(
     mesh->Nlocal,
-    1.0,
     o_avm,
-    1.0,
-    cds->o_diff,
-    0,
-    cds->fieldOffsetScan[scalarIndex]
+    platform->comm.mpiComm
   );
+  printf("vismx: %f\n", maxVisc);
 
-  if(nrs->isOutputStep && 1)
+  //platform->linAlg->axpby(
+  //  mesh->Nlocal,
+  //  1.0,
+  //  o_avm,
+  //  1.0,
+  //  cds->o_diff,
+  //  0,
+  //  cds->fieldOffsetScan[scalarIndex]
+  //);
+
+  if(nrs->isOutputStep && 0)
   {
     writeFld(
       "avm", time, 1, 1,
@@ -422,6 +432,10 @@ void applyAVM(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memo
       &nrs->o_P,
       &o_avm,
       1);
+
+    // compare to n5k results
+    //nek::ocopyToNek(time, 1); // whatever
+    //nek::userchk();
   }
 }
 

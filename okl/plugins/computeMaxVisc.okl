@@ -56,11 +56,13 @@
       for(int j = 0; j < p_Nq; ++j; @inner(1)) {
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
           const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+          const dlong printIdx = k * p_Nq * p_Nq + j * p_Nq + i;
           const dlong tid = j * p_Nq + i;
           const dfloat Ux = U[id + 0 * fieldOffset];
           const dfloat Uy = U[id + 1 * fieldOffset];
           const dfloat Uz = U[id + 2 * fieldOffset];
           const dfloat Umax = sqrt(Ux*Ux + Uy*Uy + Uz*Uz);
+          //printf("i, h0max, vmax: %d, %f, %f\n", printIdx, he, Umax);
           dfloat visc_max = 0.5 * he * Umax;
 
           // s_maxdFdS = max(s_maxdFdS, visc_max)

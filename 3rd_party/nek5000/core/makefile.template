@@ -39,6 +39,7 @@ PPS_C = $(patsubst %,-D%,$(PPS))
 # CORE##########################################################################
 CORE = drive1.o drive2.o \
 plan5.o \
+avm.o \
 plan4.o bdry.o coef.o conduct.o connect1.o connect2.o \
 dssum.o eigsolv.o gauss.o genxyz.o navier1.o makeq.o \
 navier0.o navier2.o navier3.o navier4.o prepost.o speclib.o \
@@ -227,6 +228,7 @@ $(OBJDIR)/reader_rea.o	:$S/core/reader_rea.f;	 	        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_par.o	:$S/core/reader_par.f $S/core/PARDICT;	$(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/reader_re2.o	:$S/core/reader_re2.f;		        $(FC) -c $(FL2) $< -o $@
 $(OBJDIR)/hpf.o	       	:$S/core/hpf.f;         		$(FC) -c $(FL2) $< -o $@
+$(OBJDIR)/avm.o	       	:$S/core/avm.f;         		$(FC) -c $(FL2) $< -o $@
 
 # CMT CORE     ##################################################################
 $(OBJDIR)/step.o	:$(SCMT)/step.f;        	$(FC) -c $(FL2) $< -o $@
