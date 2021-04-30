@@ -1102,7 +1102,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     }
   }
 
-  if(avmEnabled) avm::setup(cds, (udf.properties != nullptr));
+  if(avmEnabled) avm::setup(cds);
 
   // build kernels
   occa::properties kernelInfo = *nrs->kernelInfo;

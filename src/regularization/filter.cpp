@@ -86,6 +86,13 @@ void filterVandermonde1D(int N, int Np, dfloat* r, dfloat* V)
 
 double* filterSetup(mesh_t* mesh, const dlong filterNc)
 {
+  if(filterNc < 1)
+  {
+    if(platform->comm.mpiRank == 0)
+      printf("ERROR: filterNc must be at least 1, but is set to %d\n"
+        , filterNc);
+    ABORT(EXIT_FAILURE);
+  }
 
   // Construct Filter Function
   int Nmodes = mesh->N + 1; // N+1, 1D GLL points

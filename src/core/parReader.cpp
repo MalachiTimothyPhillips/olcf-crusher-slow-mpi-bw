@@ -29,6 +29,80 @@
               std::ptr_fun<int, int>(std::tolower));                           \
   }
 
+void parseRegularization(setupAide& options, inipp::Ini<char> *par, bool isScalar = false, string sidPar = "")
+{
+  int N;
+  options.getArgs("POLYNOMIAL DEGREE", N);
+  const int rank = platform->comm.mpiRank;
+  string sbuf;
+  string parSection = isScalar ? "scalar" + sidPar : "general";
+  string parPrefix = isScalar ? "SCALAR" + sidPar + " " : "";
+
+  string regularization;
+  par->extract(parSection, "regularization", regularization);
+  printf("regularization string = %s\n", regularization.c_str());
+  if(regularization.find("avm") == 0 || regularization.find("hpfrt") == 0)
+  {
+    const std::vector<string> list = serializeString(regularization, '+');
+    printf("Printing out regularization params...\n");
+    for(auto && s : list)
+    {
+      printf("%s\n", s.c_str());
+    }
+    
+
+  } else {
+    // fall back on old parsing style
+    string filtering;
+    par->extract(parSection, "filtering", filtering);
+    if (filtering == "hpfrt" || filtering == "avm") {
+      if(!isScalar && filtering == "avm"){
+        exit("AVM for GENERAL is not supported!",
+             EXIT_FAILURE);
+      }
+      string upperFilterString = filtering;
+      UPPER(upperFilterString);
+      printf("upperFilterString = %s\n", upperFilterString.c_str());
+      options.setArgs(parPrefix + "FILTER STABILIZATION", upperFilterString);
+      if (par->extract(parSection, "filterweight", sbuf)) {
+        int err = 0;
+        double weight = te_interp(sbuf.c_str(), &err);
+        if (err)
+          exit("Invalid expression for filterWeight!", EXIT_FAILURE);
+        options.setArgs(parPrefix + "HPFRT STRENGTH", to_string_f(weight));
+      } else {
+        if(filtering == "hpfrt")
+          exit("Cannot find mandatory parameter GENERAL:filterWeight!",
+               EXIT_FAILURE);
+      }
+      double filterCutoffRatio;
+      int NFilterModes;
+      if (par->extract(parSection, "filtercutoffratio", filterCutoffRatio))
+        NFilterModes = round((N + 1) * (1 - filterCutoffRatio));
+      if (par->extract(parSection, "filtermodes", NFilterModes))
+        if (NFilterModes < 1)
+          NFilterModes = 1;
+      options.setArgs(parPrefix + "HPFRT MODES", to_string_f(NFilterModes));
+
+      double sensorSens;
+      if (par->extract(parSection,"sensorsensitivity", sensorSens)){
+        options.setArgs(parPrefix + "HPFRT MODES", to_string_f(sensorSens));
+      }
+      double avmLambda;
+      if (par->extract(parSection,"avmlambda", avmLambda)){
+        options.setArgs(parPrefix + "AVM LAMBDA", to_string_f(avmLambda));
+      }
+      string avmDistribution;
+      if (par->extract(parSection,"avmdistribution", avmDistribution)){
+        options.setArgs(parPrefix + "AVM DISTRIBUTION", avmDistribution);
+      }
+
+    } else if (filtering == "explicit") {
+      exit("GENERAL::filtering = explicit not supported!", EXIT_FAILURE);
+    }
+  }
+
+}
 void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("FORMAT", string("1.0"));
 
@@ -60,6 +134,8 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("SOLUTION OUTPUT INTERVAL", "0");
   options.setArgs("SOLUTION OUTPUT CONTROL", "STEPS");
   options.setArgs("FILTER STABILIZATION", "NONE");
+  options.setArgs("AVM DISTRIBUTION", "CONSTANT");
+  options.setArgs("AVM LAMBDA", "1.0");
 
   options.setArgs("START TIME", "0.0");
 
@@ -257,31 +333,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     else
       options.setArgs("ADVECTION TYPE", "CONVECTIVE");
 
-  string filtering;
-  par->extract("general", "filtering", filtering);
-  if (filtering == "hpfrt") {
-    options.setArgs("FILTER STABILIZATION", "RELAXATION");
-    if (par->extract("general", "filterweight", sbuf)) {
-      int err = 0;
-      double weight = te_interp(sbuf.c_str(), &err);
-      if (err)
-        exit("Invalid expression for filterWeight!", EXIT_FAILURE);
-      options.setArgs("HPFRT STRENGTH", to_string_f(weight));
-    } else {
-      exit("Cannot find mandatory parameter GENERAL:filterWeight!",
-           EXIT_FAILURE);
-    }
-    double filterCutoffRatio;
-    int NFilterModes;
-    if (par->extract("general", "filtercutoffratio", filterCutoffRatio))
-      NFilterModes = round((N + 1) * (1 - filterCutoffRatio));
-    if (par->extract("general", "filtermodes", NFilterModes))
-      if (NFilterModes < 1)
-        NFilterModes = 1;
-    options.setArgs("HPFRT MODES", to_string_f(NFilterModes));
-  } else if (filtering == "explicit") {
-    exit("GENERAL::filtering = explicit not supported!", EXIT_FAILURE);
-  }
+  parseRegularization(options, par);
 
   // MESH
   string meshPartitioner;
@@ -611,32 +663,10 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
                     options.getArgs("HPFRT STRENGTH"));
     options.setArgs("SCALAR00 HPFRT MODES", options.getArgs("HPFRT MODES"));
     options.setArgs("SCALAR00 SENSOR SENSITIVITY", to_string_f(1.0));
-
-    string filtering;
-    par->extract("temperature", "filtering", filtering);
-    if (filtering == "hpfrt") {
-      options.setArgs("SCALAR00 FILTER STABILIZATION", "RELAXATION");
-      if (par->extract("temperature", "filterweight", sbuf)) {
-        int err = 0;
-        double weight = te_interp(sbuf.c_str(), &err);
-        if (err)
-          exit("Invalid expression for filterWeight!", EXIT_FAILURE);
-        options.setArgs("SCALAR00 HPFRT STRENGTH", to_string_f(weight));
-      } else {
-        exit("Cannot find mandatory parameter TEMPERATURE:filterWeight!",
-             EXIT_FAILURE);
-      }
-      double filterCutoffRatio;
-      int NFilterModes;
-      if (par->extract("temperature", "filtercutoffratio", filterCutoffRatio))
-        NFilterModes = round((N + 1) * (1 - filterCutoffRatio));
-      if (par->extract("temperature", "filtermodes", NFilterModes))
-        if (NFilterModes < 1)
-          NFilterModes = 1;
-      options.setArgs("SCALAR00 HPFRT MODES", to_string_f(NFilterModes));
-    } else if (filtering == "explicit") {
-      exit("TEMPERATURE::filtering = explicit not supported!", EXIT_FAILURE);
-    }
+    options.setArgs("SCALAR00 AVM LAMBDA", to_string_f(1.0));
+    options.setArgs("SCALAR00 AVM DISTRIBUTION", options.getArgs("AVM DISTRIBUTION"));
+    
+    parseRegularization(options, par, true, "00");
 
     options.setArgs("SCALAR00 IS TEMPERATURE", "TRUE");
 
@@ -737,39 +767,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
                     options.getArgs("HPFRT MODES"));
     options.setArgs("SCALAR" + sidPar + " SENSOR SENSITIVITY", to_string_f(1.0));
 
-    string filtering;
-    par->extract("scalar" + sidPar, "filtering", filtering);
-    if (filtering == "hpfrt") {
-      options.setArgs("SCALAR" + sidPar + " FILTER STABILIZATION",
-                      "RELAXATION");
-      if (par->extract("scalar" + sidPar, "filterweight", sbuf)) {
-        int err = 0;
-        double weight = te_interp(sbuf.c_str(), &err);
-        if (err)
-          exit("Invalid expression for filterWeight!", EXIT_FAILURE);
-        options.setArgs("SCALAR" + sidPar + " HPFRT STRENGTH",
-                        to_string_f(weight));
-      } else {
-        if (rank == 0)
-          printf("Cannot find mandatory parameter SCALAR%s:filterWeight!",
-                 sidPar.c_str());
-        exit("", EXIT_FAILURE);
-      }
-      double filterCutoffRatio;
-      int NFilterModes;
-      if (par->extract("scalar" + sidPar, "filtercutoffratio",
-                       filterCutoffRatio))
-        NFilterModes = round((N + 1) * (1 - filterCutoffRatio));
-      if (par->extract("scalar" + sidPar, "filtermodes", NFilterModes))
-        if (NFilterModes < 1)
-          NFilterModes = 1;
-      options.setArgs("SCALAR" + sidPar + " HPFRT MODES",
-                      to_string_f(NFilterModes));
-    } else if (filtering == "explicit") {
-      if (rank == 0)
-        printf("SCALAR%s::filtering = explicit not supported!", sidPar.c_str());
-      exit("", EXIT_FAILURE);
-    }
+    parseRegularization(options, par, true, sidPar);
 
     string solver;
     par->extract("scalar" + sidPar, "solver", solver);

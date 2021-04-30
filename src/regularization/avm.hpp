@@ -4,7 +4,7 @@
 #include "cds.hpp"
 #include "nrs.hpp"
 namespace avm{
-void setup(cds_t* nrs, bool userSetProps = false);
+void setup(cds_t* nrs);
 void apply(cds_t* nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S);
 }
 

@@ -24,23 +24,21 @@ void evaluateProperties(nrs_t* nrs, const double timeNew, const bool copyToHost)
     }
     udf.properties(nrs, timeNew, nrs->o_U, o_S, nrs->o_prop, o_SProp);
     platform->timer.toc("udfProperties");
-
-    if(nrs->Nscalar){
-      cds_t* cds = nrs->cds;
-      for(int is = 0 ; is < cds->NSfields; ++is){
-        if(cds->options[is].compareArgs("FILTER STABILIZATION", "AVM")){
-          platform->timer.tic("avm");
-          avm::apply(cds, timeNew, is, o_S);
-          platform->timer.toc("avm");
-        }
+  }
+  if(nrs->Nscalar){
+    cds_t* cds = nrs->cds;
+    for(int is = 0 ; is < cds->NSfields; ++is){
+      if(cds->options[is].compareArgs("FILTER STABILIZATION", "AVM")){
+        platform->timer.tic("avm");
+        avm::apply(cds, timeNew, is, cds->o_S);
+        platform->timer.toc("avm");
       }
     }
+  }
 
-
-    if(copyToHost){
-      nrs->o_prop.copyTo(nrs->prop);
-      if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
-    }
+  if(copyToHost){
+    nrs->o_prop.copyTo(nrs->prop);
+    if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
   }
 }
 

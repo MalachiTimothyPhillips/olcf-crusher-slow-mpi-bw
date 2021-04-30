@@ -25,6 +25,7 @@
 @kernel void applyAVM(const dlong Nelements,
                                     const dlong scalarOffset,
                                     const dlong scalarIdx,
+                                    @restrict const dfloat* visc,
                                     @restrict const dfloat* eps,
                                     @restrict dfloat*  viscosity)
 {
@@ -34,7 +35,7 @@
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
           const dlong point = k * p_Nq * p_Nq + j * p_Nq + i;
           const dlong id = e * p_Np + point;
-          viscosity[id + scalarOffset] += eps[e];
+          viscosity[id + scalarOffset] += eps[e] * visc[point];
         }
       }
       @barrier("local");

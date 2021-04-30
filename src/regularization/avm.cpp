@@ -1,5 +1,7 @@
 #include "cds.hpp"
 #include "avm.hpp"
+#include "udf.hpp"
+#include <limits>
 #include <string>
 
 /**
@@ -16,11 +18,12 @@ static occa::kernel computeLengthScaleKernel;
 static occa::memory o_artVisc;
 static occa::memory o_diffOld; // diffusion from initial state
 
-static bool setProp = false;
-
 void allocateMemory(cds_t* cds)
 {
-  if(!setProp) o_diffOld = platform->device.malloc(cds->fieldOffsetSum, sizeof(dfloat), cds->o_diff);
+  if(udf.properties == nullptr) o_diffOld = platform->device.malloc(cds->fieldOffsetSum, sizeof(dfloat), cds->o_diff);
+
+  o_artVisc = platform->device.malloc(cds->NSfields * cds->mesh[0]->Np, sizeof(dfloat));
+  platform->linAlg->fill(cds->NSfields * cds->mesh[0]->Np, 1.0, o_artVisc);
 }
 
 void compileKernels(cds_t* cds)
@@ -56,11 +59,38 @@ void compileKernels(cds_t* cds)
                              info);
 }
 
-void setup(cds_t* cds, bool userSetProperties)
+void setup(cds_t* cds)
 {
-  setProp = userSetProperties;
   allocateMemory(cds);
   compileKernels(cds);
+
+  const dfloat alpha = -std::log(std::numeric_limits<dfloat>::epsilon());
+  auto superGaussian = [alpha](const dfloat x, const dfloat lambda)
+  {
+    return std::exp(-alpha * std::pow(x, 2.0 * lambda));
+  };
+
+  dfloat* artVisc = (dfloat*) calloc(cds->mesh[0]->Np, sizeof(dfloat));
+  for(dlong is = 0 ; is < cds->NSfields; ++is){
+    if(cds->options[is].compareArgs("AVM DISTRIBUTION", "SUPERGAUSSIAN")){
+      dfloat lambda = 1.0;
+      cds->options[is].getArgs("AVM LAMBDA", lambda);
+      for(dlong point = 0; point < cds->mesh[is]->Np; ++point){
+        const dfloat r = cds->mesh[is]->r[point];
+        const dfloat s = cds->mesh[is]->s[point];
+        const dfloat t = cds->mesh[is]->t[point];
+        dfloat visc = superGaussian(r, lambda);
+        visc *= superGaussian(s, lambda);
+        visc *= superGaussian(t, lambda);
+        visc = cbrt(visc);
+        artVisc[point] = visc;
+      }
+      o_artVisc.copyFrom(artVisc, cds->mesh[is]->Np * sizeof(dfloat), is * cds->mesh[is]->Np * sizeof(dfloat));
+    }
+  }
+
+  free(artVisc);
+
 }
 
 occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory o_S)
@@ -75,6 +105,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
 
   // artificial viscosity magnitude
   occa::memory o_epsilon = platform->o_mempool.slice2;
+  platform->linAlg->fill(cds->fieldOffset[scalarIndex], 0.0, o_epsilon);
 
   const dfloat p = mesh->N;
   
@@ -123,25 +154,51 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
 
 void apply(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory o_S)
 {
+  const int verbose = platform->options.compareArgs("VERBOSE", "TRUE");
   mesh_t* mesh = cds->mesh[scalarIndex];
   const dlong scalarOffset = cds->fieldOffsetScan[scalarIndex];
-  if(!setProp) // restore viscosity from previous state
+  if(udf.properties == nullptr){ // restore viscosity from previous state
+    if(verbose && platform->comm.mpiRank == 0) printf("Resetting properties...\n");
     cds->o_diff.copyFrom(o_diffOld,
       cds->fieldOffset[scalarIndex] * sizeof(dfloat),
       cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat),
       cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat)
     );
+  }
   occa::memory o_eps = computeEps(cds, time, scalarIndex, o_S);
+  if(verbose && platform->comm.mpiRank == 0){
+    const dfloat maxEps = platform->linAlg->max(
+      mesh->Nlocal,
+      o_eps,
+      platform->comm.mpiComm
+    );
+    occa::memory o_S_slice = cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    const dfloat maxDiff = platform->linAlg->max(
+      mesh->Nlocal,
+      o_S_slice,
+      platform->comm.mpiComm
+    );
+    printf("Applying a max artificial viscosity of: %f to a field with max visc: %f\n", maxEps, maxDiff);
+  }
 
-  occa::memory& o_avm = platform->o_mempool.slice0;
-  platform->linAlg->fill(cds->fieldOffset[scalarIndex], 0.0, o_avm);
   applyAVMKernel(
     mesh->Nelements,
     scalarOffset,
     scalarIndex,
+    o_artVisc,
     o_eps,
     cds->o_diff
   );
+  if(verbose && platform->comm.mpiRank == 0){
+    occa::memory o_S_slice = cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    const dfloat maxDiff = platform->linAlg->max(
+      mesh->Nlocal,
+      o_S_slice,
+      platform->comm.mpiComm
+    );
+    printf("Field now has a max visc: %f\n", maxDiff);
+  }
+
 }
 
 } // namespace
