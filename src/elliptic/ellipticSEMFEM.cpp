@@ -10,6 +10,29 @@
 
 void ellipticSEMFEMSetup(elliptic_t* elliptic)
 {
+
+  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
+  occa::properties SEMFEMKernelProps = platform->kernelInfo;
+  if(useFP32){
+    SEMFEMKernelProps["defines/" "pfloat"] = "float";
+  } else {
+    SEMFEMKernelProps["defines/" "pfloat"] = "double";
+  }
+  std::string install_dir;
+  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+  const std::string oklpath = install_dir + "/okl/elliptic/";
+  std::string filename = oklpath + "ellipticGather.okl";
+  elliptic->gatherKernel = platform->device.buildKernel(
+    filename,
+    "gather",
+    SEMFEMKernelProps
+  );
+  filename = oklpath + "ellipticScatter.okl";
+  elliptic->scatterKernel = platform->device.buildKernel(
+    filename,
+    "scatter",
+    SEMFEMKernelProps
+  );
   MPI_Barrier(platform->comm.mpiComm);
   double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("setup SEMFEM preconditioner ... \n"); fflush(stdout);
@@ -37,7 +60,6 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   );
   //if(platform->comm.mpiRank == 0)  printf("SEMFEM assembly: (%gs)\n", MPI_Wtime() - tStartAssembly); fflush(stdout);
 
-  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
   const int sizeType = useFP32 ? sizeof(float) : sizeof(dfloat);
   const long long numRows = data->rowEnd - data->rowStart + 1;
   elliptic->o_dofMap = platform->device.malloc(numRows * sizeof(long long), data->dofMap);
@@ -45,29 +67,6 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   elliptic->o_SEMFEMBuffer2 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal,sizeType);
 
   elliptic->numRowsSEMFEM = numRows;
-
-
-  occa::properties SEMFEMKernelProps = platform->kernelInfo;
-  if(useFP32){
-    SEMFEMKernelProps["defines/" "pfloat"] = "float";
-  } else {
-    SEMFEMKernelProps["defines/" "pfloat"] = "double";
-  }
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-  const std::string oklpath = install_dir + "/okl/elliptic/";
-  std::string filename = oklpath + "ellipticGather.okl";
-  elliptic->gatherKernel = platform->device.buildKernel(
-    filename,
-    "gather",
-    SEMFEMKernelProps
-  );
-  filename = oklpath + "ellipticScatter.okl";
-  elliptic->scatterKernel = platform->device.buildKernel(
-    filename,
-    "scatter",
-    SEMFEMKernelProps
-  );
 
   int setupRetVal;
   if(elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")){
