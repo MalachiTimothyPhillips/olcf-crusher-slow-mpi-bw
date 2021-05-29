@@ -11,6 +11,8 @@
 
 #include "gslib.h"
 #include "fem_amg_preco.hpp"
+#include <map>
+#include <set>
 
 namespace{
 
@@ -19,6 +21,8 @@ static occa::memory o_stiffness;
 static occa::memory o_x;
 static occa::memory o_y;
 static occa::memory o_z;
+
+int bisection_search_index(long long* sortedArr, long long value, int n);
 
 void build_kernel();
 
@@ -53,7 +57,10 @@ static long long *dof_map;
 static long long row_start;
 static long long row_end;
 static HYPRE_IJMatrix A_bc;
+static HYPRE_IJMatrix A_test;
 static int rank;
+
+static std::map<long long, std::set<long long>> graph;
 }
 
 static struct comm comm;
@@ -154,6 +161,7 @@ SEMFEMData* fem_amg_setup(const int N_, const int n_elem_,
     free(ownedRows);
     free(ncols);
     HYPRE_IJMatrixDestroy(A_bc);
+    HYPRE_IJMatrixDestroy(A_test);
 
     data = (SEMFEMData*) malloc(sizeof(SEMFEMData));
     data->Ai = Ai;
@@ -433,11 +441,6 @@ int compute_id(int e, int sz, int sy, int sx, int tfem, int j, int i)
     i_offset;
 }
 void fem_assembly_device() {
-  const int E_x = n_x - 1;
-  const int E_y = n_y - 1;
-  const int E_z = n_z - 1;
-  const int num_fem = 8;
-  const int ndimp1 = n_dim + 1;
   /* Set quadrature rule */
   constexpr int n_quad = 4;
   double q_r[4][3];
@@ -446,27 +449,92 @@ void fem_assembly_device() {
   quadrature_rule(q_r, q_w);
 
   /* Mesh connectivity (Can be changed to fill-out or one-per-vertex) */
+  constexpr int num_fem = 8;
   int v_coord[8][3];
   int t_map[8][4];
 
   mesh_connectivity(v_coord, t_map);
-  const int sizeField = n_elem * E_x * E_y * E_z * num_fem * ndimp1 * ndimp1;
-  double* Aglob = (double*) malloc(sizeField * sizeof(double));
-  o_stiffness = platform->device.malloc(sizeField, sizeof(double));
-  //double tKernel = MPI_Wtime();
-  computeStiffnessMatrixKernel(
-    n_elem,
-    o_x,
-    o_y,
-    o_z,
-    o_stiffness
-  );
-  //platform->device.finish();
-  //if(platform->comm.mpiRank == 0)  printf("SEMFEM assembly kernel: (%gs)\n", MPI_Wtime() - tKernel); fflush(stdout);
 
-  // do final assembly on host
-  o_stiffness.copyTo(Aglob, sizeField * sizeof(double));
+  /* Finite element assembly */
 
+  double A_loc[4][4];
+  double J_xr[3][3];
+  double J_rx[3][3];
+  double x_t[3][4];
+  double q_x[3];
+
+  int E_x = n_x - 1;
+  int E_y = n_y - 1;
+  int E_z = n_z - 1;
+
+  double tStart = MPI_Wtime();
+  for (int e = 0; e < n_elem; e++) {
+    /* Cycle through collocated quads/hexes */
+    for (int s_z = 0; s_z < E_z; s_z++) {
+      for (int s_y = 0; s_y < E_y; s_y++) {
+        for (int s_x = 0; s_x < E_x; s_x++) {
+          /* Get indices */
+          int s[n_dim];
+
+          s[0] = s_x;
+          s[1] = s_y;
+          s[2] = s_z;
+
+          int idx[8];
+
+          for (int i = 0; i < 8; i++) {
+            idx[i] = 0;
+
+            for (int d = 0; d < n_dim; d++) {
+              idx[i] += (s[d] + v_coord[i][d]) * pow(n_x, d);
+            }
+          }
+          for (int t = 0; t < num_fem; t++) {
+            for (int i = 0; i < n_dim + 1; i++) {
+              for (int j = 0; j < n_dim + 1; j++) {
+                if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) &&
+                    (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
+                  HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
+                  HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
+                  graph[row].emplace(col);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  long long * globToLocRowMap = (long long*) malloc(row_end * sizeof(long long));
+  const long long nrows = graph.size();
+  long long * rows = (long long*) malloc(nrows * sizeof(long long));
+  long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
+  long long * ncols = (long long*) malloc(nrows * sizeof(long long));
+  long long nnz = 0;
+  long long ctr = 0;
+  rowOffsets[0] = 0;
+  for(auto && row_and_colset : graph){
+    const auto size = row_and_colset.second.size();
+    const auto row = row_and_colset.first;
+    globToLocRowMap[row] = ctr;
+    rows[ctr] = row_and_colset.first;
+    ncols[ctr] = size;
+    rowOffsets[ctr+1] = rowOffsets[ctr] + size;
+    nnz += size;
+    ctr++;
+  }
+  long long * cols = (long long*) malloc(nnz * sizeof(long long));
+  ctr = 0;
+  for(auto && row_and_colset : graph){
+    for(auto&& col : row_and_colset.second){
+      cols[ctr++] = col;
+    }
+  }
+  double* vals = (double*) calloc(nnz,sizeof(double));
+  
+  if(platform->comm.mpiRank == 0) printf("Symbolic graph construction took: (%f)s\n", MPI_Wtime() - tStart);
+
+  tStart = MPI_Wtime();
   for (int e = 0; e < n_elem; e++) {
     /* Cycle through collocated quads/hexes */
     for (int s_z = 0; s_z < E_z; s_z++) {
@@ -491,26 +559,84 @@ void fem_assembly_device() {
 
           /* Cycle through collocated triangles/tets */
           for (int t = 0; t < num_fem; t++) {
+            /* Get vertices */
+            for (int i = 0; i < n_dim + 1; i++) {
+                x_t[0][i] = x_m[idx[t_map[t][i]] + e * n_xyz];
+                x_t[1][i] = y_m[idx[t_map[t][i]] + e * n_xyz];
+                x_t[2][i] = z_m[idx[t_map[t][i]] + e * n_xyz];
+            }
+
+            /* Local FEM matrices */
+            /* Reset local stiffness and mass matrices */
+            for (int i = 0; i < n_dim + 1; i++) {
+              for (int j = 0; j < n_dim + 1; j++) {
+                A_loc[i][j] = 0.0;
+              }
+            }
+
+            /* Build local stiffness matrices by applying quadrature rules */
+            J_xr_map(J_xr, q_r, x_t);
+            inverse(J_rx, J_xr);
+            const double det_J_xr = determinant(J_xr);
+            for (int q = 0; q < n_quad; q++) {
+              /* From r to x */
+              x_map(q_x, q_r, x_t, q);
+
+              /* Integrand */
+              for (int i = 0; i < n_dim + 1; i++) {
+                double deriv_i[3];
+                dphi(deriv_i, i);
+                for (int j = 0; j < n_dim + 1; j++) {
+                  double deriv_j[3];
+                  dphi(deriv_j, j);
+                  int alpha, beta;
+                  double func = 0.0;
+
+                  for (alpha = 0; alpha < n_dim; alpha++) {
+                    double a = 0.0, b = 0.0;
+
+                    for (beta = 0; beta < n_dim; beta++) {
+                      a += deriv_i[beta] * J_rx[beta][alpha];
+
+                      b += deriv_j[beta] * J_rx[beta][alpha];
+                    }
+
+                    func += a * b;
+                  }
+
+                  A_loc[i][j] += func * det_J_xr * q_w[q];
+                }
+              }
+            }
             for (int i = 0; i < n_dim + 1; i++) {
               for (int j = 0; j < n_dim + 1; j++) {
                 if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) &&
                     (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
                   HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
                   HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  int id = compute_id(e,s_z,s_y,s_x,t,j,i);
-                  HYPRE_Real A_val = Aglob[id];
+                  // big search -- need to try and avoid!
+                  //int row_idx = bisection_search_index(rows, row, nrows);
+                  int row_idx = globToLocRowMap[row];
+                  long long row_start = rowOffsets[row_idx];
+                  long long row_end = rowOffsets[row_idx+1];
+                  int ncolsSearch = row_end - row_start + 1;
+                  // small search
+                  int col_idx = bisection_search_index(cols+row_start, col, ncolsSearch);
+                  int id = row_start + col_idx;
+                  vals[id] += A_loc[i][j];
+                  //HYPRE_Real A_val = A_loc[i][j];
                   HYPRE_Int ncols = 1;
                   double tol = 1e-7;
                   int err = 0;
 
-                  if (fabs(A_val) > tol) 
-                    err = HYPRE_IJMatrixAddToValues(A_bc, 1, &ncols, &row, &col, &A_val);
-                  if (err != 0) {
-                    if (comm.id == 0)
-                      printf("There was an error with entry A(%lld, %lld) = %f\n",
-                             row, col, A_val);
-                    exit(EXIT_FAILURE);
-                  }
+                  //if (fabs(A_val) > tol) 
+                  //  err = HYPRE_IJMatrixAddToValues(A_bc, 1, &ncols, &row, &col, &A_val);
+                  //if (err != 0) {
+                  //  if (comm.id == 0)
+                  //    printf("There was an error with entry A(%lld, %lld) = %f\n",
+                  //           row, col, A_val);
+                  //  exit(EXIT_FAILURE);
+                  //}
                 }
               }
             }
@@ -519,9 +645,13 @@ void fem_assembly_device() {
       }
     }
   }
-
-  o_stiffness.free();
-  free(Aglob);
+  int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, ncols, rows, cols, vals);
+  if (err != 0) {
+    if (comm.id == 0)
+      printf("err!\n");
+    exit(EXIT_FAILURE);
+  }
+  if(platform->comm.mpiRank == 0) printf("Actual graph construction took: (%f)s\n", MPI_Wtime() - tStart);
 }
 
 void fem_assembly() {
@@ -563,12 +693,20 @@ void fem_assembly() {
   HYPRE_IJMatrixSetObjectType(A_bc, HYPRE_PARCSR);
   HYPRE_IJMatrixInitialize(A_bc);
 
+  HYPRE_IJMatrixCreate(comm.c, row_start, row_end, row_start, row_end, &A_test);
+  HYPRE_IJMatrixSetObjectType(A_test, HYPRE_PARCSR);
+  HYPRE_IJMatrixInitialize(A_test);
+
   //fem_assembly_host();
   fem_assembly_device();
 
 
 
   HYPRE_IJMatrixAssemble(A_bc);
+  //HYPRE_IJMatrixAssemble(A_test);
+
+  //HYPRE_IJMatrixPrint(A_bc, "realMatrix");
+  //HYPRE_IJMatrixPrint(A_test, "testMatrix");
 
   free(glo_num);
 
@@ -763,6 +901,24 @@ void build_kernel(){
     "computeStiffnessMatrix",
     stiffnessKernelInfo
   );
+}
+
+int bisection_search_index(long long* sortedArr, long long value, int n)
+{
+  int fail = -1;
+  int L = 0;
+  int R = n-1;
+  while (L <= R){
+    const int m = (L+R)/2;
+    if(sortedArr[m] < value){
+      L = m + 1;
+    } else if (sortedArr[m] > value){
+      R = m - 1;
+    } else {
+      return m;
+    }
+  }
+  return fail;
 }
 
 }
