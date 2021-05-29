@@ -614,29 +614,13 @@ void fem_assembly_device() {
                     (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
                   HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
                   HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  // big search -- need to try and avoid!
-                  //int row_idx = bisection_search_index(rows, row, nrows);
                   int row_idx = globToLocRowMap[row];
                   long long row_start = rowOffsets[row_idx];
                   long long row_end = rowOffsets[row_idx+1];
                   int ncolsSearch = row_end - row_start + 1;
-                  // small search
                   int col_idx = bisection_search_index(cols+row_start, col, ncolsSearch);
                   int id = row_start + col_idx;
                   vals[id] += A_loc[i][j];
-                  //HYPRE_Real A_val = A_loc[i][j];
-                  HYPRE_Int ncols = 1;
-                  double tol = 1e-7;
-                  int err = 0;
-
-                  //if (fabs(A_val) > tol) 
-                  //  err = HYPRE_IJMatrixAddToValues(A_bc, 1, &ncols, &row, &col, &A_val);
-                  //if (err != 0) {
-                  //  if (comm.id == 0)
-                  //    printf("There was an error with entry A(%lld, %lld) = %f\n",
-                  //           row, col, A_val);
-                  //  exit(EXIT_FAILURE);
-                  //}
                 }
               }
             }
