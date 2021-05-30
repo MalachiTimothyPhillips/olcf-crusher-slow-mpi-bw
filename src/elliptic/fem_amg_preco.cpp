@@ -16,8 +16,14 @@
 #include <algorithm>
 #include <vector>
 
+#define p_maxCols (32)
+
 namespace{
 
+void compute_ncols(long long nrows,
+  const std::vector<long long>& rows,
+  std::vector<int>& ncols,
+  std::vector<long long>& tentativeCols);
 occa::memory scratchOrAllocateMemory(int nWords,
   int sizeT,
   void* src,
@@ -27,17 +33,44 @@ occa::memory scratchOrAllocateMemory(int nWords,
   bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
 static occa::kernel computeNColsKernel;
+static occa::kernel extractColsKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
 static occa::memory o_y;
 static occa::memory o_z;
 
-int bisection_search_index(long long* sortedArr, long long value, long long start, long long end);
-
 void build_kernel();
 
 void fem_assembly_device();
 
+long long bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
+{
+  long long fail = -1;
+  long long L = start;
+  long long R = end-1;
+  while (L <= R){
+    const long long m = (L+R)/2;
+    if(sortedArr[m] < value){
+      L = m + 1;
+    } else if (sortedArr[m] > value){
+      R = m - 1;
+    } else {
+      return m;
+    }
+  }
+  return fail;
+}
+
+long long linear_search_index(const long long* unsortedArr, long long value, long long start, long long end)
+{
+  long long fail = -1;
+  for(long long idx = start; idx < end; ++idx){
+    if(unsortedArr[idx] == value){
+      return idx;
+    }
+  }
+  return fail;
+}
 void matrix_distribution();
 void fem_assembly();
 void mesh_connectivity(int[8][3], int[8][4]);
@@ -282,6 +315,8 @@ void matrix_distribution() {
 }
 void fem_assembly_device() {
 
+  double tStart = MPI_Wtime();
+
   /* Mesh connectivity (Can be changed to fill-out or one-per-vertex) */
   constexpr int num_fem = 8;
   int v_coord[8][3];
@@ -301,233 +336,134 @@ void fem_assembly_device() {
   int E_y = n_y - 1;
   int E_z = n_z - 1;
 
-  std::vector<long long> locToGlob;
-  long long numRowContribs = 0;
+  std::vector<long long> rows;
+  long long nrows = 0;
   {
     std::vector<bool> found(row_end, false);
     for(int id = 0; id < n_xyze; ++id){
       if(pmask[id] > 0.0){
         long long row = glo_num[id];
         if(!found[row]){
-          locToGlob.push_back(row);
-          numRowContribs++;
+          rows.push_back(row);
+          nrows++;
           found[row] = true;
         }
       }
     }
   }
 
-  std::sort(locToGlob.begin(), locToGlob.end());
+  std::sort(rows.begin(), rows.end());
 
-  {
-    const int tentativeMaxCols = 32;
-    const long long maxNNZ = tentativeMaxCols * numRowContribs;
-    long long bytesRemaining = platform->o_mempool.bytesAllocated;
-    long long byteOffset = 0;
-    long long bytesAllocated = 0;
-
-    bool allocGloNum = false;
-    occa::memory o_glo_num = scratchOrAllocateMemory(n_xyze,
-     sizeof(long long),
-     glo_num,
-     bytesRemaining,
-     byteOffset,
-     bytesAllocated,
-     allocGloNum);
-
-    bool allocMask = false;
-    occa::memory o_mask = scratchOrAllocateMemory(n_xyze,
-     sizeof(double),
-     pmask,
-     bytesRemaining,
-     byteOffset,
-     bytesAllocated,
-     allocMask);
-
-    bool allocLocToGlob = false;
-    occa::memory o_locToGlob = scratchOrAllocateMemory(numRowContribs,
-     sizeof(long long),
-     locToGlob.data(), 
-     bytesRemaining,
-     byteOffset,
-     bytesAllocated,
-     allocLocToGlob);
-
-    std::vector<int> ncols(numRowContribs, 0);
-    bool allocNCols = false;
-    occa::memory o_ncols = scratchOrAllocateMemory(numRowContribs,
-     sizeof(int),
-     ncols.data(), 
-     bytesRemaining,
-     byteOffset,
-     bytesAllocated,
-     allocNCols);
-
-    std::vector<long long> cols(maxNNZ, -1);
-    bool allocCols = false;
-    occa::memory o_cols = scratchOrAllocateMemory(maxNNZ,
-     sizeof(long long),
-     cols.data(), 
-     bytesRemaining,
-     byteOffset,
-     bytesAllocated,
-     allocCols);
-
-    computeNColsKernel(
-      n_elem,
-      (int)numRowContribs,
-      o_mask,
-      o_glo_num,
-      o_locToGlob,
-      o_ncols,
-      o_cols
-    );
-    if(allocMask) o_mask.free();
-    if(allocGloNum) o_glo_num.free();
-    if(allocLocToGlob) o_locToGlob.free();
-    if(allocNCols) o_ncols.free();
-    if(allocCols) o_cols.free();
-
-     
-  }
-
-
-  std::unordered_map<long long, std::unordered_set<long long>> graph;
-  double tStart = MPI_Wtime();
-  for (int e = 0; e < n_elem; e++) {
-    /* Cycle through collocated quads/hexes */
-    for (int s_z = 0; s_z < E_z; s_z++) {
-      for (int s_y = 0; s_y < E_y; s_y++) {
-        for (int s_x = 0; s_x < E_x; s_x++) {
-          /* Get indices */
-          int s[n_dim];
-
-          s[0] = s_x;
-          s[1] = s_y;
-          s[2] = s_z;
-
-          int idx[8];
-
-          for (int i = 0; i < 8; i++) {
-            idx[i] = 0;
-
-            for (int d = 0; d < n_dim; d++) {
-              idx[i] += (s[d] + v_coord[i][d]) * pow(n_x, d);
-            }
-          }
-          for (int t = 0; t < num_fem; t++) {
-            for (int i = 0; i < n_dim + 1; i++) {
-              for (int j = 0; j < n_dim + 1; j++) {
-                if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) &&
-                    (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
-                  HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
-                  HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  graph[row].emplace(col);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  const long long nrows = graph.size();
-  printf("nrows = %ld\n", nrows);
-  long long * rows = (long long*) malloc(nrows * sizeof(long long));
-  long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
-  long long * ncols = (long long*) malloc(nrows * sizeof(long long));
-  long long nnz = 0;
-  long long ctr = 0;
-
-  for(auto&& row_and_colset : graph){
-    rows[ctr++] = row_and_colset.first;
-    nnz += row_and_colset.second.size();
-  }
-  long long * cols = (long long*) malloc(nnz * sizeof(long long));
-  double* vals = (double*) calloc(nnz,sizeof(double));
-  std::sort(rows, rows + nrows);
-  long long entryCtr = 0;
-  rowOffsets[0] = 0;
-  for(long long localrow = 0; localrow < nrows; ++localrow){
-    const long long row = rows[localrow];
-    const auto& colset = graph[row];
-    const int size = colset.size();
-    ncols[localrow] = size;
-    rowOffsets[localrow+1] = rowOffsets[localrow] + size;
-    for(auto&& col : colset){
-      cols[entryCtr++] = col;
-    }
-  }
-
-  
-  if(platform->comm.mpiRank == 0) printf("Symbolic graph construction took: (%f)s\n", MPI_Wtime() - tStart);
-
-  tStart = MPI_Wtime();
-  struct AllocationTracker{
-    bool o_maskAlloc;
-    bool o_glo_numAlloc;
-    bool o_rowOffsetsAlloc;
-    bool o_rowsAlloc;
-    bool o_colsAlloc;
-    bool o_valsAlloc;
-  };
-  AllocationTracker allocations;
+  const int tentativeMaxCols = p_maxCols;
+  const long long maxNNZ = tentativeMaxCols * nrows;
   long long bytesRemaining = platform->o_mempool.bytesAllocated;
   long long byteOffset = 0;
   long long bytesAllocated = 0;
-  occa::memory o_mask = scratchOrAllocateMemory(
-    n_xyze,
-    sizeof(double),
-    pmask,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_maskAlloc
+
+  bool allocGloNum = false;
+  occa::memory o_glo_num = scratchOrAllocateMemory(n_xyze,
+   sizeof(long long),
+   glo_num,
+   bytesRemaining,
+   byteOffset,
+   bytesAllocated,
+   allocGloNum);
+
+  bool allocMask = false;
+  occa::memory o_mask = scratchOrAllocateMemory(n_xyze,
+   sizeof(double),
+   pmask,
+   bytesRemaining,
+   byteOffset,
+   bytesAllocated,
+   allocMask);
+
+  bool allocRows = false;
+  occa::memory o_rows = scratchOrAllocateMemory(nrows,
+   sizeof(long long),
+   rows.data(), 
+   bytesRemaining,
+   byteOffset,
+   bytesAllocated,
+   allocRows);
+
+  std::vector<int> ncols(nrows, 0);
+  occa::memory o_ncols = platform->device.malloc(nrows*sizeof(int), ncols.data());
+
+  std::vector<long long> tentativeCols(maxNNZ, -1);
+  occa::memory o_tentativeCols = platform->device.malloc(maxNNZ * sizeof(long long), tentativeCols.data());
+
+#if 0
+  tentativeCols.clear();
+  computeNColsKernel(
+    n_elem,
+    (int)nrows,
+    o_mask,
+    o_glo_num,
+    o_rows,
+    o_ncols,
+    o_tentativeCols
   );
-  occa::memory o_glo_num = scratchOrAllocateMemory(
-    n_xyze,
-    sizeof(long long),
-    glo_num,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_glo_numAlloc
+  o_ncols.copyTo(ncols.data(), nrows * sizeof(int));
+#else
+  compute_ncols(nrows, rows, ncols, tentativeCols);
+  o_tentativeCols.copyFrom(tentativeCols.data(), maxNNZ * sizeof(long long));
+  o_ncols.copyFrom(ncols.data(), nrows * sizeof(int));
+#endif
+
+
+  long long nnz = 0;
+  for(auto && ncol : ncols) nnz += ncol;
+
+  std::vector<long long> cols(nnz, 0);
+  bool allocCols = false;
+  occa::memory o_cols = scratchOrAllocateMemory(nnz,
+   sizeof(long long),
+   cols.data(), 
+   bytesRemaining,
+   byteOffset,
+   bytesAllocated,
+   allocCols);
+
+  std::vector<long long> rowOffsets(nrows+1, 0);
+  rowOffsets[0] = 0;
+  for(int row = 0; row < nrows; ++row){
+    rowOffsets[row+1] = rowOffsets[row] + ncols[row];
+  }
+  bool allocRowOffsets = 0;
+  occa::memory o_rowOffsets = scratchOrAllocateMemory(nrows+1,
+   sizeof(long long),
+   rowOffsets.data(), 
+   bytesRemaining,
+   byteOffset,
+   bytesAllocated,
+   allocRowOffsets);
+
+  extractColsKernel(
+    (int)nrows,
+    o_rows,
+    o_ncols,
+    o_tentativeCols,
+    o_rowOffsets,
+    o_cols
   );
-  occa::memory o_rows = scratchOrAllocateMemory(
-    nrows,
-    sizeof(long long),
-    rows,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_rowsAlloc
-  );
-  occa::memory o_rowOffsets = scratchOrAllocateMemory(
-    nrows+1,
-    sizeof(long long),
-    rowOffsets,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_rowOffsetsAlloc
-  );
-  occa::memory o_cols = scratchOrAllocateMemory(
-    nnz,
-    sizeof(long long),
-    cols,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_colsAlloc
-  );
+
+  o_tentativeCols.free();
+  o_ncols.free();
+  o_cols.copyTo(cols.data(), nnz*sizeof(long long));
+
+  bool valsAlloc = false;
+
+  std::vector<double> vals(nnz, 0.0);
+     
   occa::memory o_vals = scratchOrAllocateMemory(
     nnz,
     sizeof(double),
-    vals,
+    vals.data(),
     bytesRemaining,
     byteOffset,
     bytesAllocated,
-    allocations.o_valsAlloc
+    valsAlloc
   );
 
   MPI_Allreduce(MPI_IN_PLACE, &bytesAllocated, 1, MPI_LONG_LONG, MPI_SUM, platform->comm.mpiComm);
@@ -549,28 +485,25 @@ void fem_assembly_device() {
     o_cols,
     o_vals
   );
-  o_vals.copyTo(vals, nnz * sizeof(double));
+  o_vals.copyTo(vals.data(), nnz * sizeof(double));
 
-  if(allocations.o_maskAlloc) o_mask.free();
-  if(allocations.o_glo_numAlloc) o_glo_num.free();
-  if(allocations.o_rowOffsetsAlloc) o_rowOffsets.free();
-  if(allocations.o_rowsAlloc) o_rows.free();
-  if(allocations.o_colsAlloc) o_cols.free();
-  if(allocations.o_valsAlloc) o_vals.free();
+  if(allocMask) o_mask.free();
+  if(allocGloNum) o_glo_num.free();
+  if(allocRowOffsets) o_rowOffsets.free();
+  if(allocRows) o_rows.free();
+  if(valsAlloc) o_vals.free();
 
-  int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, ncols, rows, cols, vals);
+  std::vector<long long> nColsLongLong(nrows, 0);
+  for(int rowid = 0; rowid < nrows; ++rowid)
+    nColsLongLong[rowid] = ncols[rowid];
+
+  int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, nColsLongLong.data(), rows.data(), cols.data(), vals.data());
   if (err != 0) {
     if (comm.id == 0)
       printf("err!\n");
     exit(EXIT_FAILURE);
   }
-  if(platform->comm.mpiRank == 0) printf("Actual graph construction took: (%f)s\n", MPI_Wtime() - tStart);
-
-  free(rows);
-  free(rowOffsets);
-  free(ncols);
-  free(cols);
-  free(vals);
+  if(platform->comm.mpiRank == 0) printf("Graph construction took: (%f)s\n", MPI_Wtime() - tStart);
 }
 
 void fem_assembly() {
@@ -645,9 +578,16 @@ void build_kernel(){
     stiffnessKernelInfo
   );
 
+#if 0
   computeNColsKernel = platform->device.buildKernel(
     filename,
     "computeNCols",
+    stiffnessKernelInfo
+  );
+#endif
+  extractColsKernel = platform->device.buildKernel(
+    filename,
+    "extractCols",
     stiffnessKernelInfo
   );
 }
@@ -745,5 +685,68 @@ occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long
   return o_mem;
 }
 long long maximum(long long a, long long b) { return a > b ? a : b; }
+void compute_ncols(long long nrows,
+  const std::vector<long long>& rows,
+  std::vector<int>& ncols,
+  std::vector<long long>& cols)
+{
+  const int num_fem = 8;
+  int v_coord[8][3];
+  int t_map[8][4];
+  mesh_connectivity(v_coord, t_map);
+  for (int e = 0; e < n_elem; e++) {
+    /* Cycle through collocated quads/hexes */
+    for (int s_z = 0; s_z < n_x-1; s_z++) {
+      for (int s_y = 0; s_y < n_x-1; s_y++) {
+        for (int s_x = 0; s_x < n_x-1; s_x++) {
+
+          /* Get indices */
+          int s[n_dim];
+
+          s[0] = s_x;
+          s[1] = s_y;
+          s[2] = s_z;
+
+          int idx[8];
+
+          for (int i = 0; i < 8; i++) {
+            idx[i] = 0;
+
+            for (int d = 0; d < n_dim; d++) {
+              idx[i] += (s[d] + v_coord[i][d]) * pow(n_x, d);
+            }
+          }
+
+          /* Cycle through collocated triangles/tets */
+          for (int t = 0; t < num_fem; t++) {
+            for (int i = 0; i < n_dim + 1; i++) {
+              for (int j = 0; j < n_dim + 1; j++) {
+                if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) &&
+                    (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
+                  long long row = glo_num[idx[t_map[t][i]] + e * n_xyz];
+                  long long col = glo_num[idx[t_map[t][j]] + e * n_xyz];
+
+                  long long local_row_id = bisection_search_index(rows.data(), row, 0, nrows);
+
+                  {
+                    int ncol = ncols[local_row_id];
+                    long long index = linear_search_index(cols.data(), col, local_row_id * p_maxCols, local_row_id  * p_maxCols + ncol);
+                    if(index == -1){
+                      if(ncol >= p_maxCols || ncol < 0){
+                        printf("ncol = %d\n", ncol);
+                      }
+                      cols[local_row_id * p_maxCols + ncol] = col;
+                      ncols[local_row_id] += 1;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 }

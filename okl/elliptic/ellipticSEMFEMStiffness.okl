@@ -359,6 +359,8 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
 
 #define p_maxCols (32)
 
+#if 0
+// Use of this kernel requires being able to use a lock on the @atomic section below...
 @kernel void computeNCols(
   const int Nelements,
   const int nrows,
@@ -417,14 +419,17 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                     printf("invalid row_id (%d, %d, %d, %d, %d, %d, %d)\n", e, s_z, s_y, s_x, t, i, j);
                     printf("row = %ld\n", row);
                   }
-                  long long index = linear_search_index_atomic(cols, col, local_row_id * p_maxCols, (local_row_id + 1) * p_maxCols);
-                  if(index == -1){
-                    int ncol = ncols[local_row_id];
-                    if(ncol >= p_maxCols || ncol < 0){
-                      printf("ncol = %d\n", ncol);
+                  @atomic {
+                    long long index = linear_search_index_atomic(cols, col, local_row_id * p_maxCols, (local_row_id + 1) * p_maxCols);
+                    if(index == -1){
+                      int ncol = ncols[local_row_id];
+                      if(ncol >= p_maxCols || ncol < 0){
+                        printf("ncol = %d\n", ncol);
+                      }
+                      cols[local_row_id * p_maxCols + ncol] = col;
+                      //@atomic ncols[local_row_id] += 1;
+                      ncols[local_row_id] += 1;
                     }
-                    cols[local_row_id * p_maxCols + ncol] = col;
-                    @atomic ncols[local_row_id] += 1;
                   }
                 }
               }
@@ -432,6 +437,25 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
           }
         }
       }
+    }
+  }
+}
+#endif
+
+@kernel void extractCols(
+  const int nrows,
+  @restrict const long long * locToGlob,
+  @restrict const int * ncols,
+  @restrict const long long * cols,
+  @restrict const long long * rowOffsets,
+  @restrict long long * realCols
+)
+{
+  for (int row = 0; row < nrows; row++;@tile(p_blockSize,@outer,@inner)) {
+    const int ncol = ncols[row];
+    long long row_start = rowOffsets[row];
+    for(int col_id = 0; col_id < ncol; ++col_id){
+      realCols[row_start + col_id] = cols[row * p_maxCols + col_id];
     }
   }
 }
