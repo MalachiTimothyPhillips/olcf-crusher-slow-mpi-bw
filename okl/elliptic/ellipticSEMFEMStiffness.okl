@@ -2,9 +2,9 @@
 #define n_dim (3)
 #define num_fem (8)
 
-int bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
+long long bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
 {
-  int fail = -1;
+  long long fail = -1;
   long long L = start;
   long long R = end-1;
   while (L <= R){
@@ -15,6 +15,17 @@ int bisection_search_index(const long long* sortedArr, long long value, long lon
       R = m - 1;
     } else {
       return m;
+    }
+  }
+  return fail;
+}
+
+long long linear_search_index(const long long* unsortedArr, long long value, long long start, long long end)
+{
+  long long fail = -1;
+  for(long long idx = start; idx < end; ++idx){
+    if(unsortedArr[idx] == value){
+      return idx;
     }
   }
   return fail;
@@ -311,11 +322,20 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                     (mask[idx[t_map[t][j]] + e * p_Np] > 0.0)) {
                   long long row = glo_num[idx[t_map[t][i]] + e * p_Np];
                   long long col = glo_num[idx[t_map[t][j]] + e * p_Np];
-                  int local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  long long local_row_id;
+                  if(p_rows_sorted)
+                    local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  else
+                    local_row_id = linear_search_index(rows, row, 0, nrows);
                   long long start = row_offsets[local_row_id];
                   long long end = row_offsets[local_row_id+1];
-                  int col_idx = bisection_search_index(cols, col, start, end);
-                  int id = col_idx;
+
+                  long long col_idx;
+                  if(p_cols_sorted)
+                    col_idx = bisection_search_index(cols, col, start, end);
+                  else
+                    col_idx = linear_search_index(cols, col, start, end);
+                  long long id = col_idx;
                   @atomic stiffnessMatrix[id] += A_loc[i][j];
                 }
               }
