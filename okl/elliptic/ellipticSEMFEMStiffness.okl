@@ -2,6 +2,23 @@
 #define n_dim (3)
 #define num_fem (8)
 
+int bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
+{
+  int fail = -1;
+  long long L = start;
+  long long R = end-1;
+  while (L <= R){
+    const long long m = (L+R)/2;
+    if(sortedArr[m] < value){
+      L = m + 1;
+    } else if (sortedArr[m] > value){
+      R = m - 1;
+    } else {
+      return m;
+    }
+  }
+  return fail;
+}
 
 /* Basis functions and derivatives in 3D */
  double phi_3D_1(double q_r[4][3], int q) { return q_r[q][0]; }
@@ -177,53 +194,45 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
     }
   }
 }
-int compute_id(int e, int sz, int sy, int sx, int tfem, int j, int i)
-{
-  const int E_x = p_Nq - 1;
-  const int E_y = p_Nq - 1;
-  const int E_z = p_Nq - 1;
-  const int ndimp1 = n_dim + 1;
-  const int elem_offset = e * E_x * E_y * E_z * num_fem * ndimp1 * ndimp1;
-  const int sz_offset = sz * E_x * E_y * num_fem * ndimp1 * ndimp1;
-  const int sy_offset = sy * E_x * num_fem * ndimp1 * ndimp1;
-  const int sx_offset = sx * num_fem * ndimp1 * ndimp1;
-  const int tfem_offset = tfem * ndimp1 * ndimp1;
-  const int j_offset = j * ndimp1;
-  const int i_offset = i;
-  return elem_offset +
-    sz_offset +
-    sy_offset +
-    sx_offset +
-    tfem_offset +
-    j_offset +
-    i_offset;
-}
-
 @kernel void computeStiffnessMatrix(
   const int Nelements,
+  const int nrows,
   @restrict const double * x,
   @restrict const double * y,
   @restrict const double * z,
-  @restrict double * stiffnessMat,
+  @restrict const double * mask,
+  @restrict const long long * glo_num,
+  @restrict const long long * rows,
+  @restrict const long long * row_offsets,
+  @restrict const long long * cols,
+  @restrict double * stiffnessMatrix,
 )
 {
 
   for (int e = 0; e < Nelements; e++;@outer) {
-    @exclusive double q_r[4][3];
-    @exclusive double q_w[4];
-    @exclusive int v_coord[8][3];
-    @exclusive int t_map[8][4];
+    @shared double q_r[4][3];
+    @shared double q_w[4];
+    @shared int v_coord[8][3];
+    @shared int t_map[8][4];
 
-    @exclusive double A_loc[4][4];
-    @exclusive double J_xr[3][3];
-    @exclusive double J_rx[3][3];
-    @exclusive double x_t[3][4];
-    @exclusive double q_x[3];
+    for (int s_y = 0; s_y < p_Nq-1; s_y++;@inner) {
+      for (int s_x = 0; s_x < p_Nq-1; s_x++;@inner) {
+        if(s_x == 0 && s_y == 0){
+          quadrature_rule(q_r, q_w);
+          mesh_connectivity(v_coord, t_map);
+        }
+      }
+    }
     /* Cycle through collocated quads/hexes */
     for (int s_z = 0; s_z < p_Nq-1; s_z++) {
       @barrier("local");
       for (int s_y = 0; s_y < p_Nq-1; s_y++;@inner) {
         for (int s_x = 0; s_x < p_Nq-1; s_x++;@inner) {
+          double A_loc[4][4];
+          double J_xr[3][3];
+          double J_rx[3][3];
+          double x_t[3][4];
+          double q_x[3];
           if(s_z == 0){
             quadrature_rule(q_r, q_w);
             mesh_connectivity(v_coord, t_map);
@@ -298,8 +307,17 @@ int compute_id(int e, int sz, int sy, int sx, int tfem, int j, int i)
             }
             for (int i = 0; i < n_dim + 1; i++) {
               for (int j = 0; j < n_dim + 1; j++) {
-                const int id = compute_id(e,s_z,s_y,s_x,t,j,i);
-                stiffnessMat[id] = A_loc[i][j];
+                if ((mask[idx[t_map[t][i]] + e * p_Np] > 0.0) &&
+                    (mask[idx[t_map[t][j]] + e * p_Np] > 0.0)) {
+                  long long row = glo_num[idx[t_map[t][i]] + e * p_Np];
+                  long long col = glo_num[idx[t_map[t][j]] + e * p_Np];
+                  int local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  long long start = row_offsets[local_row_id];
+                  long long end = row_offsets[local_row_id+1];
+                  int col_idx = bisection_search_index(cols, col, start, end);
+                  int id = col_idx;
+                  @atomic stiffnessMatrix[id] += A_loc[i][j];
+                }
               }
             }
           }

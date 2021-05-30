@@ -17,7 +17,7 @@
 
 namespace{
 
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, bool& allocated);
+occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
@@ -519,23 +519,25 @@ void fem_assembly_device() {
   if(platform->comm.mpiRank == 0) printf("Symbolic graph construction took: (%f)s\n", MPI_Wtime() - tStart);
 
   tStart = MPI_Wtime();
-#if 0
   struct AllocationTracker{
     bool o_maskAlloc;
     bool o_glo_numAlloc;
     bool o_rowOffsetsAlloc;
+    bool o_rowsAlloc;
     bool o_colsAlloc;
-    bool o_valAlloc;
+    bool o_valsAlloc;
   };
   AllocationTracker allocations;
   long long bytesRemaining = platform->o_mempool.bytesAllocated;
   long long byteOffset = 0;
+  long long bytesAllocated = 0;
   occa::memory o_mask = scratchOrAllocateMemory(
     n_xyze,
     sizeof(double),
     pmask,
     bytesRemaining,
     byteOffset,
+    bytesAllocated,
     allocations.o_maskAlloc
   );
   occa::memory o_glo_num = scratchOrAllocateMemory(
@@ -544,7 +546,17 @@ void fem_assembly_device() {
     glo_num,
     bytesRemaining,
     byteOffset,
+    bytesAllocated,
     allocations.o_glo_numAlloc
+  );
+  occa::memory o_rows = scratchOrAllocateMemory(
+    nrows,
+    sizeof(long long),
+    rows,
+    bytesRemaining,
+    byteOffset,
+    bytesAllocated,
+    allocations.o_rowsAlloc
   );
   occa::memory o_rowOffsets = scratchOrAllocateMemory(
     nrows+1,
@@ -552,6 +564,7 @@ void fem_assembly_device() {
     rowOffsets,
     bytesRemaining,
     byteOffset,
+    bytesAllocated,
     allocations.o_rowOffsetsAlloc
   );
   occa::memory o_cols = scratchOrAllocateMemory(
@@ -560,6 +573,7 @@ void fem_assembly_device() {
     cols,
     bytesRemaining,
     byteOffset,
+    bytesAllocated,
     allocations.o_colsAlloc
   );
   occa::memory o_vals = scratchOrAllocateMemory(
@@ -568,121 +582,38 @@ void fem_assembly_device() {
     vals,
     bytesRemaining,
     byteOffset,
+    bytesAllocated,
     allocations.o_valsAlloc
   );
+
+  MPI_Allreduce(MPI_IN_PLACE, &bytesAllocated, 1, MPI_LONG_LONG, MPI_SUM, platform->comm.mpiComm);
+  double bytesTotal = (double) bytesAllocated / 1e9;
+  double bytesPerProc = bytesTotal / platform->comm.mpiCommSize;
+
+  if(platform->comm.mpiRank == 0) printf("Allocated in total %f GB, or %f GB/proc\n", bytesTotal, bytesPerProc);
+
   computeStiffnessMatrixKernel(
     n_elem,
+    (int)nrows,
     o_x,
     o_y,
     o_z,
     o_mask,
     o_glo_num,
+    o_rows,
     o_rowOffsets,
     o_cols,
     o_vals
   );
   o_vals.copyTo(vals, nnz * sizeof(double));
 
-  if(allocations.o_maskAlloc) o_maskAlloc.free();
-  if(allocations.o_glo_numAlloc) o_glo_numAlloc.free();
-  if(allocations.o_rowOffsetsAlloc) o_rowOffsetsAlloc.free();
-  if(allocations.o_colsAlloc) o_colsAlloc.free();
-  if(allocations.o_valAlloc) o_valAlloc.free();
-#else
-  for (int e = 0; e < n_elem; e++) {
-    /* Cycle through collocated quads/hexes */
-    for (int s_z = 0; s_z < E_z; s_z++) {
-      for (int s_y = 0; s_y < E_y; s_y++) {
-        for (int s_x = 0; s_x < E_x; s_x++) {
-          /* Get indices */
-          int s[n_dim];
+  if(allocations.o_maskAlloc) o_mask.free();
+  if(allocations.o_glo_numAlloc) o_glo_num.free();
+  if(allocations.o_rowOffsetsAlloc) o_rowOffsets.free();
+  if(allocations.o_rowsAlloc) o_rows.free();
+  if(allocations.o_colsAlloc) o_cols.free();
+  if(allocations.o_valsAlloc) o_vals.free();
 
-          s[0] = s_x;
-          s[1] = s_y;
-          s[2] = s_z;
-
-          int idx[(int)(pow(2, n_dim))];
-
-          for (int i = 0; i < pow(2, n_dim); i++) {
-            idx[i] = 0;
-
-            for (int d = 0; d < n_dim; d++) {
-              idx[i] += (s[d] + v_coord[i][d]) * pow(n_x, d);
-            }
-          }
-
-          /* Cycle through collocated triangles/tets */
-          for (int t = 0; t < num_fem; t++) {
-            /* Get vertices */
-            for (int i = 0; i < n_dim + 1; i++) {
-                x_t[0][i] = x_m[idx[t_map[t][i]] + e * n_xyz];
-                x_t[1][i] = y_m[idx[t_map[t][i]] + e * n_xyz];
-                x_t[2][i] = z_m[idx[t_map[t][i]] + e * n_xyz];
-            }
-
-            /* Local FEM matrices */
-            /* Reset local stiffness and mass matrices */
-            for (int i = 0; i < n_dim + 1; i++) {
-              for (int j = 0; j < n_dim + 1; j++) {
-                A_loc[i][j] = 0.0;
-              }
-            }
-
-            /* Build local stiffness matrices by applying quadrature rules */
-            J_xr_map(J_xr, q_r, x_t);
-            inverse(J_rx, J_xr);
-            const double det_J_xr = determinant(J_xr);
-            for (int q = 0; q < n_quad; q++) {
-              /* From r to x */
-              x_map(q_x, q_r, x_t, q);
-
-              /* Integrand */
-              for (int i = 0; i < n_dim + 1; i++) {
-                double deriv_i[3];
-                dphi(deriv_i, i);
-                for (int j = 0; j < n_dim + 1; j++) {
-                  double deriv_j[3];
-                  dphi(deriv_j, j);
-                  int alpha, beta;
-                  double func = 0.0;
-
-                  for (alpha = 0; alpha < n_dim; alpha++) {
-                    double a = 0.0, b = 0.0;
-
-                    for (beta = 0; beta < n_dim; beta++) {
-                      a += deriv_i[beta] * J_rx[beta][alpha];
-
-                      b += deriv_j[beta] * J_rx[beta][alpha];
-                    }
-
-                    func += a * b;
-                  }
-
-                  A_loc[i][j] += func * det_J_xr * q_w[q];
-                }
-              }
-            }
-            for (int i = 0; i < n_dim + 1; i++) {
-              for (int j = 0; j < n_dim + 1; j++) {
-                if ((pmask[idx[t_map[t][i]] + e * n_xyz] > 0.0) &&
-                    (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
-                  HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
-                  HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  int local_row_id = bisection_search_index(rows, row, 0, nrows);
-                  long long start = rowOffsets[local_row_id];
-                  long long end = rowOffsets[local_row_id+1];
-                  int col_idx = bisection_search_index(cols, col, start, end);
-                  int id = col_idx;
-                  vals[id] += A_loc[i][j];
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-#endif
   int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, ncols, rows, cols, vals);
   if (err != 0) {
     if (comm.id == 0)
@@ -690,6 +621,7 @@ void fem_assembly_device() {
     exit(EXIT_FAILURE);
   }
   if(platform->comm.mpiRank == 0) printf("Actual graph construction took: (%f)s\n", MPI_Wtime() - tStart);
+
   free(rows);
   free(rowOffsets);
   free(ncols);
@@ -963,7 +895,7 @@ int bisection_search_index(long long* sortedArr, long long value, long long star
   }
   return fail;
 }
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, bool& allocated)
+occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated)
 {
   occa::memory o_mem;
   if(nWords * sizeT < bytesRemaining){
@@ -975,6 +907,7 @@ occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long
   } else {
     o_mem = platform->device.malloc(nWords * sizeT, src);
     allocated = true;
+    bytesAllocated += nWords * sizeT;
   }
   return o_mem;
 }
