@@ -13,16 +13,18 @@
 #include "fem_amg_preco.hpp"
 #include <map>
 #include <set>
+#include <cassert>
 
 namespace{
 
+occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
 static occa::memory o_y;
 static occa::memory o_z;
 
-int bisection_search_index(long long* sortedArr, long long value, int n);
+int bisection_search_index(long long* sortedArr, long long value, long long start, long long end);
 
 void build_kernel();
 
@@ -60,7 +62,6 @@ static HYPRE_IJMatrix A_bc;
 static HYPRE_IJMatrix A_test;
 static int rank;
 
-static std::map<long long, std::set<long long>> graph;
 }
 
 static struct comm comm;
@@ -418,28 +419,7 @@ void fem_assembly_host() {
     }
   }
 }
-int compute_id(int e, int sz, int sy, int sx, int tfem, int j, int i)
-{
-  const int E_x = n_x - 1;
-  const int E_y = n_y - 1;
-  const int E_z = n_z - 1;
-  const int num_fem = 8;
-  const int ndimp1 = n_dim + 1;
-  const int elem_offset = e * E_x * E_y * E_z * num_fem * ndimp1 * ndimp1;
-  const int sz_offset = sz * E_x * E_y * num_fem * ndimp1 * ndimp1;
-  const int sy_offset = sy * E_x * num_fem * ndimp1 * ndimp1;
-  const int sx_offset = sx * num_fem * ndimp1 * ndimp1;
-  const int tfem_offset = tfem * ndimp1 * ndimp1;
-  const int j_offset = j * ndimp1;
-  const int i_offset = i;
-  return elem_offset +
-    sz_offset +
-    sy_offset +
-    sx_offset +
-    tfem_offset +
-    j_offset +
-    i_offset;
-}
+
 void fem_assembly_device() {
   /* Set quadrature rule */
   constexpr int n_quad = 4;
@@ -467,6 +447,7 @@ void fem_assembly_device() {
   int E_y = n_y - 1;
   int E_z = n_z - 1;
 
+  std::map<long long, std::set<long long>> graph;
   double tStart = MPI_Wtime();
   for (int e = 0; e < n_elem; e++) {
     /* Cycle through collocated quads/hexes */
@@ -496,7 +477,11 @@ void fem_assembly_device() {
                     (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
                   HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
                   HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  graph[row].emplace(col);
+                  if(graph.count(row) == 0){
+                    graph[row] = {{col}};
+                  } else {
+                    graph[row].insert(col);
+                  }
                 }
               }
             }
@@ -505,7 +490,6 @@ void fem_assembly_device() {
       }
     }
   }
-  long long * globToLocRowMap = (long long*) malloc(row_end * sizeof(long long));
   const long long nrows = graph.size();
   long long * rows = (long long*) malloc(nrows * sizeof(long long));
   long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
@@ -516,13 +500,13 @@ void fem_assembly_device() {
   for(auto && row_and_colset : graph){
     const auto size = row_and_colset.second.size();
     const auto row = row_and_colset.first;
-    globToLocRowMap[row] = ctr;
     rows[ctr] = row_and_colset.first;
     ncols[ctr] = size;
     rowOffsets[ctr+1] = rowOffsets[ctr] + size;
     nnz += size;
     ctr++;
   }
+
   long long * cols = (long long*) malloc(nnz * sizeof(long long));
   ctr = 0;
   for(auto && row_and_colset : graph){
@@ -535,6 +519,76 @@ void fem_assembly_device() {
   if(platform->comm.mpiRank == 0) printf("Symbolic graph construction took: (%f)s\n", MPI_Wtime() - tStart);
 
   tStart = MPI_Wtime();
+#if 0
+  struct AllocationTracker{
+    bool o_maskAlloc;
+    bool o_glo_numAlloc;
+    bool o_rowOffsetsAlloc;
+    bool o_colsAlloc;
+    bool o_valAlloc;
+  };
+  AllocationTracker allocations;
+  long long bytesRemaining = platform->o_mempool.bytesAllocated;
+  long long byteOffset = 0;
+  occa::memory o_mask = scratchOrAllocateMemory(
+    n_xyze,
+    sizeof(double),
+    pmask,
+    bytesRemaining,
+    byteOffset,
+    allocations.o_maskAlloc
+  );
+  occa::memory o_glo_num = scratchOrAllocateMemory(
+    n_xyze,
+    sizeof(long long),
+    glo_num,
+    bytesRemaining,
+    byteOffset,
+    allocations.o_glo_numAlloc
+  );
+  occa::memory o_rowOffsets = scratchOrAllocateMemory(
+    nrows+1,
+    sizeof(long long),
+    rowOffsets,
+    bytesRemaining,
+    byteOffset,
+    allocations.o_rowOffsetsAlloc
+  );
+  occa::memory o_cols = scratchOrAllocateMemory(
+    nnz,
+    sizeof(long long),
+    cols,
+    bytesRemaining,
+    byteOffset,
+    allocations.o_colsAlloc
+  );
+  occa::memory o_vals = scratchOrAllocateMemory(
+    nnz,
+    sizeof(double),
+    vals,
+    bytesRemaining,
+    byteOffset,
+    allocations.o_valsAlloc
+  );
+  computeStiffnessMatrixKernel(
+    n_elem,
+    o_x,
+    o_y,
+    o_z,
+    o_mask,
+    o_glo_num,
+    o_rowOffsets,
+    o_cols,
+    o_vals
+  );
+  o_vals.copyTo(vals, nnz * sizeof(double));
+
+  if(allocations.o_maskAlloc) o_maskAlloc.free();
+  if(allocations.o_glo_numAlloc) o_glo_numAlloc.free();
+  if(allocations.o_rowOffsetsAlloc) o_rowOffsetsAlloc.free();
+  if(allocations.o_colsAlloc) o_colsAlloc.free();
+  if(allocations.o_valAlloc) o_valAlloc.free();
+#else
   for (int e = 0; e < n_elem; e++) {
     /* Cycle through collocated quads/hexes */
     for (int s_z = 0; s_z < E_z; s_z++) {
@@ -614,12 +668,11 @@ void fem_assembly_device() {
                     (pmask[idx[t_map[t][j]] + e * n_xyz] > 0.0)) {
                   HYPRE_BigInt row = glo_num[idx[t_map[t][i]] + e * n_xyz];
                   HYPRE_BigInt col = glo_num[idx[t_map[t][j]] + e * n_xyz];
-                  int row_idx = globToLocRowMap[row];
-                  long long row_start = rowOffsets[row_idx];
-                  long long row_end = rowOffsets[row_idx+1];
-                  int ncolsSearch = row_end - row_start + 1;
-                  int col_idx = bisection_search_index(cols+row_start, col, ncolsSearch);
-                  int id = row_start + col_idx;
+                  int local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  long long start = rowOffsets[local_row_id];
+                  long long end = rowOffsets[local_row_id+1];
+                  int col_idx = bisection_search_index(cols, col, start, end);
+                  int id = col_idx;
                   vals[id] += A_loc[i][j];
                 }
               }
@@ -629,6 +682,7 @@ void fem_assembly_device() {
       }
     }
   }
+#endif
   int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, ncols, rows, cols, vals);
   if (err != 0) {
     if (comm.id == 0)
@@ -636,6 +690,11 @@ void fem_assembly_device() {
     exit(EXIT_FAILURE);
   }
   if(platform->comm.mpiRank == 0) printf("Actual graph construction took: (%f)s\n", MPI_Wtime() - tStart);
+  free(rows);
+  free(rowOffsets);
+  free(ncols);
+  free(cols);
+  free(vals);
 }
 
 void fem_assembly() {
@@ -887,13 +946,13 @@ void build_kernel(){
   );
 }
 
-int bisection_search_index(long long* sortedArr, long long value, int n)
+int bisection_search_index(long long* sortedArr, long long value, long long start, long long end)
 {
   int fail = -1;
-  int L = 0;
-  int R = n-1;
+  long long L = start;
+  long long R = end-1;
   while (L <= R){
-    const int m = (L+R)/2;
+    const long long m = (L+R)/2;
     if(sortedArr[m] < value){
       L = m + 1;
     } else if (sortedArr[m] > value){
@@ -903,6 +962,21 @@ int bisection_search_index(long long* sortedArr, long long value, int n)
     }
   }
   return fail;
+}
+occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, bool& allocated)
+{
+  occa::memory o_mem;
+  if(nWords * sizeT < bytesRemaining){
+    o_mem = platform->o_mempool.o_ptr.slice(byteOffset);
+    o_mem.copyFrom(src, nWords * sizeT);
+    bytesRemaining -= nWords * sizeT;
+    byteOffset += nWords * sizeT;
+    allocated = false;
+  } else {
+    o_mem = platform->device.malloc(nWords * sizeT, src);
+    allocated = true;
+  }
+  return o_mem;
 }
 
 }
