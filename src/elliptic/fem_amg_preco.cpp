@@ -14,11 +14,19 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+#include <vector>
 
 namespace{
 
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated);
+occa::memory scratchOrAllocateMemory(int nWords,
+  int sizeT,
+  void* src,
+  long long& bytesRemaining,
+  long long& byteOffset,
+  long long& bytesAllocated,
+  bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
+static occa::kernel computeNColsKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
 static occa::memory o_y;
@@ -293,6 +301,97 @@ void fem_assembly_device() {
   int E_y = n_y - 1;
   int E_z = n_z - 1;
 
+  std::vector<long long> locToGlob;
+  long long numRowContribs = 0;
+  {
+    std::vector<bool> found(row_end, false);
+    for(int id = 0; id < n_xyze; ++id){
+      if(pmask[id] > 0.0){
+        long long row = glo_num[id];
+        if(!found[row]){
+          locToGlob.push_back(row);
+          numRowContribs++;
+          found[row] = true;
+        }
+      }
+    }
+  }
+
+  std::sort(locToGlob.begin(), locToGlob.end());
+
+  {
+    const int tentativeMaxCols = 32;
+    const long long maxNNZ = tentativeMaxCols * numRowContribs;
+    long long bytesRemaining = platform->o_mempool.bytesAllocated;
+    long long byteOffset = 0;
+    long long bytesAllocated = 0;
+
+    bool allocGloNum = false;
+    occa::memory o_glo_num = scratchOrAllocateMemory(n_xyze,
+     sizeof(long long),
+     glo_num,
+     bytesRemaining,
+     byteOffset,
+     bytesAllocated,
+     allocGloNum);
+
+    bool allocMask = false;
+    occa::memory o_mask = scratchOrAllocateMemory(n_xyze,
+     sizeof(double),
+     pmask,
+     bytesRemaining,
+     byteOffset,
+     bytesAllocated,
+     allocMask);
+
+    bool allocLocToGlob = false;
+    occa::memory o_locToGlob = scratchOrAllocateMemory(numRowContribs,
+     sizeof(long long),
+     locToGlob.data(), 
+     bytesRemaining,
+     byteOffset,
+     bytesAllocated,
+     allocLocToGlob);
+
+    std::vector<int> ncols(numRowContribs, 0);
+    bool allocNCols = false;
+    occa::memory o_ncols = scratchOrAllocateMemory(numRowContribs,
+     sizeof(int),
+     ncols.data(), 
+     bytesRemaining,
+     byteOffset,
+     bytesAllocated,
+     allocNCols);
+
+    std::vector<long long> cols(maxNNZ, -1);
+    bool allocCols = false;
+    occa::memory o_cols = scratchOrAllocateMemory(maxNNZ,
+     sizeof(long long),
+     cols.data(), 
+     bytesRemaining,
+     byteOffset,
+     bytesAllocated,
+     allocCols);
+
+    computeNColsKernel(
+      n_elem,
+      (int)numRowContribs,
+      o_mask,
+      o_glo_num,
+      o_locToGlob,
+      o_ncols,
+      o_cols
+    );
+    if(allocMask) o_mask.free();
+    if(allocGloNum) o_glo_num.free();
+    if(allocLocToGlob) o_locToGlob.free();
+    if(allocNCols) o_ncols.free();
+    if(allocCols) o_cols.free();
+
+     
+  }
+
+
   std::unordered_map<long long, std::unordered_set<long long>> graph;
   double tStart = MPI_Wtime();
   for (int e = 0; e < n_elem; e++) {
@@ -333,6 +432,7 @@ void fem_assembly_device() {
     }
   }
   const long long nrows = graph.size();
+  printf("nrows = %ld\n", nrows);
   long long * rows = (long long*) malloc(nrows * sizeof(long long));
   long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
   long long * ncols = (long long*) malloc(nrows * sizeof(long long));
@@ -542,6 +642,12 @@ void build_kernel(){
   computeStiffnessMatrixKernel = platform->device.buildKernel(
     filename,
     "computeStiffnessMatrix",
+    stiffnessKernelInfo
+  );
+
+  computeNColsKernel = platform->device.buildKernel(
+    filename,
+    "computeNCols",
     stiffnessKernelInfo
   );
 }

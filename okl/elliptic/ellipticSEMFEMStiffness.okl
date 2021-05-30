@@ -31,6 +31,19 @@ long long linear_search_index(const long long* unsortedArr, long long value, lon
   return fail;
 }
 
+long long linear_search_index_atomic(const volatile long long* unsortedArr, long long value, long long start, long long end)
+{
+  long long fail = -1;
+  for(long long idx = start; idx < end; ++idx){
+    long long t_value;
+    t_value = unsortedArr[idx];
+    if(t_value == value){
+      return idx;
+    }
+  }
+  return fail;
+}
+
 /* Basis functions and derivatives in 3D */
  double phi_3D_1(double q_r[4][3], int q) { return q_r[q][0]; }
  double phi_3D_2(double q_r[4][3], int q) { return q_r[q][1]; }
@@ -244,10 +257,7 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
           double J_rx[3][3];
           double x_t[3][4];
           double q_x[3];
-          if(s_z == 0){
-            quadrature_rule(q_r, q_w);
-            mesh_connectivity(v_coord, t_map);
-          }
+
           /* Get indices */
           int s[n_dim];
 
@@ -337,6 +347,85 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                     col_idx = linear_search_index(cols, col, start, end);
                   long long id = col_idx;
                   @atomic stiffnessMatrix[id] += A_loc[i][j];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#define p_maxCols (32)
+
+@kernel void computeNCols(
+  const int Nelements,
+  const int nrows,
+  @restrict const double * mask,
+  @restrict const long long * glo_num,
+  @restrict const long long * locToGlob,
+  @restrict int * ncols,
+  @restrict volatile long long * cols
+)
+{
+  for (int e = 0; e < Nelements; e++;@outer) {
+    @shared int v_coord[8][3];
+    @shared int t_map[8][4];
+
+    for (int s_y = 0; s_y < p_Nq-1; s_y++;@inner) {
+      for (int s_x = 0; s_x < p_Nq-1; s_x++;@inner) {
+        if(s_x == 0 && s_y == 0){
+          mesh_connectivity(v_coord, t_map);
+        }
+      }
+    }
+    /* Cycle through collocated quads/hexes */
+    for (int s_z = 0; s_z < p_Nq-1; s_z++) {
+      @barrier("local");
+      for (int s_y = 0; s_y < p_Nq-1; s_y++;@inner) {
+        for (int s_x = 0; s_x < p_Nq-1; s_x++;@inner) {
+
+          /* Get indices */
+          int s[n_dim];
+
+          s[0] = s_x;
+          s[1] = s_y;
+          s[2] = s_z;
+
+          int idx[8];
+
+          for (int i = 0; i < 8; i++) {
+            idx[i] = 0;
+
+            for (int d = 0; d < n_dim; d++) {
+              idx[i] += (s[d] + v_coord[i][d]) * pow(p_Nq, d);
+            }
+          }
+
+          /* Cycle through collocated triangles/tets */
+          for (int t = 0; t < num_fem; t++) {
+            for (int i = 0; i < n_dim + 1; i++) {
+              for (int j = 0; j < n_dim + 1; j++) {
+                if ((mask[idx[t_map[t][i]] + e * p_Np] > 0.0) &&
+                    (mask[idx[t_map[t][j]] + e * p_Np] > 0.0)) {
+                  long long row = glo_num[idx[t_map[t][i]] + e * p_Np];
+                  long long col = glo_num[idx[t_map[t][j]] + e * p_Np];
+
+                  long long local_row_id = bisection_search_index(locToGlob, row, 0, nrows);
+                  if(local_row_id == -1){
+                    printf("invalid row_id (%d, %d, %d, %d, %d, %d, %d)\n", e, s_z, s_y, s_x, t, i, j);
+                    printf("row = %ld\n", row);
+                  }
+                  long long index = linear_search_index_atomic(cols, col, local_row_id * p_maxCols, (local_row_id + 1) * p_maxCols);
+                  if(index == -1){
+                    int ncol = ncols[local_row_id];
+                    if(ncol >= p_maxCols || ncol < 0){
+                      printf("ncol = %d\n", ncol);
+                    }
+                    cols[local_row_id * p_maxCols + ncol] = col;
+                    @atomic ncols[local_row_id] += 1;
+                  }
                 }
               }
             }
