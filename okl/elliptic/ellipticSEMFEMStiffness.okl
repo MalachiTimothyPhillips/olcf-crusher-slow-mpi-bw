@@ -329,12 +329,8 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                   long long id = col_idx;
                   if(col_idx == INVALID || local_row_id == INVALID)
                   {
-                    printf("Invalid id encountered!\n");
-                    printf("(row,col,row_id,col_id,start,end) = (%lld, %lld, %lld, %lld, %lld, %lld)\n");
-                    for(auto ctr = start; ctr <= end; ++ctr) { // include end, in case we made an off-by-one mistake
-                      printf("%lld ", cols[ctr]);
-                    }
-                    printf("\n");
+                    long long ctr = start;
+                    printf("(row,col,row_id,col_id,start,end) = (%lld, %lld, %lld, %lld, %lld, %lld)\ncols: %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n", row, col, local_row_id, col_idx, start, end, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2);
                   } else {
                     @atomic stiffnessMatrix[id] += A_loc[i][j];
                   }

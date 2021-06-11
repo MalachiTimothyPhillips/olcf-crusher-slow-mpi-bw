@@ -13,6 +13,8 @@
 
 #include "gslib.h"
 #include "ellipticBuildSEMFEM.hpp"
+#include <set>
+#include <map>
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
@@ -291,8 +293,8 @@ void fem_assembly_device() {
   int E_y = n_y - 1;
   int E_z = n_z - 1;
 
-  std::unordered_map<long long, std::unordered_set<long long>> graph;
-  std::unordered_map<int, std::unordered_set<int>> rowIdxToColIdxMap;
+  std::map<long long, std::set<long long>> graph;
+  std::map<int, std::set<int>> rowIdxToColIdxMap;
   const int nvert = 8;
   for (int s_z = 0; s_z < E_z; s_z++) {
     for (int s_y = 0; s_y < E_y; s_y++) {
@@ -350,7 +352,7 @@ void fem_assembly_device() {
   }
   long long * cols = (long long*) malloc(nnz * sizeof(long long));
   double* vals = (double*) calloc(nnz,sizeof(double));
-  std::sort(rows, rows + nrows);
+  //std::sort(rows, rows + nrows);
   long long entryCtr = 0;
   rowOffsets[0] = 0;
   for(long long localrow = 0; localrow < nrows; ++localrow){
@@ -363,6 +365,20 @@ void fem_assembly_device() {
       cols[entryCtr++] = col;
     }
   }
+
+  // dump rows + cols
+  for(long long row = 0; row < nrows; ++row){
+    const auto rowStart = rowOffsets[row];
+    const auto rowEnd = rowOffsets[row+1];
+    printf("row, rowStart, rowEnd = %lld, %lld, %lld\n", row, rowStart, rowEnd);
+    printf("cols: ");
+    for(long long entry = rowStart; entry < rowEnd; ++entry)
+    {
+      printf("%lld ", cols[entry]);
+    }
+    printf("\n");
+  }
+  fflush(stdout);
 
   struct AllocationTracker{
     bool o_maskAlloc;
