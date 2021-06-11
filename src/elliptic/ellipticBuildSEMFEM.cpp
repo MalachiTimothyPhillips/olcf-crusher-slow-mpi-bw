@@ -431,10 +431,6 @@ void fem_assembly_device() {
     allocations.o_valsAlloc
   );
 
-  MPI_Allreduce(MPI_IN_PLACE, &bytesAllocated, 1, MPI_LONG_LONG, MPI_SUM, platform->comm.mpiComm);
-  double bytesTotal = (double) bytesAllocated / 1e9;
-  double bytesPerProc = bytesTotal / platform->comm.mpiCommSize;
-
   computeStiffnessMatrixKernel(
     n_elem,
     (int)nrows,
