@@ -252,9 +252,9 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
           for (int i = 0; i < 8; i++) {
             idx[i] = 0;
 
-            for (int d = 0; d < n_dim; d++) {
-              idx[i] += (s[d] + v_coord[i][d]) * pow(p_Nq, d);
-            }
+            idx[i] += (s[0] + v_coord[i][0]) * 1;
+            idx[i] += (s[1] + v_coord[i][1]) * p_Nq;
+            idx[i] += (s[2] + v_coord[i][2]) * p_Nq * p_Nq;
           }
 
           /* Cycle through collocated triangles/tets */
@@ -329,8 +329,7 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                   long long id = col_idx;
                   if(col_idx == INVALID || local_row_id == INVALID)
                   {
-                    long long ctr = start;
-                    printf("(row,col,row_id,col_id,start,end) = (%lld, %lld, %lld, %lld, %lld, %lld)\ncols: %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld %lld\n", row, col, local_row_id, col_idx, start, end, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2, (ctr < end) ? cols[ctr++] : -2);
+                    printf("(row,col,row_id,col_id,start,end) = (%lld, %lld, %lld, %lld, %lld, %lld)\n", row, col, local_row_id, col_idx, start, end);
                   } else {
                     @atomic stiffnessMatrix[id] += A_loc[i][j];
                   }

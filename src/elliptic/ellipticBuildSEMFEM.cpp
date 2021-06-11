@@ -366,85 +366,35 @@ void fem_assembly_device() {
     }
   }
 
-  // dump rows + cols
-  for(long long row = 0; row < nrows; ++row){
-    const auto rowStart = rowOffsets[row];
-    const auto rowEnd = rowOffsets[row+1];
-    printf("row, rowStart, rowEnd = %lld, %lld, %lld\n", row, rowStart, rowEnd);
-    printf("cols: ");
-    for(long long entry = rowStart; entry < rowEnd; ++entry)
-    {
-      printf("%lld ", cols[entry]);
-    }
-    printf("\n");
-  }
-  fflush(stdout);
-
-  struct AllocationTracker{
-    bool o_maskAlloc;
-    bool o_glo_numAlloc;
-    bool o_rowOffsetsAlloc;
-    bool o_rowsAlloc;
-    bool o_colsAlloc;
-    bool o_valsAlloc;
-  };
-  AllocationTracker allocations;
-  long long bytesRemaining = platform->o_mempool.bytesAllocated;
-  long long byteOffset = 0;
-  long long bytesAllocated = 0;
-  occa::memory o_mask = scratchOrAllocateMemory(
-    n_xyze,
+  occa::memory o_mask = platform->device.malloc(
+    n_xyze*
     sizeof(double),
-    pmask,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_maskAlloc
+    pmask
   );
-  occa::memory o_glo_num = scratchOrAllocateMemory(
-    n_xyze,
+  occa::memory o_glo_num = platform->device.malloc(
+    n_xyze*
     sizeof(long long),
-    glo_num,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_glo_numAlloc
+    glo_num
   );
-  occa::memory o_rows = scratchOrAllocateMemory(
-    nrows,
+  occa::memory o_rows = platform->device.malloc(
+    nrows*
     sizeof(long long),
-    rows,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_rowsAlloc
+    rows
   );
-  occa::memory o_rowOffsets = scratchOrAllocateMemory(
-    nrows+1,
+  occa::memory o_rowOffsets = platform->device.malloc(
+    (nrows+1)*
     sizeof(long long),
-    rowOffsets,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_rowOffsetsAlloc
+    rowOffsets
   );
-  occa::memory o_cols = scratchOrAllocateMemory(
-    nnz,
+  occa::memory o_cols = platform->device.malloc(
+    nnz*
     sizeof(long long),
-    cols,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_colsAlloc
+    cols
   );
-  occa::memory o_vals = scratchOrAllocateMemory(
-    nnz,
+  occa::memory o_vals = platform->device.malloc(
+    nnz*
     sizeof(double),
-    vals,
-    bytesRemaining,
-    byteOffset,
-    bytesAllocated,
-    allocations.o_valsAlloc
+    vals
   );
 
   computeStiffnessMatrixKernel(
@@ -462,12 +412,12 @@ void fem_assembly_device() {
   );
   o_vals.copyTo(vals, nnz * sizeof(double));
 
-  if(allocations.o_maskAlloc) o_mask.free();
-  if(allocations.o_glo_numAlloc) o_glo_num.free();
-  if(allocations.o_rowOffsetsAlloc) o_rowOffsets.free();
-  if(allocations.o_rowsAlloc) o_rows.free();
-  if(allocations.o_colsAlloc) o_cols.free();
-  if(allocations.o_valsAlloc) o_vals.free();
+   o_mask.free();
+   o_glo_num.free();
+   o_rowOffsets.free();
+   o_rows.free();
+   o_cols.free();
+   o_vals.free();
 
   int err = HYPRE_IJMatrixAddToValues(A_bc, nrows, ncols, rows, cols, vals);
   if (err != 0) {
