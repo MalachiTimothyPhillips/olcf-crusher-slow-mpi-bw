@@ -327,7 +327,17 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                   else
                     col_idx = linear_search_index(cols, col, start, end);
                   long long id = col_idx;
-                  @atomic stiffnessMatrix[id] += A_loc[i][j];
+                  if(col_idx == INVALID || local_row_id == INVALID)
+                  {
+                    printf("Invalid id encountered!\n");
+                    printf("(row,col,row_id,col_id,start,end) = (%lld, %lld, %lld, %lld, %lld, %lld)\n");
+                    for(auto ctr = start; ctr <= end; ++ctr) { // include end, in case we made an off-by-one mistake
+                      printf("%lld ", cols[ctr]);
+                    }
+                    printf("\n");
+                  } else {
+                    @atomic stiffnessMatrix[id] += A_loc[i][j];
+                  }
                 }
               }
             }
