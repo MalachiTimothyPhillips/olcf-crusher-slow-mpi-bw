@@ -1,10 +1,10 @@
 #define n_quad (4)
 #define n_dim (3)
 #define num_fem (8)
+#define INVALID (-1)
 
 long long bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
 {
-  long long fail = -1;
   long long L = start;
   long long R = end-1;
   while (L <= R){
@@ -17,26 +17,25 @@ long long bisection_search_index(const long long* sortedArr, long long value, lo
       return m;
     }
   }
-  return fail;
+  return INVALID;
 }
 
 long long linear_search_index(const long long* unsortedArr, long long value, long long start, long long end)
 {
-  long long fail = -1;
   for(long long idx = start; idx < end; ++idx){
     if(unsortedArr[idx] == value){
       return idx;
     }
   }
-  return fail;
+  return INVALID;
 }
 
 /* Basis functions and derivatives in 3D */
- double phi_3D_1(double q_r[4][3], int q) { return q_r[q][0]; }
- double phi_3D_2(double q_r[4][3], int q) { return q_r[q][1]; }
- double phi_3D_3(double q_r[4][3], int q) { return q_r[q][2]; }
- double phi_3D_4(double q_r[4][3], int q) { return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2]; }
- void dphi(double deriv[3], int q)
+ double phi_3D_1(const double q_r[4][3], const int q) { return q_r[q][0]; }
+ double phi_3D_2(const double q_r[4][3], const int q) { return q_r[q][1]; }
+ double phi_3D_3(const double q_r[4][3], const int q) { return q_r[q][2]; }
+ double phi_3D_4(const double q_r[4][3], const int q) { return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2]; }
+ void dphi(double deriv[3], const int q)
 {
   if(q==0){
     deriv[0] = 1.0;
@@ -66,7 +65,7 @@ long long linear_search_index(const long long* unsortedArr, long long value, lon
 /* Math functions */
 long long maximum(long long a, long long b) { return a > b ? a : b; }
 
-double determinant(double A[3][3]) {
+double determinant(const double A[3][3]) {
   /*
    * Computes the determinant of a matrix
    */
@@ -78,25 +77,25 @@ double determinant(double A[3][3]) {
   return d_1 - d_2 + d_3;
 }
 
-void inverse(double invA[3][3], double A[3][3]) {
+void inverse(double invA[3][3], const double A[3][3]) {
   /*
    * Computes the inverse of a matrix
    */
-  double det_A = determinant(A);
-  invA[0][0] = (1.0 / det_A) * (A[1][1] * A[2][2] - A[2][1] * A[1][2]);
-  invA[0][1] = (1.0 / det_A) * (A[0][2] * A[2][1] - A[2][2] * A[0][1]);
-  invA[0][2] = (1.0 / det_A) * (A[0][1] * A[1][2] - A[1][1] * A[0][2]);
-  invA[1][0] = (1.0 / det_A) * (A[1][2] * A[2][0] - A[2][2] * A[1][0]);
-  invA[1][1] = (1.0 / det_A) * (A[0][0] * A[2][2] - A[2][0] * A[0][2]);
-  invA[1][2] = (1.0 / det_A) * (A[0][2] * A[1][0] - A[1][2] * A[0][0]);
-  invA[2][0] = (1.0 / det_A) * (A[1][0] * A[2][1] - A[2][0] * A[1][1]);
-  invA[2][1] = (1.0 / det_A) * (A[0][1] * A[2][0] - A[2][1] * A[0][0]);
-  invA[2][2] = (1.0 / det_A) * (A[0][0] * A[1][1] - A[1][0] * A[0][1]);
+  const double inv_det_A = 1.0 / determinant(A);
+  invA[0][0] = inv_det_A * (A[1][1] * A[2][2] - A[2][1] * A[1][2]);
+  invA[0][1] = inv_det_A * (A[0][2] * A[2][1] - A[2][2] * A[0][1]);
+  invA[0][2] = inv_det_A * (A[0][1] * A[1][2] - A[1][1] * A[0][2]);
+  invA[1][0] = inv_det_A * (A[1][2] * A[2][0] - A[2][2] * A[1][0]);
+  invA[1][1] = inv_det_A * (A[0][0] * A[2][2] - A[2][0] * A[0][2]);
+  invA[1][2] = inv_det_A * (A[0][2] * A[1][0] - A[1][2] * A[0][0]);
+  invA[2][0] = inv_det_A * (A[1][0] * A[2][1] - A[2][0] * A[1][1]);
+  invA[2][1] = inv_det_A * (A[0][1] * A[2][0] - A[2][1] * A[0][0]);
+  invA[2][2] = inv_det_A * (A[0][0] * A[1][1] - A[1][0] * A[0][1]);
 }
 
  void quadrature_rule(double q_r[4][3], double q_w[4]) {
-    double a = (5.0 + 3.0 * sqrt(5.0)) / 20.0;
-    double b = (5.0 - sqrt(5.0)) / 20.0;
+    const double a = (5.0 + 3.0 * sqrt(5.0)) / 20.0;
+    const double b = (5.0 - sqrt(5.0)) / 20.0;
 
     q_r[0][0] = a;
     q_r[0][1] = b;
@@ -178,10 +177,8 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
   (t_map)[7][3] = 5;
 }
 
- void x_map(double x[3], double q_r[4][3], double x_t[3][4], int q) {
-  int i, d;
-
-  for (d = 0; d < n_dim; d++) {
+ void x_map(double x[3], const double q_r[4][3], const double x_t[3][4], const int q) {
+  for (int d = 0; d < n_dim; d++) {
     x[d] = x_t[d][0] * phi_3D_1(q_r, q);
     x[d] += x_t[d][1] * phi_3D_2(q_r, q);
     x[d] += x_t[d][2] * phi_3D_3(q_r, q);
@@ -189,15 +186,14 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
   }
 }
 
- void J_xr_map(double J_xr[3][3], double q_r[4][3], double x_t[3][4]){
-  int i, j, k;
+ void J_xr_map(double J_xr[3][3], const double q_r[4][3], const double x_t[3][4]){
   double deriv[3];
 
-  for (i = 0; i < n_dim; i++) {
-    for (j = 0; j < n_dim; j++) {
+  for (int i = 0; i < n_dim; i++) {
+    for (int j = 0; j < n_dim; j++) {
       J_xr[i][j] = 0.0;
 
-      for (k = 0; k < n_dim + 1; k++) {
+      for (int k = 0; k < n_dim + 1; k++) {
         dphi(deriv, k);
 
         J_xr[i][j] += x_t[i][k] * deriv[j];
@@ -244,10 +240,6 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
           double J_rx[3][3];
           double x_t[3][4];
           double q_x[3];
-          if(s_z == 0){
-            quadrature_rule(q_r, q_w);
-            mesh_connectivity(v_coord, t_map);
-          }
           /* Get indices */
           int s[n_dim];
 
@@ -297,13 +289,12 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
                 for (int j = 0; j < n_dim + 1; j++) {
                   double deriv_j[3];
                   dphi(deriv_j, j);
-                  int alpha, beta;
                   double func = 0.0;
 
-                  for (alpha = 0; alpha < n_dim; alpha++) {
+                  for (int alpha = 0; alpha < n_dim; alpha++) {
                     double a = 0.0, b = 0.0;
 
-                    for (beta = 0; beta < n_dim; beta++) {
+                    for (int beta = 0; beta < n_dim; beta++) {
                       a += deriv_i[beta] * J_rx[beta][alpha];
 
                       b += deriv_j[beta] * J_rx[beta][alpha];
