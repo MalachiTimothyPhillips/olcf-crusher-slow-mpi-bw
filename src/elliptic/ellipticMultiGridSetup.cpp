@@ -231,11 +231,11 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
                                           lambda,
                                           Nf, Nc,
                                           options,
-                                          precon->parAlmond->ktype, platform->comm.mpiComm
-                                          );
+                                          precon->parAlmond->ktype, platform->comm.mpiComm,
+                                          true);
   } else {
     levels[numMGLevels - 1] = new MGLevel(ellipticCoarse, lambda, Nmin, options,
-                                          precon->parAlmond->ktype, platform->comm.mpiComm);
+                                          precon->parAlmond->ktype, platform->comm.mpiComm, true);
   }
   MGLevelAllocateStorage((MGLevel*) levels[numMGLevels - 1], numMGLevels - 1,
                          precon->parAlmond->ctype);

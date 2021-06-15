@@ -53,7 +53,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   const double crsTime = [&](){
     const double tBoomerAMG = platform->timer.query("BoomerAMGSolve", "HOST:MAX")/Nrep;
     const double tAMGX = platform->timer.query("AmgXSolve", "DEVICE:MAX")/Nrep;
-    return tBoomerAMG > tAMGX ? tBoomerAMG : tAMGX;
+    const double tCrsSEMFEM = platform->timer.query("Coarse SEMFEM Solve", "DEVICE:MAX")/Nrep;
+    const double maxTime = tBoomerAMG > tAMGX ? tBoomerAMG : tAMGX;
+    return maxTime > tCrsSEMFEM ? maxTime : tCrsSEMFEM;
   }();
   if(platform->comm.mpiRank == 0) {
     const double throughput = (double)Ntotal/solveTime;
