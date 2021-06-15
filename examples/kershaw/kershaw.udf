@@ -22,6 +22,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       (3*M_PI*M_PI+lambda)*sin(M_PI*mesh->x[i])*sin(M_PI*mesh->y[i])*sin(M_PI*mesh->z[i]);
   }
   platform->linAlg->fillKernel(mesh->Nlocal, 1.0, nrs->o_ellipticCoeff);
+  platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
 
   // warm-up
   ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);

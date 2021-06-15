@@ -142,7 +142,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   }
   if(setupRetVal) MPI_Abort(platform->comm.mpiComm, 1);
 
-  delete data;
+  free(data);
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }
 
@@ -160,7 +160,7 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     o_buffer
   );
 
-  platform->linAlg->fill(elliptic->Nfields * elliptic->Ntotal, 0.0, o_z);
+  platform->linAlg->fill(mesh->Np * mesh->Nelements, 0.0, o_z);
 
   if(elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")){
     boomerAMGSolve(o_buffer2.ptr(), o_buffer.ptr());
@@ -175,5 +175,6 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     o_z
   );
 
-  oogs::startFinish(o_z, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
+  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
+  oogs::startFinish(o_z, 1, mesh->Np * mesh->Nelements, useFP32 ? ogsPfloat : ogsDfloat, ogsAdd, elliptic->oogs);
 }

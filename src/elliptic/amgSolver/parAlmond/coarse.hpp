@@ -27,6 +27,8 @@ SOFTWARE.
 #ifndef PARALMOND_COARSESOLVE_HPP
 #define PARALMOND_COARSESOLVE_HPP
 
+#include <functional>
+
 namespace parAlmond {
 
 class coarseSolver {
@@ -55,6 +57,8 @@ public:
   occa::device device;
 
   setupAide options;
+  bool useSEMFEM = false;
+  std::function<void(occa::memory,occa::memory)> semfemSolver = nullptr;
 
   coarseSolver(setupAide options, MPI_Comm comm);
   ~coarseSolver();

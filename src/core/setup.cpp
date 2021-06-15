@@ -789,6 +789,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("SEMFEM SOLVER PRECISION", options.getArgs("PRESSURE SEMFEM SOLVER PRECISION"));
     nrs->pOptions.setArgs("MULTIGRID COARSENING", options.getArgs("PRESSURE MULTIGRID COARSENING"));
     nrs->pOptions.setArgs("MULTIGRID SMOOTHER",   options.getArgs("PRESSURE MULTIGRID SMOOTHER"));
+    nrs->pOptions.setArgs("MULTIGRID COARSE SOLVE",   options.getArgs("PRESSURE MULTIGRID COARSE SOLVE"));
+    nrs->pOptions.setArgs("MULTIGRID COARSE SEMFEM",   options.getArgs("PRESSURE MULTIGRID COARSE SEMFEM"));
     nrs->pOptions.setArgs("MULTIGRID DOWNWARD SMOOTHER",
                           options.getArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER"));
     nrs->pOptions.setArgs("MULTIGRID UPWARD SMOOTHER",

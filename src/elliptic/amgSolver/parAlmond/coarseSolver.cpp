@@ -383,6 +383,13 @@ void coarseSolver::AmgXSolve(occa::memory o_rhs, occa::memory o_x) {
 }
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
+  if(useSEMFEM){
+    platform->timer.tic("Coarse SEMFEM Solve", 1);
+    semfemSolver(o_rhs, o_x);
+    platform->timer.tic("Coarse SEMFEM Solve", 1);
+    return;
+  }
+
   const bool useDevice = options.compareArgs("AMG SOLVER", "AMGX");
   if (gatherLevel) {
     //weight

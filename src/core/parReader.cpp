@@ -231,6 +231,8 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("AMG SOLVER", "BOOMERAMG");
 
   options.setArgs("PRESSURE PARALMOND CYCLE", "VCYCLE");
+  options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
+  options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "FALSE");
   options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
   options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
@@ -472,7 +474,8 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       options.setArgs("PRESSURE PRECONDITIONER", "NONE");
     } else if(p_preconditioner == "jacobi") {
       options.setArgs("PRESSURE PRECONDITIONER", "JACOBI");
-    } else if(p_preconditioner.find("semfem") != std::string::npos) {
+    } else if(p_preconditioner.find("semfem") != std::string::npos
+       && p_preconditioner.find("pmg") == std::string::npos) {
       options.setArgs("PRESSURE PRECONDITIONER", "SEMFEM");
       options.setArgs("PRESSURE SEMFEM SOLVER", "BOOMERAMG");
       options.setArgs("PRESSURE SEMFEM SOLVER PRECISION", "FP64");
@@ -511,6 +514,20 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       if (p_preconditioner.find("overlap") != std::string::npos)
         key += "+OVERLAPCRS";
       options.setArgs("PRESSURE PARALMOND CYCLE", key);
+    } else if(p_preconditioner.find("pmg") != std::string::npos){
+      options.setArgs("PRESSURE PRECONDITIONER", "MULTIGRID");
+      string key = "VCYCLE";
+      options.setArgs("PRESSURE PARALMOND CYCLE", key);
+      options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "FALSE");
+      options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
+      if(p_preconditioner.find("coarse") != std::string::npos){
+        options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
+        options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
+      }
+      if(p_preconditioner.find("semfem") != std::string::npos)
+        options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "TRUE");
+
+      options.setArgs("PRESSURE SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     }
 
     string p_mglevels;
@@ -655,9 +672,11 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     par->extract("pressure", "coarsesolver", p_coarseSolver);
     if(p_coarseSolver == "boomeramg"){
       options.setArgs("AMG SOLVER", "BOOMERAMG");
+      options.setArgs("PRESSURE SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     }
     else if(p_coarseSolver == "amgx"){
       options.setArgs("AMG SOLVER", "AMGX");
+      options.setArgs("PRESSURE SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     } else if(p_coarseSolver.size() > 0){
       if(rank == 0) printf("PRESSURE:coarseSolver %s is not supported!\n", p_coarseSolver.c_str());
       ABORT(EXIT_FAILURE);

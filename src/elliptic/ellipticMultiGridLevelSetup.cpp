@@ -109,7 +109,7 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
 void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 {
   
-  if (degree == 1) return; // solved by coarse grid solver
+  if (degree == 1 && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) return; // solved by coarse grid solver
 
   if (options.compareArgs("MULTIGRID SMOOTHER","ASM") ||
       options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
@@ -192,7 +192,7 @@ void MGLevel::Report()
   MPI_Allreduce(&Nrows, &minNrows, 1, MPI_DLONG, MPI_MIN, platform->comm.mpiComm);
 
   char smootherString[BUFSIZ];
-  if (degree != 1) {
+  if (degree != 1 || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
     if (stype == SmootherType::CHEBYSHEV && smtypeDown == SecondarySmootherType::JACOBI)
       strcpy(smootherString, "Chebyshev+Jacobi ");
     else if (stype == SmootherType::SCHWARZ)
@@ -202,8 +202,9 @@ void MGLevel::Report()
   }
 
   if (platform->comm.mpiRank == 0) {
-    if(degree == 1) {
-      strcpy(smootherString, "BoomerAMG        ");
+    if(degree == 1 && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) {
+      if(options.compareArgs("AMG SOLVER","BOOMERAMG")) strcpy(smootherString, "BoomerAMG        ");
+      if(options.compareArgs("AMG SOLVER","AMGX"))      strcpy(smootherString, "AMGX             ");
       printf(     "|    AMG     |   Matrix        | %s |\n", smootherString);
       printf("     |            |     Degree %2d   |                   |\n", degree);
     } else {
