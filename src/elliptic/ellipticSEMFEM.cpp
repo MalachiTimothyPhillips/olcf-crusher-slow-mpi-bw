@@ -175,6 +175,5 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     o_z
   );
 
-  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
-  oogs::startFinish(o_z, 1, mesh->Np * mesh->Nelements, useFP32 ? ogsPfloat : ogsDfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_z, 1, mesh->Np * mesh->Nelements, ogsDfloat, ogsAdd, elliptic->oogs);
 }
