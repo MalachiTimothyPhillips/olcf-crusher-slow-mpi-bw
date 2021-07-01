@@ -42,8 +42,6 @@ set(OCCA_CXXFLAGS "-O2 -ftree-vectorize -funroll-loops -march=native -mtune=nati
 set(OCCA_CUDA_COMPILER_FLAGS "-O3 --fmad=true" CACHE STRING "CUDA flags for OCCA JIT compile")
 set(OCCA_HIP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "HIP flags for OCCA JIT compile")
 set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros" CACHE STRING "OPENCL flags for OCCA JIT compile")
-set(GPU_MPI "0" CACHE STRING "GPU aware MPI")
-set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
 
 # From OCCA's CMakeLists. All default to ON, but are verified in config tests
 #   - ENABLE_OPENMP
@@ -53,7 +51,10 @@ set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
 #   - ENABLE_METAL
 #   - ENABLE_MPI
 
+set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
+set(GPU_MPI "0" CACHE STRING "GPU aware MPI")
+set(BACKEND_DEFAULT "SERIAL" CACHE STRING "Default occa mode")
 
 ###############################################################################
 # Check compiler/MPI vendor, version and Fortran/C compatibility              #
@@ -290,7 +291,7 @@ set_target_properties(nekrs-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs
 target_link_libraries(nekrs-bin nekrs-lib)
 
 message(NOTICE "")
-message(NOTICE "------------ Summary ------------")
+message(NOTICE "----------------- Summary -----------------")
 message(NOTICE "Installation directory: ${CMAKE_CURRENT_SOURCE_DIR}") 
 message(NOTICE "C compiler: ${CMAKE_C_COMPILER}")
 message(NOTICE "C++ compiler: ${CMAKE_CXX_COMPILER}")
@@ -311,7 +312,7 @@ if(GPU_MPI)
 else(GPU_MPI)
   message(NOTICE "GPU aware MPI support disabled!")
 endif()
-message(NOTICE "")
+message(NOTICE "-------------------------------------------")
 
 ###############################################################################
 # Generate nekrs.conf                                                       #
@@ -376,6 +377,3 @@ add_custom_target(tar
   COMMAND tar -czf ${TAR_NAME} ${DEST_DIR}
   COMMAND rm -rf ${DEST_DIR}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-
-
