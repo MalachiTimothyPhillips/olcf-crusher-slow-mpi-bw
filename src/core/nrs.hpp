@@ -65,6 +65,12 @@ struct nrs_t
   dfloat* U, * P;
   dfloat* BF, * FU;
 
+  // unit normal flow direction for constant flow rate
+  dfloat flowDirection[3];
+  int fromBID;
+  int toBID;
+  dfloat flowRate;
+
   //RK Subcycle Data
   int nRK;
   dfloat* coeffsfRK, * weightsRK, * nodesRK;
@@ -119,7 +125,13 @@ struct nrs_t
   occa::kernel subCycleStrongCubatureVolumeKernel;
   occa::kernel subCycleStrongVolumeKernel;
 
+  occa::kernel computeCentroidKernel;
+  occa::kernel computeFieldDotNormalKernel;
+
   occa::memory o_U, o_P;
+
+  occa::memory o_Uc, o_Pc;
+  occa::memory o_prevProp;
 
   occa::memory o_relUrst;
   occa::memory o_Urst;
@@ -166,6 +178,7 @@ struct nrs_t
   occa::kernel pressureAxKernel;
   occa::kernel curlKernel;
   occa::kernel maskCopyKernel;
+  occa::kernel maskKernel;
 
   int* EToB;
   occa::memory o_EToB;
