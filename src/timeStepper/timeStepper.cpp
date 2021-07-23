@@ -170,7 +170,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
       udf.div(nrs, timeNew, nrs->o_div);
     }
 
-    if (adjustFlowRate) {
+    if (useConstantFlowRate && stage > 1) {
       ConstantFlowRate::apply(nrs, tstep, timeNew);
     } else if (nrs->flow)
       fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, stage);
@@ -186,9 +186,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
     if (udf.converged)
       converged = udf.converged(nrs, stage);
     if (useConstantFlowRate && stage == 1){
-      adjustFlowRate = ConstantFlowRate::checkIfRecompute(nrs,tstep);
-      if(adjustFlowRate)
-        converged = false;
+      converged = false;
     }
 
     printInfo(nrs, timeNew, tstep, tElapsedStep, tElapsed);

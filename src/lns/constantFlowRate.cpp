@@ -48,8 +48,11 @@ bool checkIfRecompute(nrs_t *nrs, int tstep) {
   if (delta > TOL)
     adjustFlowRate = true;
 
+  nrs->o_prevProp.copyFrom(nrs->o_prop, nPropertyFields * nrs->fieldOffset * sizeof(dfloat));
+
   adjustFlowRate |= platform->options.compareArgs("MOVING MESH", "TRUE");
   adjustFlowRate |= tstep <= std::max(nrs->nEXT, nrs->nBDF);
+  adjustFlowRate |= abs(nrs->dt[0] - nrs->dt[1]) > TOL;
   return adjustFlowRate;
 }
 
@@ -156,7 +159,8 @@ void apply(nrs_t *nrs, int tstep, dfloat time) {
                      centroidFrom_z, centroidTo_z, flowDirection);
   }
 
-  ConstantFlowRate::compute(nrs, lengthScale, time);
+  if(ConstantFlowRate::checkIfRecompute(nrs, tstep))
+    ConstantFlowRate::compute(nrs, lengthScale, time);
 
   occa::memory &o_currentFlowRate = platform->o_mempool.slice0;
   occa::memory &o_baseFlowRate = platform->o_mempool.slice1;
