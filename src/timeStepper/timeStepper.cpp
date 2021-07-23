@@ -149,7 +149,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
 
   const bool useConstantFlowRate =
       platform->options.compareArgs("CONSTANT FLOW RATE DRIVER", "TRUE");
-  bool adjustFlowRate = false;
+  bool solveRequired = true;
 
   do {
     stage++;
@@ -171,7 +171,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
     }
 
     if (useConstantFlowRate && stage > 1) {
-      ConstantFlowRate::apply(nrs, tstep, timeNew);
+      solveRequired = ConstantFlowRate::apply(nrs, tstep, timeNew);
     } else if (nrs->flow)
       fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, stage);
 
@@ -189,7 +189,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
       converged = false;
     }
 
-    printInfo(nrs, timeNew, tstep, tElapsedStep, tElapsed);
+    if(solveRequired) printInfo(nrs, timeNew, tstep, tElapsedStep, tElapsed);
 
     platform->timer.tic("udfExecuteStep", 1);
     if (isOutputStep && converged) {

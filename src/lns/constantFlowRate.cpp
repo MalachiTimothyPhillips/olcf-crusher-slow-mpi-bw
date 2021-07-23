@@ -56,13 +56,16 @@ bool checkIfRecompute(nrs_t *nrs, int tstep) {
   return adjustFlowRate;
 }
 
-void apply(nrs_t *nrs, int tstep, dfloat time) {
+bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   constexpr int ndim = 3;
   const dfloat TOL = 1e-10;
   mesh_t *mesh = nrs->meshV;
   dfloat *flowDirection = nrs->flowDirection;
   const dfloat flowRate = nrs->flowRate;
+
+  bool recomputeBaseFlowRate = false;
+
 
   dfloat flowDirMag = 0.0;
   for (int dim = 0; dim < ndim; ++dim)
@@ -159,8 +162,10 @@ void apply(nrs_t *nrs, int tstep, dfloat time) {
                      centroidFrom_z, centroidTo_z, flowDirection);
   }
 
-  if(ConstantFlowRate::checkIfRecompute(nrs, tstep))
+  if(ConstantFlowRate::checkIfRecompute(nrs, tstep)){
+    recomputeBaseFlowRate = true;
     ConstantFlowRate::compute(nrs, lengthScale, time);
+  }
 
   occa::memory &o_currentFlowRate = platform->o_mempool.slice0;
   occa::memory &o_baseFlowRate = platform->o_mempool.slice1;
@@ -204,6 +209,8 @@ void apply(nrs_t *nrs, int tstep, dfloat time) {
   platform->linAlg->axpbyMany(mesh->Nlocal, nrs->NVfields, nrs->fieldOffset,
                               scale, nrs->o_Uc, 1.0, nrs->o_U);
   platform->linAlg->axpby(mesh->Nlocal, scale, nrs->o_Pc, 1.0, nrs->o_P);
+
+  return recomputeBaseFlowRate;
 }
 
 void compute(nrs_t *nrs, double lengthScale, dfloat time) {
