@@ -246,6 +246,9 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
   options.setArgs("ENABLE OVERLAP", "TRUE");
+
+  options.setArgs("VARIABLE DT", "FALSE");
+  options.setArgs("TARGET CFL", "1.0");
 }
 
 setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
@@ -342,11 +345,6 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     options.setArgs("TIME INTEGRATOR", "TOMBO1");
   }
 
-  bool variableDt = false;
-  par->extract("general", "variabledt", variableDt);
-  if (variableDt)
-    exit("GENERAL::variableDt = Yes not supported!", EXIT_FAILURE);
-
   double endTime;
   string stopAt = "numsteps";
   par->extract("general", "stopat", stopAt);
@@ -380,6 +378,24 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     if(par->extract("general", "subcyclingsteps", NSubCycles));
     options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
   }
+
+  double targetCFL;
+  if(par->extract("general", "targetcfl", targetCFL))
+  {
+    options.setArgs("TARGET CFL", to_string_f(targetCFL));
+  }
+
+  bool variableDt;
+  if(par->extract("general", "variabledt", variableDt))
+  {
+    if(variableDt){
+      options.setArgs("VARIABLE DT", "TRUE");
+    }
+    else{
+      options.setArgs("VARIABLE DT", "FALSE");
+    }
+  }
+
 
   double writeInterval = 0;
   par->extract("general", "writeinterval", writeInterval);
