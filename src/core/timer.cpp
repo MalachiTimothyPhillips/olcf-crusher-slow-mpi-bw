@@ -256,8 +256,6 @@ void timer_t::printRunStat()
   dEtime[14] = query("udfSEqnSource", "DEVICE:MAX");
   dEtime[15] = query("udfProperties", "DEVICE:MAX");
 
-  dEtime[18] = query("constant flow rate driver", "DEVICE:MAX");
-
   double hEtime[10];
   hEtime[0] = query("BoomerAMGSolve", "HOST:MAX");
   hEtime[1] = ogsTime(/* reportHostTime */ true);
@@ -301,8 +299,6 @@ void timer_t::printRunStat()
     std::cout << "      udfSEqnSource     " << dEtime[14] << " s\n";
     }
 
-    if(dEtime[18] > 0)
-    std::cout << "    constant flow rate  " << dEtime[18] << " s\n";
     if(dEtime[15] > 0)
     std::cout << "    udfProperties       " << dEtime[15] << " s\n"
               << std::endl;

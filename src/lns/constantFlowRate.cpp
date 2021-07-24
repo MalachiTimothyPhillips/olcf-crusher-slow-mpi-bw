@@ -28,7 +28,6 @@ inline void computeDirection(dfloat x1, dfloat x2, dfloat y1, dfloat y2,
 static dfloat lengthScale;
 static dfloat baseFlowRate;
 
-
 }
 
 namespace ConstantFlowRate {
@@ -60,9 +59,8 @@ bool checkIfRecompute(nrs_t *nrs, int tstep) {
   adjustFlowRate |= abs(nrs->dt[0] - nrs->dt[1]) > TOL;
   return adjustFlowRate;
 }
-bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
-  platform->timer.tic("constant flow rate driver", 1);
+bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   constexpr int ndim = 3;
   const dfloat TOL = 1e-10;
@@ -219,8 +217,6 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   platform->linAlg->axpbyMany(mesh->Nlocal, nrs->NVfields, nrs->fieldOffset,
                               scale, nrs->o_Uc, 1.0, nrs->o_U);
   platform->linAlg->axpby(mesh->Nlocal, scale, nrs->o_Pc, 1.0, nrs->o_P);
-
-  platform->timer.toc("constant flow rate driver");
 
   return recomputeBaseFlowRate;
 }
