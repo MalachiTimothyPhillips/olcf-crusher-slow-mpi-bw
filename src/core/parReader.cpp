@@ -75,6 +75,10 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *pa
         const int toBID = std::stoi(bids[1]);
         options.setArgs("CONSTANT FLOW FROM BID", std::to_string(fromBID));
         options.setArgs("CONSTANT FLOW TO BID", std::to_string(toBID));
+
+        if(platform->comm.mpiRank == 0)
+          printf("Specifying a constant flow direction with a pair of BIDs is currently not supported.\n");
+        ABORT(1);
       }
       if(s.find("direction") == 0)
       {

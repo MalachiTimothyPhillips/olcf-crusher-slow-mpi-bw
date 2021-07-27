@@ -7,7 +7,7 @@
 //      is pre-filled with 0s
 
 @kernel void
-computeCentroid(const dlong Nelements, const dlong BID,
+computeFaceCentroid(const dlong Nelements, const dlong BID,
                 @restrict const dlong *EToB, @restrict const dlong *vmapM,
                 @restrict const dfloat *x, @restrict const dfloat *y,
                 @restrict const dfloat *z, @restrict dfloat *result,

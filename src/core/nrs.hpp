@@ -125,7 +125,7 @@ struct nrs_t
   occa::kernel subCycleStrongCubatureVolumeKernel;
   occa::kernel subCycleStrongVolumeKernel;
 
-  occa::kernel computeCentroidKernel;
+  occa::kernel computeFaceCentroidKernel;
   occa::kernel computeFieldDotNormalKernel;
 
   occa::memory o_U, o_P;

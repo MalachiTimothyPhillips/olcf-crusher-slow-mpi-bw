@@ -60,34 +60,25 @@ bool checkIfRecompute(nrs_t *nrs, int tstep) {
   return adjustFlowRate;
 }
 
+bool checkIfRecomputeDirection(nrs_t *nrs, int tstep) {
+  return platform->options.compareArgs("MOVING MESH", "TRUE") || tstep < 2;
+}
+
 bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   constexpr int ndim = 3;
-  const dfloat TOL = 1e-10;
   mesh_t *mesh = nrs->meshV;
   dfloat *flowDirection = nrs->flowDirection;
   const dfloat flowRate = nrs->flowRate;
 
-  bool recomputeBaseFlowRate = false;
-
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 
-  dfloat flowDirMag = 0.0;
-  for (int dim = 0; dim < ndim; ++dim)
-    flowDirMag += flowDirection[dim] * flowDirection[dim];
-  flowDirMag = std::sqrt(flowDirMag);
-
-  const dfloat invFlowDirMag = 1.0 / flowDirMag;
-
-  for (int dim = 0; dim < ndim; ++dim)
-    flowDirection[dim] *= invFlowDirMag;
-
-  const bool X_aligned = std::abs(flowDirection[0] - 1.0) < TOL;
-  const bool Y_aligned = std::abs(flowDirection[1] - 1.0) < TOL;
-  const bool Z_aligned = std::abs(flowDirection[2] - 1.0) < TOL;
+  const bool X_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "X");
+  const bool Y_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Y");
+  const bool Z_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Z");
   const bool directionAligned = X_aligned || Y_aligned || Z_aligned;
 
-  if (!directionAligned && nrs->fromBID == -1) {
+  if (!directionAligned) {
     if (platform->comm.mpiRank == 0)
       printf("Flow direction is not aligned in (X,Y,Z).\n"
              "Currently, only (X,Y,Z) aligned flow directions are supported in "
@@ -96,17 +87,30 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
     ABORT(1);
   }
 
-  recomputeBaseFlowRate = ConstantFlowRate::checkIfRecompute(nrs, tstep);
+  const bool recomputeBaseFlowRate = ConstantFlowRate::checkIfRecompute(nrs, tstep);
+  const bool recomputeDirection = ConstantFlowRate::checkIfRecomputeDirection(nrs, tstep);
 
-  if (recomputeBaseFlowRate){
-    if (nrs->fromBID == -1) {
+  if (recomputeDirection){
+    if (directionAligned) {
       occa::memory o_coord;
-      if (X_aligned)
+      if (X_aligned){
         o_coord = mesh->o_x;
-      if (Y_aligned)
+        flowDirection[0] = 1.0;
+        flowDirection[1] = 0.0;
+        flowDirection[2] = 0.0;
+      }
+      if (Y_aligned){
         o_coord = mesh->o_y;
-      if (Z_aligned)
+        flowDirection[0] = 0.0;
+        flowDirection[1] = 1.0;
+        flowDirection[2] = 0.0;
+      }
+      if (Z_aligned){
         o_coord = mesh->o_z;
+        flowDirection[0] = 0.0;
+        flowDirection[1] = 0.0;
+        flowDirection[2] = 1.0;
+      }
 
       const dfloat maxCoord =
           platform->linAlg->max(mesh->Nlocal, o_coord, platform->comm.mpiComm);
@@ -119,7 +123,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
       occa::memory o_counts = platform->o_mempool.slice3;
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
-      nrs->computeCentroidKernel(mesh->Nelements, nrs->fromBID, mesh->o_EToB,
+      nrs->computeFaceCentroidKernel(mesh->Nelements, nrs->fromBID, mesh->o_EToB,
                                  mesh->o_vmapM, mesh->o_x, mesh->o_y, mesh->o_z,
                                  o_centroid, o_counts);
 
@@ -141,7 +145,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
-      nrs->computeCentroidKernel(mesh->Nelements, nrs->toBID, mesh->o_EToB,
+      nrs->computeFaceCentroidKernel(mesh->Nelements, nrs->toBID, mesh->o_EToB,
                                  mesh->o_vmapM, mesh->o_x, mesh->o_y, mesh->o_z,
                                  o_centroid, o_counts);
 

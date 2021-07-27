@@ -399,9 +399,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       occa::properties centroidProp = kernelInfo;
       centroidProp["defines/" "p_Nfp"] = nrs->meshV->Nq * nrs->meshV->Nq;
       centroidProp["defines/" "p_Nfaces"] = nrs->meshV->Nfaces;
-      fileName = oklpath + "nrs/computeCentroid.okl";
-      kernelName = "computeCentroid";
-      nrs->computeCentroidKernel =
+      fileName = oklpath + "nrs/computeFaceCentroid.okl";
+      kernelName = "computeFaceCentroid";
+      nrs->computeFaceCentroidKernel =
         device.buildKernel(fileName, kernelName, centroidProp);
 
       {
