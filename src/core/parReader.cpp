@@ -71,8 +71,8 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *pa
         assert(items.size() == 2);
         std::vector<string> bids = serializeString(items[1], ',');
         assert(bids.size() == 2);
-        const int fromBID = std::stoi(items[0]);
-        const int toBID = std::stoi(items[1]);
+        const int fromBID = std::stoi(bids[0]);
+        const int toBID = std::stoi(bids[1]);
         options.setArgs("CONSTANT FLOW FROM BID", std::to_string(fromBID));
         options.setArgs("CONSTANT FLOW TO BID", std::to_string(toBID));
       }
