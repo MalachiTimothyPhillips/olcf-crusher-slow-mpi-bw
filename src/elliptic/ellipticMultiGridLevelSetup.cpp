@@ -102,7 +102,7 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
     o_invDegree = ellipticFine->ogs->o_invDegree;
   }
 
-  if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE"))
+  if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
     this->setupSmoother(ellipticBase);
 
   /* build coarsening and prologation operators to connect levels */
@@ -114,8 +114,6 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
 
 void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 {
-  
-  if (degree == 1 && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) return; // solved by coarse grid solver
 
   if (options.compareArgs("MULTIGRID SMOOTHER","ASM") ||
       options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
@@ -198,7 +196,7 @@ void MGLevel::Report()
   MPI_Allreduce(&Nrows, &minNrows, 1, MPI_DLONG, MPI_MIN, platform->comm.mpiComm);
 
   char smootherString[BUFSIZ];
-  if (degree != 1 || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
+  if (options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
     if (stype == SmootherType::CHEBYSHEV && smtypeDown == SecondarySmootherType::JACOBI)
       strcpy(smootherString, "Chebyshev+Jacobi ");
     else if (stype == SmootherType::SCHWARZ)
