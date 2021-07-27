@@ -196,7 +196,7 @@ void MGLevel::Report()
   MPI_Allreduce(&Nrows, &minNrows, 1, MPI_DLONG, MPI_MIN, platform->comm.mpiComm);
 
   char smootherString[BUFSIZ];
-  if (options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
+  if (!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
     if (stype == SmootherType::CHEBYSHEV && smtypeDown == SecondarySmootherType::JACOBI)
       strcpy(smootherString, "Chebyshev+Jacobi ");
     else if (stype == SmootherType::SCHWARZ)
@@ -206,7 +206,7 @@ void MGLevel::Report()
   }
 
   if (platform->comm.mpiRank == 0) {
-    if((degree == 1 || isCoarse) && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) {
+    if(isCoarse && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) {
       if(options.compareArgs("AMG SOLVER","BOOMERAMG")) strcpy(smootherString, "BoomerAMG        ");
       if(options.compareArgs("AMG SOLVER","AMGX"))      strcpy(smootherString, "AMGX             ");
       printf(     "|    AMG     |   Matrix        | %s |\n", smootherString);
