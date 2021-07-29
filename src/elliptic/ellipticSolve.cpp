@@ -74,7 +74,8 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
   elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
-  if(options.compareArgs("RESIDUAL PROJECTION","TRUE")) {
+  if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
+     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
     platform->timer.tic(elliptic->name + " proj pre",1);
     elliptic->res00Norm = 
       platform->linAlg->weightedNorm2Many(
@@ -130,7 +131,8 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   }
 
 
-  if(options.compareArgs("RESIDUAL PROJECTION","TRUE")) { 
+  if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
+     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) { 
     platform->timer.tic(elliptic->name + " proj post",1);
     elliptic->residualProjection->post(o_x);
     platform->timer.toc(elliptic->name + " proj post");
