@@ -95,7 +95,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   mesh = nrs->meshV;
   if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE"))
     nrs->UrstCubatureKernel(mesh->Nelements, mesh->o_cubvgeo,
-                            mesh->o_cubDiffInterpT, mesh->o_cubInterpT,
+                            mesh->o_cubInterpT,
                             mesh->o_cubProjectT, nrs->fieldOffset,
                             cubatureOffset, nrs->o_U, mesh->o_U, o_Urst);
   else
