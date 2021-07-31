@@ -6,12 +6,15 @@
 // pre: count (length: p_Nfaces * Nelements)
 //      is pre-filled with 0s
 
-@kernel void
-computeFaceCentroid(const dlong Nelements, const dlong BID,
-                @restrict const dlong *EToB, @restrict const dlong *vmapM,
-                @restrict const dfloat *x, @restrict const dfloat *y,
-                @restrict const dfloat *z, @restrict dfloat *result,
-                @restrict dfloat *count) {
+@kernel void computeFaceCentroid(const dlong Nelements,
+    const dlong BID,
+    @restrict const dlong *EToB,
+    @restrict const dlong *vmapM,
+    @restrict const dfloat *x,
+    @restrict const dfloat *y,
+    @restrict const dfloat *z,
+    @restrict dfloat *result,
+    @restrict dfloat *count) {
 
   for (dlong e = 0; e < Nelements; e++; @outer(0)) {
     for (int f = 0; f < p_Nfaces; f++) {
@@ -21,7 +24,7 @@ computeFaceCentroid(const dlong Nelements, const dlong BID,
       @shared dfloat avg_z[p_blockSize];
 
       for (int m = 0; m < p_blockSize; ++m; @inner(0)) {
-        if(m < p_Nfp){
+        if (m < p_Nfp) {
           const int n = m + f * p_Nfp;
           const int sk = e * p_Nfp * p_Nfaces + n;
           const dlong idM = vmapM[sk];
