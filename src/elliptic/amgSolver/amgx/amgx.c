@@ -83,7 +83,6 @@ int AMGXsetup(const int nLocalRows, const int nnz,
     char cfgStr[4096] = "";
     strcat(cfgStr, "{ \"config_version\": 2,");
     strcat(cfgStr, (MPI_DIRECT) ? "\"communicator\":\"MPI_DIRECT\"," : "\"communicator\":\"MPI\",");
-    strcat(cfgStr, "\"min_rows_latency_hiding\": 0,");
     strcat(cfgStr, solverSettings);
     strcat(cfgStr, "}");
     //printf("cfgStr: %s\n", cfgStr); fflush(stdout);
