@@ -35,7 +35,7 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *pa
   string flowRateDescription;
   if(par->extract("general", "constflowrate", flowRateDescription))
   {
-    options.setArgs("CONSTANT FLOW RATE DRIVER", "TRUE");
+    options.setArgs("CONSTANT FLOW RATE", "TRUE");
     bool flowRateSet = false;
     bool flowDirectionSet = false;
     bool issueError = false;
@@ -45,22 +45,22 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *pa
       if(s.find("meanvelocity") == 0){
         if(flowRateSet) issueError = true;
         flowRateSet = true;
-        options.setArgs("CONSTANT FLOW QUANTITY", "VELOCITY");
+        options.setArgs("CONSTANT FLOW RATE TYPE", "BULK");
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         const dfloat value = std::stod(items[1]);
-        options.setArgs("CONSTANT FLOW RATE", to_string_f(value));
+        options.setArgs("FLOW RATE", to_string_f(value));
       }
 
       if(s.find("meanvolumetricflow") == 0)
       {
         if(flowRateSet) issueError = true;
         flowRateSet = true;
-        options.setArgs("CONSTANT FLOW QUANTITY", "VOLUMETRIC FLOW");
+        options.setArgs("CONSTANT FLOW RATE TYPE", "VOLUMETRIC");
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         const dfloat value = std::stod(items[1]);
-        options.setArgs("CONSTANT FLOW RATE", to_string_f(value));
+        options.setArgs("FLOW RATE", to_string_f(value));
       }
 
       if(s.find("bid") == 0)
@@ -328,7 +328,7 @@ void parseRegularization(const int rank, setupAide &options,
 void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("FORMAT", string("1.0"));
 
-  options.setArgs("CONSTANT FLOW RATE DRIVER", "FALSE");
+  options.setArgs("CONSTANT FLOW RATE", "FALSE");
   options.setArgs("ELEMENT TYPE", string("12")); /* HEX */
   options.setArgs("ELEMENT MAP", string("ISOPARAMETRIC"));
   options.setArgs("MESH DIMENSION", string("3"));

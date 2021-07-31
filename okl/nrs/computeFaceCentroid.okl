@@ -95,7 +95,7 @@ computeFaceCentroid(const dlong Nelements, const dlong BID,
           avg_z[t] += avg_z[t + 16];
         }
       }
-//    @barrier("local");
+      @barrier("local");
 
       for (int t = 0; t < p_blockSize; ++t; @inner(0)) {
         if (t < 8) {
@@ -104,7 +104,7 @@ computeFaceCentroid(const dlong Nelements, const dlong BID,
           avg_z[t] += avg_z[t + 8];
         }
       }
-//    @barrier("local");
+      @barrier("local");
 
       for (int t = 0; t < p_blockSize; ++t; @inner(0)) {
         if (t < 4) {
@@ -113,7 +113,7 @@ computeFaceCentroid(const dlong Nelements, const dlong BID,
           avg_z[t] += avg_z[t + 4];
         }
       }
-//    @barrier("local");
+      @barrier("local");
 
       for (int t = 0; t < p_blockSize; ++t; @inner(0)) {
         if (t < 2) {
@@ -122,7 +122,7 @@ computeFaceCentroid(const dlong Nelements, const dlong BID,
           avg_z[t] += avg_z[t + 2];
         }
       }
-      //    @barrier("local");
+      @barrier("local");
 
       for (int t = 0; t < p_blockSize; ++t; @inner(0)) {
         if (t < 1) {

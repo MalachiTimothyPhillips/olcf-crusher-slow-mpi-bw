@@ -208,8 +208,8 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   // user specifies a mean velocity, not volumetric flow rate
   dfloat volumetricFlowRate = flowRate * mesh->volume / lengthScale;
-  if (platform->options.compareArgs("CONSTANT FLOW QUANTITY",
-                                    "VOLUMETRIC FLOW")) {
+  if (platform->options.compareArgs("CONSTANT FLOW RATE TYPE",
+                                    "VOLUMETRIC")) {
     volumetricFlowRate = flowRate;
   }
 

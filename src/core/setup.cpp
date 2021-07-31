@@ -47,9 +47,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
        platform->options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
   }
 
-  if(platform->options.compareArgs("CONSTANT FLOW RATE DRIVER", "TRUE"))
+  if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE"))
   {
-    platform->options.getArgs("CONSTANT FLOW RATE", nrs->flowRate);
+    platform->options.getArgs("FLOW RATE", nrs->flowRate);
     nrs->fromBID = -1;
     nrs->toBID = -1;
     platform->options.getArgs("CONSTANT FLOW FROM BID", nrs->fromBID);
@@ -252,7 +252,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_mue = nrs->o_prop.slice(0 * nrs->fieldOffset * sizeof(dfloat));
   nrs->o_rho = nrs->o_prop.slice(1 * nrs->fieldOffset * sizeof(dfloat));
 
-  if(platform->options.compareArgs("CONSTANT FLOW RATE DRIVER", "TRUE")){
+  if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE")){
     nrs->o_Uc  = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
     nrs->o_Pc  = platform->device.malloc(nrs->fieldOffset * sizeof(dfloat));
     nrs->o_prevProp = device.malloc(2 * nrs->fieldOffset * sizeof(dfloat), nrs->prop);

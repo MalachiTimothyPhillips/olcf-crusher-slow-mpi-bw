@@ -177,7 +177,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   int stage = 0;
 
   const bool useConstantFlowRate =
-      platform->options.compareArgs("CONSTANT FLOW RATE DRIVER", "TRUE");
+      platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE");
   bool solveRequired = true;
 
   do {
