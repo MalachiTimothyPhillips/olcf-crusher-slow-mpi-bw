@@ -21,6 +21,9 @@ filtering = hpfrt
 filterWeight = 0.1/${dt}
 filterModes = 1
 
+#variableDt = true
+#targetCFL = 1.5
+
 [PRESSURE]
 residualTol = 1e-04
 #preconditioner = multigrid+additive+overlapCrsSolve
