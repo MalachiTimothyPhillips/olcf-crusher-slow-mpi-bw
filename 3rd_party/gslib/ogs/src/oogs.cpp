@@ -203,15 +203,6 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
       gs->packBufDoubleMaxKernel = device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleMax", ogs::kernelInfo);
       gs->unpackBufDoubleMaxKernel = device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleMax", ogs::kernelInfo);
 
-      if(device.mode() == "HIP" || device.mode() == "CUDA") {
-        std::string fileName = DOGS;
-        if(device.mode() == "CUDA") fileName += "/okl/oogs-half.cu";
-        if(device.mode() == "HIP") fileName += "/okl/oogs-half.hip";
-        occa::properties nativeProperties = ogs::kernelInfo;
-        nativeProperties["okl/enabled"] = false;
-        gs->packBufFloatToHalfAddKernel = device.buildKernel(fileName.c_str(), "packBuf_halfAdd", nativeProperties);
-        gs->unpackBufHalfToFloatAddKernel = device.buildKernel(fileName.c_str(), "unpackBuf_halfAdd", nativeProperties);
-      }
     }
     MPI_Barrier(gs->comm);
   }
@@ -369,15 +360,7 @@ static void packBuf(oogs_t *gs,
                     occa::memory  &o_v,
                     occa::memory  &o_gv)
 {
-  if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
-    occa::dim outer, inner;
-    outer.dims = 1;
-    inner.dims = 1;
-    outer[0] = (Ngather * k + BLOCKSIZE - 1) / BLOCKSIZE;
-    inner[0] = BLOCKSIZE;
-    gs->packBufFloatToHalfAddKernel.setRunDims(outer, inner);
-    gs->packBufFloatToHalfAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
-  } else if (!strcmp(type, "float") && !strcmp(op, ogsAdd)) {
+  if (!strcmp(type, "float") && !strcmp(op, ogsAdd)) {
     gs->packBufFloatAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
   } else if (!strcmp(type, "double") && !strcmp(op, ogsAdd)) {
     gs->packBufDoubleAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
@@ -404,15 +387,7 @@ static void unpackBuf(oogs_t *gs,
                       occa::memory  &o_v,
                       occa::memory  &o_gv)
 {
-  if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
-    occa::dim outer, inner;
-    outer.dims = 1;
-    inner.dims = 1;
-    outer[0] = (Ngather * k + BLOCKSIZE - 1) / BLOCKSIZE;
-    inner[0] = BLOCKSIZE;
-    gs->unpackBufHalfToFloatAddKernel.setRunDims(outer, inner);
-    gs->unpackBufHalfToFloatAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
-  } else if (!strcmp(type, "float") && !strcmp(op, ogsAdd)) {
+  if (!strcmp(type, "float") && !strcmp(op, ogsAdd)) {
     gs->unpackBufFloatAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
   } else if (!strcmp(type, "double") && !strcmp(op, ogsAdd)) {
     gs->unpackBufDoubleAddKernel(Ngather, k, stride, o_gstarts, o_gids, o_sstarts, o_sids, o_v, o_gv);
@@ -449,10 +424,8 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
 {
   size_t Nbytes;
   ogs_t *ogs = gs->ogs; 
-  const char* type = (!strcmp(_type,"floatCommHalf")) ? "float" : _type;
-  if (!strcmp(_type, "floatCommHalf"))
-    Nbytes = sizeof(float)/2;
-  else if (!strcmp(type, "float"))
+  const char* type = _type;
+  if (!strcmp(type, "float"))
     Nbytes = sizeof(float);
   else if (!strcmp(type, "double"))
     Nbytes = sizeof(double);
@@ -460,12 +433,6 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
     Nbytes = sizeof(int);
   else if (!strcmp(type, "long long int"))
     Nbytes = sizeof(long long int);
-
-  if (!strcmp(_type, "floatCommHalf") && ogs->device.mode() == "Serial"){
-    if(gs->rank == 0)
-      std::cout << "ERROR: Current backend does not support floatCommHalf!\n";
-    exit(-1);
-  }
 
   if(gs->mode == OOGS_DEFAULT) { 
     if(k>1)
@@ -509,19 +476,11 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
 {
   size_t Nbytes;
   ogs_t *ogs = gs->ogs; 
-  const char* type = (!strcmp(_type,"floatCommHalf")) ? "float" : _type;
-  if (!strcmp(_type, "floatCommHalf"))
-    Nbytes = sizeof(float)/2;
-  else if (!strcmp(_type, "float"))
+  const char* type = _type;
+  if (!strcmp(_type, "float"))
     Nbytes = sizeof(float);
   else if (!strcmp(_type, "double"))
     Nbytes = sizeof(double);
-
-  if (!strcmp(_type, "floatCommHalf") && ogs->device.mode() == "Serial"){
-    if(gs->rank == 0)
-      std::cout << "ERROR: Current backend does not support floatCommHalf!\n";
-    exit(-1);
-  }
 
   if(gs->mode == OOGS_DEFAULT) { 
     if(k>1)
@@ -599,8 +558,5 @@ void oogs::destroy(oogs_t *gs)
   gs->packBufDoubleMaxKernel.free();
   gs->unpackBufDoubleMaxKernel.free();
 
-  gs->packBufFloatToHalfAddKernel.free();
-  gs->unpackBufHalfToFloatAddKernel.free();
-  
   free(gs);
 }

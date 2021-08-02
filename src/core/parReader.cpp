@@ -304,7 +304,6 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE RESIDUAL PROJECTION START", "5");
 
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
-  options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
   options.setArgs("ENABLE OVERLAP", "TRUE");
 }

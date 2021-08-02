@@ -221,8 +221,7 @@ void ellipticOperator(elliptic_t* elliptic,
   setupAide &options = elliptic->options;
   oogs_t* oogsAx = elliptic->oogsAx;
   const char* ogsDataTypeString = (!strstr(precision, dfloatString)) ?
-                                  options.compareArgs("ENABLE FLOATCOMMHALF GS SUPPORT",
-                                                      "TRUE") ? ogsFloatCommHalf : ogsPfloat
+                                  ogsPfloat
     :
                                   ogsDfloat;
   int serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
