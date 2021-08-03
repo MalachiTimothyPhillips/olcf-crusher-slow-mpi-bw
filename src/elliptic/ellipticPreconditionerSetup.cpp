@@ -48,6 +48,8 @@ void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs, occa::propert
     ellipticUpdateJacobi(elliptic);
   } else if(options.compareArgs("PRECONDITIONER", "NONE")) {
     // nothing 
+  } else if(options.compareArgs("PRECONDITIONER", "USER")) {
+    // nothing 
   } else {
     printf("ERROR: Unknown preconditioner!\n");
     ABORT(EXIT_FAILURE);

@@ -39,6 +39,7 @@
 #include "platform.hpp"
 
 #include "timer.hpp"
+#include <functional>
 
 #define ELLIPTIC_ENABLE_TIMER
 
@@ -181,6 +182,9 @@ struct elliptic_t
 
   ResidualProjection* residualProjection;
   GmresData* gmresData;
+
+  // optional handle for user-defined preconditioner
+  std::function<void(occa::memory& o_r, occa::memory& o_z)> userPreconditioner;
 };
 
 #include "ellipticMultiGrid.h"

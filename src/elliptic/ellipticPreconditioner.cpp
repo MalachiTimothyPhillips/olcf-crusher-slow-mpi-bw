@@ -55,6 +55,8 @@ void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memor
     parAlmond::Precon(precon->parAlmond, o_z, o_r);
   }else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
     ellipticSEMFEMSolve(elliptic, o_r, o_z);
+  }else if (options.compareArgs("PRECONDITIONER", "USER")) {
+    elliptic->userPreconditioner(o_r, o_z);
   }else if (options.compareArgs("PRECONDITIONER", "NONE")) {
     o_z.copyFrom(o_r);
   }else {
