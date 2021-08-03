@@ -9,7 +9,7 @@ c     NOTE ::: This routine MAY NOT be called by every process
 
       integer i,j,k,f,e,eg
 
-      ux   = 1.0
+      ux   = 0.0
       uy   = 0.0
       uz   = 0.0
       temp = 0.0
@@ -62,16 +62,24 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKUSE'
 
-      integer  idum 
-      save     idum 
-      data     idum  / 9 /
+c      integer  idum 
+c      save     idum 
+c      data     idum  / 9 /
 
-      if (idum.eq.9) idum = idum+1+nid
+c      if (idum.eq.9) idum = idum+1+nid
 
-      ux = ran1(idum)
-      uy = ran1(idum)
-      uz = ran1(idum)
-      ux = sin(pi*x)*sin(pi*y)*sin(pi*z)
+c      ux = ran1(idum)
+c      uy = ran1(idum)
+c      uz = ran1(idum)
+c      ux = sin(pi*x)*sin(pi*y)*sin(pi*z)
+
+      integer i,j,k,e,eg
+
+      ux   = 0.0
+      uy   = 0.0
+      uz   = 0.0
+      temp = eg
+
 
       return
       end
@@ -80,6 +88,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
+      call gfdm_test
+
       return
       end
 c-----------------------------------------------------------------------
@@ -87,9 +97,9 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
 
-      call rescale_x(xm1,-0.5,0.5)
-      call rescale_x(ym1,-0.5,0.5)
-      call rescale_x(zm1,-0.5,0.5)
+      call rescale_x(xm1,0.0,1.0)
+      call rescale_x(ym1,0.0,1.0)
+      call rescale_x(zm1,0.0,1.0)
 
       do iel=1,nelt
       do ifc=1,2*ndim
@@ -222,3 +232,653 @@ c-----------------------------------------------------------------------
         return
       end
 c-----------------------------------------------------------------------
+      subroutine userqtl ! Set thermal divergence
+
+      call userqtl_scig
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gfdm_test
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      parameter(lt=lx1*ly1*lz1*lelt)
+      common /scrns_z/ u(lt),ue(lt),bf(lt),err(lt)
+     
+      common /slabmxy/ mx,my,mz 
+      parameter(la=350*350,le=100)
+      common /cbiga/ d(lt),b(lt),uc(lt)
+      common /cbigx/ ax(la),axt(la),lamx(la)
+      common /cbigy/ ay(la),ayt(la),lamy(la)
+      common /cbigz/ az(la),azt(la),lamz(la)
+      real len,lamx,lamy,lamz
+
+      common /cptr/ sptr(lt+1),lnull
+      integer sptr
+
+      common /viral/ sptrd(lt+1),h_data(100)
+      real sptrd,h_data
+
+      common /nrsscptr/ nrs_scptr(20)
+      integer*8         nrs_scptr
+
+      nelx = 18
+      nely = 18
+      nelz = 18
+
+
+      n = lx1*ly1*lz1*nelt
+      do i=1,n
+         x=xm1(i,1,1,1)
+         y=ym1(i,1,1,1)
+         z=zm1(i,1,1,1)
+         ue(i) = sin(pi*x)*sin(pi*y)*sin(pi*z)
+c         write(6,*)  i, ue(i) , 'exact'
+         bf(i) = 3*pi*pi*ue(i)*bm1(i,1,1,1)
+      enddo
+      ifield = 1
+
+      call dssum(bf,lx1,ly1,lz1)
+
+      call gfdm_solver_setup
+      call gfdm_solver(u,bf,ue)
+
+      call sem_to_slab(b,bf,sptr)
+      call sem_to_slab(uc,ue,sptr)
+ 
+      h_data(1) = n
+      h_data(2) = mx
+      h_data(3) = my
+      h_data(4) = mz
+      h_data(5) = lx1-1
+      h_data(6) = lnull
+
+c      do i=1,mx*mx
+c        write(6,*) i, ax(i), 'a_mat'
+c      enddo
+
+c      do i=1,n
+c        write(6,*) i, sptrd(i), 'sptr'
+c      enddo
+
+c      do i=1,6
+c        write(6,*) i, h_data(i), ' value'     
+c      enddo 
+ 
+      nrs_scptr(1) = loc(h_data(1))
+      nrs_scptr(2) = loc(sptrd(1))
+      nrs_scptr(3) = loc(ax(1))
+      nrs_scptr(4) = loc(ay(1))
+      nrs_scptr(5) = loc(az(1))
+      nrs_scptr(6) = loc(axt(1))
+      nrs_scptr(7) = loc(ayt(1))
+      nrs_scptr(8) = loc(azt(1))
+      nrs_scptr(9) = loc(d(1))
+      nrs_scptr(10) = loc(b(1))
+      nrs_scptr(11) = loc(ue(1))
+
+      call sub3    (err,u,ue,n)
+      call outpost (u,ue,err,bf,t,'   ')
+
+      errmax = glamax(err,n)
+      if (nio.eq.0) write(6,*) n,errmax,' err'
+
+c      do i=1,n
+c        write(6,*) i, sptr(i), sptrd(i), ' value'     
+c      enddo 
+
+c       write(6,*) , lnull, ' value'     
+c      call exitti('quit gfdm_test$',nelx)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine build_sptr(sptr,lnull,cbx,cby,cbz)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      integer sptr(lx1,ly1,lz1,lelt)  ! SEM-to-Slab pointer array
+      character*1 cbx(2),cby(2),cbz(2)
+
+      integer e,eg,ex,ey,ez
+
+c
+c     In this arrangement, we put the x-index in the middle, so that the
+c     y- and z-transforms can be effected directly as matrix-matrix products.
+c
+c     We assume that x is the direction that is partitioned (with lowest
+c     elements on rank 0, highest on rank np-1).
+c
+c     y and z are assumed to be wholly contained on each rank.
+c
+c     The number of points in each direction is influenced by the 
+c     cbx(2), cby(2), cbz(2) arrays, which can be
+c
+c     'N' for Neumann      (here, 'N' is for _this_ field, not for the velocity)
+c     'D' for Dirichlet
+c     'P' for Periodic
+c
+
+
+      n = lx1*ly1*lz1*lelt
+      mone = -1
+      call ifill(sptr,mone,n)    ! Initialize pointer to -1
+
+      nlx = nelgv / (nely*nelz)
+
+      l = 0  ! Slab index
+
+      k0=2
+      if (ldim.eq.2.or.cbz(1).eq.'N') k0=1
+      do ez=1,nelz
+        k1=lz1
+        if (ez.eq.nelz.and.cbz(2).eq.'D') k1=lz1-1
+        do k=k0,k1
+
+          i0=2
+          if (nid.eq.0.and.cbx(1).eq.'N') i0=1 ! Start point for x
+          do ex=1,nlx
+           i1=lx1
+           if (nid.eq.np-1.and.ex.eq.nlx.and.cbx(2).eq.'D') i1=lx1-1
+           do i=i0,i1
+
+            j0=2
+            if (cby(1).eq.'N') j0=1
+            do ey=1,nely
+
+              j1=ly1
+              if (ey.eq.nely.and.cby(2).eq.'D') j1=ly1-1
+
+              e = ex + nlx*(ey-1) + nlx*nely*(ez-1)
+
+              do j=j0,j1
+                 l  = l+1
+                 sptr(i,j,k,e) = l
+              enddo
+
+              j0=2
+           enddo
+
+          enddo
+          i0=2
+        enddo
+
+       enddo
+       k0=2
+      enddo
+
+      lnull = l+1   ! Point "unused" entries in SEM array to trivial address
+      do i=1,n
+         if (sptr(i,1,1,1).lt.0) sptr(i,1,1,1)=lnull
+      enddo
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine slab_to_sem(usem,uslab,sptr,lnull)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real usem(1),uslab(1)
+      integer sptr(1)
+
+      n=lx1*ly1*lz1*nelt
+
+c     call rzero(usem,n) ! Necessary here? Or automatic in loop below?
+
+      uslab(lnull)=0
+      do i=1,n
+         j=sptr(i)
+         usem(i)=uslab(j)
+      enddo
+
+      ifldt  = ifield
+      ifield = 1
+      call dssum(usem,lx1,ly1,lz1) ! Necessary here? Or better elsewhere?
+      ifield = ifldt
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine sem_to_slab(uslab,usem,sptr)
+      include 'SIZE'
+      include 'TOTAL'
+
+      real uslab(1),usem(1)
+      integer sptr(1)
+
+      n=lx1*ly1*lz1*nelt
+      do i=1,n
+         j=sptr(i)
+         uslab(j)=usem(i)
+      enddo
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine axpym(x,ldx,y,ldy,a,m,n) ! X = X + a*Y
+
+      real x(ldx,1),y(ldy,1)
+
+c     write(6,*)
+c     write(6,1) m,n,x(1,1),y(1,1),a,a
+c     write(6,*)
+
+      do j=1,n
+      do i=1,m
+           xi = x(i,j)
+           x(i,j) = x(i,j) + a*y(i,j)
+c          write(6,1) i,j,x(i,j),y(i,j),xi,a
+      enddo
+      enddo
+   1  format(2i5,1p4e12.4,' AXPYm')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_fast_solve_1d(a,b,lam,m,nx,nel,len,bc0,bc1,wk)
+
+      include 'SIZE'
+      include 'INPUT' ! if3d
+      include 'ZPER'  ! lelx,lely,lelz in nek5000
+
+      real a(1),b(1),lam(1),len(nel),wk(1)
+      character*1 bc0,bc1
+
+      call set_1d_ab  (a,b,m,nx,nel,len,bc0,bc1,wk)
+      call generales  (a,b,lam,m,wk)
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_1d_a_mat(eigv,eigs,n,len,nel,nx,bc0,bc1,bw,lbw)
+
+c     Construct and diagonalize 1D A-matrix (H1 operator)
+
+
+      real    eigv(1),eigs(1)     ! output eigenvec and eigenvalues
+      integer n                   ! output size of eigv (nxn) and eigs(n)
+
+      real    len(nel)            ! input array containing length of els.
+      integer nx                  ! # els, # vel pts/el
+      character*1 bc0,bc1         ! bc at each end of domain
+      real bw(0:lbw)              ! big work array
+
+
+      n = (nx-1)*nel+1 ! Size of assembled stiffness matrix, A
+      if (bc0.eq.'P') n=n-1
+      if (bc0.eq.'D') n=n-1
+      if (bc1.eq.'D') n=n-1
+
+      n1  = n**2  +  1
+      n2  = n**2  +  n1
+
+      if(n2.gt.lbw)call exitti('ABORT set_1d_a_mat: increase lbw:$',n2)
+      call set_fast_solve_1d(eigv,bw,eigs,n,nx,nel,len,bc0,bc1,bw(n1))
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine set_1d_ab(a,b,m,nx,nel,len,bc0,bc1,wk)
+
+c     Generate fast diagonalization matrices for 1D SEM operator
+
+      include 'SIZE'
+      include 'SEMHAT'
+
+      real a(1),b(1),len(nel),wk(1)
+      character*1 bc0,bc1
+      integer e,ah1
+
+      write(6,*) nx,nel,len(1),bc0,bc1,' bcs amat'
+      write(6,*) 
+
+
+      m  = (nx-1)*nel+1 ! Size of assembled stiffness matrix, A
+      if (bc0.eq.'P') m=m-1 ! %%% THESE ARE NOT YET CORRECT
+      if (bc0.eq.'D') m=m-1
+      if (bc1.eq.'D') m=m-1
+
+      nr = nx-1  ! Polynomial order
+
+      call semhat(ah,bh,ch,dh,zh,dph,jph,bgl,zgl,dgl,jgl,nr,wh)
+
+      ij=1
+      call rzero(wk,nx*nx)
+      do i=1,nx
+         wk(ij) = bh(i)
+         ij = ij+nx+1
+      enddo
+
+      call rzero(a,m*m)
+      call rzero(b,m*m)
+
+      write(6,*) 'BC MATRIX SETUP: ',bc0,bc1
+
+      ij = 1
+      do e=1,nel
+
+         sa = 2/len(e)      ! Scale factors for Ah and Bh
+         sb = len(e)/2
+
+         ah1 = 1
+         nah = nx
+         if (e.eq.1.and.bc0.eq.'P') then
+
+            ah1 =2
+            nah =nx-1
+            icol=m*m-(m-1)
+            call axpym  (a(icol),m,ah(ah1),nx,sa,nah,1)
+            call axpym  (b(icol),m,wk(ah1),nx,sb,nah,1)
+
+            ah1 =1+nx
+            nah =nx-1
+            irow=m
+            call axpym  (a(irow),m,ah(ah1),nx,sa,1,nah)
+            call axpym  (b(irow),m,wk(ah1),nx,sb,1,nah)
+
+            ah1 =1  ! Map ah(1) to A(m,m)
+            nah =1
+            inn =m*m
+            call axpym  (a(inn),m,ah(ah1),nx,sa,1,nah)
+            call axpym  (b(inn),m,wk(ah1),nx,sb,1,nah)
+
+            ah1=1+nx+1  !! ah(2,2) is 1st entry
+            nah=nx-1
+
+         elseif (e.eq.1.and.bc0.eq.'D') then
+            ah1=1+nx+1  !! ah(2,2) is 1st entry
+            nah=nah-1
+         endif
+
+         if (e.eq.nel.and.bc1.eq.'D') nah=nah-1
+
+         call axpym  (a(ij),m,ah(ah1),nx,sa,nah,nah)
+         call axpym  (b(ij),m,wk(ah1),nx,sb,nah,nah)
+         ij = ij + (nah-1)*m + (nah-1)
+
+      enddo
+
+c     call outmat(a,m,m,'A Matr',m)
+c     call pausit('2aa')
+c     call outmat(b,m,m,'B Matr',m)
+c     call pausit('3aa')
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine pausit(str3)
+      character*1 yesno
+      character*3 str3
+
+      return
+      write(6,*) str3,': pausit: continue? (y/n)'
+      read(5,*) yesno
+      if (yesno.eq.'n') stop
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine generales(a,b,lam,n,w)
+c
+c     Solve the generalized eigenvalue problem  A x = lam B x
+c
+c     A -- symm.
+c     B -- symm., pos. definite
+c
+c     "SIZE" is included here only to deduce WDSIZE, the working
+c     precision, in bytes, so as to know whether dsygv or ssygv
+c     should be called.
+c
+      include 'SIZE'
+      include 'PARALLEL'
+c
+      real a(n,n),b(n,n),lam(n),w(n,n)
+      real aa(100),bb(100)
+c
+      parameter (lbw=4*lx1*ly1*lz1*lelv)
+      common /bigw/ bw(lbw)
+      integer ind(lbw)
+      equivalence (ind,bw)
+c
+      lw = n*n
+      write(6,*) 'in generales, =',info,n,ninf,lw
+ 
+c     call outmat2(a,n,n,n,'aa  ')
+c     call outmat2(b,n,n,n,'bb  ')
+c
+c     call copy(aa,a,100)
+c     call copy(bb,b,100)
+c
+      call copy(w,b,n*n)
+      call dsygv(1,'V','U',n,a,n,b,n,lam,bw,lbw,info)
+      call copy(b,w,n*n)
+c
+c     call outmat2(a  ,n,n,n,'Aeig')
+c     call outmat2(lam,1,n,n,'Deig')
+c
+      if (info.ne.0) then
+c
+         if (nid.eq.0) then
+            call outmat2(aa ,n,n,n,'aa  ')
+            call outmat2(bb ,n,n,n,'bb  ')
+            call outmat2(a  ,n,n,n,'Aeig')
+            call outmat2(lam,1,n,n,'Deig')
+         endif
+c
+         ninf = n-info
+         write(6,*) 'Error in generales, info=',info,n,ninf
+         call exitt
+      endif
+
+      isort=1
+      if (isort.gt.0) then
+       call sort(lam,ind,n)   ! Sort columns according to eigenvalues
+       do i=1,n
+         do j=1,n
+            w(j,1)=a(i,j)
+         enddo
+         do j=1,n
+            jn=ind(j)
+            a(i,jn)=w(j,1)
+         enddo
+       enddo
+      endif
+
+      iorth=1
+      if (iorth.gt.0) then
+       do ipass=1,2 ! 2-Pass Classical GS Orthogonalization wrt B inner-product
+       do j=1,n 
+         call mxm(b,n,a(1,j),n,bw,1)
+         scale=vlsc2(a(1,j),bw,n)
+         do k=1,j-1
+            betak=-vlsc2(a(1,k),bw,n)
+            call add2s2(a(1,j),a(1,k),betak,n)
+            scale=scale - betak*betak
+c           write(6,*) ipass,j,k,betak,scale,' scale'
+         enddo
+         scale=1./sqrt(scale)
+         call cmult(a(1,j),scale,n)
+       enddo
+       enddo
+      endif
+
+c     call copy      (w,a,n*n)      !  S
+c     call transpose1(w,n)          !  S^T 
+c     call mxm       (w,n,b,n,bw,n) !  S^T B
+c     call mxm       (bw,n,a,n,w,n) !  S^T B S
+c     call outmat2   (w ,n,n,n,'STBS')
+
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gfdm_solver_setup
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      common /slabmxy/ mx,my,mz
+      common /slabcbc/ cbx,cby,cbz
+      character*1 cbx(2),cby(2),cbz(2)
+
+      parameter(la=350*350,le=100,lt=lx1*ly1*lz1*lelt)
+      common /cbiga/ d(lt),b(la),len(le)
+      common /cbigx/ ax(la),axt(la),lamx(la)
+      common /cbigy/ ay(la),ayt(la),lamy(la)
+      common /cbigz/ az(la),azt(la),lamz(la)
+      real len,lamx,lamy,lamz
+
+      common /cptr/ sptr(lt+1),lnull
+      integer sptr
+
+      common /viral/ sptrd(lt+1)
+      real sptrd
+
+      character*1 bc0,bc1
+
+      integer e,eg,ex,ey,ez
+
+      write(6,*) nelx,nely,nelz,'nelx,nely,nelz'
+
+      nlx = nelgv / (nely*nelz)
+
+      bc0='P'
+      bc1='P'
+      bc0='D'
+      bc1='D'
+      cbx(1)=bc0
+      cby(1)=bc0
+      cbz(1)=bc0
+      cbx(2)=bc1
+      cby(2)=bc1
+      cbz(2)=bc1
+
+      call build_sptr(sptr,lnull,cbx,cby,cbz)
+      
+      do i=1,(lt+1)
+        sptrd(i) = real(sptr(i))
+      enddo
+
+
+      nel = nlx
+      do e=1,nel
+         len(e) = 1./e
+         len(e) = 1.
+      enddo
+      scale=1./vlsum(len,nel)
+      call cmult(len,scale,nel)
+      call set_fast_solve_1d(ax,b,lamx,mx,lx1,nel,len,bc0,bc1,axt)
+      call transpose(axt,mx,ax,mx)
+
+      nel = nely
+      do e=1,nel
+         len(e) = 1./e
+         len(e) = 1.
+      enddo
+      scale=1./vlsum(len,nel)
+      call cmult(len,scale,nel)
+      call set_fast_solve_1d(ay,b,lamy,my,lx1,nel,len,bc0,bc1,ayt)
+      call transpose(ayt,my,ay,my)
+
+      mz=0
+      if (ldim.eq.3) then
+        nel = nelz
+        do e=1,nel
+           len(e) = 1./e
+           len(e) = 1.
+        enddo
+        scale=1./vlsum(len,nel)
+        call cmult(len,scale,nel)
+        call set_fast_solve_1d(az,b,lamz,mz,lx1,nel,len,bc0,bc1,azt)
+        call transpose(azt,mz,az,mz)
+      endif
+
+      xmax = vlamax(lamx,mx)
+      ymax = vlamax(lamy,my)
+      zmax = vlamax(lamz,mz)
+      zmax = xmax+ymax+zmax
+
+      tiny = 1.e-12*zmax
+
+      l=0
+      do j=1,my
+      do i=1,mx
+      do k=1,mz
+
+         l=l+1
+         eigenvalue = lamx(i)+lamy(j)+lamz(k)
+
+         if (abs(eigenvalue).gt.tiny) then
+            d(l) = 1./eigenvalue
+         else
+            d(l) = 0. ! Pseudoinverse
+         endif
+
+      enddo
+      enddo
+      enddo
+            
+
+      return
+      end
+c-----------------------------------------------------------------------
+      subroutine gfdm_solver(u,bf,ue)
+      include 'SIZE'
+      include 'TOTAL'
+      include 'ZPER'
+
+      real u(1),bf(1),ue(1)
+
+      common /slabmxy/ mx,my,mz
+      common /slabcbc/ cbx,cby,cbz
+      character*1 cbx(2),cby(2),cbz(2)
+
+      parameter(la=350*350,le=100,lt=lx1*ly1*lz1*lelt)
+      common /cbiga/ d(lt),b(lt)
+      common /cbigx/ ax(la),axt(la),lamx(la)
+      common /cbigy/ ay(la),ayt(la),lamy(la)
+      common /cbigz/ az(la),azt(la),lamz(la)
+      real len,lamx,lamy,lamz
+
+      common /cptr/ sptr(lt+1),lnull
+      integer sptr
+
+      call sem_to_slab(b,bf,sptr)   ! Use b as work array
+
+c      do i=1,mx*my*mz
+c        write(6,*) i, b(i), ' value'
+c      enddo
+
+      call mxm(ayt,my,b,my,u,mx*mz) ! Use u as work array
+      call mxm(u,mx*my,az,mz,b,mz)  ! Use b as work array
+
+      i_in=1
+      do k=1,mz
+         call mxm(b(i_in),my,ax,mx,u(i_in),mx) ! u is work array
+         i_in = i_in + my*mx
+      enddo
+
+      call col2(u,d,mx*my*mz)
+
+      i_in=1
+      do k=1,mz
+         call mxm(u(i_in),my,axt,mx,b(i_in),mx) ! b is work array
+         i_in = i_in + my*mx
+      enddo
+
+      call mxm(b,mx*my,azt,mz,u,mz) ! Use u as work array
+      call mxm(ay,my,u,my,b,mx*mz)  ! Use b as work array
+
+      call slab_to_sem(u,b,sptr,lnull) ! u is output
+
+      return
+      end
+c-----------------------------------------------------------------------
+
+
