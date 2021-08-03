@@ -1,0 +1,170 @@
+// Boundary conditions
+
+// Stabilized outflow (Dong et al)
+
+#define TILE_WIDTH_X 8
+#define TILE_WIDTH_Y 8
+#define TILE_WIDTH_Z 8
+#define TILE_WIDTH 512
+
+@kernel void TCx(dfloat *A, dfloat *B, dfloat *C,
+                                     int nx, int ny, int nz) {
+
+  for(int bz=0; bz<(nz-1)/TILE_WIDTH_Z+1; ++bz; @outer){
+    for(int by=0; by<(ny-1)/TILE_WIDTH_Y+1; ++by; @outer){
+      for(int bx=0; bx<(nx-1)/TILE_WIDTH_X+1; ++bx; @outer){
+
+        for(int tz = 0; tz<TILE_WIDTH_Z; ++tz; @inner){
+          for(int ty = 0; ty<TILE_WIDTH_Y; ++ty; @inner){
+            for(int tx = 0; tx<TILE_WIDTH_X; ++tx; @inner){
+
+              int Len = bx * TILE_WIDTH_X + tx;
+              int Bre = by * TILE_WIDTH_Y + ty;
+              int Dep = bz * TILE_WIDTH_Z + tz;
+
+              if(Len<nx && Bre<ny && Dep<nz){
+                dfloat value = 0.0;
+                for(int iter_x=0; iter_x < nx; ++iter_x){
+                  value += A[iter_x*nx + Len] * B[iter_x + Bre*nx + Dep*nx*ny];
+                }
+                C[Len + Bre*nx + Dep*nx*ny] = value;
+              }
+
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+
+@kernel void TCy(dfloat *A, dfloat *B, dfloat *C,
+                                     int nx, int ny, int nz) {
+
+  for(int bz=0; bz<(nz-1)/TILE_WIDTH_Z+1; ++bz; @outer){
+    for(int by=0; by<(ny-1)/TILE_WIDTH_Y+1; ++by; @outer){
+      for(int bx=0; bx<(nx-1)/TILE_WIDTH_X+1; ++bx; @outer){
+
+        for(int tz = 0; tz<TILE_WIDTH_Z; ++tz; @inner){
+          for(int ty = 0; ty<TILE_WIDTH_Y; ++ty; @inner){
+            for(int tx = 0; tx<TILE_WIDTH_X; ++tx; @inner){
+
+              int Len = bx * TILE_WIDTH_X + tx;
+              int Bre = by * TILE_WIDTH_Y + ty;
+              int Dep = bz * TILE_WIDTH_Z + tz;
+
+              if(Len<nx && Bre<ny && Dep<nz){
+                dfloat value = 0.0;
+                for(int iter_y=0; iter_y < ny; ++iter_y){
+                  value += A[iter_y*ny + Bre] * B[Len + iter_y*nx+ Dep*nx*ny];
+                }
+                C[Len + Bre*nx + Dep*nx*ny] = value;
+              }
+
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+@kernel void TCz(dfloat *A, dfloat *B, dfloat *C,
+                                     int nx, int ny, int nz) {
+
+  for(int bz=0; bz<(nz-1)/TILE_WIDTH_Z+1; ++bz; @outer){
+    for(int by=0; by<(ny-1)/TILE_WIDTH_Y+1; ++by; @outer){
+      for(int bx=0; bx<(nx-1)/TILE_WIDTH_X+1; ++bx; @outer){
+
+        for(int tz = 0; tz<TILE_WIDTH_Z; ++tz; @inner){
+          for(int ty = 0; ty<TILE_WIDTH_Y; ++ty; @inner){
+            for(int tx = 0; tx<TILE_WIDTH_X; ++tx; @inner){
+
+              int Len = bx * TILE_WIDTH_X + tx;
+              int Bre = by * TILE_WIDTH_Y + ty;
+              int Dep = bz * TILE_WIDTH_Z + tz;
+
+              if(Len<nx && Bre<ny && Dep<nz){
+                dfloat value = 0.0;
+                for(int iter_z=0; iter_z < nz; ++iter_z){
+                  value += A[iter_z*nz + Dep] * B[Len + Bre*nx + iter_z*nx*ny];
+                }
+                C[Len + Bre*nx + Dep*nx*ny] = value;
+              }
+
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+@kernel void Dot(dfloat *A, dfloat *B, dfloat *C,
+                                     int nx, int ny, int nz) {
+
+  for(int bz=0; bz<(nz-1)/TILE_WIDTH_Z+1; ++bz; @outer){
+    for(int by=0; by<(ny-1)/TILE_WIDTH_Y+1; ++by; @outer){
+      for(int bx=0; bx<(nx-1)/TILE_WIDTH_X+1; ++bx; @outer){
+
+        for(int tz = 0; tz<TILE_WIDTH_Z; ++tz; @inner){
+          for(int ty = 0; ty<TILE_WIDTH_Y; ++ty; @inner){
+            for(int tx = 0; tx<TILE_WIDTH_X; ++tx; @inner){
+
+              int Len = bx * TILE_WIDTH_X + tx;
+              int Bre = by * TILE_WIDTH_Y + ty;
+              int Dep = bz * TILE_WIDTH_Z + tz;
+
+              if(Len<nx && Bre<ny && Dep<nz){
+                C[Len + Bre*nx + Dep*nx*ny] = A[Len + Bre*nx + Dep*nx*ny] * B[Len + Bre*nx + Dep*nx*ny];
+              }
+
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+
+@kernel void SlabToSem(dfloat *Sem, dfloat *Slab, int *Sptr,
+                                     int lnull, int n) {
+
+  for(int bz=0; bz<n; bz+=TILE_WIDTH; @outer){
+    for(int tz = bz; tz<bz+TILE_WIDTH; ++tz; @inner){
+      if(tz==0){
+        Slab[lnull-1] = 0;
+      }
+      if(tz<n){
+        int j = Sptr[tz];
+        Sem[tz] = Slab[j-1];
+      }
+    }
+  }
+}
+
+@kernel void SemToSlab(dfloat *Sem, dfloat *Slab, int *Sptr,
+                                     int lnull, int n) {
+
+  for(int bz=0; bz<n; bz+=TILE_WIDTH; @outer){
+    for(int tz = bz; tz<bz+TILE_WIDTH; ++tz; @inner){
+      if(tz==0){
+        Slab[lnull-1] = 0;
+      }
+      if(tz<n){
+        int j = Sptr[tz];
+        Slab[j-1]=Sem[tz];
+      }
+    }
+  }
+}
+
+// @kernel void diff(dfloat *A, dloat *B){
+//  
+// }

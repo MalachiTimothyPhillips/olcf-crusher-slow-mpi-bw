@@ -926,6 +926,8 @@ void registerEllipticPreconditionerKernels(const std::string &section) {
     registerJacobiKernels(section);
   } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "NONE")) {
     // nothing 
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "USER")) {
+    // nothing 
   } else {
     printf("ERROR: Unknown preconditioner!\n");
     ABORT(EXIT_FAILURE);
