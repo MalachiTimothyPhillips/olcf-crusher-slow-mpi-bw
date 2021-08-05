@@ -5,6 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
+#include <limits>
 
 #include "inipp.hpp"
 #include "tinyexpr.h"
@@ -310,6 +311,9 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
 
   options.setArgs("VARIABLE DT", "FALSE");
   options.setArgs("TARGET CFL", "1.0");
+
+  const double bigNumber = std::numeric_limits<double>::max();
+  options.setArgs("MAX DT", to_string_f(bigNumber));
 }
 
 setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
@@ -390,9 +394,34 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
   par->extract("general", "cubaturepolynomialorder", cubN);
   options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
 
-  double dt = 0;
-  if (par->extract("general", "dt", dt))
-    options.setArgs("DT", to_string_f(fabs(dt)));
+  string dtString;
+  if (par->extract("general", "dt", dtString)){
+    if(dtString.find("targetcfl") != string::npos)
+    {
+      options.setArgs("VARIABLE DT", "TRUE");
+      std::vector<string> entries = serializeString(dtString, '+');
+      for(string entry : entries)
+      {
+        if(entry.find("max") != string::npos)
+        {
+          std::vector<string> maxAndValue = serializeString(entry, '=');
+          assert(maxAndValue.size() == 2);
+          const double maxDT = std::stod(maxAndValue[1]);
+          options.setArgs("MAX DT", to_string_f(maxDT));
+        }
+
+        double initialDt = std::strtod(entry.c_str(), nullptr);
+        if(initialDt > 0.0){
+          options.setArgs("DT", to_string_f(initialDt));
+        }
+      }
+    }
+    else
+    {
+      const double dt = std::stod(dtString);
+      options.setArgs("DT", to_string_f(fabs(dt)));
+    }
+  }
 
   string timeStepper;
   par->extract("general", "timestepper", timeStepper);

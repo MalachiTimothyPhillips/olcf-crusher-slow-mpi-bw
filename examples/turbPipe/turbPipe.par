@@ -21,7 +21,7 @@ filtering = hpfrt
 filterWeight = 0.1/${dt}
 filterModes = 1
 
-#variableDt = true
+#dt = targetCFL + max = 1e-2 + 6e-3
 #targetCFL = 1.5
 
 [PRESSURE]

@@ -304,6 +304,13 @@ double dt(int tstep)
   if(platform->options.compareArgs("VARIABLE DT", "TRUE")){
     computeTimeStepFromCFL(tstep);
   }
+  
+  {
+    double maxDt;
+    platform->options.getArgs("MAX DT", maxDt);
+    nrs->dt[0] = (nrs->dt[0] < maxDt) ? nrs->dt[0] : maxDt;
+  }
+
   return nrs->dt[0];
 }
 
