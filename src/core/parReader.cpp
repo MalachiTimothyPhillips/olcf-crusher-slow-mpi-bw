@@ -30,6 +30,72 @@
               std::ptr_fun<int, int>(std::tolower));                           \
   }
 
+void parseCoarseSolver(const int rank, setupAide &options,
+                       inipp::Ini<char> *par, string parScope) {
+  string parSectionName = (parScope.find("temperature") != std::string::npos)
+                              ? "scalar00"
+                              : parScope;
+  UPPER(parSectionName);
+  string p_coarseSolver;
+  const bool continueParsing = par->extract(parScope, "coarsesolver", p_coarseSolver);
+  if(!continueParsing)
+    return;
+
+  if(p_coarseSolver.find("boomeramg") != string::npos){
+    options.setArgs("AMG SOLVER", "BOOMERAMG");
+    options.setArgs(parSectionName + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP64");
+    options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP64");
+    options.setArgs("AMG SOLVER LOCATION", "CPU");
+  }
+  else if(p_coarseSolver.find("amgx") != string::npos){
+    options.setArgs("AMG SOLVER", "AMGX");
+    options.setArgs(parSectionName + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP32");
+    options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP32");
+    options.setArgs("AMG SOLVER LOCATION", "GPU");
+  } else if(p_coarseSolver.size() > 0){
+    if(rank == 0) printf("%s:coarseSolver %s is not supported!\n", parScope.c_str(), p_coarseSolver.c_str());
+    ABORT(EXIT_FAILURE);
+  }
+
+  // parse fp type + location
+  std::vector<string> entries = serializeString(p_coarseSolver, '+');
+  for(string entry : entries)
+  {
+    if(entry.find("fp32") != string::npos)
+    {
+      options.setArgs("AMG SOLVER PRECISION", "FP32");
+      options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP32");
+      if(p_coarseSolver.find("boomeramg") != string::npos){
+        if(rank == 0) printf("BoomerAMG+FP32 is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+    else if(entry.find("fp64") != string::npos)
+    {
+      options.setArgs("AMG SOLVER PRECISION", "FP64");
+      options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP64");
+    }
+    else if(entry.find("cpu") != string::npos)
+    {
+      options.setArgs("AMG SOLVER LOCATION", "CPU");
+      if(p_coarseSolver.find("amgx") != string::npos){
+        if(rank == 0) printf("AMGX+CPU is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+    else if(entry.find("gpu") != string::npos)
+    {
+      options.setArgs("AMG SOLVER LOCATION", "GPU");
+      if(p_coarseSolver.find("boomeramg") != string::npos){
+        if(rank == 0) printf("BoomerAMG+CPU is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+  }
+
+}
 void parseInitialGuess(const int rank, setupAide &options,
                        inipp::Ini<char> *par, string parScope) {
 
@@ -292,6 +358,8 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE DISCRETIZATION", "CONTINUOUS");
   options.setArgs("PRESSURE BASIS", "NODAL");
   options.setArgs("AMG SOLVER", "BOOMERAMG");
+  options.setArgs("AMG SOLVER PRECISION", "FP64");
+  options.setArgs("AMG SOLVER LOCATION", "CPU");
 
   options.setArgs("PRESSURE PARALMOND CYCLE", "VCYCLE");
   options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
@@ -731,19 +799,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     else if (p_upwardSmoother == "jacobi")
       options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "JACOBI");
 
-    string p_coarseSolver;
-    par->extract("pressure", "coarsesolver", p_coarseSolver);
-    if(p_coarseSolver == "boomeramg"){
-      options.setArgs("AMG SOLVER", "BOOMERAMG");
-      options.setArgs("PRESSURE SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
-    }
-    else if(p_coarseSolver == "amgx"){
-      options.setArgs("AMG SOLVER", "AMGX");
-      options.setArgs("PRESSURE SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
-    } else if(p_coarseSolver.size() > 0){
-      if(rank == 0) printf("PRESSURE:coarseSolver %s is not supported!\n", p_coarseSolver.c_str());
-      ABORT(EXIT_FAILURE);
-    }
+    parseCoarseSolver(rank, options, par, "pressure");
     string p_amgsolver;
     par->extract("pressure", "amgsolver", p_amgsolver);
     if (p_amgsolver == "paralmond")
