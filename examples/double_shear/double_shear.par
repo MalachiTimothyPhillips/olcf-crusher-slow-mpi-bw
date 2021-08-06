@@ -33,7 +33,7 @@ dt = 1e-03
 residualTol = 1e-8
 rho = 1
 diffusivity = -100000
-regularization=avm+c0
+regularization=avm+c0+highestModalDecay+vismaxcoeff=0.5+rampconstant=1+nmodes=1
 
 [SCALAR03]
 dt = 1e-03
@@ -41,4 +41,4 @@ residualProj = true
 residualTol = 1e-8
 rho = 1
 diffusivity = -100000
-regularization=avm+c0+errorIndicator+errorCoeff=1.0+vismaxCoeff=0.5
+regularization=avm+c0+hpfResidual+vismaxCoeff=0.5+nmodes=1+scalingCoeff=1.0
