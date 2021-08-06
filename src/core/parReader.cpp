@@ -140,6 +140,8 @@ void parseRegularization(const int rank, setupAide &options,
     options.setArgs(parPrefix + "HPFRT MODES", "1");
     if (usesAVM) {
       options.setArgs(parPrefix + "VISMAX COEFF", "0.5");
+      options.setArgs(parPrefix + "ERROR COEFF", "1.0");
+      options.setArgs(parPrefix + "ERROR INDICATOR", "FALSE");
       options.setArgs(parPrefix + "FILTER STABILIZATION", "AVM");
       options.setArgs(parPrefix + "RAMP CONSTANT", to_string_f(1.0));
       options.setArgs(parPrefix + "AVM C0", "FALSE");
@@ -174,10 +176,23 @@ void parseRegularization(const int rank, setupAide &options,
           const dfloat value = std::stod(items[1]);
           options.setArgs(parPrefix + "VISMAX COEFF", to_string_f(value));
         }
-        if (s.find("c0") == 0) {
+        if(s.find("errorcoeff") == 0)
+        {
+          std::vector<string> items = serializeString(s, '=');
+          assert(items.size() == 2);
+          const dfloat value = std::stod(items[1]);
+          options.setArgs(parPrefix + "ERROR COEFF", to_string_f(value));
+        }
+        if(s.find("c0") == 0)
+        {
           options.setArgs(parPrefix + "AVM C0", "TRUE");
         }
-        if (s.find("rampconstant") == 0) {
+        if(s.find("errorindicator") == 0)
+        {
+          options.setArgs(parPrefix + "ERROR INDICATOR", "TRUE");
+        }
+        if(s.find("rampconstant") == 0)
+        {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat rampConstant = std::stod(items[1]);

@@ -74,9 +74,14 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
   int Nblock = (cds->mesh[scalarIndex]->Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
 
   occa::memory& o_logShockSensor = platform->o_mempool.slice0;
+  occa::memory& o_filteredField = platform->o_mempool.slice1;
+  occa::memory& o_errorIndicator = platform->o_mempool.slice2;
+  occa::memory& o_rhoField = platform->o_mempool.slice3;
+  occa::memory& o_ones = platform->o_mempool.slice4;
+  platform->linAlg->fill(mesh->Nlocal, 1.0, o_ones);
 
   // artificial viscosity magnitude
-  occa::memory o_epsilon = platform->o_mempool.slice1;
+  occa::memory o_epsilon = platform->o_mempool.slice5;
   platform->linAlg->fill(cds->fieldOffset[scalarIndex], 0.0, o_epsilon);
 
   const dfloat p = mesh->N;
@@ -88,8 +93,67 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
     cds->o_filterMT,
     mesh->o_LMM,
     o_S,
+    o_filteredField,
     o_logShockSensor
   );
+
+  const bool useErrorIndicator = cds->options[scalarIndex].compareArgs("ERROR INDICATOR", "TRUE");
+
+  dfloat Uinf = 1.0;
+  if(useErrorIndicator){
+    o_rhoField.copyFrom(cds->o_rho, cds->fieldOffset[scalarIndex] * sizeof(dfloat), 0, cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat));
+    const dlong cubatureOffset = std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
+        if(cds->options[scalarIndex].compareArgs("ADVECTION TYPE", "CUBATURE"))
+          cds->advectionStrongCubatureVolumeKernel(
+            cds->meshV->Nelements,
+            mesh->o_vgeo,
+            mesh->o_cubDiffInterpT,
+            mesh->o_cubInterpT,
+            mesh->o_cubProjectT,
+            cds->vFieldOffset,
+            0,
+            cubatureOffset,
+            o_filteredField,
+            cds->o_Urst,
+            o_rhoField,
+            o_errorIndicator);
+        else
+          cds->advectionStrongVolumeKernel(
+            cds->meshV->Nelements,
+            mesh->o_D,
+            cds->vFieldOffset,
+            0,
+            o_filteredField,
+            cds->o_Urst,
+            o_rhoField,
+            o_errorIndicator);
+    
+    occa::memory o_S_field = o_S + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    
+    const dfloat Uavg = platform->linAlg->weightedNorm2(
+      mesh->Nlocal,
+      mesh->o_LMM,
+      o_S_field,
+      platform->comm.mpiComm
+    ) / sqrt(mesh->volume);
+
+    platform->linAlg->fill(mesh->Nlocal,
+      Uavg,
+      o_filteredField);
+
+    platform->linAlg->axpby(
+      mesh->Nlocal,
+      -1.0,
+      o_S_field,
+      1.0,
+      o_filteredField
+    );
+
+    if(Uavg > 0.0){
+      Uinf = platform->linAlg->max(mesh->Nlocal, o_filteredField, platform->comm.mpiComm);
+    }
+    Uinf = 1.0 / Uinf;
+  }
 
   const dfloat logReferenceSensor = -4.0 * log10(p);
 
@@ -99,16 +163,24 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
   dfloat rampParameter = 1.0;
   cds->options[scalarIndex].getArgs("RAMP CONSTANT", rampParameter);
 
+
+  dfloat errorCoeff = 1.0;
+  cds->options[scalarIndex].getArgs("ERROR COEFF", errorCoeff);
+
   computeMaxViscKernel(
     mesh->Nelements,
     cds->vFieldOffset,
     logReferenceSensor,
     rampParameter,
     coeff,
+    errorCoeff,
+    Uinf,
+    useErrorIndicator,
     mesh->o_x,
     mesh->o_y,
     mesh->o_z,
     cds->o_U,
+    o_errorIndicator,
     o_logShockSensor,
     o_epsilon // max(|df/du|) <- max visc
   );

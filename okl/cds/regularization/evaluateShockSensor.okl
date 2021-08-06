@@ -30,6 +30,7 @@
                               @restrict const dfloat* fMT,
                               @restrict const dfloat* massMatrix,
                               @restrict const dfloat* U,
+                              @restrict dfloat* filteredU,
                               @restrict dfloat* logShockSensor)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
@@ -135,6 +136,8 @@
           const dfloat JW = massMatrix[id];
           const dfloat unfilteredVal = r_U[k];
           const dfloat filteredDiff = unfilteredVal - r_Un[k];
+
+          filteredU[id] = filteredDiff;
 
           s_filtered[tid] += JW * filteredDiff * filteredDiff;
           s_unfiltered[tid] += JW * unfilteredVal * unfilteredVal;
