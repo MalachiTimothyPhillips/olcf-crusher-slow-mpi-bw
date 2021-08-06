@@ -100,6 +100,15 @@ void parseInitialGuess(const int rank, setupAide &options,
     }
   }
 }
+
+//I suggest
+//
+//regularization=avm+hpfResidual+c0+scalingCoeff=1.0+nModes=1+vismaxCoeff=0.5
+//
+//or (Persson)
+//
+//regularization=avm+HighestModalDecay+c0+...+vismaxCoeff=0.5
+
 void parseRegularization(const int rank, setupAide &options,
                          inipp::Ini<char> *par, bool isScalar = false,
                          bool isTemperature = false, string sidPar = "") {
@@ -139,9 +148,19 @@ void parseRegularization(const int rank, setupAide &options,
 
     options.setArgs(parPrefix + "HPFRT MODES", "1");
     if (usesAVM) {
+      if(regularization.find("hpfresidual") != string::npos)
+        options.setArgs(parPrefix + "HPF RESIDUAL", "TRUE");
+      else if(regularization.find("highestmodaldecay") != string::npos)
+        options.setArgs(parPrefix + "HPF RESIDUAL", "FALSE");
+      else {
+        if(rank == 0){
+          printf("Error: avm must be specified with hpfResidual or HighestModalDecay!\n");
+        }
+        ABORT(1);
+      }
+
       options.setArgs(parPrefix + "VISMAX COEFF", "0.5");
-      options.setArgs(parPrefix + "ERROR COEFF", "1.0");
-      options.setArgs(parPrefix + "ERROR INDICATOR", "FALSE");
+      options.setArgs(parPrefix + "SCALING COEFF", "1.0");
       options.setArgs(parPrefix + "FILTER STABILIZATION", "AVM");
       options.setArgs(parPrefix + "RAMP CONSTANT", to_string_f(1.0));
       options.setArgs(parPrefix + "AVM C0", "FALSE");
@@ -176,20 +195,16 @@ void parseRegularization(const int rank, setupAide &options,
           const dfloat value = std::stod(items[1]);
           options.setArgs(parPrefix + "VISMAX COEFF", to_string_f(value));
         }
-        if(s.find("errorcoeff") == 0)
+        if(s.find("scalingcoeff") == 0)
         {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat value = std::stod(items[1]);
-          options.setArgs(parPrefix + "ERROR COEFF", to_string_f(value));
+          options.setArgs(parPrefix + "SCALING", to_string_f(value));
         }
         if(s.find("c0") == 0)
         {
           options.setArgs(parPrefix + "AVM C0", "TRUE");
-        }
-        if(s.find("errorindicator") == 0)
-        {
-          options.setArgs(parPrefix + "ERROR INDICATOR", "TRUE");
         }
         if(s.find("rampconstant") == 0)
         {

@@ -141,9 +141,9 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
                             const dfloat logReferenceSensor,
                             const dfloat rampParameter,
                             const dfloat visCoeff,
-                            const dfloat errorCoeff,
+                            const dfloat scalingCoeff,
                             const dfloat Uinf,
-                            const bool useErrorIndicator,
+                            const bool useHPFResidual,
                             @restrict const dfloat* x,
                             @restrict const dfloat* y,
                             @restrict const dfloat* z,
@@ -181,9 +181,9 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
           const dfloat Umag = sqrt(Ux*Ux + Uy*Uy + Uz*Uz);
           dfloat visc_max = visCoeff * he * Umag;
 
-          if(useErrorIndicator)
+          if(useHPFResidual)
           {
-            const dfloat errorTerm = errorCoeff * he * he * abs(errorIndicator[id]) * Uinf;
+            const dfloat errorTerm = scalingCoeff * he * he * abs(errorIndicator[id]) * Uinf;
             visc_max = (visc_max < errorTerm) ? visc_max : errorTerm;
           }
 
@@ -300,7 +300,7 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
           const dfloat maxVisc = (s_maxdFdS[0] > s_maxdFdS[1]) ?
             s_maxdFdS[0] : s_maxdFdS[1];
           dfloat avm = 0.0;
-          if(useErrorIndicator){
+          if(useHPFResidual){
             avm = maxVisc;
           } else {
             const dfloat multiplier = nu_k(logSensor, logReferenceSensor, rampParameter);

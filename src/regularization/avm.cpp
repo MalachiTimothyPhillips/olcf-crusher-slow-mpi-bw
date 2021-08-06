@@ -97,10 +97,10 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
     o_logShockSensor
   );
 
-  const bool useErrorIndicator = cds->options[scalarIndex].compareArgs("ERROR INDICATOR", "TRUE");
+  const bool useHPFResidual = cds->options[scalarIndex].compareArgs("HPF RESIDUAL", "TRUE");
 
   dfloat Uinf = 1.0;
-  if(useErrorIndicator){
+  if(useHPFResidual){
     o_rhoField.copyFrom(cds->o_rho, cds->fieldOffset[scalarIndex] * sizeof(dfloat), 0, cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat));
     const dlong cubatureOffset = std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
         if(cds->options[scalarIndex].compareArgs("ADVECTION TYPE", "CUBATURE"))
@@ -164,8 +164,8 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
   cds->options[scalarIndex].getArgs("RAMP CONSTANT", rampParameter);
 
 
-  dfloat errorCoeff = 1.0;
-  cds->options[scalarIndex].getArgs("ERROR COEFF", errorCoeff);
+  dfloat scalingCoeff = 1.0;
+  cds->options[scalarIndex].getArgs("SCALING COEFF", scalingCoeff);
 
   computeMaxViscKernel(
     mesh->Nelements,
@@ -173,9 +173,9 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
     logReferenceSensor,
     rampParameter,
     coeff,
-    errorCoeff,
+    scalingCoeff,
     Uinf,
-    useErrorIndicator,
+    useHPFResidual,
     mesh->o_x,
     mesh->o_y,
     mesh->o_z,
