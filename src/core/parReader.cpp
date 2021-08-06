@@ -126,7 +126,7 @@ void parseRegularization(const int rank, setupAide &options,
 
   string regularization;
   par->extract(parSection, "regularization", regularization);
-  if (regularization.find("avm") == 0 || regularization.find("hpfrt") == 0) {
+  if (regularization.find("avm") != string::npos || regularization.find("hpfrt") != string::npos) {
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
@@ -171,14 +171,14 @@ void parseRegularization(const int rank, setupAide &options,
 
     // common parameters
     for (std::string s : list) {
-      if (s.find("nmodes") == 0) {
+      if (s.find("nmodes") != string::npos) {
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         double value = std::stod(items[1]);
         value = round(value);
         options.setArgs(parPrefix + "HPFRT MODES", to_string_f(value));
       }
-      if (s.find("cutoffratio") == 0) {
+      if (s.find("cutoffratio") != string::npos) {
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         double filterCutoffRatio = std::stod(items[1]);
@@ -189,24 +189,24 @@ void parseRegularization(const int rank, setupAide &options,
 
     if (usesAVM) {
       for (std::string s : list) {
-        if (s.find("vismaxcoeff") == 0) {
+        if (s.find("vismaxcoeff") != string::npos) {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat value = std::stod(items[1]);
           options.setArgs(parPrefix + "VISMAX COEFF", to_string_f(value));
         }
-        if(s.find("scalingcoeff") == 0)
+        if(s.find("scalingcoeff") != string::npos)
         {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat value = std::stod(items[1]);
-          options.setArgs(parPrefix + "SCALING", to_string_f(value));
+          options.setArgs(parPrefix + "SCALING COEFF", to_string_f(value));
         }
-        if(s.find("c0") == 0)
+        if(s.find("c0") != string::npos)
         {
           options.setArgs(parPrefix + "AVM C0", "TRUE");
         }
-        if(s.find("rampconstant") == 0)
+        if(s.find("rampconstant") != string::npos)
         {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
@@ -220,7 +220,7 @@ void parseRegularization(const int rank, setupAide &options,
     if (usesHPFRT) {
       bool setsStrength = false;
       for (std::string s : list) {
-        if (s.find("strength") == 0) {
+        if (s.find("strength") != string::npos) {
           setsStrength = true;
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
