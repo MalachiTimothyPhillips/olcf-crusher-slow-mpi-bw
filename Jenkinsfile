@@ -43,15 +43,15 @@ node("bigmem") {
       checkout scm
     }
 
-    //stage ("Install") {
-    //  sh 'env | sort'
-    //  sh './nrsconfig'
-    //  sh 'cmake --build build --target install -j 4'
-    //}
+    stage ("Install") {
+      sh 'env | sort'
+      sh './nrsconfig'
+      sh 'cmake --build build --target install -j 4'
+    }
 
-    //stage ("Warm-up") {
-    //  sh 'cd $NEKRS_EXAMPLES/ethier && nrspre ethier 1'
-    //}
+    stage ("Warm-up") {
+      sh 'cd $NEKRS_EXAMPLES/ethier && nrspre ethier 1'
+    }
 
     parallel(testStages)
   }
