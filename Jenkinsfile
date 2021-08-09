@@ -5,20 +5,20 @@ def ethierStage = { ->
     sh 'echo ethier ${FOO}'
       sh 'which mpic++'
       sh 'which mpif90'
-      sh 'sleep 5'
+      sh 'sleep 20'
   }
 }
 
 def lowMachStage = { ->
   stage("lowMach") {
     sh 'echo lowMach ${FOO}'
-      sh 'sleep 5'
+      sh 'sleep 20'
   }
 }
 
-List testStages = [
-  ["ethier" : ethierStage],
-  ["lowMach": lowMachStage]
+Map testStages = [ 
+  "ethier" : ethierStage, 
+  "lowMach": lowMachStage
 ]
 
 // "bigmem" runs on compute001
@@ -42,32 +42,16 @@ node("bigmem") {
       checkout([$class: 'GitSCM', branches: [[name: '*/master'], [name: '*/next']], extensions: [[$class: 'CloneOption', noTags: true, reference: '', shallow: true], [$class: 'WipeWorkspace']], userRemoteConfigs: [[url: 'https://github.com/Nek5000/nekRS.git']]])
     }
 
-    stage ("Install") {
-      sh 'env | sort'
-      sh './nrsconfig'
-      sh 'cmake --build build --target install -j 4'
-    }
-
-    stage ("Warm-up") {
-      sh 'cd $NEKRS_EXAMPLES/ethier && nrspre ethier 1'
-    }
-
-    parallel {
-      stage("ethier") {
-          sh 'echo ethier ${FOO}'
-          sh 'which mpic++'
-          sh 'which mpif90'
-          sh 'sleep 5'
-      }
-
-      stage("lowMach") {
-        sh 'echo lowMach ${FOO}'
-          sh 'sleep 5'
-      }
-    }
-
-    //for (test in testStages) {
-    //  parallel(test)
+    //stage ("Install") {
+    //  sh 'env | sort'
+    //  sh './nrsconfig'
+    //  sh 'cmake --build build --target install -j 4'
     //}
+
+    //stage ("Warm-up") {
+    //  sh 'cd $NEKRS_EXAMPLES/ethier && nrspre ethier 1'
+    //}
+
+    parallel(testStages)
   }
 }
