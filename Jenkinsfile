@@ -2,17 +2,18 @@
 
 def ethierStage = { ->
   stage("ethier") {
-    sh 'echo ethier ${FOO}'
-      sh 'which mpic++'
-      sh 'which mpif90'
-      sh 'sleep 20'
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1"
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2"
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3"
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4"
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5"
+     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6"
   }
 }
 
 def lowMachStage = { ->
   stage("lowMach") {
-    sh 'echo lowMach ${FOO}'
-      sh 'sleep 20'
+     sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
   }
 }
 
