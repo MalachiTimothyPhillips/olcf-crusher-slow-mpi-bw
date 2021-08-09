@@ -40,7 +40,7 @@ node("bigmem") {
   ]) {
 
     stage("Clone") {
-      checkout([$class: 'GitSCM', branches: [[name: '*/master'], [name: '*/next']], extensions: [[$class: 'CloneOption', noTags: true, reference: '', shallow: true], [$class: 'WipeWorkspace']], userRemoteConfigs: [[url: 'https://github.com/Nek5000/nekRS.git']]])
+      checkout scm
     }
 
     //stage ("Install") {
