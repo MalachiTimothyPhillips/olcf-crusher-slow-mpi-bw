@@ -1,5 +1,17 @@
 // Adapted from https://stackoverflow.com/a/53456430
 
+def createStage(String name, String workDir, List stepList) {
+  return {
+    stage(name) {
+      dir(workDir) {
+        for (s in stepList) {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+        }
+      }
+    }
+  }
+}
+
 
 //def ethierStage = { ->
 //  stage("ethier") {
@@ -78,18 +90,6 @@ node("bigmem") {
     //}
 
     Map testStages
-
-    def createStage(String name, String workDir, List stepList) {
-      return {
-        stage(name) {
-          dir(workDir) {
-            for (s in stepList) {
-              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
-            }
-          }
-        }
-      }
-    }
 
     def ethierStage = createStage(
       "ethier", "${env.NEKRS_EXAMPLES}/ethier",
