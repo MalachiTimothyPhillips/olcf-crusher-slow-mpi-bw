@@ -32,7 +32,7 @@ void evaluateProperties(nrs_t* nrs, const double timeNew)
       const bool applyAVM = stabilizationMethod.find("HPF_RESIDUAL") != string::npos
         || stabilizationMethod.find("HIGHEST_MODAL_DECAY") != string::npos;
       if(applyAVM){
-        avm::apply(cds, timeNew, is, cds->o_S);
+        avm::apply(nrs, timeNew, is, cds->o_S);
       }
     }
   }

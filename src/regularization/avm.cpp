@@ -21,6 +21,8 @@ static occa::memory o_r;
 static occa::memory o_s;
 static occa::memory o_t;
 static occa::memory o_diffOld; // diffusion from initial state
+static double cachedDt = -1.0;
+static bool recomputeUrst = false;
 namespace
 {
 
@@ -68,21 +70,23 @@ void setup(cds_t* cds)
   compileKernels(cds);
 }
 
-occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory o_S)
+occa::memory computeEps(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S)
 {
-  const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
-  const bool relative = movingMesh && cds->Nsubsteps;
-  occa::memory& o_Urst = relative ? cds->o_relUrst : cds->o_Urst;
+  cds_t* cds = nrs->cds;
 
+  const dfloat TOL = 1e-10;
+  if(std::abs(cachedDt - time) > TOL)
+    recomputeUrst = true;
+  
+  cachedDt = time;
+  
   mesh_t* mesh = cds->mesh[scalarIndex];
   int Nblock = (cds->mesh[scalarIndex]->Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
 
   occa::memory& o_logRelativeMassHighestMode = platform->o_mempool.slice0;
   occa::memory& o_filteredField = platform->o_mempool.slice1;
   occa::memory& o_hpfResidual = platform->o_mempool.slice2;
-  occa::memory& o_rhoField = platform->o_mempool.slice3;
-  occa::memory& o_ones = platform->o_mempool.slice4;
-  platform->linAlg->fill(mesh->Nlocal, 1.0, o_ones);
+  occa::memory& o_aliasedUrst = platform->o_mempool.slice6;
 
   // artificial viscosity magnitude
   occa::memory o_epsilon = platform->o_mempool.slice5;
@@ -105,32 +109,30 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
 
   dfloat Uinf = 1.0;
   if(useHPFResidual){
-    o_rhoField.copyFrom(cds->o_rho, cds->fieldOffset[scalarIndex] * sizeof(dfloat), 0, cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat));
-    const dlong cubatureOffset = std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
-        if(cds->options[scalarIndex].compareArgs("ADVECTION TYPE", "CUBATURE"))
-          cds->advectionStrongCubatureVolumeKernel(
-            cds->meshV->Nelements,
-            mesh->o_vgeo,
-            mesh->o_cubDiffInterpT,
-            mesh->o_cubInterpT,
-            mesh->o_cubProjectT,
-            cds->vFieldOffset,
-            0,
-            cubatureOffset,
-            o_filteredField,
-            o_Urst,
-            o_rhoField,
-            o_hpfResidual);
-        else
-          cds->advectionStrongVolumeKernel(
-            cds->meshV->Nelements,
-            mesh->o_D,
-            cds->vFieldOffset,
-            0,
-            o_filteredField,
-            o_Urst,
-            o_rhoField,
-            o_hpfResidual);
+
+    occa::memory o_rhoField = cds->o_rho + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    
+    if(recomputeUrst){
+      nrs->UrstKernel(
+        cds->meshV->Nelements,
+        cds->meshV->o_vgeo,
+        nrs->fieldOffset,
+        nrs->o_U,
+        cds->meshV->o_U,
+        o_aliasedUrst
+      );
+      recomputeUrst = false;
+    }
+
+    cds->advectionStrongVolumeKernel(
+      cds->meshV->Nelements,
+      mesh->o_D,
+      cds->vFieldOffset,
+      0,
+      o_filteredField,
+      o_aliasedUrst,
+      o_rhoField,
+      o_hpfResidual);
     
     occa::memory o_S_field = o_S + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
     
@@ -212,8 +214,9 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
 
 }
 
-void apply(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory o_S)
+void apply(nrs_t* nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S)
 {
+  cds_t* cds = nrs->cds;
   const int verbose = platform->options.compareArgs("VERBOSE", "TRUE");
   mesh_t* mesh = cds->mesh[scalarIndex];
   const dlong scalarOffset = cds->fieldOffsetScan[scalarIndex];
@@ -225,7 +228,7 @@ void apply(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory 
       cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat)
     );
   }
-  occa::memory o_eps = computeEps(cds, time, scalarIndex, o_S);
+  occa::memory o_eps = computeEps(nrs, time, scalarIndex, o_S);
   if(verbose && platform->comm.mpiRank == 0){
     const dfloat maxEps = platform->linAlg->max(
       mesh->Nlocal,
