@@ -864,6 +864,15 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
           // rather than just smoothing, then use the SEMFEM discretization
           platform->options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "TRUE");
           nrs->pOptions.setArgs("MULTIGRID COARSE SEMFEM", "TRUE");
+
+          // However, if the user explicitly asked for the FEM discretization, bail
+          if(platform->options.compareArgs("USER SPECIFIED FEM COARSE SOLVER", "TRUE"))
+          {
+            if(platform->comm.mpiRank == 0){
+              printf("Error! FEM coarse discretization only supports p=1 for the coarsest level!\n");
+            }
+            ABORT(1);
+          }
         }
       }
       nrs->pOptions.setArgs("MULTIGRID COARSENING","CUSTOM");

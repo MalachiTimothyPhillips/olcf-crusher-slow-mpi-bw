@@ -93,6 +93,7 @@ void parseCoarseSolver(const int rank, setupAide &options,
   else if(p_coarseSolver.find("fem") != string::npos){
     options.setArgs(parSectionName + " MULTIGRID COARSE SEMFEM", "FALSE");
     options.setArgs("GALERKIN COARSE OPERATOR", "FALSE");
+    options.setArgs("USER SPECIFIED FEM COARSE SOLVER", "TRUE");
     if(p_coarseSolver.find("galerkin") != string::npos){
       options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
     }
