@@ -1,19 +1,5 @@
 // Adapted from https://stackoverflow.com/a/53456430
 
-Map testStages
-
-def createStage(String name, String workDir, List stepList) {
-  return {
-    stage(name) {
-      dir(workDir) {
-        for (s in stepList) {
-          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
-        }
-      }
-    }
-  }
-}
-
 
 //def ethierStage = { ->
 //  stage("ethier") {
@@ -90,6 +76,20 @@ node("bigmem") {
     //  sh './nrsconfig'
     //  sh 'cmake --build build --target install -j 4'
     //}
+
+    Map testStages
+
+    def createStage(String name, String workDir, List stepList) {
+      return {
+        stage(name) {
+          dir(workDir) {
+            for (s in stepList) {
+              catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+            }
+          }
+        }
+      }
+    }
 
     def ethierStage = createStage(
       "ethier", "${env.NEKRS_EXAMPLES}/ethier",
