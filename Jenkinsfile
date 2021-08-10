@@ -65,7 +65,7 @@ node("bigmem") {
       ]
     )
 
-    def mvCylStage = createTestStage(
+    def conjHtStage = createTestStage(
       "conj_ht", 
       "${env.NEKRS_EXAMPLES}/conj_ht",
       [ "nrsmpi conj_ht 2 1" ]
