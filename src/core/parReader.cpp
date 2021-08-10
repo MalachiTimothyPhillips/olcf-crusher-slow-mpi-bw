@@ -70,6 +70,7 @@ void parseCoarseSolver(const int rank, setupAide &options,
   if(!continueParsing)
     return;
 
+  // solution methods
   if(p_coarseSolver.find("boomeramg") != string::npos){
     options.setArgs("AMG SOLVER", "BOOMERAMG");
     options.setArgs(parSectionName + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
@@ -83,10 +84,20 @@ void parseCoarseSolver(const int rank, setupAide &options,
     options.setArgs("AMG SOLVER PRECISION", "FP32");
     options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP32");
     options.setArgs("AMG SOLVER LOCATION", "GPU");
-  } else if(p_coarseSolver.size() > 0){
-    if(rank == 0) printf("%s:coarseSolver %s is not supported!\n", parScope.c_str(), p_coarseSolver.c_str());
-    ABORT(EXIT_FAILURE);
   }
+
+  // coarse grid discretization
+  if(p_coarseSolver.find("semfem") != string::npos){
+    options.setArgs(parSectionName + " MULTIGRID COARSE SEMFEM", "TRUE");
+  }
+  else if(p_coarseSolver.find("fem") != string::npos){
+    options.setArgs(parSectionName + " MULTIGRID COARSE SEMFEM", "FALSE");
+    options.setArgs("GALERKIN COARSE OPERATOR", "FALSE");
+    if(p_coarseSolver.find("galerkin") != string::npos){
+      options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
+    }
+  }
+
 
   // parse fp type + location
   std::vector<string> entries = serializeString(p_coarseSolver, '+');
@@ -332,8 +343,6 @@ void parsePreconditioner(const int rank, setupAide &options,
       options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "TRUE");
       options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
     }
-    if(p_preconditioner.find("semfem") != std::string::npos)
-      options.setArgs(parSection + " MULTIGRID COARSE SEMFEM", "TRUE");
 
     options.setArgs(parSection + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
   }
@@ -818,8 +827,11 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
 
     bool p_gproj;
     if (par->extract("pressure", "galerkincoarseoperator", p_gproj))
-      if (p_gproj)
-        options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
+    {
+      if(rank == 0)
+        printf("PRESSURE:galerkinCoarseOperator is not supported!\n");
+      ABORT(1);
+    }
 
     parsePreconditioner(rank, options, par, "pressure");
 
