@@ -1,6 +1,5 @@
-// Adapted from https://stackoverflow.com/a/53456430
-
-def createStage(String name, String workDir, List stepList) {
+// Creates a stage for a given test case.  See usage in node() below.
+def createTestStage(String name, String workDir, List stepList) {
   return {
     stage(name) {
       dir(workDir) {
@@ -9,48 +8,6 @@ def createStage(String name, String workDir, List stepList) {
         }
       }
     }
-  }
-}
-
-
-//def ethierStage = { ->
-//  stage("ethier") {
-//    List steps =  [
-//      "echo 'I am okay'",
-//      "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1",
-//      "echo 'I am also okay'"
-//    ]
-//    for (s in steps) {
-//      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
-//    }
-//    //catchError { sh "echo 'I am okay'" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
-//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
-//    //catchError { sh "echo 'I am also okay'" }
-//  }
-//}
-
-
-def mvCylStage = { ->
-  stage("mv_cyl") {
-    sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 1"
-      sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 2"
-  }
-}
-
-def conjHtStage = { ->
-  stage("conj_ht") {
-    sh "cd $NEKRS_EXAMPLES/conj_ht && nrsmpi conj_ht 2 1"
-  }
-}
-
-def channelStressStage = { ->
-  stage("channelStress") {
-    sh "cd $NEKRS_EXAMPLES/channel && nrsmpi channel 2 1"
   }
 }
 
@@ -78,24 +35,46 @@ node("bigmem") {
     //   3. Use the Map to create parallel runs (below)
     // =====================================================
 
-    def ethierStage = createStage(
+    def ethierStage = createTestStage(
       "ethier", 
       "${env.NEKRS_EXAMPLES}/ethier",
       [
-        "pwd",
-        "echo 'I am okay'",
-        "foo bar",
-        "echo 'I am also okay'"
+        "nrsmpi ethier 1 1",
+        "nrsmpi ethier 2 2",
+        "nrsmpi ethier 2 3",
+        "nrsmpi ethier 2 4",
+        "nrsmpi ethier 2 5",
+        "nrsmpi ethier 2 6"
       ]
     )
 
-    def lowMachStage = createStage(
+    def lowMachStage = createTestStage(
       "lowMach", 
       "${env.NEKRS_EXAMPLES}/lowMach",
       [
-        "pwd",
         "nrsmpi lowMach 2 1"
       ]
+    )
+
+    def mvCylStage = createTestStage(
+      "mv_cyl", 
+      "${env.NEKRS_EXAMPLES}/mv_cyl",
+      [
+        "nrsmpi mv_cyl 2 1",
+        "nrsmpi mv_cyl 2 2"
+      ]
+    )
+
+    def mvCylStage = createTestStage(
+      "conj_ht", 
+      "${env.NEKRS_EXAMPLES}/conj_ht",
+      [ "nrsmpi conj_ht 2 1" ]
+    )
+
+    def channelStressStage = createTestStage(
+      "channel", 
+      "${env.NEKRS_EXAMPLES}/channel",
+      [ "nrsmpi channel 2 1" ]
     )
 
     Map testStages = [ 
@@ -122,5 +101,5 @@ node("bigmem") {
 
     parallel(testStages)
 
-  }
-}
+  } // end withEnv
+} // end node("bigmem")
