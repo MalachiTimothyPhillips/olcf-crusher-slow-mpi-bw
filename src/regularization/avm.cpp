@@ -12,7 +12,7 @@
 namespace avm {
 
 
-static occa::kernel evaluateShockSensorKernel;
+static occa::kernel relativeMassHighestModeKernel;
 static occa::kernel computeMaxViscKernel;
 static occa::kernel interpolateP1Kernel;
 
@@ -40,13 +40,13 @@ void compileKernels(cds_t* cds)
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string oklpath = install_dir + "/okl/cds/regularization/";
-  std::string filename = oklpath + "evaluateShockSensor.okl";
+  std::string filename = oklpath + "relativeMassHighestMode.okl";
   occa::properties info = platform->kernelInfo;
   info["defines/" "p_Nq"] = cds->mesh[0]->Nq;
   info["defines/" "p_Np"] = cds->mesh[0]->Np;
-  evaluateShockSensorKernel =
+  relativeMassHighestModeKernel =
     platform->device.buildKernel(filename,
-                             "evaluateShockSensor",
+                             "relativeMassHighestMode",
                              info);
 
   filename = oklpath + "computeMaxVisc.okl";
@@ -86,7 +86,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
 
   const dfloat p = mesh->N;
   
-  evaluateShockSensorKernel(
+  relativeMassHighestModeKernel(
     mesh->Nelements,
     scalarIndex,
     cds->fieldOffsetScan[scalarIndex],
@@ -97,7 +97,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
     o_logShockSensor
   );
 
-  const bool useHPFResidual = cds->options[scalarIndex].compareArgs("HPF RESIDUAL", "TRUE");
+  const bool useHPFResidual = cds->options[scalarIndex].compareArgs("STABILIZATION METHOD", "HPF_RESIDUAL");
 
   dfloat Uinf = 1.0;
   if(useHPFResidual){
@@ -158,14 +158,14 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
   const dfloat logReferenceSensor = -4.0 * log10(p);
 
   dfloat coeff = 0.5;
-  cds->options[scalarIndex].getArgs("VISMAX COEFF", coeff);
+  cds->options[scalarIndex].getArgs("STABILIZATION VISMAX COEFF", coeff);
 
   dfloat rampParameter = 1.0;
-  cds->options[scalarIndex].getArgs("RAMP CONSTANT", rampParameter);
+  cds->options[scalarIndex].getArgs("STABILIZATION RAMP CONSTANT", rampParameter);
 
 
   dfloat scalingCoeff = 1.0;
-  cds->options[scalarIndex].getArgs("SCALING COEFF", scalingCoeff);
+  cds->options[scalarIndex].getArgs("STABILIZATION SCALING COEFF", scalingCoeff);
 
   computeMaxViscKernel(
     mesh->Nelements,
@@ -185,7 +185,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
     o_epsilon // max(|df/du|) <- max visc
   );
 
-  const bool makeCont = cds->options[scalarIndex].compareArgs("AVM C0", "TRUE");
+  const bool makeCont = cds->options[scalarIndex].compareArgs("STABILIZATION AVM C0", "TRUE");
   if(makeCont){
     oogs_t* gsh;
     if(scalarIndex){
