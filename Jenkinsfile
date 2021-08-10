@@ -1,30 +1,48 @@
 // Adapted from https://stackoverflow.com/a/53456430
 
-def ethierStage = { ->
-  stage("ethier") {
-    List steps =  [
-      "echo 'I am okay'",
-      "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1",
-      "echo 'I am also okay'"
-    ]
-    for (s in steps) {
-      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+def createStage(String name, List stepList) {
+  return {
+    stage(name) {
+      for (s in stepList) {
+        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+      }
     }
-    //catchError { sh "echo 'I am okay'" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
-    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
-    //catchError { sh "echo 'I am also okay'" }
   }
 }
+
+def ethierStage = createStage("ethier", [
+    "echo 'I am okay'",
+    "cd ${env.NEKRS_EXAMPLES}/ethier && nrsmpi ethier 1 1",
+    "echo 'I am also okay'"
+  ]
+)
+
+//def ethierStage = { ->
+//  stage("ethier") {
+//    List steps =  [
+//      "echo 'I am okay'",
+//      "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1",
+//      "echo 'I am also okay'"
+//    ]
+//    for (s in steps) {
+//      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+//    }
+//    //catchError { sh "echo 'I am okay'" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
+//    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
+//    //catchError { sh "echo 'I am also okay'" }
+//  }
+//}
+
 
 def lowMachStage = { ->
   stage("lowMach") {
     sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
-    sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
+      sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
   }
 }
 
@@ -70,6 +88,7 @@ node("bigmem") {
       'NEKRS_OCCA_MODE_DEFAULT=SERIAL',
       'NEKRS_CI=1'
   ]) {
+
 
     stage("Clone") {
       checkout scm
