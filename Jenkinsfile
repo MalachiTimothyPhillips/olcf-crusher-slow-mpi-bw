@@ -77,17 +77,13 @@ node("bigmem") {
       'NEKRS_OCCA_MODE_DEFAULT=SERIAL',
       'NEKRS_CI=1'
   ]) {
-
-
-    stage("Clone") {
-      checkout scm
-    }
-
-    //stage ("Install") {
-    //  sh 'env | sort'
-    //  sh './nrsconfig'
-    //  sh 'cmake --build build --target install -j 4'
-    //}
+    
+    // =====================================================
+    // Instantiating stages for test cases
+    //   1. Create a stage for each test case
+    //   2. Create a Map, `testStages` with the stages
+    //   3. Use the Map to create parallel runs (below)
+    // =====================================================
 
     def ethierStage = createStage(
       "ethier", "${env.NEKRS_EXAMPLES}/ethier",
@@ -106,7 +102,22 @@ node("bigmem") {
       "conj_ht": conjHtStage,
       "channelStress": channelStressStage
     ]
+    
+    // =====================================================
+    // Run all stages (including setup and tests)
+    // =====================================================
+
+    stage("Clone") {
+      checkout scm
+    }
+
+    //stage ("Install") {
+    //  sh 'env | sort'
+    //  sh './nrsconfig'
+    //  sh 'cmake --build build --target install -j 4'
+    //}
 
     parallel(testStages)
+
   }
 }
