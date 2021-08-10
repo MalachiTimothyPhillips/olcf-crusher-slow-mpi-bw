@@ -2,12 +2,14 @@
 
 def ethierStage = { ->
   stage("ethier") {
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1"
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2"
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3"
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4"
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5"
-     sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6"
+    catchError { sh "echo 'I am okay'" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
+    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
+    catchError { sh "echo 'I am also okay'" }
   }
 }
 
@@ -64,11 +66,11 @@ node("bigmem") {
       checkout scm
     }
 
-    stage ("Install") {
-      sh 'env | sort'
-      sh './nrsconfig'
-      sh 'cmake --build build --target install -j 4'
-    }
+    //stage ("Install") {
+    //  sh 'env | sort'
+    //  sh './nrsconfig'
+    //  sh 'cmake --build build --target install -j 4'
+    //}
 
     parallel(testStages)
   }
