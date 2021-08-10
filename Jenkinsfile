@@ -24,6 +24,7 @@ node("bigmem") {
       'OCCA_CUDA_ENABLED=0',
       'OCCA_HIP_ENABLED=0',
       'OCCA_OPENCL_ENABLED=0',
+      'TRAVIS=true'
   ]) {
     
     // =====================================================
