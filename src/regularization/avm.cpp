@@ -70,6 +70,10 @@ void setup(cds_t* cds)
 
 occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, occa::memory o_S)
 {
+  const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
+  const bool relative = movingMesh && cds->Nsubsteps;
+  occa::memory& o_Urst = relative ? cds->o_relUrst : cds->o_Urst;
+
   mesh_t* mesh = cds->mesh[scalarIndex];
   int Nblock = (cds->mesh[scalarIndex]->Nlocal+BLOCKSIZE-1)/BLOCKSIZE;
 
@@ -114,7 +118,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
             0,
             cubatureOffset,
             o_filteredField,
-            cds->o_Urst,
+            o_Urst,
             o_rhoField,
             o_hpfResidual);
         else
@@ -124,7 +128,7 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
             cds->vFieldOffset,
             0,
             o_filteredField,
-            cds->o_Urst,
+            o_Urst,
             o_rhoField,
             o_hpfResidual);
     
