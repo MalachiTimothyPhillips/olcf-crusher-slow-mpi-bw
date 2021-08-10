@@ -302,6 +302,17 @@ void computeTimeStepFromCFL(int tstep)
 double dt(int tstep)
 {
   if(platform->options.compareArgs("VARIABLE DT", "TRUE")){
+
+    if(tstep == 1)
+    {
+      // use user-specified initial dt on startup
+      double initialDt = 0.0;
+      platform->options.getArgs("DT", initialDt);
+      if(initialDt > 0.0){
+        nrs->dt[0] = initialDt;
+        return nrs->dt[0];
+      }
+    }
     computeTimeStepFromCFL(tstep);
   }
   

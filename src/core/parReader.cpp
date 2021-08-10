@@ -623,6 +623,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   if (par->extract("general", "dt", dtString)){
     if(dtString.find("targetcfl") != string::npos)
     {
+      bool userSuppliesInitialDt = false;
       options.setArgs("VARIABLE DT", "TRUE");
       std::vector<string> entries = serializeString(dtString, '+');
       for(string entry : entries)
@@ -634,10 +635,29 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
           const double maxDT = std::stod(maxAndValue[1]);
           options.setArgs("MAX DT", to_string_f(maxDT));
         }
-
-        double initialDt = std::strtod(entry.c_str(), nullptr);
-        if(initialDt > 0.0){
+        if(entry.find("initial") != string::npos)
+        {
+          std::vector<string> initialDtAndValue = serializeString(entry, '=');
+          assert(initialDtAndValue.size() == 2);
+          const double initialDt = std::stod(initialDtAndValue[1]);
           options.setArgs("DT", to_string_f(initialDt));
+          userSuppliesInitialDt = true;
+        }
+      }
+
+      // guard against using a higher initial dt than the max
+      if(userSuppliesInitialDt)
+      {
+        double initialDt = 0.0;
+        double maxDt = 0.0;
+        options.getArgs("DT", initialDt);
+        options.getArgs("MAX DT", maxDt);
+        if(initialDt > maxDt)
+        {
+          if(rank == 0){
+            printf("Error: initial dt %g is larger than the max dt %g!\n", initialDt, maxDt);
+          }
+          ABORT(1);
         }
       }
     }
@@ -646,6 +666,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
       const double dt = std::stod(dtString);
       options.setArgs("DT", to_string_f(fabs(dt)));
     }
+
   }
 
   string timeStepper;
