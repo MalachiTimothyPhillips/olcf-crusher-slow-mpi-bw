@@ -35,13 +35,6 @@ def createStage(String name, String workDir, List stepList) {
 //}
 
 
-def lowMachStage = { ->
-  stage("lowMach") {
-    sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
-      sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
-  }
-}
-
 def mvCylStage = { ->
   stage("mv_cyl") {
     sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 1"
@@ -86,12 +79,22 @@ node("bigmem") {
     // =====================================================
 
     def ethierStage = createStage(
-      "ethier", "${env.NEKRS_EXAMPLES}/ethier",
+      "ethier", 
+      "${env.NEKRS_EXAMPLES}/ethier",
       [
         "pwd",
         "echo 'I am okay'",
-        "nrsmpi ethier 1 1",
+        "foo bar",
         "echo 'I am also okay'"
+      ]
+    )
+
+    def lowMachStage = createStage(
+      "lowMach", 
+      "${env.NEKRS_EXAMPLES}/lowMach",
+      [
+        "pwd",
+        "nrsmpi lowMach 2 1"
       ]
     )
 
@@ -111,11 +114,11 @@ node("bigmem") {
       checkout scm
     }
 
-    //stage ("Install") {
-    //  sh 'env | sort'
-    //  sh './nrsconfig'
-    //  sh 'cmake --build build --target install -j 4'
-    //}
+    stage ("Install") {
+      sh 'env | sort'
+      sh './nrsconfig'
+      sh 'cmake --build build --target install -j 4'
+    }
 
     parallel(testStages)
 
