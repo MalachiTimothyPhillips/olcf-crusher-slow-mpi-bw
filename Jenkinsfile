@@ -2,39 +2,48 @@
 
 def ethierStage = { ->
   stage("ethier") {
-    catchError { sh "echo 'I am okay'" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
-    catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
-    catchError { sh "echo 'I am also okay'" }
+    List steps =  [
+      "echo 'I am okay'",
+      "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1",
+      "echo 'I am also okay'"
+    ]
+    for (s in steps) {
+      catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+    }
+    //catchError { sh "echo 'I am okay'" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 1 1" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 2" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 3" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 4" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 5" }
+    //catchError { sh "cd $NEKRS_EXAMPLES/ethier && nrsmpi ethier 2 6" }
+    //catchError { sh "echo 'I am also okay'" }
   }
 }
 
 def lowMachStage = { ->
   stage("lowMach") {
-     sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
+    sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
+    sh "cd $NEKRS_EXAMPLES/lowMach && nrsmpi lowMach 2 1"
   }
 }
 
 def mvCylStage = { ->
   stage("mv_cyl") {
-     sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 1"
-     sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 2"
+    sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 1"
+      sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 2"
   }
 }
 
 def conjHtStage = { ->
   stage("conj_ht") {
-     sh "cd $NEKRS_EXAMPLES/conj_ht && nrsmpi conj_ht 2 1"
+    sh "cd $NEKRS_EXAMPLES/conj_ht && nrsmpi conj_ht 2 1"
   }
 }
 
 def channelStressStage = { ->
   stage("channelStress") {
-     sh "cd $NEKRS_EXAMPLES/channel && nrsmpi channel 2 1"
+    sh "cd $NEKRS_EXAMPLES/channel && nrsmpi channel 2 1"
   }
 }
 
