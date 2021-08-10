@@ -3,6 +3,7 @@
 def createStage(String name, List stepList) {
   return {
     stage(name) {
+      pwd
       for (s in stepList) {
         catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
       }
@@ -10,12 +11,6 @@ def createStage(String name, List stepList) {
   }
 }
 
-def ethierStage = createStage("ethier", [
-    "echo 'I am okay'",
-    "cd ${env.NEKRS_EXAMPLES}/ethier && nrsmpi ethier 1 1",
-    "echo 'I am also okay'"
-  ]
-)
 
 //def ethierStage = { ->
 //  stage("ethier") {
@@ -92,6 +87,13 @@ node("bigmem") {
     //  sh './nrsconfig'
     //  sh 'cmake --build build --target install -j 4'
     //}
+
+    def ethierStage = createStage("ethier", [
+        "echo 'I am okay'",
+        "cd ${env.NEKRS_EXAMPLES}/ethier && nrsmpi ethier 1 1",
+        "echo 'I am also okay'"
+      ]
+    )
 
     Map testStages = [ 
       "ethier" : ethierStage, 
