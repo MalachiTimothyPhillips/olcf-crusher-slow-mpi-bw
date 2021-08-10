@@ -1,5 +1,7 @@
 // Adapted from https://stackoverflow.com/a/53456430
 
+Map testStages
+
 def createStage(String name, String workDir, List stepList) {
   return {
     stage(name) {
@@ -99,13 +101,11 @@ node("bigmem") {
       ]
     )
 
-    Map testStages = [ 
-      "ethier" : ethierStage, 
-      "lowMach": lowMachStage,
-      "mv_cyl": mvCylStage,
-      "conj_ht": conjHtStage,
-      "channelStress": channelStressStage
-    ]
+    testStages.add("ethier", ethierStage)
+    testStages.add("lowMach", lowMachStage)
+    testStages.add("mv_cyl", mvCylStage)
+    testStages.add("conj_ht", conjHtStage)
+    testStages.add("channelStress", channelStressStage)
 
     parallel(testStages)
   }
