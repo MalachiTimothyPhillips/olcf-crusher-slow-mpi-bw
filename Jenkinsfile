@@ -89,7 +89,7 @@ node("bigmem") {
     //  sh 'cmake --build build --target install -j 4'
     //}
 
-    Map testStages
+    Map testStages = [:]
 
     def ethierStage = createStage(
       "ethier", "${env.NEKRS_EXAMPLES}/ethier",
