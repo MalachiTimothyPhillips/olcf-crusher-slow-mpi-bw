@@ -148,8 +148,8 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
                             @restrict const dfloat* y,
                             @restrict const dfloat* z,
                             @restrict const dfloat* U,
-                            @restrict const dfloat* errorIndicator,
-                            @restrict const dfloat* logShockSensor,
+                            @restrict const dfloat* hpfResidual,
+                            @restrict const dfloat* logRelativeMassHighestMode,
                             @restrict dfloat* epsilons)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) { // for all elements
@@ -160,7 +160,7 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-        logSensor = logShockSensor[e];
+        logSensor = logRelativeMassHighestMode[e];
         const int id = i + j * p_Nq;
         for (int k = j*p_Nq + i; k < p_blockSize; k += p_Nq*p_Nq){
           s_maxdFdS[k] = -1e8;
@@ -183,7 +183,7 @@ inline dfloat nu_k(const dfloat s, const dfloat logReferenceSensor, const dfloat
 
           if(useHPFResidual)
           {
-            const dfloat errorTerm = scalingCoeff * he * he * abs(errorIndicator[id]) * Uinf;
+            const dfloat errorTerm = scalingCoeff * he * he * abs(hpfResidual[id]) * Uinf;
             visc_max = (visc_max < errorTerm) ? visc_max : errorTerm;
           }
 
