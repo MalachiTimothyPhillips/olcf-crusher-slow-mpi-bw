@@ -17,9 +17,31 @@ def lowMachStage = { ->
   }
 }
 
+def mvCylStage = { ->
+  stage("mv_cyl") {
+     sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 1"
+     sh "cd $NEKRS_EXAMPLES/mv_cyl && nrsmpi mv_cyl 2 2"
+  }
+}
+
+def conjHtStage = { ->
+  stage("conj_ht") {
+     sh "cd $NEKRS_EXAMPLES/conj_ht && nrsmpi conj_ht 2 1"
+  }
+}
+
+def channelStressStage = { ->
+  stage("channelStress") {
+     sh "cd $NEKRS_EXAMPLES/channel && nrsmpi channel 2 1"
+  }
+}
+
 Map testStages = [ 
   "ethier" : ethierStage, 
-  "lowMach": lowMachStage
+  "lowMach": lowMachStage,
+  "mv_cyl": mvCylStage,
+  "conj_ht": conjHtStage,
+  "channelStress": channelStressStage
 ]
 
 // "bigmem" runs on compute001
@@ -31,7 +53,6 @@ node("bigmem") {
       "NEKRS_INSTALL_DIR=${pwd()}/install",
       "NEKRS_HOME=${pwd()}/install",
       "NEKRS_EXAMPLES=${pwd()}/install/examples",
-      "OCCA_CACHE_DIR=${pwd()}/occa_cache",
       'OCCA_CUDA_ENABLED=0',
       'OCCA_HIP_ENABLED=0',
       'OCCA_OPENCL_ENABLED=0',
@@ -47,10 +68,6 @@ node("bigmem") {
       sh 'env | sort'
       sh './nrsconfig'
       sh 'cmake --build build --target install -j 4'
-    }
-
-    stage ("Warm-up") {
-      sh 'cd $NEKRS_EXAMPLES/ethier && nrspre ethier 1'
     }
 
     parallel(testStages)
