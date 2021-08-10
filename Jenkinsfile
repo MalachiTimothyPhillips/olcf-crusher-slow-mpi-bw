@@ -65,13 +65,6 @@ def channelStressStage = { ->
   }
 }
 
-Map testStages = [ 
-  "ethier" : ethierStage, 
-  "lowMach": lowMachStage,
-  "mv_cyl": mvCylStage,
-  "conj_ht": conjHtStage,
-  "channelStress": channelStressStage
-]
 
 // "bigmem" runs on compute001
 node("bigmem") {
@@ -99,6 +92,14 @@ node("bigmem") {
     //  sh './nrsconfig'
     //  sh 'cmake --build build --target install -j 4'
     //}
+
+    Map testStages = [ 
+      "ethier" : ethierStage, 
+      "lowMach": lowMachStage,
+      "mv_cyl": mvCylStage,
+      "conj_ht": conjHtStage,
+      "channelStress": channelStressStage
+    ]
 
     parallel(testStages)
   }
