@@ -41,7 +41,7 @@ node("bigmem") {
       [
         "nrsmpi ethier 1 1",
         "nrsmpi ethier 2 2",
-        "nrsmpi ethier 2 3",
+        "nrsmpi here_is_a_broken_step 2 3",
         "nrsmpi ethier 2 4",
         "nrsmpi ethier 2 5",
         "nrsmpi ethier 2 6"
