@@ -102,15 +102,6 @@ occa::memory computeEps(cds_t* cds, const dfloat time, const dlong scalarIndex, 
   dfloat Uinf = 1.0;
   if(useHPFResidual){
     o_rhoField.copyFrom(cds->o_rho, cds->fieldOffset[scalarIndex] * sizeof(dfloat), 0, cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat));
-    cds->advectionStrongVolumeKernel(
-      cds->meshV->Nelements,
-      mesh->o_D,
-      cds->vFieldOffset,
-      0,
-      o_filteredField,
-      cds->o_Urst,
-      o_rhoField,
-      o_hpfResidual);
     const dlong cubatureOffset = std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
         if(cds->options[scalarIndex].compareArgs("ADVECTION TYPE", "CUBATURE"))
           cds->advectionStrongCubatureVolumeKernel(
