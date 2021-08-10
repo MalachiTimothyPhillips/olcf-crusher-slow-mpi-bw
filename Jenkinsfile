@@ -1,11 +1,12 @@
 // Adapted from https://stackoverflow.com/a/53456430
 
-def createStage(String name, List stepList) {
+def createStage(String name, String workDir, List stepList) {
   return {
     stage(name) {
-      pwd
-      for (s in stepList) {
-        catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+      dir(workDir) {
+        for (s in stepList) {
+          catchError(buildResult: 'FAILURE', stageResult: 'FAILURE'){ sh s }
+        }
       }
     }
   }
@@ -88,9 +89,12 @@ node("bigmem") {
     //  sh 'cmake --build build --target install -j 4'
     //}
 
-    def ethierStage = createStage("ethier", [
+    def ethierStage = createStage(
+      "ethier", "${env.NEKRS_EXAMPLES}/ethier",
+      [
+        "pwd",
         "echo 'I am okay'",
-        "cd ${env.NEKRS_EXAMPLES}/ethier && nrsmpi ethier 1 1",
+        "nrsmpi ethier 1 1",
         "echo 'I am also okay'"
       ]
     )
