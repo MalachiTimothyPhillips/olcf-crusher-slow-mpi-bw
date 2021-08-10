@@ -4,7 +4,7 @@ polynomialOrder = 9
 stopAt = endTime
 endTime = 100 
 
-dt = targetCFL+max=1.0
+dt = targetCFL+max=0.25
 targetCFL = 4.0
 timeStepper = tombo2 
 extrapolation = subCycling # disable after transition
