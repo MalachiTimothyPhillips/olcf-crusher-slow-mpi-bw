@@ -86,8 +86,9 @@ node("bigmem") {
     // =====================================================
 
     def ethierStage = createStage(
-      "ethier", "${env.NEKRS_EXAMPLES}/ethier",
-      [
+      name: "ethier", 
+      workDir: "${env.NEKRS_EXAMPLES}/ethier",
+      stepList: [
         "pwd",
         "echo 'I am okay'",
         "nrsmpi ethier 1 1",
