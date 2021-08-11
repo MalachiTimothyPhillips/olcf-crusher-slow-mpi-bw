@@ -29,7 +29,7 @@
 @kernel void fusedResidualAndNorm(const dlong Nblocks, const dlong N,
                                     const dlong offset,
                                     @restrict const dfloat* weights,
-                                    @restrict const dfloat* b,
+                                    @restrict const dfloat* b_vec,
                                     @restrict const dfloat* Ax,
                                     @restrict dfloat* r,
                                     @restrict dfloat* reduction)
@@ -45,7 +45,7 @@
         double sum = 0.0;
         #pragma unroll
         for(int fld = 0 ; fld < p_eNfields; ++fld){
-          const dfloat rnew = b[id + fld * offset] - Ax[id + fld * offset];
+          const dfloat rnew = b_vec[id + fld * offset] - Ax[id + fld * offset];
           r[id + fld * offset] = rnew;
           sum += rnew * rnew;
         }

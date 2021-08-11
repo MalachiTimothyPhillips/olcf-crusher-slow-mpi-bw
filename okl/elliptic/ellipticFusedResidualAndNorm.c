@@ -29,7 +29,7 @@
 extern "C" void fusedResidualAndNorm(const dlong & Nblocks, const dlong & N,
                                     const dlong & offset,
                                     const dfloat* __restrict__ weights,
-                                    const dfloat* __restrict__ b,
+                                    const dfloat* __restrict__ b_vec,
                                     const dfloat* __restrict__ Ax,
                                     dfloat* __restrict__ r,
                                     dfloat* __restrict__ reduction)
@@ -37,7 +37,7 @@ extern "C" void fusedResidualAndNorm(const dlong & Nblocks, const dlong & N,
   dfloat rdotr = 0.0;
   for(int fld = 0 ; fld < p_eNfields; ++fld){
     for(int id = 0 ; id < N; ++id){
-      const dfloat rnew = b[id + fld * offset] - Ax[id + fld * offset];
+      const dfloat rnew = b_vec[id + fld * offset] - Ax[id + fld * offset];
       r[id + fld * offset] = rnew;
       rdotr += rnew * rnew * weights[id];
     }
