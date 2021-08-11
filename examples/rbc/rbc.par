@@ -4,11 +4,10 @@ polynomialOrder = 9
 stopAt = endTime
 endTime = 100 
 
-dt = targetCFL+max=0.25
-targetCFL = 4.0
+dt = 3e-03
 timeStepper = tombo2 
 extrapolation = subCycling # disable after transition
-subCyclingSteps = 2
+subCyclingSteps = 1
 
 writeControl = runTime
 writeInterval = 5

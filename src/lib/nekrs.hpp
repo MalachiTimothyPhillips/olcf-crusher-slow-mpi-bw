@@ -20,7 +20,7 @@ void finalize();
 void nekUserchk(void);
 void printRuntimeStatistics(void);
 double writeInterval(void);
-double dt(int tStep);
+double dt(void);
 double startTime(void);
 double endTime(void);
 int numSteps(void);
