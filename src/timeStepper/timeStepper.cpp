@@ -24,11 +24,15 @@ void evaluateProperties(nrs_t *nrs, const double timeNew) {
     }
     udf.properties(nrs, timeNew, nrs->o_U, o_S, nrs->o_prop, o_SProp);
   }
-  if (nrs->Nscalar) {
-    cds_t *cds = nrs->cds;
-    for (int is = 0; is < cds->NSfields; ++is) {
-      if (cds->options[is].compareArgs("FILTER STABILIZATION", "AVM")) {
-        avm::apply(cds, timeNew, is, cds->o_S);
+  if(nrs->Nscalar){
+    cds_t* cds = nrs->cds;
+    for(int is = 0 ; is < cds->NSfields; ++is){
+      string stabilizationMethod;
+      cds->options[is].getArgs("STABILIZATION METHOD", stabilizationMethod);
+      const bool applyAVM = stabilizationMethod.find("HPF_RESIDUAL") != string::npos
+        || stabilizationMethod.find("HIGHEST_MODAL_DECAY") != string::npos;
+      if(applyAVM){
+        avm::apply(nrs, timeNew, is, cds->o_S);
       }
     }
   }
@@ -298,15 +302,16 @@ void makeq(
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
 
-    if (cds->options[is].compareArgs("FILTER STABILIZATION", "RELAXATION")) {
-      cds->filterRTKernel(cds->meshV->Nelements,
-          is,
-          cds->o_filterMT,
-          cds->filterS[is],
-          isOffset,
-          cds->o_rho,
-          cds->o_S,
-          o_FS);
+    if(cds->options[is].compareArgs("STABILIZATION METHOD", "RELAXATION")){
+      cds->filterRTKernel(
+        cds->meshV->Nelements,
+        is,
+        cds->o_filterMT,
+        cds->filterS[is],
+        isOffset,
+        cds->o_rho,
+        cds->o_S,
+        o_FS);
     }
     const int movingMesh = cds->options[is].compareArgs("MOVING MESH", "TRUE");
     if (movingMesh && !cds->Nsubsteps) {
@@ -435,13 +440,14 @@ void makef(
     platform->timer.toc("udfUEqnSource");
   }
 
-  if (platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION"))
-    nrs->filterRTKernel(mesh->Nelements,
-        nrs->o_filterMT,
-        nrs->filterS,
-        nrs->fieldOffset,
-        nrs->o_U,
-        o_FU);
+  if(platform->options.compareArgs("STABILIZATION METHOD", "RELAXATION"))
+    nrs->filterRTKernel(
+      mesh->Nelements,
+      nrs->o_filterMT,
+      nrs->filterS,
+      nrs->fieldOffset,
+      nrs->o_U,
+      o_FU);
 
   if (movingMesh && !nrs->Nsubsteps) {
     nrs->advectMeshVelocityKernel(mesh->Nelements,

@@ -358,7 +358,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_EToB = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToB);
   nrs->o_VmapB = device.malloc(mesh->Nelements * mesh->Np * sizeof(int), nrs->VmapB);
 
-  if(platform->options.compareArgs("FILTER STABILIZATION", "RELAXATION")){
+  if(platform->options.compareArgs("STABILIZATION METHOD", "RELAXATION")){
 
     nrs->filterNc = -1;
     dfloat filterS;
@@ -839,6 +839,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("SEMFEM SOLVER PRECISION", options.getArgs("PRESSURE SEMFEM SOLVER PRECISION"));
     nrs->pOptions.setArgs("MULTIGRID COARSENING", options.getArgs("PRESSURE MULTIGRID COARSENING"));
     nrs->pOptions.setArgs("MULTIGRID SMOOTHER",   options.getArgs("PRESSURE MULTIGRID SMOOTHER"));
+    nrs->pOptions.setArgs("MULTIGRID COARSE SOLVE",   options.getArgs("PRESSURE MULTIGRID COARSE SOLVE"));
+    nrs->pOptions.setArgs("MULTIGRID COARSE SEMFEM",   options.getArgs("PRESSURE MULTIGRID COARSE SEMFEM"));
     nrs->pOptions.setArgs("MULTIGRID DOWNWARD SMOOTHER",
                           options.getArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER"));
     nrs->pOptions.setArgs("MULTIGRID UPWARD SMOOTHER",
@@ -891,11 +893,36 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->pSolver->levels = (int*) calloc(nrs->pSolver->nLevels,sizeof(int));
       for(int i = 0; i < nrs->pSolver->nLevels; ++i)
         nrs->pSolver->levels[i] = std::atoi(mgLevelList.at(i).c_str());
+      
+      bool invalid = false;
+      invalid |= (nrs->pSolver->levels[0] != mesh->N); // top level order must match
+      for(int i = 0; i < nrs->pSolver->nLevels; ++i){
+        invalid |= (nrs->pSolver->levels[i] < 0); // each level must be positive
+        if(i > 0)
+          invalid |= (nrs->pSolver->levels[i] >= nrs->pSolver->levels[i-1]); // each successive level must be smaller
+      }
 
-      if(nrs->pSolver->levels[0] > mesh->N || 
-         nrs->pSolver->levels[nrs->pSolver->nLevels-1] < 1) {
+      if(invalid){
         if(platform->comm.mpiRank == 0) printf("ERROR: Invalid multigrid coarsening!\n");
         ABORT(EXIT_FAILURE);;
+      }
+      if(nrs->pSolver->levels[nrs->pSolver->nLevels-1] > 1)
+      {
+        if(platform->options.compareArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE")){
+          // if the coarse level has p > 1 and requires solving the coarsest level,
+          // rather than just smoothing, then use the SEMFEM discretization
+          platform->options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "TRUE");
+          nrs->pOptions.setArgs("MULTIGRID COARSE SEMFEM", "TRUE");
+
+          // However, if the user explicitly asked for the FEM discretization, bail
+          if(platform->options.compareArgs("USER SPECIFIED FEM COARSE SOLVER", "TRUE"))
+          {
+            if(platform->comm.mpiRank == 0){
+              printf("Error! FEM coarse discretization only supports p=1 for the coarsest level!\n");
+            }
+            ABORT(1);
+          }
+        }
       }
       nrs->pOptions.setArgs("MULTIGRID COARSENING","CUSTOM");
     } else if(nrs->pOptions.compareArgs("MULTIGRID DOWNWARD SMOOTHER","ASM") ||
@@ -1088,15 +1115,16 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
       continue;
     }
 
-    mesh_t* mesh;
+    mesh_t* mesh; 
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0]; // only first scalar can be a CHT mesh
  
     cds->options[is] = options;
 
-    cds->options[is].setArgs("RAMP CONSTANT", options.getArgs("SCALAR" + sid + " RAMP CONSTANT"));
-    cds->options[is].setArgs("AVM C0", options.getArgs("SCALAR" + sid + " AVM C0"));
-    cds->options[is].setArgs("FILTER STABILIZATION", options.getArgs("SCALAR" + sid + " FILTER STABILIZATION"));
-    cds->options[is].setArgs("VISMAX COEFF", options.getArgs("SCALAR" + sid + " VISMAX COEFF"));
+    cds->options[is].setArgs("STABILIZATION RAMP CONSTANT", options.getArgs("SCALAR" + sid + " STABILIZATION RAMP CONSTANT"));
+    cds->options[is].setArgs("STABILIZATION AVM C0", options.getArgs("SCALAR" + sid + " STABILIZATION AVM C0"));
+    cds->options[is].setArgs("STABILIZATION METHOD", options.getArgs("SCALAR" + sid + " STABILIZATION METHOD"));
+    cds->options[is].setArgs("STABILIZATION VISMAX COEFF", options.getArgs("SCALAR" + sid + " STABILIZATION VISMAX COEFF"));
+    cds->options[is].setArgs("STABILIZATION SCALING COEFF", options.getArgs("SCALAR" + sid + " STABILIZATION SCALING COEFF"));
     cds->options[is].setArgs("HPFRT STRENGTH", options.getArgs("SCALAR" + sid + " HPFRT STRENGTH"));
     cds->options[is].setArgs("HPFRT MODES", options.getArgs("SCALAR" + sid + " HPFRT MODES"));
     cds->options[is].setArgs("KRYLOV SOLVER", options.getArgs("SCALAR" + sid + " KRYLOV SOLVER"));
@@ -1149,8 +1177,9 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   bool avmEnabled = false;
   {
     for(int is = 0; is < cds->NSfields; is++) {
-      if(!cds->options[is].compareArgs("FILTER STABILIZATION", "NONE")) scalarFilteringEnabled = true;
-      if(cds->options[is].compareArgs("FILTER STABILIZATION", "AVM")) avmEnabled = true;
+      if(!cds->options[is].compareArgs("STABILIZATION METHOD", "NONE")) scalarFilteringEnabled = true;
+      if(cds->options[is].compareArgs("STABILIZATION METHOD", "HPF_RESIDUAL")) avmEnabled = true;
+      if(cds->options[is].compareArgs("STABILIZATION METHOD", "HIGHEST_MODAL_DECAY")) avmEnabled = true;
     }
   }
 
@@ -1160,7 +1189,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     cds->o_filterMT = platform->device.malloc(cds->NSfields * Nmodes * Nmodes, sizeof(dfloat));
     for(int is = 0; is < cds->NSfields; is++)
     {
-      if(cds->options[is].compareArgs("FILTER STABILIZATION", "NONE")) continue;
+      if(cds->options[is].compareArgs("STABILIZATION METHOD", "NONE")) continue;
       int filterNc = -1;
       cds->options[is].getArgs("HPFRT MODES", filterNc);
       dfloat filterS;

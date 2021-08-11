@@ -5,7 +5,7 @@
 #include <string>
 #include <unistd.h>
 #include <vector>
-#include <utility>
+#include <limits>
 
 #include "inipp.hpp"
 #include "tinyexpr.h"
@@ -145,6 +145,83 @@ void parseSolverTolerance(const int rank, setupAide &options,
     }
   }
 }
+void parseCoarseSolver(const int rank, setupAide &options,
+                       inipp::Ini<char> *par, string parScope) {
+  string parSectionName = (parScope.find("temperature") != std::string::npos)
+                              ? "scalar00"
+                              : parScope;
+  UPPER(parSectionName);
+  string p_coarseSolver;
+  const bool continueParsing = par->extract(parScope, "coarsesolver", p_coarseSolver);
+  if(!continueParsing)
+    return;
+
+  // solution methods
+  if(p_coarseSolver.find("boomeramg") != string::npos){
+    options.setArgs("AMG SOLVER", "BOOMERAMG");
+    options.setArgs(parSectionName + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP64");
+    options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP64");
+    options.setArgs("AMG SOLVER LOCATION", "CPU");
+  }
+  else if(p_coarseSolver.find("amgx") != string::npos){
+    options.setArgs("AMG SOLVER", "AMGX");
+    options.setArgs(parSectionName + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
+    options.setArgs("AMG SOLVER PRECISION", "FP32");
+    options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP32");
+    options.setArgs("AMG SOLVER LOCATION", "GPU");
+  }
+
+  // coarse grid discretization
+  if(p_coarseSolver.find("semfem") != string::npos){
+    options.setArgs(parSectionName + " MULTIGRID COARSE SEMFEM", "TRUE");
+  }
+  else if(p_coarseSolver.find("fem") != string::npos){
+    options.setArgs(parSectionName + " MULTIGRID COARSE SEMFEM", "FALSE");
+    options.setArgs("GALERKIN COARSE OPERATOR", "FALSE");
+    options.setArgs("USER SPECIFIED FEM COARSE SOLVER", "TRUE");
+    if(p_coarseSolver.find("galerkin") != string::npos){
+      options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
+    }
+  }
+
+
+  // parse fp type + location
+  std::vector<string> entries = serializeString(p_coarseSolver, '+');
+  for(string entry : entries)
+  {
+    if(entry.find("fp32") != string::npos)
+    {
+      options.setArgs("AMG SOLVER PRECISION", "FP32");
+      options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP32");
+      if(p_coarseSolver.find("boomeramg") != string::npos){
+        if(rank == 0) printf("BoomerAMG+FP32 is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+    else if(entry.find("fp64") != string::npos)
+    {
+      options.setArgs("AMG SOLVER PRECISION", "FP64");
+      options.setArgs(parSectionName + " SEMFEM SOLVER PRECISION", "FP64");
+    }
+    else if(entry.find("cpu") != string::npos)
+    {
+      options.setArgs("AMG SOLVER LOCATION", "CPU");
+      if(p_coarseSolver.find("amgx") != string::npos){
+        if(rank == 0) printf("AMGX+CPU is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+    else if(entry.find("gpu") != string::npos)
+    {
+      options.setArgs("AMG SOLVER LOCATION", "GPU");
+      if(p_coarseSolver.find("boomeramg") != string::npos){
+        if(rank == 0) printf("BoomerAMG+CPU is not currently supported!\n");
+        ABORT(1);
+      }
+    }
+  }
+}
 
 bool is_number(const string &s) {
   return !s.empty() && std::find_if(s.begin(), s.end(), [](unsigned char c) {
@@ -246,7 +323,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
         string entry = options.getArgs(parSection + " PARALMOND CYCLE");
         if (entry.find("MULTIPLICATIVE") == string::npos) {
           entry += "+MULTIPLICATIVE";
-          options.setArgs(" PARALMOND CYCLE", entry);
+          options.setArgs(parSection + " PARALMOND CYCLE", entry);
         }
       }
     } else if (p_smoother.find("chebyshev+asm") == 0) {
@@ -261,7 +338,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
         string entry = options.getArgs(parSection + " PARALMOND CYCLE");
         if (entry.find("MULTIPLICATIVE") == string::npos) {
           entry += "+MULTIPLICATIVE";
-          options.setArgs(" PARALMOND CYCLE", entry);
+          options.setArgs(parSection + " PARALMOND CYCLE", entry);
         }
       }
     } else if (p_smoother.find("chebyshev+ras") == 0) {
@@ -273,10 +350,10 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
              "smoother!",
              EXIT_FAILURE);
       } else {
-        string entry = options.getArgs(" PARALMOND CYCLE");
+        string entry = options.getArgs(parSection + " PARALMOND CYCLE");
         if (entry.find("MULTIPLICATIVE") == string::npos) {
           entry += "+MULTIPLICATIVE";
-          options.setArgs(" PARALMOND CYCLE", entry);
+          options.setArgs(parSection + " PARALMOND CYCLE", entry);
         }
       }
     } else {
@@ -293,30 +370,35 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
 void parsePreconditioner(const int rank, setupAide &options,
                          inipp::Ini<char> *par, string parScope) {
 
-  string parSection = parScope;
+  string parSection = (parScope.find("temperature") != string::npos)
+                              ? "scalar00"
+                              : parScope;
   UPPER(parSection);
+
   string p_preconditioner;
   par->extract(parScope, "preconditioner", p_preconditioner);
   if (p_preconditioner == "none") {
     options.setArgs(parSection + " PRECONDITIONER", "NONE");
   } else if (p_preconditioner == "jacobi") {
     options.setArgs(parSection + " PRECONDITIONER", "JACOBI");
-  } else if (p_preconditioner.find("semfem") != string::npos) {
+  } else if(p_preconditioner.find("semfem") != std::string::npos
+     && p_preconditioner.find("pmg") == std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
     options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
     options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
-    std::vector<string> list;
+    std::vector<std::string> list;
     list = serializeString(p_preconditioner, '+');
-    for (string s : list) {
-      if (s.find("semfem") != string::npos) {
-      } else if (s.find("amgx") != string::npos) {
+    for (std::string s : list) {
+      if (s.find("semfem") != std::string::npos) {
+      } else if (s.find("amgx") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
-      } else if (s.find("fp32") != string::npos) {
+      } else if (s.find("fp32") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
-        if (options.compareArgs(" SEMFEM SOLVER", "BOOMERAMG"))
-          exit("FP32 is currently not supported for BoomerAMG!", EXIT_FAILURE);
-      } else if (s.find("fp64") != string::npos) {
+        if (options.compareArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG"))
+          exit("FP32 is currently not supported for BoomerAMG!",
+               EXIT_FAILURE);
+      } else if (s.find("fp64") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
       } else {
         if (rank == 0) {
@@ -327,17 +409,29 @@ void parsePreconditioner(const int rank, setupAide &options,
       }
     }
 
-  } else if (p_preconditioner.find("semg") != string::npos ||
-             p_preconditioner.find("multigrid") != string::npos) {
+  } else if (p_preconditioner.find("semg") != std::string::npos ||
+             p_preconditioner.find("multigrid") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
     string key = "VCYCLE";
-    if (p_preconditioner.find("additive") != string::npos)
+    if (p_preconditioner.find("additive") != std::string::npos)
       key += "+ADDITIVE";
-    if (p_preconditioner.find("multiplicative") != string::npos)
+    if (p_preconditioner.find("multiplicative") != std::string::npos)
       key += "+MULTIPLICATIVE";
-    if (p_preconditioner.find("overlap") != string::npos)
+    if (p_preconditioner.find("overlap") != std::string::npos)
       key += "+OVERLAPCRS";
     options.setArgs(parSection + " PARALMOND CYCLE", key);
+  } else if(p_preconditioner.find("pmg") != std::string::npos){
+    options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
+    string key = "VCYCLE";
+    options.setArgs(parSection + " PARALMOND CYCLE", key);
+    options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "FALSE");
+    options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
+    if(p_preconditioner.find("coarse") != std::string::npos){
+      options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "TRUE");
+      options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
+    }
+
+    options.setArgs(parSection + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
   }
 }
 void parseInitialGuess(const int rank, setupAide &options,
@@ -402,7 +496,7 @@ void parseInitialGuess(const int rank, setupAide &options,
     for (string s : list) {
       if (s.find("nvector") == 0) {
         const std::vector<string> items = serializeString(s, '=');
-        assert(items.size() = 2);
+        assert(items.size() == 2);
         const int value = std::stoi(items[1]);
         options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
                         std::to_string(value));
@@ -423,11 +517,11 @@ void parseRegularization(const int rank, setupAide &options,
     parSection = "general";
   }
   string parPrefix = isScalar ? "SCALAR" + sidPar + " " : "";
-  options.setArgs(parPrefix + "FILTER STABILIZATION", "NONE");
+  options.setArgs(parPrefix + "STABILIZATION METHOD", "NONE");
 
   string regularization;
   par->extract(parSection, "regularization", regularization);
-  if (regularization.find("avm") == 0 || regularization.find("hpfrt") == 0) {
+  if (regularization.find("avm") != string::npos || regularization.find("hpfrt") != string::npos) {
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
@@ -449,25 +543,36 @@ void parseRegularization(const int rank, setupAide &options,
 
     options.setArgs(parPrefix + "HPFRT MODES", "1");
     if (usesAVM) {
-      options.setArgs(parPrefix + "VISMAX COEFF", "0.5");
-      options.setArgs(parPrefix + "FILTER STABILIZATION", "AVM");
-      options.setArgs(parPrefix + "RAMP CONSTANT", to_string_f(1.0));
-      options.setArgs(parPrefix + "AVM C0", "FALSE");
+      if(regularization.find("hpfresidual") != string::npos)
+        options.setArgs(parPrefix + "STABILIZATION METHOD", "HPF_RESIDUAL");
+      else if(regularization.find("highestmodaldecay") != string::npos)
+        options.setArgs(parPrefix + "STABILIZATION METHOD", "HIGHEST_MODAL_DECAY");
+      else {
+        if(rank == 0){
+          printf("Error: avm must be specified with hpfResidual or HighestModalDecay!\n");
+        }
+        ABORT(1);
+      }
+
+      options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", "0.5");
+      options.setArgs(parPrefix + "STABILIZATION SCALING COEFF", "1.0");
+      options.setArgs(parPrefix + "STABILIZATION RAMP CONSTANT", to_string_f(1.0));
+      options.setArgs(parPrefix + "STABILIZATION AVM C0", "FALSE");
     }
     if (usesHPFRT) {
-      options.setArgs(parPrefix + "FILTER STABILIZATION", "RELAXATION");
+      options.setArgs(parPrefix + "STABILIZATION METHOD", "RELAXATION");
     }
 
     // common parameters
-    for (string s : list) {
-      if (s.find("nmodes") == 0) {
+    for (std::string s : list) {
+      if (s.find("nmodes") != string::npos) {
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         double value = std::stod(items[1]);
         value = round(value);
         options.setArgs(parPrefix + "HPFRT MODES", to_string_f(value));
       }
-      if (s.find("cutoffratio") == 0) {
+      if (s.find("cutoffratio") != string::npos) {
         std::vector<string> items = serializeString(s, '=');
         assert(items.size() == 2);
         double filterCutoffRatio = std::stod(items[1]);
@@ -477,21 +582,36 @@ void parseRegularization(const int rank, setupAide &options,
     }
 
     if (usesAVM) {
-      for (string s : list) {
-        if (s.find("vismaxcoeff") == 0) {
+      for (std::string s : list) {
+        if (s.find("vismaxcoeff") != string::npos) {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat value = std::stod(items[1]);
-          options.setArgs(parPrefix + "VISMAX COEFF", to_string_f(value));
+          options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", to_string_f(value));
         }
-        if (s.find("c0") == 0) {
-          options.setArgs(parPrefix + "AVM C0", "TRUE");
+        if(s.find("scalingcoeff") != string::npos)
+        {
+          std::vector<string> items = serializeString(s, '=');
+          assert(items.size() == 2);
+          const dfloat value = std::stod(items[1]);
+          if(regularization.find("highestmodaldecay") != string::npos)
+          {
+            // in this context, the scaling coefficient can only be vismax
+            options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", to_string_f(value));
+          } else {
+            options.setArgs(parPrefix + "STABILIZATION SCALING COEFF", to_string_f(value));
+          }
         }
-        if (s.find("rampconstant") == 0) {
+        if(s.find("c0") != string::npos)
+        {
+          options.setArgs(parPrefix + "STABILIZATION AVM C0", "TRUE");
+        }
+        if(s.find("rampconstant") != string::npos)
+        {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat rampConstant = std::stod(items[1]);
-          options.setArgs(parPrefix + "RAMP CONSTANT",
+          options.setArgs(parPrefix + "STABILIZATION RAMP CONSTANT",
                           to_string_f(rampConstant));
         }
       }
@@ -499,8 +619,8 @@ void parseRegularization(const int rank, setupAide &options,
 
     if (usesHPFRT) {
       bool setsStrength = false;
-      for (string s : list) {
-        if (s.find("strength") == 0) {
+      for (std::string s : list) {
+        if (s.find("strength") != string::npos) {
           setsStrength = true;
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
@@ -523,7 +643,7 @@ void parseRegularization(const int rank, setupAide &options,
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
-      options.setArgs(parPrefix + "FILTER STABILIZATION", "RELAXATION");
+      options.setArgs(parPrefix + "STABILIZATION METHOD", "RELAXATION");
       if (par->extract(parSection, "filterweight", sbuf)) {
         int err = 0;
         double weight = te_interp(sbuf.c_str(), &err);
@@ -581,7 +701,7 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("RESTART FROM FILE", "0");
   options.setArgs("SOLUTION OUTPUT INTERVAL", "0");
   options.setArgs("SOLUTION OUTPUT CONTROL", "STEPS");
-  options.setArgs("FILTER STABILIZATION", "NONE");
+  options.setArgs("STABILIZATION METHOD", "NONE");
 
   options.setArgs("START TIME", "0.0");
 
@@ -603,8 +723,12 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE DISCRETIZATION", "CONTINUOUS");
   options.setArgs("PRESSURE BASIS", "NODAL");
   options.setArgs("AMG SOLVER", "BOOMERAMG");
+  options.setArgs("AMG SOLVER PRECISION", "FP64");
+  options.setArgs("AMG SOLVER LOCATION", "CPU");
 
   options.setArgs("PRESSURE PARALMOND CYCLE", "VCYCLE");
+  options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
+  options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "FALSE");
   options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
   options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
@@ -620,6 +744,12 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
   options.setArgs("ENABLE OVERLAP", "TRUE");
+
+  options.setArgs("VARIABLE DT", "FALSE");
+  options.setArgs("TARGET CFL", "1.0");
+
+  const double bigNumber = std::numeric_limits<double>::max();
+  options.setArgs("MAX DT", to_string_f(bigNumber));
 }
 
 setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
@@ -700,9 +830,55 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   par->extract("general", "cubaturepolynomialorder", cubN);
   options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
 
-  double dt = 0;
-  if (par->extract("general", "dt", dt))
-    options.setArgs("DT", to_string_f(fabs(dt)));
+  string dtString;
+  if (par->extract("general", "dt", dtString)){
+    if(dtString.find("targetcfl") != string::npos)
+    {
+      bool userSuppliesInitialDt = false;
+      options.setArgs("VARIABLE DT", "TRUE");
+      std::vector<string> entries = serializeString(dtString, '+');
+      for(string entry : entries)
+      {
+        if(entry.find("max") != string::npos)
+        {
+          std::vector<string> maxAndValue = serializeString(entry, '=');
+          assert(maxAndValue.size() == 2);
+          const double maxDT = std::stod(maxAndValue[1]);
+          options.setArgs("MAX DT", to_string_f(maxDT));
+        }
+        if(entry.find("initial") != string::npos)
+        {
+          std::vector<string> initialDtAndValue = serializeString(entry, '=');
+          assert(initialDtAndValue.size() == 2);
+          const double initialDt = std::stod(initialDtAndValue[1]);
+          options.setArgs("DT", to_string_f(initialDt));
+          userSuppliesInitialDt = true;
+        }
+      }
+
+      // guard against using a higher initial dt than the max
+      if(userSuppliesInitialDt)
+      {
+        double initialDt = 0.0;
+        double maxDt = 0.0;
+        options.getArgs("DT", initialDt);
+        options.getArgs("MAX DT", maxDt);
+        if(initialDt > maxDt)
+        {
+          if(rank == 0){
+            printf("Error: initial dt %g is larger than the max dt %g!\n", initialDt, maxDt);
+          }
+          ABORT(1);
+        }
+      }
+    }
+    else
+    {
+      const double dt = std::stod(dtString);
+      options.setArgs("DT", to_string_f(fabs(dt)));
+    }
+
+  }
 
   string timeStepper;
   par->extract("general", "timestepper", timeStepper);
@@ -717,11 +893,6 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   }
 
   parseConstFlowRate(rank, options, par);
-
-  bool variableDt = false;
-  par->extract("general", "variabledt", variableDt);
-  if (variableDt)
-    exit("GENERAL::variableDt = Yes not supported!", EXIT_FAILURE);
 
   double endTime;
   string stopAt = "numsteps";
@@ -757,6 +928,24 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
       ;
     options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
   }
+
+  double targetCFL;
+  if(par->extract("general", "targetcfl", targetCFL))
+  {
+    options.setArgs("TARGET CFL", to_string_f(targetCFL));
+  }
+
+  bool variableDt;
+  if(par->extract("general", "variabledt", variableDt))
+  {
+    if(variableDt){
+      options.setArgs("VARIABLE DT", "TRUE");
+    }
+    else{
+      options.setArgs("VARIABLE DT", "FALSE");
+    }
+  }
+
 
   double writeInterval = 0;
   par->extract("general", "writeinterval", writeInterval);
@@ -819,8 +1008,11 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
 
     bool p_gproj;
     if (par->extract("pressure", "galerkincoarseoperator", p_gproj))
-      if (p_gproj)
-        options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
+    {
+      if(rank == 0)
+        printf("PRESSURE:galerkinCoarseOperator is not supported!\n");
+      ABORT(1);
+    }
 
     parsePreconditioner(rank, options, par, "pressure");
 
@@ -870,6 +1062,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
 
     parseSmoother(rank, options, par, "pressure");
 
+    parseCoarseSolver(rank, options, par, "pressure");
     string p_amgsolver;
     par->extract("pressure", "amgsolver", p_amgsolver);
     if (p_amgsolver == "paralmond")
