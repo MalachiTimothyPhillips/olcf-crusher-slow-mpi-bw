@@ -21,10 +21,13 @@ filtering = hpfrt
 filterWeight = 0.1/${dt}
 filterModes = 1
 
+#dt = targetCFL + max = 1e-2 + initial = 6e-3
+#targetCFL = 4
+
 [PRESSURE]
 residualTol = 1e-04
 #preconditioner = multigrid+additive+overlapCrsSolve
-#smootherType = Chebyshev+ASM
+#smootherType = Chebyshev+ASM+2+minEigenvalueBoundFactor=0.05+maxEigenvalueBoundFactor=1.0
 #pMultigridCoarsening = 7,3,1
 #galerkinCoarseOperator = true
 #initialGuess = projectionAconj+nVector=10
