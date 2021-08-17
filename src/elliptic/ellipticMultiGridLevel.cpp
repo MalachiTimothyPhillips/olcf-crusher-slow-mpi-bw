@@ -117,18 +117,18 @@ void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
   occa::memory o_Ad  = o_smootherResidual2;
   occa::memory o_d   = o_smootherUpdate;
 
-  const dfloat one = 1.0;
-  const dfloat mone = -1.0;
-  const dfloat zero = 0.0;
+  const pfloat one = 1.0;
+  const pfloat mone = -1.0;
+  const pfloat zero = 0.0;
 
   if(xIsZero) { //skip the Ax if x is zero
     //res = Sr
-    elliptic->dotMultiplyPfloatKernel(mesh->Np * mesh->Nelements,o_invDiagA,o_r,o_x);
+    elliptic->dotMultiplyPfloatKernel(Nrows,o_invDiagA,o_r,o_x);
   } else {
     //res = S(r-Ax)
     this->Ax(o_x,o_res);
     elliptic->scaledAddPfloatKernel(Nrows, one, o_r, mone, o_res);
-    elliptic->dotMultiplyPfloatKernel(mesh->Np * mesh->Nelements, o_invDiagA, o_res, o_d);
+    elliptic->dotMultiplyPfloatKernel(Nrows, o_invDiagA, o_res, o_d);
     elliptic->scaledAddPfloatKernel(Nrows, one, o_d, one, o_x);
   }
 }
