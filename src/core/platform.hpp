@@ -52,6 +52,10 @@ class device_t : public occa::device{
     occa::kernel buildKernel(const std::string &filename,
                              const std::string &kernelName,
                              const occa::properties &props,
+                             const std::string &suffix) const;
+    occa::kernel buildKernel(const std::string &filename,
+                             const std::string &kernelName,
+                             const occa::properties &props,
                              MPI_Comm comm) const;
     occa::memory malloc(const dlong Nbytes, const void* src = nullptr, const occa::properties& properties = occa::properties());
     occa::memory malloc(const dlong Nbytes, const occa::properties& properties);

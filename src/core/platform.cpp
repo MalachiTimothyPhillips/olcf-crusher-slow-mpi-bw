@@ -156,6 +156,21 @@ occa::kernel
 device_t::buildKernel(const std::string &filename,
                          const std::string &kernelName,
                          const occa::properties &props,
+                         const std::string& suffix) const
+{
+  if(filename.find(".okl") != std::string::npos){
+    occa::properties propsWithSuffix = props;
+    propsWithSuffix["kernelNameSuffix"] = suffix;
+    return this->buildKernel(filename, kernelName, propsWithSuffix, comm);
+  }
+  else{
+    return this->buildNativeKernel(filename, kernelName, props);
+  }
+}
+occa::kernel
+device_t::buildKernel(const std::string &filename,
+                         const std::string &kernelName,
+                         const occa::properties &props,
                          MPI_Comm comm) const
 {
   int rank;
