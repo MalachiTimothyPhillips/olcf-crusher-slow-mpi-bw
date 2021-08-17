@@ -356,6 +356,11 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
           options.setArgs(parSection + " PARALMOND CYCLE", entry);
         }
       }
+    } else if (p_smoother.find("jac") == 0) {
+      options.setArgs(parSection + " MULTIGRID SMOOTHER", "DAMPEDJACOBI");
+      options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "JACOBI");
+      options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "JACOBI");
+      options.setArgs("BOOMERAMG ITERATIONS", "2");
     } else {
       exit("Unknown ::smootherType!", EXIT_FAILURE);
     }
