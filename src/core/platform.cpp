@@ -147,7 +147,10 @@ device_t::buildKernel(const std::string &filename,
                          const std::string &kernelName,
                          const occa::properties &props) const
 {
-  return this->buildKernel(filename, kernelName, props, comm);
+  if(filename.find(".okl") != std::string::npos)
+    return this->buildKernel(filename, kernelName, props, comm);
+  else
+    return this->buildNativeKernel(filename, kernelName, props);
 }
 occa::kernel
 device_t::buildKernel(const std::string &filename,

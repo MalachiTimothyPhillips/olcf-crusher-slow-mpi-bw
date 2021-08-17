@@ -234,7 +234,6 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       filename = oklpath + "ellipticAx" + suffix + ".okl";
       kernelName = "ellipticAx" + suffix;
       if(serial) {
-        AxKernelInfo["okl/enabled"] = false;
         filename = oklpath + "ellipticSerialAx" + suffix + ".c";
       }
       elliptic->AxKernel = platform->device.buildKernel(filename,kernelName,AxKernelInfo);
@@ -291,12 +290,10 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       if(serial){
         filename = oklpath + "ellipticPreconCoarsen" + suffix + ".c";
         kernelName = "ellipticPreconCoarsen" + suffix;
-        occa::properties coarsenProlongateKernelInfoNoOKL = coarsenProlongateKernelInfo;
-        coarsenProlongateKernelInfoNoOKL["okl/enabled"] = false;
-        elliptic->precon->coarsenKernel = platform->device.buildKernel(filename,kernelName,coarsenProlongateKernelInfoNoOKL);
+        elliptic->precon->coarsenKernel = platform->device.buildKernel(filename,kernelName,coarsenProlongateKernelInfo);
         filename = oklpath + "ellipticPreconProlongate" + suffix + ".c";
         kernelName = "ellipticPreconProlongate" + suffix;
-        elliptic->precon->prolongateKernel = platform->device.buildKernel(filename,kernelName,coarsenProlongateKernelInfoNoOKL);
+        elliptic->precon->prolongateKernel = platform->device.buildKernel(filename,kernelName,coarsenProlongateKernelInfo);
       } else {
         filename = oklpath + "ellipticPreconCoarsen" + suffix + ".okl";
         kernelName = "ellipticPreconCoarsen" + suffix;

@@ -83,7 +83,6 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
     occa::properties gmresKernelInfo = platform->kernelInfo;
     gmresKernelInfo["defines/" "p_eNfields"] = elliptic->Nfields;
     gmresKernelInfo["defines/" "p_Nfields"] = elliptic->Nfields;
-    if(serial) gmresKernelInfo["okl/enabled"] = false;
     filename = serial ? oklpath + "ellipticGramSchmidtOrthogonalization.c" : oklpath + "ellipticGramSchmidtOrthogonalization.okl";
     elliptic->gramSchmidtOrthogonalizationKernel =
       platform->device.buildKernel(filename,
@@ -272,9 +271,6 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   pfloatKernelInfo["defines/dfloat"] = pfloatString;
   pfloatKernelInfo["defines/pfloat"] = pfloatString;
 
-  occa::properties kernelInfoNoOKL = kernelInfo;
-  if(serial) kernelInfoNoOKL["okl/enabled"] = false;
-
   string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
 
@@ -360,9 +356,6 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   dfloatKernelInfo["defines/" "pfloat"] = dfloatString;
 
   occa::properties AxKernelInfo = dfloatKernelInfo;
-  occa::properties dfloatKernelInfoNoOKL = kernelInfoNoOKL;
-  dfloatKernelInfoNoOKL["defines/" "pfloat"] = dfloatString;
-  if(serial) AxKernelInfo = dfloatKernelInfoNoOKL;
 
   {
       const string oklpath = install_dir + "/okl/elliptic/";
@@ -453,27 +446,22 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
       // combined PCG update and r.r kernel
       if(serial) {
         filename = oklpath + "ellipticSerialUpdatePCG.c";
-        elliptic->updatePCGKernel =
-          platform->device.buildKernel(filename,
-                                   "ellipticUpdatePCG", dfloatKernelInfoNoOKL);
       } else {
         filename = oklpath + "ellipticUpdatePCG.okl";
-        elliptic->updatePCGKernel =
-          platform->device.buildKernel(filename,
-                                   "ellipticBlockUpdatePCG", dfloatKernelInfo);
       }
+      elliptic->updatePCGKernel =
+        platform->device.buildKernel(filename,
+                                 "ellipticBlockUpdatePCG", dfloatKernelInfo);
 
       if(!elliptic->blockSolver) {
         if(serial){
           filename = oklpath + "ellipticPreconCoarsen" + suffix + ".c";
           kernelName = "ellipticPreconCoarsen" + suffix;
-          occa::properties serialPreconKernelInfo = kernelInfo;
-          serialPreconKernelInfo["okl/enabled"] = false;
-          elliptic->precon->coarsenKernel = platform->device.buildKernel(filename,kernelName,serialPreconKernelInfo);
+          elliptic->precon->coarsenKernel = platform->device.buildKernel(filename,kernelName,kernelInfo);
           filename = oklpath + "ellipticPreconProlongate" + suffix + ".c";
           kernelName = "ellipticPreconProlongate" + suffix;
           elliptic->precon->prolongateKernel =
-            platform->device.buildKernel(filename,kernelName,serialPreconKernelInfo);
+            platform->device.buildKernel(filename,kernelName,kernelInfo);
         } else {
           filename = oklpath + "ellipticPreconCoarsen" + suffix + ".okl";
           kernelName = "ellipticPreconCoarsen" + suffix;

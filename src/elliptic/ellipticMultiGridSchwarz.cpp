@@ -902,7 +902,6 @@ void MGLevel::build(
       filename = oklpath + "ellipticSchwarzSolverHex3D.okl";
       if(serial) {
         filename = oklpath + "ellipticSchwarzSolverHex3D.c";
-        properties["okl/enabled"] = false;
       }
       preFDMKernel = platform->device.buildKernel(filename, "preFDM", properties);
       fusedFDMKernel = platform->device.buildKernel(filename, "fusedFDM", properties);

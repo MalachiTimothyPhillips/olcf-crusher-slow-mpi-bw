@@ -78,7 +78,6 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
       filename = oklpath + "ellipticAx" + suffix + ".okl";
       kernelName = "ellipticAx" + suffix;
       if(serial) {
-        AxKernelInfo["okl/enabled"] = false;
         filename = oklpath + "ellipticSerialAx" + suffix + ".c";
       }
       elliptic->AxKernel = platform->device.buildKernel(filename,kernelName,AxKernelInfo);
