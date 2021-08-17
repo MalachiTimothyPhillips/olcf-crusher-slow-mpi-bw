@@ -48,11 +48,8 @@ class device_t : public occa::device{
                              const occa::properties &props) const;
     occa::kernel buildKernel(const std::string &filename,
                              const std::string &kernelName,
-                             const occa::properties &props) const;
-    occa::kernel buildKernel(const std::string &filename,
-                             const std::string &kernelName,
                              const occa::properties &props,
-                             const std::string &suffix) const;
+                             std::string suffix = std::string()) const;
     occa::kernel buildKernel(const std::string &filename,
                              const std::string &kernelName,
                              const occa::properties &props,
