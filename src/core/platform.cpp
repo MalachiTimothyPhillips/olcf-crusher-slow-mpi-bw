@@ -164,7 +164,13 @@ device_t::buildKernel(const std::string &filename,
     return this->buildKernel(filename, kernelName, propsWithSuffix, comm);
   }
   else{
-    return this->buildNativeKernel(filename, kernelName, props);
+    occa::properties propsWithSuffix = props;
+    propsWithSuffix["defines/SUFFIX"] = suffix;
+    propsWithSuffix["defines/TOKEN_PASTE_(a,b)"] = std::string("a##b");
+    propsWithSuffix["defines/TOKEN_PASTE(a,b)"] = std::string("TOKEN_PASTE_(a,b)");
+    propsWithSuffix["defines/FUNC(a)"] = std::string("TOKEN_PASTE(a,SUFFIX)");
+    const std::string alteredName =  kernelName + suffix;
+    return this->buildNativeKernel(filename, alteredName, propsWithSuffix);
   }
 }
 occa::kernel
