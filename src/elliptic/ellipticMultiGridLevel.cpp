@@ -37,9 +37,8 @@ void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
   if(stype != SmootherType::SCHWARZ) {
     ellipticOperator(elliptic,o_x,o_res, dfloatString);
     // subtract r = b - A*x
-    const dlong Nlocal = mesh->Np * mesh->Nelements;
     platform->linAlg->axpbyMany(
-      Nlocal,
+      Nrows,
       elliptic->Nfields,
       elliptic->Ntotal,
       1.0,
@@ -279,5 +278,5 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 
 void MGLevel::smootherJacobi(occa::memory &o_r, occa::memory &o_Sr)
 {
-  elliptic->dotMultiplyPfloatKernel(mesh->Np * mesh->Nelements,o_invDiagA,o_r,o_Sr);
+  elliptic->dotMultiplyPfloatKernel(Nrows, o_invDiagA, o_r, o_Sr);
 }
