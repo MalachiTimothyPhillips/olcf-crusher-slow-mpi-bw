@@ -745,6 +745,10 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");
   options.setArgs("PRESSURE RESIDUAL PROJECTION START", "5");
 
+  options.setArgs("MESH INITIAL GUESS", "PROJECTION-ACONJ");
+  options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "5");
+  options.setArgs("MESH RESIDUAL PROJECTION START", "5");
+
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
@@ -985,22 +989,14 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     if(meshSolver == "none") options.setArgs("MOVING MESH", "FALSE"); 
   }
 
-  bool m_rproj;
-  if(par->extract("mesh", "residualproj", m_rproj) ||
-     par->extract("mesh", "residualprojection", m_rproj)) {
-    if(m_rproj) {
-      options.setArgs("MESH RESIDUAL PROJECTION", "TRUE");
-      options.setArgs("MESH INITIAL GUESS DEFAULT","PREVIOUS STEP");
-    } else {
-      options.setArgs("MESH RESIDUAL PROJECTION", "FALSE");
-    }
+  {
+    string keyValue;
+    if (par->extract("mesh", "maxiterations", keyValue))
+      options.setArgs("MESH MAXIMUM ITERATIONS", keyValue);
   }
-  int m_nProjVec;
-  if(par->extract("mesh", "residualprojectionvectors", m_nProjVec))
-    options.setArgs("MESH RESIDUAL PROJECTION VECTORS", std::to_string(m_nProjVec));
-  int m_nProjStep;
-  if(par->extract("mesh", "residualprojectionstart", m_nProjStep))
-    options.setArgs("MESH RESIDUAL PROJECTION START", std::to_string(m_nProjStep));
+
+  parseInitialGuess(rank, options, par, "mesh");
+
 
   double m_residualTol;
   if(par->extract("mesh", "residualtol", m_residualTol) ||

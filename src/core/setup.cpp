@@ -770,7 +770,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->mOptions.setArgs("DISCRETIZATION",       options.getArgs("MESH DISCRETIZATION"));
     nrs->mOptions.setArgs("BASIS",                options.getArgs("MESH BASIS"));
     nrs->mOptions.setArgs("PRECONDITIONER",       options.getArgs("MESH PRECONDITIONER"));
-    nrs->mOptions.setArgs("RESIDUAL PROJECTION",       options.getArgs("MESH RESIDUAL PROJECTION"));
+    nrs->mOptions.setArgs("INITIAL GUESS",       options.getArgs("MESH INITIAL GUESS"));
     nrs->mOptions.setArgs("RESIDUAL PROJECTION VECTORS",       options.getArgs("MESH RESIDUAL PROJECTION VECTORS"));
     nrs->mOptions.setArgs("RESIDUAL PROJECTION START",       options.getArgs("MESH RESIDUAL PROJECTION START"));
     nrs->mOptions.setArgs("MULTIGRID COARSENING", options.getArgs("MESH MULTIGRID COARSENING"));
@@ -784,6 +784,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                           options.getArgs("MESH PARALMOND CHEBYSHEV DEGREE"));
     nrs->mOptions.setArgs("PARALMOND AGGREGATION STRATEGY",
                           options.getArgs("MESH PARALMOND AGGREGATION STRATEGY"));
+    nrs->mOptions.setArgs("MAXIMUM ITERATIONS", options.getArgs("MESH MAXIMUM ITERATIONS"));
 
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 1;
