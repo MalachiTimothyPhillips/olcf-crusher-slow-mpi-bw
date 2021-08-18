@@ -80,6 +80,10 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   // global nodes
   meshGlobalIds(mesh);
 
+  mesh->o_x = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->x);
+  mesh->o_y = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->y);
+  mesh->o_z = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->z);
+
   //dont need these once vmap is made
   free(mesh->x);
   free(mesh->y);
@@ -192,9 +196,9 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   elliptic->Nmasked = 0; //reset
   for (dlong n = 0; n < mesh->Nelements * mesh->Np; n++)
     if (elliptic->mapB[n] == 1) elliptic->maskIds[elliptic->Nmasked++] = n;
-  if (elliptic->Nmasked) elliptic->o_maskIds = platform->device.malloc(
-      elliptic->Nmasked * sizeof(dlong),
-      elliptic->maskIds);
+
+  if (elliptic->Nmasked) 
+     elliptic->o_maskIds = platform->device.malloc(elliptic->Nmasked * sizeof(dlong), elliptic->maskIds);
 
   //make a masked version of the global id numbering
   hlong* maskedGlobalIds = (hlong*) calloc(Ntotal,sizeof(hlong));
