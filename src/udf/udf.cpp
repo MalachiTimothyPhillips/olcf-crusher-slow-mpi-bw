@@ -90,6 +90,7 @@ void udfLoad(void)
   *(void**)(&udf.setup) = udfLoadFunction("UDF_Setup",1);
   *(void**)(&udf.loadKernels) = udfLoadFunction("UDF_LoadKernels",0);
   *(void**)(&udf.executeStep) = udfLoadFunction("UDF_ExecuteStep",0);
+  *(void**)(&udf.converged) = udfLoadFunction("UDF_Converged",0);
 }
 
 occa::kernel udfBuildKernel(nrs_t* nrs, const char* function)
