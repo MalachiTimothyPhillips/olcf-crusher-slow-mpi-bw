@@ -895,7 +895,7 @@ void MGLevel::build(
       properties["defines/p_Nq"] = Nq;
       properties["defines/p_Nq_e"] = Nq_e;
       properties["defines/p_restrict"] = 0;
-      const std::string suffix = std::string("_") + std::to_string(Nq_e-1);
+      const std::string suffix = std::string("_") + std::to_string(Nq_e-1) + std::string("pfloat");
       properties["defines/p_overlap"] = (int) overlap;
       if(options.compareArgs("MULTIGRID SMOOTHER","RAS"))
         properties["defines/p_restrict"] = 1;
