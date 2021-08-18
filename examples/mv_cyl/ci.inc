@@ -31,7 +31,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   if(ciMode == 3){
     options.setArgs("SUBCYCLING STEPS", string("1"));
     options.setArgs("MESH SOLVER", "ELASTICITY");
-    options.setArgs("MESH SOLVER TOLERANCE", "1e-4");
+    options.setArgs("MESH SOLVER TOLERANCE", "1e-6");
   }
 }
 
@@ -103,12 +103,6 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
   if(rank == 0) printf("velIter=%d pIter=%d\n", velIterErr, pIterErr);
   if(velIterErr >= 3) passed = false;
   if(pIterErr >= 2) passed = false;
-
-  if(ciMode == 3){
-    const int expectedMeshIter = 1;
-    const int meshIterErr = abs(expectedMeshIter - nrs->meshSolver->Niter);
-    if(meshIterErr >= 2) passed = false;
-  }
 
   passed ? (PASS) : (FAIL);
 }
