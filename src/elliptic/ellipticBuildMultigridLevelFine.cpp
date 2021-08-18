@@ -30,14 +30,14 @@
 namespace{
 std::string gen_suffix(const elliptic_t * elliptic, const char * floatString)
 {
-  std::string precision = std::string(floatString);
-  std::string FPString = "";
-  if(precision.find("float") != std::string::npos)
-    FPString = "FP32";
-  else
-    FPString = "FP64";
+  const std::string precision = std::string(floatString);
+  if(precision.find(pfloatString) != std::string::npos){
+    return std::string("_") + std::to_string(elliptic->mesh->N) + std::string("pfloat");
+  }
+  else{
+    return std::string("_") + std::to_string(elliptic->mesh->N);
+  }
   
-  return std::string("_") + std::to_string(elliptic->mesh->N) + FPString;
 }
 }
 
