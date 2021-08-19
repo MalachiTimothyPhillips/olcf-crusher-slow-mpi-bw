@@ -7,9 +7,11 @@ on:
   pull_request:
     branches:
       - master
+      - next
   push:
     branches:
       - master
+      - next
 
 env:
   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
