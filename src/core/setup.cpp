@@ -573,7 +573,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         occa::properties subCycleStrongCubatureProps = prop;
         if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP"){
           fileName = oklpath + "nrs/subCycle" + suffix + ".c";
-          subCycleStrongCubatureProps["okl/enabled"] = false;
         }
         kernelName = "subCycleStrongCubatureVolume" + suffix;
         nrs->subCycleStrongCubatureVolumeKernel =
@@ -1197,7 +1196,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     (dfloat*) calloc(std::max(cds->nBDF, cds->nEXT) * cds->fieldOffsetSum,sizeof(dfloat));
   cds->BF    = (dfloat*) calloc(cds->fieldOffsetSum,sizeof(dfloat));
   cds->FS    =
-    (dfloat*) calloc(cds->nBDF * cds->fieldOffsetSum,sizeof(dfloat));
+    (dfloat*) calloc(cds->nEXT * cds->fieldOffsetSum,sizeof(dfloat));
 
   cds->Nsubsteps = nrs->Nsubsteps;
   if(cds->Nsubsteps) {
@@ -1293,7 +1292,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     cds->options[is].setArgs("INITIAL GUESS",  options.getArgs("SCALAR" + sid + " INITIAL GUESS"));
     cds->options[is].setArgs("RESIDUAL PROJECTION VECTORS",  options.getArgs("SCALAR" + sid + " RESIDUAL PROJECTION VECTORS"));
     cds->options[is].setArgs("RESIDUAL PROJECTION START",  options.getArgs("SCALAR" + sid + " RESIDUAL PROJECTION START"));
-    cds->options[is].setArgs("MAXIMUM ITERATIONS", options.getArgs("SCALAR MAXIMUM ITERATIONS"));
+    cds->options[is].setArgs("MAXIMUM ITERATIONS", options.getArgs("SCALAR" + sid + " MAXIMUM ITERATIONS"));
 
     // setup boundary mapping
     dfloat largeNumber = 1 << 20;
@@ -1345,6 +1344,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     for(int is = 0; is < cds->NSfields; is++)
     {
       if(cds->options[is].compareArgs("STABILIZATION METHOD", "NONE")) continue;
+      if(!cds->compute[is]) continue;
       int filterNc = -1;
       cds->options[is].getArgs("HPFRT MODES", filterNc);
       dfloat filterS;
@@ -1453,7 +1453,6 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
         occa::properties subCycleStrongCubatureProps = prop;
         if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP"){
           fileName = oklpath + "cds/subCycle" + suffix + ".c";
-          subCycleStrongCubatureProps["okl/enabled"] = false;
         }
         kernelName = "subCycleStrongCubatureVolume" + suffix;
         cds->subCycleStrongCubatureVolumeKernel =
