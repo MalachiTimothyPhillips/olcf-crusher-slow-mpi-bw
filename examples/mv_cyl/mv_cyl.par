@@ -7,7 +7,7 @@ timeStepper = tombo3
 writeInterval = 50
 
 [MESH]
-boundaryTypeMap = fixedvalue, zerovalue, symx
+boundaryTypeMap = fixedValue, zeroValue, symX
 solver = user
 
 [PROBLEMTYPE]
@@ -18,9 +18,9 @@ residualTol = 1e-8
 initialGuess = none
 
 [VELOCITY]
-boundaryTypeMap = fixedvalue, zerovalue, symx
+boundaryTypeMap = fixedValue, zeroValue, symX
 residualTol = 1e-12
 
 [TEMPERATURE]
-boundaryTypeMap = zerogradient,zerogradient,zerogradient
+boundaryTypeMap = zeroGradient,zeroGradient,zeroGradient
 residualTol = 1e-12
