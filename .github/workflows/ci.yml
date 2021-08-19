@@ -12,16 +12,16 @@ on:
       - master
 
 env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  NEKRS_HOME: ${{ github.workspace }}/.local/nekrs
-  NEKRS_INSTALL_DIR: ${{ github.workspace }}/.local/nekrs
-  MPICH_FC: gfortran
-  NEKRS_EXAMPLES: ${{ github.workspace }}/.local/nekrs/examples
-  OCCA_CUDA_ENABLED: 0
-  OCCA_HIP_ENABLED: 0
-  OCCA_OPENCL_ENABLED: 0
-  NEKRS_OCCA_MODE_DEFAULT: SERIAL
-  NEKRS_CI: 1
+  GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+  NEKRS_HOME: "${{ github.workspace }}/.local/nekrs"
+  NEKRS_INSTALL_DIR: "${{ github.workspace }}/.local/nekrs"
+  MPICH_FC: "gfortran"
+  NEKRS_EXAMPLES: "${{ github.workspace }}/.local/nekrs/examples"
+  OCCA_CUDA_ENABLED: "0"
+  OCCA_HIP_ENABLED: "0"
+  OCCA_OPENCL_ENABLED: "0"
+  NEKRS_OCCA_MODE_DEFAULT: "SERIAL"
+  NEKRS_CI: "1"
 
 defaults:
   run:
