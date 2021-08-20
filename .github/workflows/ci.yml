@@ -77,12 +77,12 @@ jobs:
         name: install-dir
         path: ${{ env.NEKRS_INSTALL_DIR }}
 
-    - name: 'Echo artifact path'
-        run: echo ${{ steps.download.outputs.download-path }}
+          #- name: 'Echo artifact path'
+          #    run: echo ${{ steps.download.outputs.download-path }}
 
-    - name: 'Display artifacts'
-        working-directory: ${{ steps.download.outputs.download-path }}
-        run: ls -R
+          #- name: 'Display artifacts'
+          #    working-directory: ${{ steps.download.outputs.download-path }}
+          #    run: ls -R
 
     - name: 'ethier default'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
