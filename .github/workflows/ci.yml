@@ -44,7 +44,6 @@ jobs:
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
-
     - name: nrsconfig and build
       run: |
         ./nrsconfig
@@ -78,19 +77,8 @@ jobs:
         name: install-dir
         path: ${{ env.NEKRS_INSTALL_DIR }}
 
-
-    - name: 'echo path'
-      run: echo ${{ steps.download.outputs.download-path }}
-
-    - name: Install dir permissions
+    - name: Set install dir permissions
       run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
-
-          #- name: 'Echo artifact path'
-          #    run: echo ${{ steps.download.outputs.download-path }}
-
-          #- name: 'Display artifacts'
-          #    working-directory: ${{ steps.download.outputs.download-path }}
-          #    run: ls -R
 
     - name: 'ethier default'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
@@ -131,6 +119,15 @@ jobs:
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
+    - name: Download install dir
+      uses: actions/download-artifact@v2
+      with:
+        name: install-dir
+        path: ${{ env.NEKRS_INSTALL_DIR }}
+
+    - name: Set install dir permissions
+      run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
+
     - name: 'lowMach default'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/lowMach
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi lowMach 2 1
@@ -149,6 +146,15 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
+
+    - name: Download install dir
+      uses: actions/download-artifact@v2
+      with:
+        name: install-dir
+        path: ${{ env.NEKRS_INSTALL_DIR }}
+
+    - name: Set install dir permissions
+      run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
 
     - name: 'mv_cyl'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
@@ -173,6 +179,15 @@ jobs:
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
 
+    - name: Download install dir
+      uses: actions/download-artifact@v2
+      with:
+        name: install-dir
+        path: ${{ env.NEKRS_INSTALL_DIR }}
+
+    - name: Set install dir permissions
+      run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
+
     - name: 'conj_ht'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/conj_ht
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi conj_ht 2 1
@@ -191,6 +206,15 @@ jobs:
       run: |
         sudo apt -y update
         sudo apt install -y mpich libmpich-dev
+
+    - name: Download install dir
+      uses: actions/download-artifact@v2
+      with:
+        name: install-dir
+        path: ${{ env.NEKRS_INSTALL_DIR }}
+
+    - name: Set install dir permissions
+      run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
 
     - name: 'channelStress'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
