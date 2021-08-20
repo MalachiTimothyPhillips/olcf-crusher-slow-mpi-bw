@@ -59,6 +59,7 @@ jobs:
     
 
   ethier:
+    needs: install
     runs-on: ubuntu-18.04
     steps:
 
@@ -110,6 +111,7 @@ jobs:
 
 
   lowMach:
+    needs: install
     runs-on: ubuntu-18.04
     steps:
 
@@ -128,6 +130,7 @@ jobs:
 
 
   mv_cyl:
+    needs: install
     runs-on: ubuntu-18.04
     steps:
 
@@ -150,6 +153,7 @@ jobs:
 
 
   conj_ht:
+    needs: install
     runs-on: ubuntu-18.04
     steps:
 
@@ -168,6 +172,7 @@ jobs:
 
 
   channelStress:
+    needs: install
     runs-on: ubuntu-18.04
     steps:
 
