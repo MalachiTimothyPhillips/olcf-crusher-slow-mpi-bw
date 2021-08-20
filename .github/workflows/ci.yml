@@ -78,6 +78,13 @@ jobs:
         name: install-dir
         path: ${{ env.NEKRS_INSTALL_DIR }}
 
+
+    - name: 'echo path'
+      run: echo ${{ steps.download.outputs.download-path }}
+
+    - name: Install dir permissions
+      run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
+
           #- name: 'Echo artifact path'
           #    run: echo ${{ steps.download.outputs.download-path }}
 
