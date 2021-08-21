@@ -292,7 +292,7 @@ jobs:
     - name: 'pb146 pre-compile'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/pb146
       run: |
-        tar -xvf pb146.re2.tgz
+        tar -xvf pb.re2.tgz
         ${{ env.NEKRS_HOME }}/bin/nrspre pb 1
 
 
