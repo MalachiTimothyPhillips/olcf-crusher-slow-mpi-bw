@@ -293,7 +293,7 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/pb146
       run: |
         tar -xvf pb.re2.tgz
-        ${{ env.NEKRS_HOME }}/bin/nrspre pb 1
+        ${{ env.NEKRS_HOME }}/bin/nrspre pb 6
 
 
   rbc:
