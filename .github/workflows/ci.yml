@@ -288,11 +288,12 @@ jobs:
       run: |
         ./nrsconfig
         cmake --build build --target install -j 2
-        tar -xvf pb146.re2.tgz
 
     - name: 'pb146 pre-compile'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/pb146
-      run: ${{ env.NEKRS_HOME }}/bin/nrspre pb 1
+      run: |
+        tar -xvf pb146.re2.tgz
+        ${{ env.NEKRS_HOME }}/bin/nrspre pb 1
 
 
   rbc:
@@ -337,7 +338,7 @@ jobs:
         cmake --build build --target install -j 2
 
     - name: 'tgv pre-compile'
-      working-directory: ${{ env.NEKRS_EXAMPLES }}/tgc
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/tgv
       run: ${{ env.NEKRS_HOME }}/bin/nrspre tgv 1
 
 
