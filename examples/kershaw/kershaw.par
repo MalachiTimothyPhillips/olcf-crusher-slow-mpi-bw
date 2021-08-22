@@ -28,7 +28,7 @@ smootherType = Chebyshev+RAS+2
 pMultigridCoarsening = 7,3,1
 #galerkinCoarseOperator = true
 
-initialGuess = none
+initialGuess = previous
 
 
 [VELOCITY]
