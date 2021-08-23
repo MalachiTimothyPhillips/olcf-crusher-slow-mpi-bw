@@ -14,7 +14,8 @@
 
 ## What you may have to change to be compatible 
 
-* targetCFL par key may no longer be used to set the number of subcycling steps
+* Setting preconditioner = <multigrid | semg | pmg> now assumes no coarse solver.
+  Please use preconditioner = multigrid+coarse to keep the coarse solver.
 
 ## Known Bugs / Restrictions
 
