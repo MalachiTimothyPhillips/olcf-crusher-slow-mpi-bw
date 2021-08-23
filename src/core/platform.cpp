@@ -5,11 +5,23 @@
 #include "linAlg.hpp"
 #include "omp.h"
 
+#define SUMMIT_BARRIER_FIX 1
+
 comm_t::comm_t(MPI_Comm _comm)
 {
   mpiComm = _comm;
   MPI_Comm_rank(_comm, &mpiRank);
   MPI_Comm_size(_comm, &mpiCommSize);
+}
+void
+comm_t::barrier()
+{
+#ifdef SUMMIT_BARRIER_FIX
+  int dummy = 0;
+  MPI_Bcast(&dummy, 1, MPI_INT, 0, mpiComm);
+#else
+  MPI_Barrier(mpiComm);
+#endif
 }
 
 deviceVector_t::deviceVector_t(const dlong _vectorSize, const dlong _nVectors, const dlong _wordSize, const std::string _vectorName)

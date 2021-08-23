@@ -69,6 +69,8 @@ struct comm_t{
   MPI_Comm mpiComm;
   int mpiRank;
   int mpiCommSize;
+
+  void barrier();
 };
 struct platform_t{
   setupAide& options;
