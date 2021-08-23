@@ -1,7 +1,15 @@
 ------------------------------------------------------------------------------------------------------------------
-Key                         Value(s)                               Description
+Key                         Value(s)                                   Description
 ------------------------------------------------------------------------------------------------------------------
+[OCCA]
+
+backend                     SERIAL, CUDA, HIP                          OCCA backend
+
+deviceNumber                LOCAL-RANK                                 number associated with the device, e.g. GPU
+
 [GENERAL]
+
+verbose                     true, false [D]                            enable verbose output
 
 polynomialOrder             <int>                                      polynomial order in r,s,t 
 
