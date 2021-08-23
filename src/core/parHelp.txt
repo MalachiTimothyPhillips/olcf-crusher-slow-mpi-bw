@@ -114,6 +114,7 @@ regularization                                                         regulariz
 
 solver                      elasticity                                 solver type 
                             user                                       user provides mesh velocity
+partitioner                 rbc, rbc+rsb                               partitioner for mesh
 ----------------------------------------------------------------------------------------------------------------------
 [VELOCITY]
 
@@ -135,3 +136,17 @@ diffusivity                 <float>                                    diffusivi
 ----------------------------------------------------------------------------------------------------------------------
 [SCALAR02]
 ...
+----------------------------------------------------------------------------------------------------------------------
+[BOOMERAMG]                                                            settings for BoomerAMG solver
+
+coarsenType                 <int>                                      coarsener type
+interpolationType           <int>                                      interpolation type
+smootherType                <int>                                      smoother type
+iterations                  <int>                                      number of BoomerAMG V-cycle sweeps
+strongThreshold             <float>                                    strong threshold
+nonGalerkinTol              <float>                                    non-Galerkin tolerance
+aggressiveCoarseningLevels  <int>                                      number of levels to apply aggressive coarsening
+----------------------------------------------------------------------------------------------------------------------
+[AMGX]                                                                 settings for AmgX solver
+
+configFile                  <string>                                   AmgX JSON configuration file
