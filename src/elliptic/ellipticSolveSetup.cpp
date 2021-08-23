@@ -36,7 +36,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   
   setupAide options = elliptic->options;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
 
   const dlong Nlocal = mesh->Np * mesh->Nelements;
@@ -274,7 +274,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
   string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("loading elliptic kernels ... ");
   fflush(stdout);
@@ -398,7 +398,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
                                  "ellipticBlockUpdatePCG", dfloatKernelInfo);
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel);
   fflush(stdout);
 
@@ -437,7 +437,7 @@ void ellipticSolveSetup(elliptic_t* elliptic, occa::properties kernelInfo)
     elliptic->residualProjection = new ResidualProjection(*elliptic, type, nVecsProject, nStepsStart);
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
   fflush(stdout);
 }

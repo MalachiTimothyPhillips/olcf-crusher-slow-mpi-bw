@@ -9,7 +9,7 @@
 void meshNekReaderHex3D(int N, mesh_t* mesh)
 {
   
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("loading mesh from nek ... "); fflush(stdout); 
 
@@ -120,6 +120,6 @@ void meshNekReaderHex3D(int N, mesh_t* mesh)
     if(e < nekData.nelv ) mesh->elementInfo[e] = 0;
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }

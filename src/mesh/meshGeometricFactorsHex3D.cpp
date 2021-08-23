@@ -315,6 +315,6 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
   free(cubzse);
   free(cubzte);
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }

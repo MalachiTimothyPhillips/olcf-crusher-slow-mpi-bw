@@ -282,7 +282,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   }
 
   platform->device.finish();
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tPreStep = MPI_Wtime() - tStart;
 
   const int isOutputStep = nrs->isOutputStep;
@@ -296,7 +296,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   double tElapsedStep = 0;
   do {
     platform->device.finish();
-    MPI_Barrier(platform->comm.mpiComm);
+    platform->comm.barrier();
     const double tStartStage = MPI_Wtime();
 
     stage++;
@@ -329,7 +329,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
     }
 
     platform->device.finish();
-    MPI_Barrier(platform->comm.mpiComm);
+    platform->comm.barrier();
     double tElapsedStage = MPI_Wtime() - tStartStage;
     if (stage == 1) tElapsedStage += tPreStep;
     tElapsedStep += tElapsedStage;

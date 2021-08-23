@@ -133,7 +133,7 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
   
   setupAide options = elliptic->options;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("building full FEM matrix using Galerkin projection ... ");
   fflush(stdout);
@@ -312,10 +312,10 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
   if (*nnz) cnt++;
   *nnz = cnt;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   MPI_Type_free(&MPI_NONZERO_T);
 
   free(sendNonZeros);

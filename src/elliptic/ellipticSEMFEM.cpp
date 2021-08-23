@@ -43,7 +43,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
     SEMFEMKernelProps
   );
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("setup SEMFEM preconditioner ... \n"); fflush(stdout);
 
@@ -109,13 +109,13 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       if(useFP32)
       {
         if(platform->comm.mpiRank == 0) printf("HYPRE does not support FP32!\n");
-        MPI_Barrier(platform->comm.mpiComm);
+        platform->comm.barrier();
         ABORT(1);
       }
 
       if(platform->device.mode() != "Serial" && useDevice) {
         if(platform->comm.mpiRank == 0) printf("HYPRE has not been built with GPU support!\n");
-        MPI_Barrier(platform->comm.mpiComm);
+        platform->comm.barrier();
         ABORT(1);
       } 
 
@@ -136,7 +136,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX")){
     if(platform->device.mode() != "CUDA") {
       if(platform->comm.mpiRank == 0) printf("AmgX only supports CUDA!\n");
-      MPI_Barrier(platform->comm.mpiComm);
+      platform->comm.barrier();
       ABORT(1);
     } 
       

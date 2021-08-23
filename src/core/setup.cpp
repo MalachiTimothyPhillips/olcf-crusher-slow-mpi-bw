@@ -384,7 +384,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   const string suffix = "Hex3D";
   const string oklpath = install_dir + "/okl/";
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("loading ns kernels ... "); fflush(stdout);
 
@@ -606,7 +606,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         device.buildKernel(fileName, kernelName, kernelInfo);
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel); fflush(stdout);
 
   if(nrs->Nscalar) {
@@ -1311,7 +1311,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   const string suffix = "Hex3D";
   const string oklpath = install_dir + "/okl/";
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("loading cds kernels ... "); fflush(stdout);
 
@@ -1415,7 +1415,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
       }
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel); fflush(stdout);
 
   return cds;

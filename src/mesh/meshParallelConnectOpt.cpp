@@ -83,7 +83,7 @@ void meshParallelConnect(mesh_t* mesh)
   rank = platform->comm.mpiRank;
   size = platform->comm.mpiCommSize;
 
-  //MPI_Barrier(platform->comm.mpiComm);
+  //platform->comm.barrier();
   //const double tStart = MPI_Wtime();
   //if(platform->comm.mpiRank == 0) printf("Building parallel face connectivity ... ");
 
@@ -252,11 +252,11 @@ void meshParallelConnect(mesh_t* mesh)
     }
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   MPI_Type_free(&MPI_PARALLELFACE_T);
   free(sendFaces);
   free(recvFaces);
 
-  //MPI_Barrier(platform->comm.mpiComm);
+  //platform->comm.barrier();
   //if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 }

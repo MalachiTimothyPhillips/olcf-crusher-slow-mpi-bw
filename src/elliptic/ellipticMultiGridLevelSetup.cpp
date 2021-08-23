@@ -288,7 +288,7 @@ static void eig(const int Nrows, double* A, double* WR, double* WI)
 
 dfloat MGLevel::maxEigSmoothAx()
 {
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("estimating maxEigenvalue ... "); fflush(stdout);
      
@@ -442,7 +442,7 @@ dfloat MGLevel::maxEigSmoothAx()
   //free((void*)o_V);
   delete[] o_V;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0)  printf("%g done (%gs)\n", rho, MPI_Wtime() - tStart); fflush(stdout);
 
   return rho;

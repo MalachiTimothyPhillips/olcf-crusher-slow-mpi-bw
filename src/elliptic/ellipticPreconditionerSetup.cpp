@@ -34,7 +34,7 @@ void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs, occa::propert
   precon_t* precon = elliptic->precon;
   setupAide options = elliptic->options;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
 
   if(options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
@@ -53,6 +53,6 @@ void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs, occa::propert
     ABORT(EXIT_FAILURE);
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }

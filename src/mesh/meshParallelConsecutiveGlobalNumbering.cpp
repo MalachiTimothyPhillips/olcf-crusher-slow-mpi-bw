@@ -209,7 +209,7 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t* mesh,
     globalNumbering[id] = sendNodes[n].newGlobalId;
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   MPI_Type_free(&MPI_PARALLELFACE_T);
 
   free(sendNodes);

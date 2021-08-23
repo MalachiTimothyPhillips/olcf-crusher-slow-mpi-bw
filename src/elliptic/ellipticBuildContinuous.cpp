@@ -55,7 +55,7 @@ void ellipticBuildContinuous(elliptic_t* elliptic,
                              hlong* globalStarts)
 {
   mesh_t *mesh = elliptic->mesh;
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("building full FEM matrix ... ");
   fflush(stdout);
@@ -66,7 +66,7 @@ void ellipticBuildContinuous(elliptic_t* elliptic,
     break;
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 
@@ -278,7 +278,7 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
 
   if(platform->comm.mpiRank == 0) printf("done.\n");
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   MPI_Type_free(&MPI_NONZERO_T);
 
   free(sendNonZeros);

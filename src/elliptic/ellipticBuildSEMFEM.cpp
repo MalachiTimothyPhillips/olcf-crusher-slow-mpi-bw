@@ -853,7 +853,7 @@ void fem_assembly() {
 
   free(glo_num);
 
-  MPI_Barrier(comm.c);
+  platform->comm.barrier();
   if(comm.id == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 

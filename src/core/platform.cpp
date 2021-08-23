@@ -188,7 +188,7 @@ device_t::buildKernel(const std::string &filename,
     if ((r == 0 && rank == 0) || (r == 1 && rank > 0)) {
       _kernel = occa::device::buildKernel(filename, kernelName, props);
     }
-    MPI_Barrier(comm);
+    platform->comm.barrier();
   }
   return _kernel;
 }

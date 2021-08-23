@@ -77,7 +77,7 @@ void ellipticBuildJacobi(elliptic_t* elliptic, dfloat** invDiagA)
   mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   const double tStart = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("building Jacobi ... ");
   fflush(stdout);
@@ -179,7 +179,7 @@ void ellipticBuildJacobi(elliptic_t* elliptic, dfloat** invDiagA)
     }
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 
   free(diagA);

@@ -83,13 +83,13 @@ void timer_t::finalize()
 
 void timer_t::deviceTic(const std::string tag,int ifSync)
 {
-  if(ifSync) MPI_Barrier(comm_);
+  if(ifSync) platform->comm.barrier();
   m_[tag].startTag = device_.tagStream();
 }
 
 void timer_t::deviceTic(const std::string tag)
 {
-  if(ifSync()) MPI_Barrier(comm_);
+  if(ifSync()) platform->comm.barrier();
   m_[tag].startTag = device_.tagStream();
 }
 
@@ -109,13 +109,13 @@ void timer_t::deviceToc(const std::string tag)
 
 void timer_t::hostTic(const std::string tag,int ifSync)
 {
-  if(ifSync) MPI_Barrier(comm_);
+  if(ifSync) platform->comm.barrier();
   m_[tag].startTime = MPI_Wtime();
 }
 
 void timer_t::hostTic(const std::string tag)
 {
-  if(ifSync()) MPI_Barrier(comm_);
+  if(ifSync()) platform->comm.barrier();
   m_[tag].startTime = MPI_Wtime();
 }
 
@@ -135,14 +135,14 @@ void timer_t::hostToc(const std::string tag)
 
 void timer_t::tic(const std::string tag,int ifSync)
 {
-  if(ifSync) MPI_Barrier(comm_);
+  if(ifSync) platform->comm.barrier();
   m_[tag].startTime = MPI_Wtime();
   m_[tag].startTag = device_.tagStream();
 }
 
 void timer_t::tic(const std::string tag)
 {
-  if(ifSync()) MPI_Barrier(comm_);
+  if(ifSync()) platform->comm.barrier();
   m_[tag].startTime = MPI_Wtime();
   m_[tag].startTag = device_.tagStream();
 }

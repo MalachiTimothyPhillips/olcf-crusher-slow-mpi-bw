@@ -47,7 +47,7 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic, occa::properties k
   string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("loading elliptic preconditioner kernels ... ");
   fflush(stdout);
@@ -118,7 +118,7 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic, occa::properties k
                                  orderSuffix);
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel);
   fflush(stdout);
 

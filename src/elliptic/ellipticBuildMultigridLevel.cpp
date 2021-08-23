@@ -233,7 +233,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
   string filename, kernelName;
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0) printf("loading elliptic MG kernels ... ");
   fflush(stdout);
@@ -290,7 +290,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       }
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel);
   fflush(stdout);
 

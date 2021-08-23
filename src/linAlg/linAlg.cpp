@@ -70,7 +70,7 @@ void linAlg_t::setup() {
   oklDir.assign(getenv("NEKRS_INSTALL_DIR"));
   oklDir += "/okl/linAlg/";
 
-  MPI_Barrier(platform->comm.mpiComm);
+  platform->comm.barrier();
   double tStartLoadKernel = MPI_Wtime();
   if(platform->comm.mpiRank == 0)  printf("loading linAlg kernels ... "); fflush(stdout);
 
