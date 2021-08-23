@@ -223,22 +223,6 @@ void parseCoarseSolver(const int rank, setupAide &options,
   }
 }
 
-bool is_number(const string &s) {
-  return !s.empty() && std::find_if(s.begin(), s.end(), [](unsigned char c) {
-                         return !std::isdigit(c);
-                       }) == s.end();
-}
-
-std::vector<int> checkForIntInInputs(const std::vector<string> &inputs) {
-  std::vector<int> values;
-  for (string s : inputs) {
-    if (is_number(s)) {
-      values.emplace_back(std::stoi(s));
-    }
-  }
-  return values;
-}
-
 void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
                    string parScope) {
 
@@ -253,20 +237,20 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
     std::vector<string> list;
     list = serializeString(p_smoother, '+');
 
-    std::vector<int> optionalChebyshevOrder = checkForIntInInputs(list);
-    if (optionalChebyshevOrder.size() > 1) {
-      if (rank == 0) {
-        printf("Could not parse smoother string %s!\n", p_smoother.c_str());
-      }
-      ABORT(1);
-    }
-
-    if (p_smoother.find("chebyshev") != string::npos) {
-      if (optionalChebyshevOrder.size() == 1)
-        options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE",
-                        std::to_string(optionalChebyshevOrder[0]));
+    if (p_smoother.find("cheb") != string::npos) {
+      bool surrogateSmootherSet = false;
       for (string s : list) {
-        if (s.find("mineigenvalueboundfactor") != string::npos) {
+        if(s.find("degree") != string::npos){
+          std::vector<string> params = serializeString(s, '=');
+          if (params.size() != 2) {
+            if (rank == 0)
+              printf("Error: could not parse degree %s!\n", s.c_str());
+            ABORT(1);
+          }
+          const int value = std::stoi(params[1]);
+          options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE",
+                          std::to_string(value));
+        } else if (s.find("mineigenvalueboundfactor") != string::npos) {
           std::vector<string> params = serializeString(s, '=');
           if (params.size() != 2) {
             if (rank == 0)
@@ -286,9 +270,66 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
           const double value = std::stod(params[1]);
           options.setArgs(parSection + " MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR",
                           to_string_f(value));
+        } else if (s.find("jac") != string::npos) {
+          surrogateSmootherSet = true;
+          options.setArgs(parSection + " MULTIGRID SMOOTHER",
+                          "DAMPEDJACOBI,CHEBYSHEV");
+          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "JACOBI");
+          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "JACOBI");
+          options.setArgs("BOOMERAMG ITERATIONS", "2");
+          if (p_preconditioner.find("additive") != string::npos) {
+            exit("Additive vcycle is not supported for Chebyshev smoother!",
+                 EXIT_FAILURE);
+          } else {
+            string entry = options.getArgs(parSection + " PARALMOND CYCLE");
+            if (entry.find("MULTIPLICATIVE") == string::npos) {
+              entry += "+MULTIPLICATIVE";
+              options.setArgs(parSection + " PARALMOND CYCLE", entry);
+            }
+          }
+        } else if (s.find("asm") != string::npos)
+        {
+          surrogateSmootherSet = true;
+          options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
+          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "ASM");
+          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "ASM");
+          if (p_preconditioner.find("additive") != string::npos) {
+            exit("Additive vcycle is not supported for hybrid Schwarz/Chebyshev "
+                 "smoother!",
+                 EXIT_FAILURE);
+          } else {
+            string entry = options.getArgs(parSection + " PARALMOND CYCLE");
+            if (entry.find("MULTIPLICATIVE") == string::npos) {
+              entry += "+MULTIPLICATIVE";
+              options.setArgs(parSection + " PARALMOND CYCLE", entry);
+            }
+          }
+        } else if (s.find("ras") != string::npos)
+        {
+          surrogateSmootherSet = true;
+          options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
+          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "RAS");
+          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "RAS");
+          if (p_preconditioner.find("additive") != string::npos) {
+            exit("Additive vcycle is not supported for hybrid Schwarz/Chebyshev "
+                 "smoother!",
+                 EXIT_FAILURE);
+          } else {
+            string entry = options.getArgs(parSection + " PARALMOND CYCLE");
+            if (entry.find("MULTIPLICATIVE") == string::npos) {
+              entry += "+MULTIPLICATIVE";
+              options.setArgs(parSection + " PARALMOND CYCLE", entry);
+            }
+          }
         }
       }
+      if(!surrogateSmootherSet){
+        exit("Inner Chebyshev smoother not set!", EXIT_FAILURE);
+      }
+      return;
     }
+
+    // Non-Chebyshev smoothers
 
     if (p_smoother.find("asm") == 0) {
       options.setArgs(parSection + " MULTIGRID SMOOTHER", "ASM");
@@ -310,52 +351,6 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
         options.setArgs(parSection + " PARALMOND CYCLE",
                         "VCYCLE+ADDITIVE+OVERLAPCRS");
       }
-    } else if (p_smoother.find("chebyshev+jac") == 0 || p_smoother.find("cheb+jac") == 0) {
-      options.setArgs(parSection + " MULTIGRID SMOOTHER",
-                      "DAMPEDJACOBI,CHEBYSHEV");
-      options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "JACOBI");
-      options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "JACOBI");
-      options.setArgs("BOOMERAMG ITERATIONS", "2");
-      if (p_preconditioner.find("additive") != string::npos) {
-        exit("Additive vcycle is not supported for Chebyshev smoother!",
-             EXIT_FAILURE);
-      } else {
-        string entry = options.getArgs(parSection + " PARALMOND CYCLE");
-        if (entry.find("MULTIPLICATIVE") == string::npos) {
-          entry += "+MULTIPLICATIVE";
-          options.setArgs(parSection + " PARALMOND CYCLE", entry);
-        }
-      }
-    } else if (p_smoother.find("chebyshev+asm") == 0 || p_smoother.find("cheb+asm") == 0) {
-      options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
-      options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "ASM");
-      options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "ASM");
-      if (p_preconditioner.find("additive") != string::npos) {
-        exit("Additive vcycle is not supported for hybrid Schwarz/Chebyshev "
-             "smoother!",
-             EXIT_FAILURE);
-      } else {
-        string entry = options.getArgs(parSection + " PARALMOND CYCLE");
-        if (entry.find("MULTIPLICATIVE") == string::npos) {
-          entry += "+MULTIPLICATIVE";
-          options.setArgs(parSection + " PARALMOND CYCLE", entry);
-        }
-      }
-    } else if (p_smoother.find("chebyshev+ras") == 0 || p_smoother.find("cheb+ras") == 0) {
-      options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
-      options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "RAS");
-      options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "RAS");
-      if (p_preconditioner.find("additive") != string::npos) {
-        exit("Additive vcycle is not supported for hybrid Schwarz/Chebyshev "
-             "smoother!",
-             EXIT_FAILURE);
-      } else {
-        string entry = options.getArgs(parSection + " PARALMOND CYCLE");
-        if (entry.find("MULTIPLICATIVE") == string::npos) {
-          entry += "+MULTIPLICATIVE";
-          options.setArgs(parSection + " PARALMOND CYCLE", entry);
-        }
-      }
     } else if (p_smoother.find("jac") == 0) {
       options.setArgs(parSection + " MULTIGRID SMOOTHER",
                       "DAMPEDJACOBI");
@@ -375,12 +370,6 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
     } else {
       exit("Unknown ::smootherType!", EXIT_FAILURE);
     }
-  }
-
-  if (p_preconditioner.find("additive") != string::npos) {
-    options.setArgs(parSection + " MULTIGRID SMOOTHER", "ASM");
-    options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "ASM");
-    options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "ASM");
   }
 }
 void parsePreconditioner(const int rank, setupAide &options,
