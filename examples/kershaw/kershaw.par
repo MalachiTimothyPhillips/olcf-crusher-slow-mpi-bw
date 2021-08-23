@@ -26,8 +26,7 @@ smootherType = RAS+Chebyshev+degree=2 #+minEigenvalueBoundFactor=0.1+maxEigenval
 #smootherType = ASM
 
 pMultigridCoarsening = 7,3,1
-initialGuess = none
-
+initialGuess = previous
 
 [VELOCITY]
 density = 1.0

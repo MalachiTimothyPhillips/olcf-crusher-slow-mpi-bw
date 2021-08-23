@@ -387,7 +387,11 @@ void parsePreconditioner(const int rank, setupAide &options,
   } else if (p_preconditioner.find("jac") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "JACOBI");
   } else if(p_preconditioner.find("semfem") != std::string::npos
-     && p_preconditioner.find("pmg") == std::string::npos) {
+     && (p_preconditioner.find("pmg") == std::string::npos
+         &&
+         p_preconditioner.find("multigrid") == std::string::npos
+        )
+     ) {
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
     options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
     options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
@@ -415,7 +419,8 @@ void parsePreconditioner(const int rank, setupAide &options,
     }
 
   } else if (p_preconditioner.find("semg") != std::string::npos ||
-             p_preconditioner.find("multigrid") != std::string::npos) {
+             p_preconditioner.find("multigrid") != std::string::npos ||
+             p_preconditioner.find("pmg") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
     string key = "VCYCLE";
     if (p_preconditioner.find("additive") != std::string::npos)
@@ -425,10 +430,8 @@ void parsePreconditioner(const int rank, setupAide &options,
     if (p_preconditioner.find("overlap") != std::string::npos)
       key += "+OVERLAPCRS";
     options.setArgs(parSection + " PARALMOND CYCLE", key);
-  } else if(p_preconditioner.find("pmg") != std::string::npos){
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
-    string key = "VCYCLE";
-    options.setArgs(parSection + " PARALMOND CYCLE", key);
+
     options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "FALSE");
     options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
     if(p_preconditioner.find("coarse") != std::string::npos){
@@ -481,7 +484,7 @@ void parseInitialGuess(const int rank, setupAide &options,
     } else if (initialGuess.find("projection") != string::npos) {
       options.setArgs(parSectionName + " INITIAL GUESS",
                       "PROJECTION");
-    } else if (initialGuess.find("none") != string::npos) {
+    } else if (initialGuess.find("previous") != string::npos) {
       options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
     } else if (initialGuess.find("true") != string::npos) {
       const int defaultNumVectors = parScope == "pressure" ? 10 : 5;
@@ -750,10 +753,6 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");
   options.setArgs("PRESSURE RESIDUAL PROJECTION START", "5");
 
-  options.setArgs("MESH INITIAL GUESS", "PROJECTION-ACONJ");
-  options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "5");
-  options.setArgs("MESH RESIDUAL PROJECTION START", "5");
-
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
@@ -990,7 +989,12 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   if (par->extract("mesh", "solver", meshSolver)) {
     options.setArgs("MOVING MESH", "TRUE");
     if(meshSolver == "user") options.setArgs("MESH SOLVER", "USER");
-    if(meshSolver == "elasticity") options.setArgs("MESH SOLVER", "ELASTICITY");
+    if(meshSolver == "elasticity") {
+      options.setArgs("MESH SOLVER", "ELASTICITY");
+      options.setArgs("MESH INITIAL GUESS", "PROJECTION-ACONJ");
+      options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "5");
+      options.setArgs("MESH RESIDUAL PROJECTION START", "5");
+    }
     if(meshSolver == "none") options.setArgs("MOVING MESH", "FALSE"); 
   }
 
