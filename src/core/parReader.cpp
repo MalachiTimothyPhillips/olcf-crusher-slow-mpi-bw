@@ -513,23 +513,30 @@ void parseInitialGuess(const int rank, setupAide &options,
   }
 }
 void parseRegularization(const int rank, setupAide &options,
-                         inipp::Ini<char> *par, bool isScalar = false,
-                         bool isTemperature = false, string sidPar = "") {
+                       inipp::Ini<char> *par, string parSection) {
   int N;
   options.getArgs("POLYNOMIAL DEGREE", N);
-  string sbuf;
-  string parSection;
-  if (isScalar) {
-    parSection = isTemperature ? "temperature" : "scalar" + sidPar;
-  } else {
-    parSection = "general";
-  }
-  string parPrefix = isScalar ? "SCALAR" + sidPar + " " : "";
+  const bool isScalar = (parSection.find("temperature") != std::string::npos) ||
+                        (parSection.find("scalar") != std::string::npos);
+  const bool isVelocity = parSection.find("velocity") != std::string::npos;
+  std::string sbuf;
+
+  std::string parPrefix = [parSection](){
+    if(parSection.find("general") != std::string::npos)
+      return std::string("");
+    if(parSection.find("temperature") != std::string::npos)
+      return std::string("scalar00 ");
+    return parSection + std::string(" ");
+  }();
+
+  UPPER(parPrefix);
+
   options.setArgs(parPrefix + "STABILIZATION METHOD", "NONE");
 
   string regularization;
-  par->extract(parSection, "regularization", regularization);
-  if (regularization.find("avm") != string::npos || regularization.find("hpfrt") != string::npos) {
+  if(par->extract(parSection, "regularization", regularization)){
+    if(regularization.find("none") != std::string::npos) return;
+    // new command syntax
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
@@ -544,7 +551,7 @@ void parseRegularization(const int rank, setupAide &options,
     if (!usesAVM && !usesHPFRT) {
       exit("ERROR: regularization must use avm or hpfrt!\n", EXIT_FAILURE);
     }
-    if (usesAVM && !isScalar) {
+    if (usesAVM && isVelocity) {
       exit("ERROR: avm regularization is only enabled for scalars!\n",
            EXIT_FAILURE);
     }
@@ -645,9 +652,10 @@ void parseRegularization(const int rank, setupAide &options,
              EXIT_FAILURE);
       }
     }
-
-  } else {
-    // fall back on old parsing style
+    return;
+  }
+  else if(par->extract(parSection, "filtering", regularization)){
+    // fall back on old command syntax
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
@@ -674,6 +682,35 @@ void parseRegularization(const int rank, setupAide &options,
 
     } else if (filtering == "explicit") {
       exit("GENERAL::filtering = explicit not supported!", EXIT_FAILURE);
+    }
+    return;
+  }
+  else {
+    // use default settings, if applicable
+    std::string defaultSettings;
+    if(par->extract("general", "filtering", defaultSettings)){
+      options.setArgs(parPrefix + "STABILIZATION METHOD", options.getArgs("STABILIZATION METHOD"));
+      options.setArgs(parPrefix + "HPFRT MODES", options.getArgs("HPFRT MODES"));
+      options.setArgs(parPrefix + "HPFRT STRENGTH", options.getArgs("HPFRT STRENGTH"));
+    }
+    if(par->extract("general", "regularization", defaultSettings)){
+      options.setArgs(parPrefix + "STABILIZATION METHOD", options.getArgs("STABILIZATION METHOD"));
+      options.setArgs(parPrefix + "HPFRT MODES", options.getArgs("HPFRT MODES"));
+
+      if(defaultSettings.find("hpfrt") != std::string::npos)
+        options.setArgs(parPrefix + "HPFRT STRENGTH", options.getArgs("HPFRT STRENGTH"));
+
+      if(defaultSettings.find("avm") != std::string::npos){
+        if(isVelocity){
+          // Catch if the general block is using AVM + no [VELOCITY] specification
+          exit("ERROR: avm regularization is only enabled for scalars!\n",
+               EXIT_FAILURE);
+        }
+        options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", options.getArgs("STABILIZATION VISMAX COEFF"));
+        options.setArgs(parPrefix + "STABILIZATION SCALING COEFF", options.getArgs("STABILIZATION SCALING COEFF"));
+        options.setArgs(parPrefix + "STABILIZATION RAMP CONSTANT", options.getArgs("STABILIZATION RAMP CONSTANT"));
+        options.setArgs(parPrefix + "STABILIZATION AVM C0", options.getArgs("STABILIZATION AVM C0"));
+      }
     }
   }
 }
@@ -978,7 +1015,13 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     else
       options.setArgs("ADVECTION TYPE", "CONVECTIVE");
 
-  parseRegularization(rank, options, par);
+  {
+    parseRegularization(rank, options, par, "general");
+  }
+
+  {
+    parseRegularization(rank, options, par, "velocity");
+  }
 
   // MESH
   string meshPartitioner;
@@ -1153,15 +1196,6 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
         options.setArgs("VELOCITY MAXIMUM ITERATIONS", keyValue);
     }
 
-    bool _;
-    if (par->extract("velocity", "regularization", _)) {
-      exit("ERROR: cannot specify regularization in [VELOCITY]!\n",
-           EXIT_FAILURE);
-    }
-    if (par->extract("velocity", "filtering", _)) {
-      exit("ERROR: cannot specify filtering in [VELOCITY]!\n", EXIT_FAILURE);
-    }
-
     string vsolver;
     int flow = 1;
 
@@ -1221,7 +1255,9 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
         options.setArgs("SCALAR00 MAXIMUM ITERATIONS", keyValue);
     }
 
-    { parseRegularization(rank, options, par, true, true, "00"); }
+    { 
+      parseRegularization(rank, options, par, "temperature");
+    }
 
     options.setArgs("SCALAR00 IS TEMPERATURE", "TRUE");
 
@@ -1296,7 +1332,9 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
         options.setArgs("SCALAR" + sid + " MAXIMUM ITERATIONS", keyValue);
     }
 
-    { parseRegularization(rank, options, par, true, false, sidPar); }
+    { 
+      parseRegularization(rank, options, par, "scalar" + sidPar);
+    }
 
     string solver;
     par->extract("scalar" + sidPar, "solver", solver);

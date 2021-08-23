@@ -89,7 +89,7 @@ boundaryTypeMap             <...>, <...>, ...                          boundary 
                             zeroZValue/zeroGradient                    symmetry z-normal plane
 
 regularization                                                         regularization scheme
-                                                                       for [GENERAL],[TEMPERATURE],[SCALAR01],...
+                                                                       for [GENERAL],[VELOCITY],[TEMPERATURE],[SCALAR01],...
                             hpfrt                                      HPF stabilization
                               +nModes=<int>                            number of modes                                 
                               +strength=<float>                        filter strength
