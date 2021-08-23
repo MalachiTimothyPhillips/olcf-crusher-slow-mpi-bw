@@ -14,6 +14,8 @@
 
 ## What you may have to change to be compatible 
 
+* targetCFL par key may no longer be used to set the number of subcycling steps
+
 ## Known Bugs / Restrictions
 
 * [300](https://github.com/Nek5000/nekRS/issues/300)
