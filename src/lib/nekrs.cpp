@@ -202,7 +202,7 @@ double dt(int tstep)
         return nrs->dt[0];
       }
     }
-    timeStepper::computeTimeStepFromCFL(tstep);
+    timeStepper::computeTimeStepFromCFL(nrs, tstep);
   }
   
   {
