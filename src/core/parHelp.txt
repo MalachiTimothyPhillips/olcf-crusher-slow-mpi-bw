@@ -33,6 +33,8 @@ dt                          <float> [D]                                time step
                               +max=<float>                             maximum time step size
                               +initial=<float>                         enforce initial time step
 
+subCycling                  auto                                       compute subcycling steps on targetCFL from dt
+
 subCyclingSteps             <int>                                      number of OIFS sub-steps for convertive terms
                             0 [D]                             
 
