@@ -37,7 +37,6 @@ int parRSB_partMesh(int *part, int *seq, long long *vtx, double *coord, int nel,
     printf("running parRSB ...\n");
   fflush(stdout);
 
-  comm_barrier(&c);
   double time0 = comm_time();
 
   struct crystal cr;
@@ -50,10 +49,6 @@ int parRSB_partMesh(int *part, int *seq, long long *vtx, double *coord, int nel,
 
   /* Load balance input data */
   genmap_load_balance(&eList, nel, nv, coord, vtx, &cr, &bfr);
-
-  double time1 = comm_time();
-  comm_barrier(&c);
-  double time2 = comm_time();
 
   /* Run RSB now */
   comm_ext comm_rsb;
@@ -111,35 +106,13 @@ int parRSB_partMesh(int *part, int *seq, long long *vtx, double *coord, int nel,
   MPI_Comm_free(&comm_rsb);
 #endif
 
-  double time3 = comm_time();
-  comm_barrier(&c);
-  double time4 = comm_time();
-
   genmap_restore_original(part, seq, &cr, &eList, &bfr);
 
-  double time5 = comm_time();
-  comm_barrier(&c);
   double time = comm_time() - time0;
 
   /* Report time and finish */
   if (rank == 0)
     printf(" finished in %g s\n", time);
-
-  if (options->print_timing_info > 0) {
-    double min[3], max[3], sum[3], buf[3];
-    min[0] = max[0] = sum[0] = time1 - time0;
-    min[1] = max[1] = sum[1] = time3 - time2;
-    min[2] = max[2] = sum[2] = time5 - time4;
-    comm_allreduce(&c, gs_double, gs_min, min, 3, buf); // min
-    comm_allreduce(&c, gs_double, gs_max, max, 3, buf); // max
-    comm_allreduce(&c, gs_double, gs_add, sum, 3, buf); // sum
-    if (rank == 0) {
-      printf("LOADBALANCE : %g/%g/%g\n", min[0], max[0], sum[0] / c.np);
-      printf("RSB         : %g/%g/%g\n", min[1], max[1], sum[1] / c.np);
-      printf("RESTORE     : %g/%g/%g\n", min[2], max[2], sum[2] / c.np);
-    }
-    fflush(stdout);
-  }
 
   array_free(&eList);
   buffer_free(&bfr);
