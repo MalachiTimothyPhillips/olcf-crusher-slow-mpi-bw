@@ -44,7 +44,8 @@ writeInterval               <int> or <float>                           checkpoin
 
 constFlowRate               meanVelocity=<float>                       set constant flow velocity
                             meanVolumetricFlow=<float>                 set constant volumetric flow rate
-                            + direction = <X,Y,Z>                    constant flow direction
+                            + direction = <X,Y,Z>                      constant flow direction
+regularization                                                         see COMMON field settings                          
 ----------------------------------------------------------------------------------------------------------------------
 [PROBLEMTYPE]
 stressFormulation           true, false [D]                            enable stress formulation 
@@ -96,13 +97,11 @@ boundaryTypeMap             <...>, <...>, ...                          boundary 
                             zeroYValue/zeroGradient                    symmetry y-normal plane
                             zeroZValue/zeroGradient                    symmetry z-normal plane
 
-regularization                                                         regularization scheme
-                                                                       for [GENERAL],[VELOCITY],[TEMPERATURE],[SCALAR01],...
+regularization                                                         
                             hpfrt                                      HPF stabilization
                               +nModes=<int>                            number of modes                                 
                               +strength=<float>                        filter strength
                             avm                                        artificial viscosity method
-                                                                       for [TEMPERATURE],[SCALAR01], ...
                               +c0                                      make viscosity C0 continous across elements
                               +scalingCoeff=<float>                    strength of artifical viscosity
                               +hpfResidual                             use HPF Residual AVM
@@ -139,12 +138,12 @@ diffusivity                 <float>                                    diffusivi
 ----------------------------------------------------------------------------------------------------------------------
 [BOOMERAMG]                                                            settings for BoomerAMG solver
 
-coarsenType                 <int>                                      coarsener type
-interpolationType           <int>                                      interpolation type
-smootherType                <int>                                      smoother type
+coarsenType                 <int>                                      
+interpolationType           <int>                                      
+smootherType                <int>                                      
 iterations                  <int>                                      number of BoomerAMG V-cycle sweeps
-strongThreshold             <float>                                    strong threshold
-nonGalerkinTol              <float>                                    non-Galerkin tolerance
+strongThreshold             <float>                                    
+nonGalerkinTol              <float>                                    
 aggressiveCoarseningLevels  <int>                                      number of levels to apply aggressive coarsening
 ----------------------------------------------------------------------------------------------------------------------
 [AMGX]                                                                 settings for AmgX solver
