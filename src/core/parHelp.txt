@@ -3,9 +3,9 @@ Key                         Value(s)                                   Descripti
 ------------------------------------------------------------------------------------------------------------------
 [OCCA]
 
-backend                     SERIAL, CUDA, HIP                          OCCA backend
+backend                     SERIAL, CUDA, HIP, OPENCL                  OCCA backend
 
-deviceNumber                LOCAL-RANK                                 number associated with the device, e.g. GPU
+deviceNumber                <int>, LOCAL-RANK                          number associated with the device, e.g. GPU
 
 [GENERAL]
 
