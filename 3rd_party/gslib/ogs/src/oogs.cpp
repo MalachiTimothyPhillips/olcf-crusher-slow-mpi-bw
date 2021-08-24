@@ -13,6 +13,8 @@ extern "C" {
 
 #include "gslib.h"
 
+#define SUMMIT_BARRIER_FIX 1
+
 // hardwired for now
 static const unsigned transpose = 0;
 static const unsigned recv = 0^transpose, send = 1^transpose;
@@ -162,6 +164,16 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
   }
 }
 
+void ogsBarrier(MPI_Comm& comm)
+{
+#ifdef SUMMIT_BARRIER_FIX
+  int dummy = 0;
+  MPI_Bcast(&dummy, 1, MPI_INT, 0, comm);
+#else
+  MPI_Barrier(comm);
+#endif
+}
+
 void oogs::gpu_mpi(int val)
 {
   OGS_MPI_SUPPORT = val;
@@ -213,7 +225,8 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
         gs->unpackBufHalfToFloatAddKernel = device.buildKernel(fileName.c_str(), "unpackBuf_halfAdd", nativeProperties);
       }
     }
-    MPI_Barrier(gs->comm);
+    ogsBarrier(gs->comm);
+
   }
 
   if(ogs->NhaloGather == 0) return gs;
@@ -305,7 +318,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
 	  double elapsedTest[Ntests];
           for(int test=0;test<Ntests;++test) {
             device.finish();
-            MPI_Barrier(gs->comm);
+            ogsBarrier(gs->comm);
             const double tStart = MPI_Wtime();
 
             oogs::start (o_q, nVec, stride, type, ogsAdd, gs);
@@ -343,7 +356,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
 #ifdef DISABLE_OOGS
   gs->mode = OOGS_DEFAULT;
 #endif
-  MPI_Barrier(gs->comm);
+  ogsBarrier(gs->comm);
   if(gs->rank == 0) printf("used config: %d.%d.%d\n", gs->mode, gs->modeExchange, gs->earlyPrepostRecv);
 
   return gs; 

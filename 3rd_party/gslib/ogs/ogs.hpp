@@ -172,6 +172,7 @@ typedef struct {
 
 }ogs_t;
 
+void ogsBarrier(MPI_Comm &comm);
 
 ogs_t *ogsSetup(int N, long long int *ids, MPI_Comm &comm, 
                 int verbose, occa::device device);
