@@ -902,6 +902,26 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
           ABORT(1);
         }
       }
+
+      string subCyclingString;
+      if(par->extract("general", "subcycling", subCyclingString))
+      {
+        if(subCyclingString.find("auto") != std::string::npos)
+        {
+          double targetCFL;
+          options.getArgs("TARGET CFL", targetCFL);
+          const int nSteps = [targetCFL](){
+            if (targetCFL <= 0.5){
+              return 0;
+            } else if (targetCFL > 0.5 && targetCFL <= 2.0){
+              return 1;
+            } else {
+              return 2;
+            }
+          }();
+          options.setArgs("SUBCYCLING STEPS", std::to_string(nSteps));
+        }
+      }
     }
     else
     {
@@ -949,10 +969,9 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
 
   {
     int NSubCycles = 0;
-
-    if (par->extract("general", "subcyclingsteps", NSubCycles))
-      ;
-    options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
+    if (par->extract("general", "subcyclingsteps", NSubCycles)){
+      options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
+    }
   }
 
   bool variableDt;
