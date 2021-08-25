@@ -813,6 +813,13 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   par->parse(is);
   par->interpolate();
 
+  int keysInvalid = 0;
+  if (rank == 0) {
+    keysInvalid = par->validateKeys();
+  }
+  MPI_Bcast(&keysInvalid, sizeof(keysInvalid), MPI_BYTE, 0, comm);
+  if(keysInvalid) ABORT(1);
+
   string sbuf;
 
   // OCCA

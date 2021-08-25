@@ -39,6 +39,13 @@
 
 namespace inipp
 {
+
+static std::vector<std::string> keysGeneral = {
+  {"dt"},
+  {"endtime"},
+  {"numsteps"},
+};
+
 namespace detail
 {
 template <class CharT>
@@ -243,6 +250,21 @@ public:
         }
       }
     }
+  }
+
+  int validateKeys()
+  {
+    int err = 0;
+    for (auto const & sec : sections) {
+      for (auto const & val : sec.second) {
+        if(sec.first == "general") {
+          if (std::find(keysGeneral.begin(), keysGeneral.end(), val.first) == keysGeneral.end()) 
+            std::cout << "par-file: " << sec.first << "." << val.first << " unknown!\n";
+            err++;
+          }
+        }
+    }
+    return err;
   }
 
   void interpolate()
