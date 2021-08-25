@@ -40,13 +40,6 @@ int ellipticSolve(elliptic_t* elliptic,
 
   elliptic->resNormFactor = 1 / (elliptic->Nfields * mesh->volume);
 
-  if(options.compareArgs("KRYLOV SOLVER", "PGMRES")){
-    elliptic->o_rtmp.copyFrom(o_r, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
-    if(elliptic->allNeumann) ellipticZeroMean(elliptic, elliptic->o_rtmp);
-    oogs::startFinish(elliptic->o_rtmp, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
-    if(elliptic->Nmasked) mesh->maskKernel(elliptic->Nmasked, elliptic->o_maskIds, elliptic->o_rtmp);
-  }
-
   if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "JACOBI"))
     ellipticUpdateJacobi(elliptic);
 
@@ -58,9 +51,10 @@ int ellipticSolve(elliptic_t* elliptic,
   oogs::startFinish(o_r, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
   if(elliptic->Nmasked) mesh->maskKernel(elliptic->Nmasked, elliptic->o_maskIds, o_r);
 
+  elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
+  elliptic->fillKernel(elliptic->Nfields * elliptic->Ntotal, 0.0, o_x);
   if(options.compareArgs("RESIDUAL PROJECTION","TRUE")) {
     timer::tic("pre",1);
-    elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
     elliptic->residualProjection->pre(o_r);
     timer::toc("pre");
   }
@@ -87,12 +81,12 @@ int ellipticSolve(elliptic_t* elliptic,
   }
 
   if(options.compareArgs("RESIDUAL PROJECTION","TRUE")) {
-    ellipticScaledAdd(elliptic, -1.f, elliptic->o_x0, 1.f, o_x);
     timer::tic("post",1);
     elliptic->residualProjection->post(o_x);
     timer::toc("post");
-    ellipticScaledAdd(elliptic, 1.f, elliptic->o_x0, 1.f, o_x);
   }
+
+  ellipticScaledAdd(elliptic, 1.f, elliptic->o_x0, 1.f, o_x);
 
   if(elliptic->allNeumann)
     ellipticZeroMean(elliptic, o_x);

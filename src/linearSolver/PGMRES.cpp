@@ -132,6 +132,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
   occa::memory& o_w = elliptic->o_p;
   occa::memory& o_b = elliptic->o_rtmp;
+  o_b.copyFrom(o_r, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
 
   occa::memory& o_z = elliptic->o_z;
   occa::memory& o_Ax = elliptic->o_Ap;
