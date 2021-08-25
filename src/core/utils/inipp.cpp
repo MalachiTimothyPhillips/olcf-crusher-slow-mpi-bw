@@ -324,6 +324,17 @@ int Ini::validateKeys() const
   return err;
 }
 
+void Ini::printDeprecation() const
+{
+  for (auto const & sec : sections) {
+    for (auto const & val : sec.second) {
+      if (std::find(deprecatedKeys.begin(), deprecatedKeys.end(), val.first) != deprecatedKeys.end()) {
+          std::cout << "par-file: " << sec.first << "." << val.first << " deprecated!\n";
+      }
+    }
+  }
+}
+
 void Ini::interpolate()
 {
   int global_iteration = 0;

@@ -820,6 +820,10 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   MPI_Bcast(&keysInvalid, sizeof(keysInvalid), MPI_BYTE, 0, comm);
   if(keysInvalid) ABORT(1);
 
+  if (rank == 0) {
+    par->printDeprecation();
+  }
+
   string sbuf;
 
   // OCCA
