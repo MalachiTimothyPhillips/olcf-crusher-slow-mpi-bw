@@ -6,7 +6,7 @@
 ###############################################################################
 
 #: ${NEKRS_INSTALL_DIR:=/gpfs/alpine/proj-shared/csc262/ylan/.local/nekrs_stefan0414}
-: ${NEKRS_INSTALL_DIR:=/gpfs/alpine/csc262/proj-shared/ylan/.local/nekrs_stefan0414}
+: ${NEKRS_INSTALL_DIR:=/gpfs/alpine/csc262/proj-shared/ylan/.local/nekrs_stefan0414_gmres_bugfix}
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}
 : ${NEKRS_FC:="mpif77"}
