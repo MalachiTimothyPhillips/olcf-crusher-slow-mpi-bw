@@ -22,11 +22,15 @@ startFrom                   "<string>"                                 name of r
 
 stopAt                      numSteps [D], endTime                      stop criterion 
 
-  numSteps                  <int>                                      number of time steps
-
-  endTime                   <float>                                    simulation end time
-
 timeStepper                 tombo2 [D], tombo3                         time stepping scheme
+
+stopAt                      numSteps [D], endTime, elapsedTime         stop criterion 
+
+  numSteps                  <int>                                  
+
+  endTime                   <float>                                
+
+  elapsedTime               <float>                                
 
 dt                          <float> [D]                                time step size
                             targetCFL=<float>                          adjust time step to match CFL 
