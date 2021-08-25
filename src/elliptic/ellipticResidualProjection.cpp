@@ -47,7 +47,6 @@ void ResidualProjection::updateProjectionSpace()
   dfloat norm_new = norm_orig;
   const dfloat one = 1.0;
   multiScaledAddwOffsetKernel(Nlocal, numVecsProjection, Nfields * (numVecsProjection - 1) * fieldOffset, fieldOffset, o_alpha, one, o_xx);
-  multiScaledAddwOffsetKernel(Nlocal, numVecsProjection, Nfields * (numVecsProjection - 1) * fieldOffset, fieldOffset, o_alpha, one, o_bb);
   for(int k = 0; k < numVecsProjection - 1; ++k)
     norm_new = norm_new - alpha[k] * alpha[k];
   norm_new = sqrt(norm_new);
@@ -56,7 +55,6 @@ void ResidualProjection::updateProjectionSpace()
   if(test > tol) {
     const dfloat scale = 1.0 / norm_new;
     scalarMultiplyKernel(Nlocal, fieldOffset, Nfields * (numVecsProjection - 1) * fieldOffset, scale, o_xx);
-    scalarMultiplyKernel(Nlocal, fieldOffset, Nfields * (numVecsProjection - 1) * fieldOffset, scale, o_bb);
   } else {
     if(verbose && rank == 0) {
       std::cout << "Detected rank deficiency: " << test << ".\n";
@@ -75,11 +73,11 @@ void ResidualProjection::computePreProjection(occa::memory& o_r)
   multiWeightedInnerProduct(o_xx,o_r,0);
 
   accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_xx, o_xbar);
-  accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_bb, o_rtmp);
+  matvec(o_bb, 0, o_xbar, 0);
   if(blockSolver){
-    scaledAddKernel(Nlocal, fieldOffset, mone, o_rtmp, one, o_r);
+    scaledAddKernel(Nlocal, fieldOffset, mone, o_bb, one, o_r);
   } else {
-    scaledAddKernel(Nlocal, mone, o_rtmp, one, o_r);
+    scaledAddKernel(Nlocal, mone, o_bb, one, o_r);
   }
 }
 
@@ -112,7 +110,7 @@ void ResidualProjection::computePostProjection(occa::memory & o_x)
     }
   }
   const dlong previousNumVecsProjection = numVecsProjection;
-  matvec(o_bb,numVecsProjection - 1,o_xx,numVecsProjection - 1);
+  matvec(o_bb,0,o_xx,numVecsProjection - 1);
 
   updateProjectionSpace();
   if (numVecsProjection < previousNumVecsProjection) { // Last vector was linearly dependent, reset space
@@ -157,7 +155,7 @@ ResidualProjection::ResidualProjection(elliptic_t& elliptic,
   o_alpha = elliptic.mesh->device.malloc(maxNumVecsProjection * sizeof(dfloat));
   o_xbar = elliptic.mesh->device.malloc(Nfields * fieldOffset * sizeof(dfloat));
   o_xx = elliptic.mesh->device.malloc(Nfields * fieldOffset * maxNumVecsProjection * sizeof(dfloat));
-  o_bb = elliptic.mesh->device.malloc(Nfields * fieldOffset * maxNumVecsProjection * sizeof(dfloat));
+  o_bb = elliptic.mesh->device.malloc(Nfields * fieldOffset * sizeof(dfloat));
 
   string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
