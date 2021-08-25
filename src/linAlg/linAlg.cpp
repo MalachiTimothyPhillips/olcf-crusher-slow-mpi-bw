@@ -49,7 +49,7 @@ void linAlg_t::reallocScratch(const dlong Nbytes)
   if(o_scratch.size()) o_scratch.free();
   //pinned scratch buffer
   {
-    h_scratch = device.hostMalloc(Nbytes);
+    h_scratch = device.mallocHost(Nbytes);
     scratch = (dfloat*) h_scratch.ptr();
   }
   o_scratch = device.malloc(Nbytes);

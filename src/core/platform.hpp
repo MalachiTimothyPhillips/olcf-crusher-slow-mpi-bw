@@ -59,7 +59,7 @@ class device_t : public occa::device{
     occa::memory malloc(const dlong Nwords, const dlong wordSize, occa::memory src);
     occa::memory malloc(const dlong Nwords, const dlong wordSize);
 
-    occa::memory hostMalloc(const dlong Nbytes);
+    occa::memory mallocHost(const dlong Nbytes);
 
     int id() const { return _device_id; }
   private:

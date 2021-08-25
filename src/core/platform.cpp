@@ -181,7 +181,7 @@ device_t::buildKernel(const std::string &filename,
   return _kernel;
 }
 occa::memory
-device_t::hostMalloc(const dlong Nbytes)
+device_t::mallocHost(const dlong Nbytes)
 {
   occa::properties props;
   props["host"] = true;

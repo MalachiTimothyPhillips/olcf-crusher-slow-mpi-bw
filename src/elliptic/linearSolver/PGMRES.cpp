@@ -56,7 +56,7 @@ GmresData::GmresData(elliptic_t* elliptic)
   const dlong Nbytes = restart * Nblock * sizeof(dfloat);
   //pinned scratch buffer
   {
-    h_scratch = platform->device.hostMalloc(Nbytes);
+    h_scratch = platform->device.mallocHost(Nbytes);
     scratch = (dfloat*) h_scratch.ptr();
   }
   o_scratch = platform->device.malloc(Nbytes);
