@@ -31,7 +31,7 @@
               std::ptr_fun<int, int>(std::tolower));                           \
   }
 
-void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *par)
+void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini *par)
 {
   string flowRateDescription;
   if(par->extract("general", "constflowrate", flowRateDescription))
@@ -118,7 +118,7 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini<char> *pa
   }
 }
 void parseSolverTolerance(const int rank, setupAide &options,
-                       inipp::Ini<char> *par, string parScope) {
+                       inipp::Ini *par, string parScope) {
   string parSectionName = (parScope.find("temperature") != std::string::npos)
                               ? "scalar00"
                               : parScope;
@@ -146,7 +146,7 @@ void parseSolverTolerance(const int rank, setupAide &options,
   }
 }
 void parseCoarseSolver(const int rank, setupAide &options,
-                       inipp::Ini<char> *par, string parScope) {
+                       inipp::Ini *par, string parScope) {
   string parSectionName = (parScope.find("temperature") != std::string::npos)
                               ? "scalar00"
                               : parScope;
@@ -239,7 +239,7 @@ std::vector<int> checkForIntInInputs(const std::vector<string> &inputs) {
   return values;
 }
 
-void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
+void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
                    string parScope) {
 
   string parSection = parScope;
@@ -384,7 +384,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini<char> *par,
   }
 }
 void parsePreconditioner(const int rank, setupAide &options,
-                         inipp::Ini<char> *par, string parScope) {
+                         inipp::Ini *par, string parScope) {
 
   string parSection = (parScope.find("temperature") != string::npos)
                               ? "scalar00"
@@ -454,7 +454,7 @@ void parsePreconditioner(const int rank, setupAide &options,
   }
 }
 void parseInitialGuess(const int rank, setupAide &options,
-                       inipp::Ini<char> *par, string parScope) {
+                       inipp::Ini *par, string parScope) {
 
   string parSectionName = (parScope.find("temperature") != string::npos)
                               ? "scalar00"
@@ -524,7 +524,7 @@ void parseInitialGuess(const int rank, setupAide &options,
   }
 }
 void parseRegularization(const int rank, setupAide &options,
-                         inipp::Ini<char> *par, bool isScalar = false,
+                         inipp::Ini *par, bool isScalar = false,
                          bool isTemperature = false, string sidPar = "") {
   int N;
   options.getArgs("POLYNOMIAL DEGREE", N);
@@ -809,7 +809,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   stringstream is;
   is.write(rbuf, fsize);
 
-  inipp::Ini<char> *par = (inipp::Ini<char> *)ppar;
+  inipp::Ini *par = (inipp::Ini *)ppar;
   par->parse(is);
   par->interpolate();
 
