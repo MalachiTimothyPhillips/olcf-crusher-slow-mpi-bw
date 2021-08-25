@@ -5,8 +5,8 @@ deviceNumber = LOCAL-RANK
 [GENERAL]
 polynomialOrder = 7
 #startFrom = restart.fld
-stopAt = endTime
-endTime = 200
+stopAt = numSteps
+numSteps = 200
 
 dt = 6.0e-3
 timeStepper = tombo2

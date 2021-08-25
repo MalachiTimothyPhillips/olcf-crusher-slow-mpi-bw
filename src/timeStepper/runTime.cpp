@@ -21,6 +21,8 @@ occa::memory scalarStrongSubCycle(cds_t* cds, dfloat time, int is,
 void scalarSolve(nrs_t* nrs, dfloat time, occa::memory o_S);
 
 double tElapsed = 0;
+//int sum_iterP=0, sum_iterU=0, sum_iterV=0, sum_iterW=0;
+//dfloat sum_CFL=0, sum_tps=0;
 
 void runStep(nrs_t* nrs, dfloat time, dfloat dt, int tstep)
 {
@@ -79,11 +81,41 @@ void runStep(nrs_t* nrs, dfloat time, dfloat dt, int tstep)
   mesh->device.finish();
   MPI_Barrier(mesh->comm);
   const double tElapsedStep = MPI_Wtime() - tStart;
+//  const int freq_printStepStat = 1000;
   tElapsed += tElapsedStep;
   timer::set("solve", tElapsed);
 
   // print some diagnostics
   const dfloat cfl = computeCFL(nrs);
+/*
+  if(nrs->flow) {
+    sum_iterP += nrs->NiterP;
+    sum_iterU += nrs->NiterU;
+    if(!nrs->uvwSolver) {
+      sum_iterV += nrs->NiterV;
+      sum_iterW += nrs->NiterW;
+    }
+  }
+  sum_CFL += cfl;
+  sum_tps += tElapsedStep;
+  if(mesh->rank == 0 && tstep%freq_printStepStat == 0) {
+    printf("step= %d  t= %.8e  dt=%.1e  C= %.2f",
+           tstep, time + nrs->dt[0], nrs->dt[0], sum_CFL);
+
+    if(nrs->flow) {
+      if(nrs->uvwSolver)
+        printf("  UVW: %d  P: %d", sum_iterU, sum_iterP);
+      else
+        printf("  U: %d  V: %d  W: %d  P: %d", sum_iterU, sum_iterV, sum_iterW, sum_iterP);
+    }
+
+    for(int is = 0; is < nrs->Nscalar; is++)
+      if(cds->compute[is]) printf("  S: %d", cds->Niter[is]);
+
+    printf("  eTime= %.2e, %.5e s\n", sum_tps, tElapsed);
+  }
+*/
+
   if(mesh->rank == 0) {
     printf("step= %d  t= %.8e  dt=%.1e  C= %.2f",
            tstep, time + nrs->dt[0], nrs->dt[0], cfl);
@@ -101,11 +133,13 @@ void runStep(nrs_t* nrs, dfloat time, dfloat dt, int tstep)
     printf("  eTime= %.2e, %.5e s\n", tElapsedStep, tElapsed);
   }
 
+
   if(cfl > 30 || std::isnan(cfl)) {
     if(mesh->rank == 0) cout << "Unreasonable CFL! Dying ...\n" << endl;
     ABORT(1);
   }
 
+//  if(tstep % freq_printStepStat == 0) fflush(stdout);
   if(tstep % 10 == 0) fflush(stdout);
 }
 

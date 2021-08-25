@@ -5,7 +5,8 @@
 # USER SETTINGS
 ###############################################################################
 
-: ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
+#: ${NEKRS_INSTALL_DIR:=/gpfs/alpine/proj-shared/csc262/ylan/.local/nekrs_stefan0414}
+: ${NEKRS_INSTALL_DIR:=/gpfs/alpine/csc262/proj-shared/ylan/.local/nekrs_stefan0414}
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}
 : ${NEKRS_FC:="mpif77"}
@@ -125,6 +126,8 @@ fi
 NEKRS_CFLAGS="${NEKRS_CXXFLAGS}"
 NEKRS_FFLAGS="${NEKRS_CXXFLAGS}"
 NEKRS_NEK5000_PPLIST="PARRSB DPROCMAP"
+echo $NEKRS_CXXFLAGS
+echo ttt
 
 export OCCA_CUDA_ENABLED
 export OCCA_HIP_ENABLED

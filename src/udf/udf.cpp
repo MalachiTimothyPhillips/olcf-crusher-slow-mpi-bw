@@ -44,17 +44,18 @@ int udfBuild(const char* udfFile)
     sprintf(cmd,
             "mkdir -p %s/udf && cd %s/udf && cp %s/CMakeLists.txt . && \
              CXX=\"${NEKRS_CXX}\" CXXFLAGS=\"${NEKRS_CXXFLAGS}\" \
-             cmake -DUDF_DIR=\"%s\" -DFILENAME=\"%s\" . >build.log 2>&1 && \
+             cmake -DUDF_DIR=\"%s\" -DFILENAME=\"%s\" . > build.log 2>&1 && \
              make >>build.log 2>&1",
             cache_dir,
             cache_dir,
             udf_dir,
             udf_dir,
             abs_path);
+    printf("%s\n",cmd); fflush(stdout);
 
     if(system(cmd)) { 
       printf("\nAn ERROR occured, see %s/udf/build.log for details!\n", cache_dir);
-      return EXIT_FAILURE;
+//      return EXIT_FAILURE;
     }
     printf("done (%gs)\n", MPI_Wtime() - tStart);
     fflush(stdout);

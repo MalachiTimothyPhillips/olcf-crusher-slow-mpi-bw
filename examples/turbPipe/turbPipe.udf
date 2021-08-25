@@ -9,6 +9,14 @@
 #include "casedata.h"
 
 /* UDF Functions */                                                      
+void UDF_Setup0(MPI_Comm comm, setupAide &options)
+{
+//  options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "TRUE");
+  options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "2");
+  options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS","30");
+
+//  options.setArgs("ENABLE OVERLAP", "FALSE");
+}
 
 void UDF_LoadKernels(nrs_t *nrs)
 {

@@ -497,6 +497,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np)
             "%s/bin/nekconfig %s >build.log 2>&1", 
 	    cache_dir, fflags,cflags, nek5000_dir, nek5000_dir, casename);
 
+    printf("%s\n",buf);fflush(stdout);
     system(buf);
   }
  
@@ -512,10 +513,12 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np)
     printf("building nek ... "); fflush(stdout);
     double tStart = MPI_Wtime();
     sprintf(buf, "cd %s && NEKRS_WORKING_DIR=%s make -j4 -f %s/Makefile lib usr libnekInterface "
-            ">build.log 2>&1", cache_dir, cache_dir, nekInterface_dir);
+            "|tee build.log 2>&1", cache_dir, cache_dir, nekInterface_dir);
+    printf("%s \n",buf); fflush(stdout);
+
     if(system(buf)) {
       printf("\nCannot compile nek5000 lib, see %s/build.log for details!\n", cache_dir);
-      return EXIT_FAILURE;
+//      return EXIT_FAILURE;
     } 
     printf("done (%gs)\n\n", MPI_Wtime() - tStart);
     fflush(stdout);

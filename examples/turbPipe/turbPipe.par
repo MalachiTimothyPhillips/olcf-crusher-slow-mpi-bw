@@ -4,10 +4,10 @@ deviceNumber = LOCAL-RANK
 
 [GENERAL]
 #verbose = true
-polynomialOrder = 7
+polynomialOrder = 8
 #startFrom = restart.fld
-stopAt = endTime
-endTime = 200
+stopAt = numSteps
+numSteps = 2000
 
 dt = 6.0e-3
 timeStepper = tombo2
@@ -15,16 +15,22 @@ extrapolation = subCycling
 subCyclingSteps = 2
 
 writeControl = runTime
-writeInterval = 1
+writeInterval = -1
 
 filtering = hpfrt
 filterWeight = 8
 filterModes = 20
 
 [PRESSURE]
+solver=gmres+20
 residualTol = 1e-04
+residualProj = yes
+residualprojectionvectors = 30
 #preconditioner = multigrid+additive+overlapCrsSolve
 #smootherType = Chebyshev+ASM
+smootherType = chebyshev+asm
+#smootherType = chebyshev+ras
+pMultigridCoarsening = 8,6,4,1
 #pMultigridCoarsening = 7,3,1
 #galerkinCoarseOperator = true
 
@@ -34,6 +40,7 @@ boundaryTypeMap = inlet, outlet, wall
 density = 1.0
 viscosity = -19000
 residualTol = 1e-06
+residualProj = no
 
 [BOOMERAMG]
 #coarsenType = 10
