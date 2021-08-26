@@ -398,7 +398,11 @@ void parsePreconditioner(const int rank, setupAide &options,
   } else if (p_preconditioner.find("jac") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "JACOBI");
   } else if(p_preconditioner.find("semfem") != std::string::npos
-     && p_preconditioner.find("pmg") == std::string::npos) {
+     && (p_preconditioner.find("pmg") == std::string::npos
+         &&
+         p_preconditioner.find("multigrid") == std::string::npos
+        )
+     ) {
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
     options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
     options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
@@ -426,7 +430,8 @@ void parsePreconditioner(const int rank, setupAide &options,
     }
 
   } else if (p_preconditioner.find("semg") != std::string::npos ||
-             p_preconditioner.find("multigrid") != std::string::npos) {
+             p_preconditioner.find("multigrid") != std::string::npos ||
+             p_preconditioner.find("pmg") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
     string key = "VCYCLE";
     if (p_preconditioner.find("additive") != std::string::npos)
@@ -436,10 +441,8 @@ void parsePreconditioner(const int rank, setupAide &options,
     if (p_preconditioner.find("overlap") != std::string::npos)
       key += "+OVERLAPCRS";
     options.setArgs(parSection + " PARALMOND CYCLE", key);
-  } else if(p_preconditioner.find("pmg") != std::string::npos){
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
-    string key = "VCYCLE";
-    options.setArgs(parSection + " PARALMOND CYCLE", key);
+
     options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "FALSE");
     options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
     if(p_preconditioner.find("coarse") != std::string::npos){
@@ -492,7 +495,7 @@ void parseInitialGuess(const int rank, setupAide &options,
     } else if (initialGuess.find("projection") != string::npos) {
       options.setArgs(parSectionName + " INITIAL GUESS",
                       "PROJECTION");
-    } else if (initialGuess.find("none") != string::npos) {
+    } else if (initialGuess.find("previous") != string::npos) {
       options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
     } else if (initialGuess.find("true") != string::npos) {
       const int defaultNumVectors = parScope == "pressure" ? 10 : 5;
@@ -533,7 +536,7 @@ void parseRegularization(const int rank, setupAide &options,
     parSection = "general";
   }
   string parPrefix = isScalar ? "SCALAR" + sidPar + " " : "";
-  options.setArgs(parPrefix + "STABILIZATION METHOD", "NONE");
+  options.setArgs(parPrefix + "REGULARIZATION METHOD", "NONE");
 
   string regularization;
   par->extract(parSection, "regularization", regularization);
@@ -560,9 +563,9 @@ void parseRegularization(const int rank, setupAide &options,
     options.setArgs(parPrefix + "HPFRT MODES", "1");
     if (usesAVM) {
       if(regularization.find("hpfresidual") != string::npos)
-        options.setArgs(parPrefix + "STABILIZATION METHOD", "HPF_RESIDUAL");
+        options.setArgs(parPrefix + "REGULARIZATION METHOD", "HPF_RESIDUAL");
       else if(regularization.find("highestmodaldecay") != string::npos)
-        options.setArgs(parPrefix + "STABILIZATION METHOD", "HIGHEST_MODAL_DECAY");
+        options.setArgs(parPrefix + "REGULARIZATION METHOD", "HIGHEST_MODAL_DECAY");
       else {
         if(rank == 0){
           printf("Error: avm must be specified with hpfResidual or HighestModalDecay!\n");
@@ -570,13 +573,13 @@ void parseRegularization(const int rank, setupAide &options,
         ABORT(1);
       }
 
-      options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", "0.5");
-      options.setArgs(parPrefix + "STABILIZATION SCALING COEFF", "1.0");
-      options.setArgs(parPrefix + "STABILIZATION RAMP CONSTANT", to_string_f(1.0));
-      options.setArgs(parPrefix + "STABILIZATION AVM C0", "FALSE");
+      options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", "0.5");
+      options.setArgs(parPrefix + "REGULARIZATION SCALING COEFF", "1.0");
+      options.setArgs(parPrefix + "REGULARIZATION RAMP CONSTANT", to_string_f(1.0));
+      options.setArgs(parPrefix + "REGULARIZATION AVM C0", "FALSE");
     }
     if (usesHPFRT) {
-      options.setArgs(parPrefix + "STABILIZATION METHOD", "RELAXATION");
+      options.setArgs(parPrefix + "REGULARIZATION METHOD", "RELAXATION");
     }
 
     // common parameters
@@ -603,7 +606,7 @@ void parseRegularization(const int rank, setupAide &options,
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat value = std::stod(items[1]);
-          options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", to_string_f(value));
+          options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", to_string_f(value));
         }
         if(s.find("scalingcoeff") != string::npos)
         {
@@ -613,21 +616,21 @@ void parseRegularization(const int rank, setupAide &options,
           if(regularization.find("highestmodaldecay") != string::npos)
           {
             // in this context, the scaling coefficient can only be vismax
-            options.setArgs(parPrefix + "STABILIZATION VISMAX COEFF", to_string_f(value));
+            options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", to_string_f(value));
           } else {
-            options.setArgs(parPrefix + "STABILIZATION SCALING COEFF", to_string_f(value));
+            options.setArgs(parPrefix + "REGULARIZATION SCALING COEFF", to_string_f(value));
           }
         }
         if(s.find("c0") != string::npos)
         {
-          options.setArgs(parPrefix + "STABILIZATION AVM C0", "TRUE");
+          options.setArgs(parPrefix + "REGULARIZATION AVM C0", "TRUE");
         }
         if(s.find("rampconstant") != string::npos)
         {
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
           const dfloat rampConstant = std::stod(items[1]);
-          options.setArgs(parPrefix + "STABILIZATION RAMP CONSTANT",
+          options.setArgs(parPrefix + "REGULARIZATION RAMP CONSTANT",
                           to_string_f(rampConstant));
         }
       }
@@ -636,7 +639,7 @@ void parseRegularization(const int rank, setupAide &options,
     if (usesHPFRT) {
       bool setsStrength = false;
       for (std::string s : list) {
-        if (s.find("strength") != string::npos) {
+        if (s.find("scalingcoeff") != string::npos) {
           setsStrength = true;
           std::vector<string> items = serializeString(s, '=');
           assert(items.size() == 2);
@@ -659,7 +662,7 @@ void parseRegularization(const int rank, setupAide &options,
     string filtering;
     par->extract(parSection, "filtering", filtering);
     if (filtering == "hpfrt") {
-      options.setArgs(parPrefix + "STABILIZATION METHOD", "RELAXATION");
+      options.setArgs(parPrefix + "REGULARIZATION METHOD", "RELAXATION");
       if (par->extract(parSection, "filterweight", sbuf)) {
         int err = 0;
         double weight = te_interp(sbuf.c_str(), &err);
@@ -717,7 +720,7 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("RESTART FROM FILE", "0");
   options.setArgs("SOLUTION OUTPUT INTERVAL", "0");
   options.setArgs("SOLUTION OUTPUT CONTROL", "STEPS");
-  options.setArgs("STABILIZATION METHOD", "NONE");
+  options.setArgs("REGULARIZATION METHOD", "NONE");
 
   options.setArgs("START TIME", "0.0");
 
@@ -760,10 +763,6 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");
   options.setArgs("PRESSURE RESIDUAL PROJECTION START", "5");
-
-  options.setArgs("MESH INITIAL GUESS", "PROJECTION-ACONJ");
-  options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "5");
-  options.setArgs("MESH RESIDUAL PROJECTION START", "5");
 
   options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
@@ -879,6 +878,13 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
           options.setArgs("DT", to_string_f(initialDt));
           userSuppliesInitialDt = true;
         }
+        if(entry.find("targetcfl") != string::npos)
+        {
+          std::vector<string> cflAndValue = serializeString(entry, '=');
+          assert(cflAndValue.size() == 2);
+          const double targetCFL = std::stod(cflAndValue[1]);
+          options.setArgs("TARGET CFL", to_string_f(targetCFL));
+        }
       }
 
       // guard against using a higher initial dt than the max
@@ -896,6 +902,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
           ABORT(1);
         }
       }
+
     }
     else
     {
@@ -904,6 +911,7 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     }
 
   }
+
 
   string timeStepper;
   par->extract("general", "timestepper", timeStepper);
@@ -941,23 +949,39 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     options.setArgs("STOP AT ELAPSED TIME", to_string_f(elapsedTime));
   }
 
-  string extrapolation;
-  par->extract("general", "extrapolation", extrapolation);
-  if (extrapolation == "oifs" || extrapolation == "subcycling") {
-    double targetCFL;
-    int NSubCycles = 1;
-
-    if (par->extract("general", "targetcfl", targetCFL))
-      NSubCycles = round(targetCFL / 2);
-    if (par->extract("general", "subcyclingsteps", NSubCycles))
-      ;
-    options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
+  string subCyclingString;
+  if(par->extract("general", "subcycling", subCyclingString))
+  {
+    if(subCyclingString.find("auto") != std::string::npos)
+    {
+      double targetCFL;
+      options.getArgs("TARGET CFL", targetCFL);
+      string dtString;
+      if (par->extract("general", "dt", dtString)){
+        if(dtString.find("targetcfl") == std::string::npos)
+        {
+          exit("subCycling = auto requires the targetCFL to be set!",
+               EXIT_FAILURE);
+        }
+      }
+      const int nSteps = [targetCFL](){
+        if (targetCFL <= 0.5){
+          return 0;
+        } else if (targetCFL > 0.5 && targetCFL <= 2.0){
+          return 1;
+        } else {
+          return 2;
+        }
+      }();
+      options.setArgs("SUBCYCLING STEPS", std::to_string(nSteps));
+    }
   }
 
-  double targetCFL;
-  if(par->extract("general", "targetcfl", targetCFL))
   {
-    options.setArgs("TARGET CFL", to_string_f(targetCFL));
+    int NSubCycles = 0;
+    if (par->extract("general", "subcyclingsteps", NSubCycles)){
+      options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
+    }
   }
 
   bool variableDt;
@@ -1001,7 +1025,12 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   if (par->extract("mesh", "solver", meshSolver)) {
     options.setArgs("MOVING MESH", "TRUE");
     if(meshSolver == "user") options.setArgs("MESH SOLVER", "USER");
-    if(meshSolver == "elasticity") options.setArgs("MESH SOLVER", "ELASTICITY");
+    if(meshSolver == "elasticity") {
+      options.setArgs("MESH SOLVER", "ELASTICITY");
+      options.setArgs("MESH INITIAL GUESS", "PROJECTION-ACONJ");
+      options.setArgs("MESH RESIDUAL PROJECTION VECTORS", "5");
+      options.setArgs("MESH RESIDUAL PROJECTION START", "5");
+    }
     if(meshSolver == "none") options.setArgs("MOVING MESH", "FALSE"); 
   }
 

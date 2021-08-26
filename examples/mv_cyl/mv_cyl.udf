@@ -8,6 +8,8 @@
 
 #include "ci.inc"
 
+static constexpr int meshSolverMode = 3;
+
 static occa::kernel userVpKernel;
 static occa::kernel userMeshVelocityKernel;
  

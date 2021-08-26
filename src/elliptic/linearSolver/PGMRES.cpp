@@ -56,9 +56,7 @@ GmresData::GmresData(elliptic_t* elliptic)
   const dlong Nbytes = restart * Nblock * sizeof(dfloat);
   //pinned scratch buffer
   {
-    occa::properties props = platform->kernelInfo;
-    props["host"] = true;
-    h_scratch = platform->device.malloc(Nbytes, props);
+    h_scratch = platform->device.mallocHost(Nbytes);
     scratch = (dfloat*) h_scratch.ptr();
   }
   o_scratch = platform->device.malloc(Nbytes);
@@ -283,9 +281,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       error = fabs(s[i+1]) * sqrt(elliptic->resNormFactor);
       rdotr = error;
 
-      if (verbose&&(platform->comm.mpiRank==0)) {
-        printf("GMRES: it %d, approx residual norm %12.12le \n", iter, error);
-      }
+      if (verbose && (platform->comm.mpiRank == 0))
+        printf("it %d r norm %.15e\n", iter, rdotr);
 
       if(error < TOL || iter==MAXIT) {
         //update approximation

@@ -10,9 +10,13 @@
 * AVM for scalars
 * FEMSEM preconditioner
 * NVIDIA AmgX solver 
+* Update file (nekrs.upd) for runtime modifications
 * Various bug fixes 
 
 ## What you may have to change to be compatible 
+
+* Setting preconditioner = <multigrid | semg | pmg> now assumes no coarse solver.
+  Please use preconditioner = multigrid+coarse to keep the coarse solver.
 
 ## Known Bugs / Restrictions
 
@@ -23,6 +27,8 @@
 * [2](https://github.com/Nek5000/nekRS/issues/2)
 
 ## Thanks to our Contributors
+
+@RonRahaman, @aprilnovak, @yslan
 
 We are grateful to all who added new features, filed issues or helped resolve them, 
 asked and answered questions, and were part of inspiring discussions.
