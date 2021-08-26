@@ -9,7 +9,6 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 {
   mesh_t* mesh = nrs->meshV;
   
-
   //enforce Dirichlet BCs
   platform->linAlg->fill((1+nrs->NVfields)*nrs->fieldOffset, -1.0*std::numeric_limits<dfloat>::max(), platform->o_mempool.slice6);
   for (int sweep = 0; sweep < 2; sweep++) {
@@ -37,7 +36,6 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
                                    mesh->o_vmapM,
                                    mesh->o_EToB,
                                    nrs->o_EToB,
-                                   nrs->o_VmapB,
                                    nrs->o_usrwrk,
                                    nrs->o_U,
                                    platform->o_mempool.slice7);
@@ -232,57 +230,6 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
     ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
     ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2);
   }
-
-  return platform->o_mempool.slice0;
-}
-
-occa::memory meshSolve(nrs_t* nrs, dfloat time, int stage)
-{
-  mesh_t* mesh = nrs->meshV;
-  oogs_t* gsh = nrs->gsh;
-
-  //enforce Dirichlet BCs
-  platform->o_mempool.slice0.copyFrom(mesh->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0.0, platform->o_mempool.slice3);
-  for (int sweep = 0; sweep < 2; sweep++) {
-    nrs->meshV->velocityDirichletKernel(mesh->Nelements,
-                                   nrs->fieldOffset,
-                                   mesh->o_vmapM,
-                                   nrs->o_EToBMesh,
-                                   nrs->o_VmapBMesh,
-                                   nrs->o_U,
-                                   platform->o_mempool.slice3);
-
-    //take care of Neumann-Dirichlet shared edges across elements
-    if(sweep == 0) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, gsh);
-    if(sweep == 1) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, gsh);
-  }
-  oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
-  platform->linAlg->axmyMany(
-    mesh->Nlocal,
-    nrs->NVfields,
-    nrs->fieldOffset,
-    0,
-    1.0,
-    nrs->meshSolver->o_invDegree,
-    platform->o_mempool.slice3
-  );
-  
-  if (nrs->meshSolver->Nmasked) nrs->maskCopyKernel(nrs->meshSolver->Nmasked, 0*nrs->fieldOffset, nrs->meshSolver->o_maskIds,
-      platform->o_mempool.slice3, platform->o_mempool.slice0);
-
-  ellipticSolve(nrs->meshSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
-
-  oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-  platform->linAlg->axmyMany(
-    mesh->Nlocal,
-    nrs->NVfields,
-    nrs->fieldOffset,
-    0,
-    1.0,
-    nrs->meshSolver->o_invDegree,
-    platform->o_mempool.slice0
-  );
 
   return platform->o_mempool.slice0;
 }

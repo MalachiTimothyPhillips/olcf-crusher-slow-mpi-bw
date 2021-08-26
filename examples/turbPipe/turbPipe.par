@@ -17,19 +17,16 @@ subCyclingSteps = 2
 writeControl = runTime
 writeInterval = 1
 
-filtering = hpfrt
-filterWeight = 0.1/${dt}
-filterModes = 1
+regularization = hpfrt+nModes=1+strength=0.1/${dt}
 
-#dt = targetCFL + max = 1e-2 + initial = 6e-3
-#targetCFL = 4
+#dt = targetCFL=4 + max=1e-2 + initial=6e-3
 
 [PRESSURE]
 residualTol = 1e-04
 #initialGuess = projectionAconj+nVector=10
 
 [VELOCITY]
-#solver = pcg
+#solver = pfcg
 boundaryTypeMap = inlet, outlet, wall
 density = 1.0
 viscosity = -19000
