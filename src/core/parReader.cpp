@@ -462,26 +462,6 @@ void parseInitialGuess(const int rank, setupAide &options,
 
   UPPER(parSectionName);
 
-  // see if user has provided old (deprecated) solution projection syntax
-  {
-    bool solutionProjection;
-    if (par->extract(parScope, "residualproj", solutionProjection) ||
-        par->extract(parScope, "residualprojection", solutionProjection)) {
-      if (solutionProjection) {
-        options.setArgs(parSectionName + " INITIAL GUESS", "PROJECTION-ACONJ");
-
-        const int defaultNumVectors = parScope == "pressure" ? 10 : 5;
-
-        // default parameters
-        options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
-                        std::to_string(defaultNumVectors));
-        options.setArgs(parSectionName + " RESIDUAL PROJECTION START", "5");
-      }
-
-      return;
-    }
-  }
-
   string initialGuess;
 
   if (par->extract(parScope, "initialguess", initialGuess)) {
@@ -520,6 +500,45 @@ void parseInitialGuess(const int rank, setupAide &options,
         options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
                         std::to_string(value));
       }
+      if (s.find("start") == 0) {
+        const std::vector<string> items = serializeString(s, '=');
+        assert(items.size() == 2);
+        const int value = std::stoi(items[1]);
+        options.setArgs(parSectionName + " RESIDUAL PROJECTION START",
+                        std::to_string(value));
+      }
+    }
+    return;
+  }
+
+  // see if user has provided old (deprecated) solution projection syntax
+  {
+    bool solutionProjection;
+    if (par->extract(parScope, "residualproj", solutionProjection) ||
+        par->extract(parScope, "residualprojection", solutionProjection)) {
+      if (solutionProjection) {
+        options.setArgs(parSectionName + " INITIAL GUESS", "PROJECTION-ACONJ");
+
+        const int defaultNumVectors = parScope == "pressure" ? 10 : 5;
+
+        // default parameters
+        options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
+                        std::to_string(defaultNumVectors));
+        options.setArgs(parSectionName + " RESIDUAL PROJECTION START", "5");
+      }
+
+      return;
+    }
+
+    int nVectors;
+    if(par->extract(parScope, "residualprojectionvectors", nVectors)){
+        options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
+                        std::to_string(nVectors));
+    }
+    int nStart;
+    if(par->extract(parScope, "residualprojectionstart", nStart)){
+        options.setArgs(parSectionName + " RESIDUAL PROJECTION START",
+                        std::to_string(nStart));
     }
   }
 }

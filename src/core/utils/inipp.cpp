@@ -89,6 +89,8 @@ static std::vector<std::string> commonKeys = {
   // deprecated projection params
   {"residualProj"},
   {"residualProjection"},
+  {"residualProjectionVectors"},
+  {"residualProjectionStart"},
 };
 
 static std::vector<std::string> meshKeys = {
@@ -136,6 +138,12 @@ static std::vector<std::string> deprecatedKeys = {
   {"filterWeight"},
   {"filterModes"},
   {"filterCutoffRatio"},
+
+  // deprecated projection params
+  {"residualProj"},
+  {"residualProjection"},
+  {"residualProjectionVectors"},
+  {"residualProjectionStart"},
 };
 
 void convertToLowerCase(std::vector<std::string>& stringVec)
