@@ -361,12 +361,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->o_EToBMesh = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToBMesh);
   }
 
-  if(platform->options.compareArgs("STABILIZATION METHOD", "RELAXATION")){
+  if(platform->options.compareArgs("VELOCITY REGULARIZATION METHOD", "RELAXATION")){
 
     nrs->filterNc = -1;
     dfloat filterS;
-    platform->options.getArgs("HPFRT STRENGTH", filterS);
-    platform->options.getArgs("HPFRT MODES", nrs->filterNc);
+    platform->options.getArgs("VELOCITY HPFRT STRENGTH", filterS);
+    platform->options.getArgs("VELOCITY HPFRT MODES", nrs->filterNc);
     filterS = -1.0 * fabs(filterS);
     nrs->filterS = filterS;
 
@@ -723,6 +723,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->vOptions.setArgs("PARALMOND AGGREGATION STRATEGY",
                           options.getArgs("VELOCITY PARALMOND AGGREGATION STRATEGY"));
     nrs->vOptions.setArgs("MAXIMUM ITERATIONS", options.getArgs("VELOCITY MAXIMUM ITERATIONS"));
+    nrs->vOptions.setArgs("STABILIZATION METHOD", options.getArgs("VELOCITY STABILIZATION METHOD"));
+    nrs->vOptions.setArgs("HPFRT STRENGTH", options.getArgs("VELOCITY HPFRT STRENGTH"));
+    nrs->vOptions.setArgs("HPFRT MODES", options.getArgs("VELOCITY HPFRT MODES"));
 
     nrs->mOptions = options;
     nrs->mOptions.setArgs("PGMRES RESTART",        options.getArgs("MESH PGMRES RESTART"));
@@ -1233,11 +1236,11 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
  
     cds->options[is] = options;
 
-    cds->options[is].setArgs("STABILIZATION RAMP CONSTANT", options.getArgs("SCALAR" + sid + " STABILIZATION RAMP CONSTANT"));
-    cds->options[is].setArgs("STABILIZATION AVM C0", options.getArgs("SCALAR" + sid + " STABILIZATION AVM C0"));
-    cds->options[is].setArgs("STABILIZATION METHOD", options.getArgs("SCALAR" + sid + " STABILIZATION METHOD"));
-    cds->options[is].setArgs("STABILIZATION VISMAX COEFF", options.getArgs("SCALAR" + sid + " STABILIZATION VISMAX COEFF"));
-    cds->options[is].setArgs("STABILIZATION SCALING COEFF", options.getArgs("SCALAR" + sid + " STABILIZATION SCALING COEFF"));
+    cds->options[is].setArgs("REGULARIZATION RAMP CONSTANT", options.getArgs("SCALAR" + sid + " REGULARIZATION RAMP CONSTANT"));
+    cds->options[is].setArgs("REGULARIZATION AVM C0", options.getArgs("SCALAR" + sid + " REGULARIZATION AVM C0"));
+    cds->options[is].setArgs("REGULARIZATION METHOD", options.getArgs("SCALAR" + sid + " REGULARIZATION METHOD"));
+    cds->options[is].setArgs("REGULARIZATION VISMAX COEFF", options.getArgs("SCALAR" + sid + " REGULARIZATION VISMAX COEFF"));
+    cds->options[is].setArgs("REGULARIZATION SCALING COEFF", options.getArgs("SCALAR" + sid + " REGULARIZATION SCALING COEFF"));
     cds->options[is].setArgs("HPFRT STRENGTH", options.getArgs("SCALAR" + sid + " HPFRT STRENGTH"));
     cds->options[is].setArgs("HPFRT MODES", options.getArgs("SCALAR" + sid + " HPFRT MODES"));
     cds->options[is].setArgs("KRYLOV SOLVER", options.getArgs("SCALAR" + sid + " KRYLOV SOLVER"));
@@ -1271,9 +1274,9 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
   bool avmEnabled = false;
   {
     for(int is = 0; is < cds->NSfields; is++) {
-      if(!cds->options[is].compareArgs("STABILIZATION METHOD", "NONE")) scalarFilteringEnabled = true;
-      if(cds->options[is].compareArgs("STABILIZATION METHOD", "HPF_RESIDUAL")) avmEnabled = true;
-      if(cds->options[is].compareArgs("STABILIZATION METHOD", "HIGHEST_MODAL_DECAY")) avmEnabled = true;
+      if(!cds->options[is].compareArgs("REGULARIZATION METHOD", "NONE")) scalarFilteringEnabled = true;
+      if(cds->options[is].compareArgs("REGULARIZATION METHOD", "HPF_RESIDUAL")) avmEnabled = true;
+      if(cds->options[is].compareArgs("REGULARIZATION METHOD", "HIGHEST_MODAL_DECAY")) avmEnabled = true;
     }
   }
 
@@ -1283,7 +1286,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options, occa::properties& kernelInfoBC)
     cds->o_filterMT = platform->device.malloc(cds->NSfields * Nmodes * Nmodes, sizeof(dfloat));
     for(int is = 0; is < cds->NSfields; is++)
     {
-      if(cds->options[is].compareArgs("STABILIZATION METHOD", "NONE")) continue;
+      if(cds->options[is].compareArgs("REGULARIZATION METHOD", "NONE")) continue;
       if(!cds->compute[is]) continue;
       int filterNc = -1;
       cds->options[is].getArgs("HPFRT MODES", filterNc);
