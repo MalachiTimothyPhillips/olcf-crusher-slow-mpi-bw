@@ -60,6 +60,9 @@ static std::vector<std::string> generalKeys = {
   {"verbose"},
   {"variableDT"},
 
+  {"oudf"},
+  {"udf"},
+
 };
 
 static std::vector<std::string> problemTypeKeys = {

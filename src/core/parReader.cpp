@@ -1038,6 +1038,22 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
   par->extract("general", "cubaturepolynomialorder", cubN);
   options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
 
+  // udf file
+  {
+    std::string udfFile;
+    if(par->extract("general", "udf", udfFile)){
+      options.setArgs("UDF FILE", udfFile);
+    }
+  }
+
+  // oudf file
+  {
+    std::string oudfFile;
+    if(par->extract("general", "oudf", oudfFile)){
+      options.setArgs("UDF OKL FILE", oudfFile);
+    }
+  }
+
   string dtString;
   if (par->extract("general", "dt", dtString)){
     const std::vector<std::string> validValues = {
