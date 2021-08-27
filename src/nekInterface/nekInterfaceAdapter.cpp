@@ -506,7 +506,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np, setupAide&
   char usrFileCache[BUFSIZ];
   {
     char usrFile[BUFSIZ];
-    const std::string usrFileStr = options.getArgs("USR FILE");
+    const std::string usrFileStr = options.getArgs("NEK USR FILE");
     strcpy(usrFile, usrFileStr.c_str());
     if(!fileExists(usrFile) || isFileEmpty(usrFile))
       sprintf(usrFile, "%s/core/zero.usr", nek5000_dir);
