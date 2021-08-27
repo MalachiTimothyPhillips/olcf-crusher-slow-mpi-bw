@@ -1,4 +1,3 @@
-#include <casedata.h>
 // Boundary conditions
 void velocityDirichletConditions(bcData *bc)
 {
