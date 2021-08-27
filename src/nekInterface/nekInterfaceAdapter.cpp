@@ -36,7 +36,7 @@ static void (* nek_outpost_ptr)(double* v1, double* v2, double* v3, double* vp,
                                 double* vt, char* name, int);
 static void (* nek_uf_ptr)(double*, double*, double*);
 static int (* nek_lglel_ptr)(int*);
-static void (* nek_bootstrap_ptr)(int*, char*, char*, int, int);
+static void (* nek_bootstrap_ptr)(int*, char*, char*, char*, int, int, int);
 static void (* nek_setup_ptr)(int*, int*, int*, int*, double*, double*, double*, double*);
 static void (* nek_ifoutfld_ptr)(int*);
 static void (* nek_setics_ptr)(void);
@@ -267,7 +267,7 @@ void set_function_handles(const char* session_in,int verbose)
   nek_scptr_ptr = (void (*)(int*, void*))dlsym(handle, fname("nekf_scptr"));
   check_error(dlerror());
   nek_bootstrap_ptr =
-    (void (*)(int*, char*, char*, int, int))dlsym(handle, fname("nekf_bootstrap"));
+    (void (*)(int*, char*, char*, char*, int, int, int))dlsym(handle, fname("nekf_bootstrap"));
   check_error(dlerror());
   nek_setup_ptr =
     (void (*)(int*, int*, int*, int*, double*, double*, double*, double*))dlsym(handle, fname("nekf_setup"));
@@ -471,8 +471,7 @@ int buildNekInterface(const char* casename, int ldimt, int N, int np, setupAide&
   const char* nekInterface_dir = getenv("NEKRS_NEKINTERFACE_DIR");
   const char* nek5000_dir = getenv("NEKRS_NEK5000_DIR");
 
-  std::string meshFile;
-  options.getArgs("MESH FILE", meshFile);
+  const std::string meshFile = options.getArgs("MESH FILE");
 
   // create SIZE
   strcpy(buf, meshFile.c_str());
@@ -562,6 +561,9 @@ void bootstrap(MPI_Comm c, setupAide &options_in)
   string casename;
   options->getArgs("CASENAME", casename);
 
+  string meshFile;
+  options->getArgs("MESH FILE", meshFile);
+
   char buf[FILENAME_MAX];
   getcwd(buf, sizeof(buf));
   string cwd;
@@ -589,7 +591,9 @@ void bootstrap(MPI_Comm c, setupAide &options_in)
     }
     set_function_handles(casename.c_str(), 0);
     (*nek_bootstrap_ptr)(&nek_comm, (char*)cwd.c_str(), (char*)casename.c_str(),
-                         cwd.length(), casename.length());
+                         (char*)meshFile.c_str(),
+                         cwd.length(), casename.length(),
+                         meshFile.length());
   }
 }
 
