@@ -98,6 +98,7 @@ static std::vector<std::string> commonKeys = {
 
 static std::vector<std::string> meshKeys = {
   {"partitioner"},
+  {"file"},
 };
 
 static std::vector<std::string> velocityKeys = {

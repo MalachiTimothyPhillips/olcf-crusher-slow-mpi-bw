@@ -464,14 +464,18 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
 
 int buildNekInterface(const char* casename, int ldimt, int N, int np, setupAide& options)
 {
-  char buf[BUFSIZ], cache_dir[BUFSIZ];
+  char buf[BUFSIZ];
+  char cache_dir[BUFSIZ];
   sprintf(cache_dir,"%s/nek5000",getenv("NEKRS_CACHE_DIR"));
   mkdir(cache_dir, S_IRWXU); 
   const char* nekInterface_dir = getenv("NEKRS_NEKINTERFACE_DIR");
   const char* nek5000_dir = getenv("NEKRS_NEK5000_DIR");
 
+  std::string meshFile;
+  options.getArgs("MESH FILE", meshFile);
+
   // create SIZE
-  sprintf(buf, "%s.re2", casename);
+  strcpy(buf, meshFile.c_str());
   FILE *fp = fopen(buf, "r");
   if (!fp) {
     printf("\nERROR: Cannot find %s!\n", buf);

@@ -871,6 +871,7 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("CASENAME", casename);
   options.setArgs("UDF OKL FILE", casename + ".oudf");
   options.setArgs("UDF FILE", casename + ".udf");
+  options.setArgs("MESH FILE", casename + ".re2");
 
   // options.setArgs("THREAD MODEL", "SERIAL");
   options.setArgs("DEVICE NUMBER", "LOCAL-RANK");
@@ -1051,6 +1052,14 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     std::string oudfFile;
     if(par->extract("general", "oudf", oudfFile)){
       options.setArgs("UDF OKL FILE", oudfFile);
+    }
+  }
+
+  // mesh file
+  {
+    std::string meshFile;
+    if(par->extract("mesh", "file", meshFile)){
+      options.setArgs("MESH FILE", meshFile);
     }
   }
 
