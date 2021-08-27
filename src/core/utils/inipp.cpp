@@ -319,6 +319,7 @@ int Ini::validateKeys() const
 {
   int err = 0;
   for (auto const & sec : sections) {
+    if(sec.first.find("caseparams") != std::string::npos) continue;
     const auto& validKeys = getValidKeys(sec.first);
     for (auto const & val : sec.second) {
       if (std::find(validKeys.begin(), validKeys.end(), val.first) == validKeys.end()) {
