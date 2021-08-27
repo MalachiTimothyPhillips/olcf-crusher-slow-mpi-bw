@@ -86,6 +86,10 @@ static std::vector<std::string> commonKeys = {
   {"filterModes"},
   {"filterCutoffRatio"},
 
+  // deprecated no-op extrapolation param
+  {"extrapolation"},
+
+
   // deprecated projection params
   {"residualProj"},
   {"residualProjection"},
@@ -138,6 +142,9 @@ static std::vector<std::string> deprecatedKeys = {
   {"filterWeight"},
   {"filterModes"},
   {"filterCutoffRatio"},
+
+  // deprecated no-op extrapolation param
+  {"extrapolation"},
 
   // deprecated projection params
   {"residualProj"},
