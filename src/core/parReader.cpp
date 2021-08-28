@@ -970,10 +970,6 @@ void setDefaultSettings(setupAide &options, string casename, int rank) {
   options.setArgs("ENABLE OVERLAP", "TRUE");
 
   options.setArgs("VARIABLE DT", "FALSE");
-  options.setArgs("TARGET CFL", "1.0");
-
-  const double bigNumber = std::numeric_limits<double>::max();
-  options.setArgs("MAX DT", to_string_f(bigNumber));
 }
 
 setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
@@ -1107,6 +1103,20 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     }
   }
 
+  bool variableDt;
+  if(par->extract("general", "variabledt", variableDt))
+  {
+    if(variableDt){
+      options.setArgs("VARIABLE DT", "TRUE");
+      options.setArgs("TARGET CFL", "0.5");
+      const double bigNumber = std::numeric_limits<double>::max();
+      options.setArgs("MAX DT", to_string_f(bigNumber));
+    }
+    else{
+      options.setArgs("VARIABLE DT", "FALSE");
+    }
+  }
+
   string dtString;
   if (par->extract("general", "dt", dtString)){
     const std::vector<std::string> validValues = {
@@ -1118,6 +1128,9 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     {
       bool userSuppliesInitialDt = false;
       options.setArgs("VARIABLE DT", "TRUE");
+      options.setArgs("TARGET CFL", "0.5");
+      const double bigNumber = std::numeric_limits<double>::max();
+      options.setArgs("MAX DT", to_string_f(bigNumber));
       std::vector<string> entries = serializeString(dtString, '+');
       for(string entry : entries)
       {
@@ -1252,17 +1265,6 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     int NSubCycles = 0;
     if (par->extract("general", "subcyclingsteps", NSubCycles)){
       options.setArgs("SUBCYCLING STEPS", std::to_string(NSubCycles));
-    }
-  }
-
-  bool variableDt;
-  if(par->extract("general", "variabledt", variableDt))
-  {
-    if(variableDt){
-      options.setArgs("VARIABLE DT", "TRUE");
-    }
-    else{
-      options.setArgs("VARIABLE DT", "FALSE");
     }
   }
 
