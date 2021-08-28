@@ -41,10 +41,13 @@ void checkValidity(
     valid |= (entry.find(v) != std::string::npos);
   }
   if(!valid){
-    if(rank == 0){
-      printf("Value %s is not recognized!\n", entry.c_str());
+    std::ostringstream ss;
+    ss << "Value " << entry << " is not recognized!\n";
+    ss << "Valid values are:\n";
+    for(auto && v : validValues){
+      ss << "\t" << v << "\n";
     }
-    ABORT(1);
+    exit(ss.str(),1);
   }
 }
 
