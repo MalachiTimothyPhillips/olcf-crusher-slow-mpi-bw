@@ -1103,20 +1103,6 @@ setupAide parRead(void *ppar, string setupFile, MPI_Comm comm) {
     }
   }
 
-  bool variableDt;
-  if(par->extract("general", "variabledt", variableDt))
-  {
-    if(variableDt){
-      options.setArgs("VARIABLE DT", "TRUE");
-      options.setArgs("TARGET CFL", "0.5");
-      const double bigNumber = std::numeric_limits<double>::max();
-      options.setArgs("MAX DT", to_string_f(bigNumber));
-    }
-    else{
-      options.setArgs("VARIABLE DT", "FALSE");
-    }
-  }
-
   string dtString;
   if (par->extract("general", "dt", dtString)){
     const std::vector<std::string> validValues = {
