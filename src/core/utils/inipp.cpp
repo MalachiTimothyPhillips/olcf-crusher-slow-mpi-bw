@@ -60,6 +60,10 @@ static std::vector<std::string> generalKeys = {
   {"verbose"},
   {"variableDT"},
 
+  {"oudf"},
+  {"udf"},
+  {"usr"},
+
 };
 
 static std::vector<std::string> problemTypeKeys = {
@@ -86,6 +90,10 @@ static std::vector<std::string> commonKeys = {
   {"filterModes"},
   {"filterCutoffRatio"},
 
+  // deprecated no-op extrapolation param
+  {"extrapolation"},
+
+
   // deprecated projection params
   {"residualProj"},
   {"residualProjection"},
@@ -95,6 +103,8 @@ static std::vector<std::string> commonKeys = {
 
 static std::vector<std::string> meshKeys = {
   {"partitioner"},
+  {"file"},
+  {"connectivitytol"},
 };
 
 static std::vector<std::string> velocityKeys = {
@@ -138,6 +148,9 @@ static std::vector<std::string> deprecatedKeys = {
   {"filterWeight"},
   {"filterModes"},
   {"filterCutoffRatio"},
+
+  // deprecated no-op extrapolation param
+  {"extrapolation"},
 
   // deprecated projection params
   {"residualProj"},
@@ -319,11 +332,12 @@ int Ini::validateKeys() const
 {
   int err = 0;
   for (auto const & sec : sections) {
+    if(sec.first.find("caseparams") != std::string::npos) continue;
     const auto& validKeys = getValidKeys(sec.first);
     for (auto const & val : sec.second) {
       if (std::find(validKeys.begin(), validKeys.end(), val.first) == validKeys.end()) {
         if (std::find(commonKeys.begin(), commonKeys.end(), val.first) == commonKeys.end()) {
-          std::cout << "par-file: " << sec.first << "." << val.first << " unknown!\n";
+          std::cout << "par-file: " << sec.first << "::" << val.first << " unknown!\n";
           err++;
         }
       }
@@ -337,7 +351,7 @@ void Ini::printDeprecation() const
   for (auto const & sec : sections) {
     for (auto const & val : sec.second) {
       if (std::find(deprecatedKeys.begin(), deprecatedKeys.end(), val.first) != deprecatedKeys.end()) {
-          std::cout << "par-file: " << sec.first << "." << val.first << " deprecated!\n";
+          std::cout << "par-file: " << sec.first << "::" << val.first << " deprecated!\n";
       }
     }
   }

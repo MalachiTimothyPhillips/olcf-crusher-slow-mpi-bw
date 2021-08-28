@@ -133,7 +133,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekf_bootstrap(comm_in,path_in,session_in)
+      subroutine nekf_bootstrap(comm_in,path_in,session_in,mesh_in)
 
       include 'SIZE'
       include 'TOTAL'
@@ -142,12 +142,16 @@ c-----------------------------------------------------------------------
 
       integer comm_in
       character session_in*(*),path_in*(*)
+      character mesh_in*(*)
 
       real rtest
       integer itest
       integer*8 itest8
       character ctest
       logical ltest 
+
+      character*1  re2fle1(132)
+      equivalence  (RE2FLE,re2fle1)
 
       ! set word size for REAL
       wdsize = sizeof(rtest)
@@ -168,11 +172,16 @@ c-----------------------------------------------------------------------
       call initdat
       call files
 
+      ls = ltrunc(PATH,132)
+      call chcopy(re2fle1(ls+1),mesh_in,len(mesh_in))
+      ls = ltrunc(PATH,132) + len(mesh_in)
+      call blank(re2fle1(ls+1),132-ls)
+
       return
       end
 c-----------------------------------------------------------------------
       subroutine nekf_setup(ifflow_in,
-     $                      npscal_in, p32, meshp_in,
+     $                      npscal_in, p32, mpart, contol,
      $                      rho, mue, rhoCp, lambda) 
 
       include 'SIZE'
@@ -180,8 +189,8 @@ c-----------------------------------------------------------------------
       include 'DOMAIN'
       include 'NEKINTF'
 
-      integer iftmsh_in, ifflow_in, meshp_in, p32
-      real rho, mue, rhoCp, lambda
+      integer iftmsh_in, ifflow_in, mpart, p32
+      real rho, mue, rhoCp, lambda, contol
 
       common /rdump/ ntdump
 
@@ -201,7 +210,9 @@ c-----------------------------------------------------------------------
       param(27) = 1  ! torder 1 to save mem
       param(32) = p32 ! number of BC fields read from re2
       param(99) = -1 ! no dealiasing to save mem
-      meshPartitioner = meshp_in 
+
+      meshPartitioner = mpart 
+      connectivityTol = contol
 
       ifflow = .true.
       if(ifflow_in.eq.0) ifflow = .false.

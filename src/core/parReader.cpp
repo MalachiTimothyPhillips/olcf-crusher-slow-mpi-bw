@@ -286,15 +286,33 @@ std::vector<int> checkForIntInInputs(const std::vector<std::string> &inputs) {
 
 void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
                    std::string parScope) {
+  std::string p_smoother;
+  if (!par->extract(parScope, "smoothertype", p_smoother)) return;
 
   std::string parSection = parScope;
   UPPER(parSection);
   std::string p_preconditioner;
   par->extract(parScope, "preconditioner", p_preconditioner);
 
-  std::string p_smoother;
-  if (par->extract(parScope, "smoothertype", p_smoother) &&
-      options.compareArgs(parSection + " PRECONDITIONER", "MULTIGRID")) {
+  const std::vector<std::string> validValues = {
+    {"asm"},
+    {"ras"},
+    {"cheby"},
+    {"jac"},
+    {"degree"},
+    {"mineigenvalueboundfactor"},
+    {"maxeigenvalueboundfactor"},
+  };
+
+  {
+    const std::vector<std::string> list = serializeString(p_smoother, '+');
+    for(const std::string s : list)
+    {
+      checkValidity(rank, validValues, s);
+    }
+  }
+
+  if (options.compareArgs(parSection + " PRECONDITIONER", "MULTIGRID")) {
     std::vector<std::string> list;
     list = serializeString(p_smoother, '+');
 
@@ -672,6 +690,24 @@ void parseRegularization(const int rank, setupAide &options,
 
   std::string regularization;
   if(par->extract(parSection, "regularization", regularization)){
+    const std::vector<std::string> validValues = {
+      {"hpfrt"},
+      {"none"},
+      {"avm"},
+      {"c0"},
+      {"highestmodaldecay"},
+      {"hpfresidual"},
+      {"nmodes"},
+      {"cutoffratio"},
+      {"scalingcoeff"},
+      {"vismaxcoeff"},
+      {"rampconstant"},
+    };
+    const std::vector<std::string> list = serializeString(regularization, '+');
+    for(const std::string s : list)
+    {
+      checkValidity(rank, validValues, s);
+    }
     if(regularization.find("none") != std::string::npos) return;
     // new command syntax
     std::string filtering;
@@ -680,7 +716,6 @@ void parseRegularization(const int rank, setupAide &options,
       exit("ERROR: cannot specify both regularization and filtering!\n",
            EXIT_FAILURE);
     }
-    const std::vector<std::string> list = serializeString(regularization, '+');
     const bool usesAVM =
         std::find(list.begin(), list.end(), "avm") != list.end();
     const bool usesHPFRT =
@@ -871,6 +906,8 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("CASENAME", casename);
   options.setArgs("UDF OKL FILE", casename + ".oudf");
   options.setArgs("UDF FILE", casename + ".udf");
+  options.setArgs("NEK USR FILE", casename + ".usr");
+  options.setArgs("MESH FILE", casename + ".re2");
 
   // options.setArgs("THREAD MODEL", "SERIAL");
   options.setArgs("DEVICE NUMBER", "LOCAL-RANK");
@@ -1037,6 +1074,38 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
   int cubN = round(3. / 2 * (N + 1) - 1) - 1;
   par->extract("general", "cubaturepolynomialorder", cubN);
   options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
+
+  // udf file
+  {
+    std::string udfFile;
+    if(par->extract("general", "udf", udfFile)){
+      options.setArgs("UDF FILE", udfFile);
+    }
+  }
+
+  // usr file
+  {
+    std::string usrFile;
+    if(par->extract("general", "usr", usrFile)){
+      options.setArgs("NEK USR FILE", usrFile);
+    }
+  }
+
+  // oudf file
+  {
+    std::string oudfFile;
+    if(par->extract("general", "oudf", oudfFile)){
+      options.setArgs("UDF OKL FILE", oudfFile);
+    }
+  }
+
+  // mesh file
+  {
+    std::string meshFile;
+    if(par->extract("mesh", "file", meshFile)){
+      options.setArgs("MESH FILE", meshFile);
+    }
+  }
 
   std::string dtString;
   if (par->extract("general", "dt", dtString)){
@@ -1241,6 +1310,11 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       ABORT(1);
     }
     options.setArgs("MESH PARTITIONER", meshPartitioner);
+  }
+
+  std::string meshConTol;
+  if (par->extract("mesh", "connectivitytol", meshConTol)){
+    options.setArgs("MESH CONNECTIVITY TOL", meshConTol);
   }
 
   std::string meshSolver;
