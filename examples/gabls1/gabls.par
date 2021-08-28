@@ -31,7 +31,7 @@ residualTol = 1e-06
 rhoCp = 1.0
 conductivity = -50e3
 
-[CASEPARAMS]
+[CASEDATA]
 #/* latitude north */
 NLAT = 73.0
 #/* geostrophic wind speed [m/s] */

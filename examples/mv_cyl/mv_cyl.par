@@ -25,7 +25,7 @@ residualTol = 1e-12
 boundaryTypeMap = zeroGradient,zeroGradient,zeroGradient
 residualTol = 1e-12
 
-[CASEPARAMS]
+[CASEDATA]
 XLEN = 1.0
 YLEN = 1.5
 ZLEN = 0.1

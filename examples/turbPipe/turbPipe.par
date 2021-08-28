@@ -40,7 +40,7 @@ residualTol = 1e-06
 #strongThreshold = 0.25
 #nonGalerkinTol = 0.1
 #
-[CASEPARAMS]
+[CASEDATA]
 #/* diameters  */
 ZLENGTH = 20.0
 NSLABS  = 60

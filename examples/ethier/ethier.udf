@@ -61,13 +61,13 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
   options.getArgs("CI-MODE", ciMode);
   if (ciMode) ciSetup(comm, options);
-  platform->par->extract("caseparams", "p_u0", P_U0);
-  platform->par->extract("caseparams", "p_v0", P_V0);
-  platform->par->extract("caseparams", "p_w0", P_W0);
-  platform->par->extract("caseparams", "p_a0", P_A0);
-  platform->par->extract("caseparams", "p_d0", P_D0);
-  platform->par->extract("caseparams", "p_omega", P_OMEGA);
-  platform->par->extract("caseparams", "p_amp", P_AMP);
+  platform->par->extract("casedata", "p_u0", P_U0);
+  platform->par->extract("casedata", "p_v0", P_V0);
+  platform->par->extract("casedata", "p_w0", P_W0);
+  platform->par->extract("casedata", "p_a0", P_A0);
+  platform->par->extract("casedata", "p_d0", P_D0);
+  platform->par->extract("casedata", "p_omega", P_OMEGA);
+  platform->par->extract("casedata", "p_amp", P_AMP);
 
   if (platform->options.compareArgs("BUILD ONLY", "FALSE")) {
     double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");

@@ -69,20 +69,20 @@ void UDF_LoadKernels(nrs_t *nrs)
 }
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
-  platform->par->extract("caseparams","nlat",NLAT);
-  platform->par->extract("caseparams","uref",UREF);
-  platform->par->extract("caseparams","lref",LREF);
-  platform->par->extract("caseparams","tref",TREF);
-  platform->par->extract("caseparams","ts0",TS0);
-  platform->par->extract("caseparams","scr",SCR);
-  platform->par->extract("caseparams","ilstrength",ILSTRENGTH);
-  platform->par->extract("caseparams","number_elements_x",NUMBER_ELEMENTS_X);
-  platform->par->extract("caseparams","number_elements_y",NUMBER_ELEMENTS_Y);
-  platform->par->extract("caseparams","number_elements_z",NUMBER_ELEMENTS_Z);
-  platform->par->extract("caseparams","xlen",XLEN);
-  platform->par->extract("caseparams","ylen",YLEN);
-  platform->par->extract("caseparams","zlen",ZLEN);
-  platform->par->extract("caseparams","betam",BETAM);
+  platform->par->extract("casedata","nlat",NLAT);
+  platform->par->extract("casedata","uref",UREF);
+  platform->par->extract("casedata","lref",LREF);
+  platform->par->extract("casedata","tref",TREF);
+  platform->par->extract("casedata","ts0",TS0);
+  platform->par->extract("casedata","scr",SCR);
+  platform->par->extract("casedata","ilstrength",ILSTRENGTH);
+  platform->par->extract("casedata","number_elements_x",NUMBER_ELEMENTS_X);
+  platform->par->extract("casedata","number_elements_y",NUMBER_ELEMENTS_Y);
+  platform->par->extract("casedata","number_elements_z",NUMBER_ELEMENTS_Z);
+  platform->par->extract("casedata","xlen",XLEN);
+  platform->par->extract("casedata","ylen",YLEN);
+  platform->par->extract("casedata","zlen",ZLEN);
+  platform->par->extract("casedata","betam",BETAM);
 
   if (platform->options.compareArgs("BUILD ONLY", "FALSE")) {
     double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");
