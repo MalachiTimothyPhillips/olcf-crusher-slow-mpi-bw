@@ -7,12 +7,6 @@
 #include "nekInterfaceAdapter.hpp"
 #include "parReader.hpp"
 
-// MTP
-// These are provided only for backward-compatibility of user cases.
-using std::cout;
-using std::endl;
-using std::string;
-
 extern "C" {
 void UDF_Setup0(MPI_Comm comm, setupAide &options);
 void UDF_Setup(nrs_t* nrs);
