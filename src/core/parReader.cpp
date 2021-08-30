@@ -1385,6 +1385,8 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     if (par->extract("general", "numsteps", numSteps)) {
       options.setArgs("NUMBER TIMESTEPS", std::to_string(numSteps));
       endTime = -1;
+    } else {
+      append_error("Cannot find mandatory parameter GENERAL::numSteps!");
     }
     options.setArgs("NUMBER TIMESTEPS", std::to_string(numSteps));
   } else if (stopAt == "endtime") {
