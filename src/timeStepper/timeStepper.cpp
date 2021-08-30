@@ -10,7 +10,7 @@
 #include "nrs.hpp"
 #include "timeStepper.hpp"
 #include "tombo.hpp"
-#include "udf.hpp"
+#include "udf_impl.hpp"
 
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);

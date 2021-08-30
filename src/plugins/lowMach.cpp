@@ -4,7 +4,7 @@
 
 #include "nrs.hpp"
 #include "nekInterfaceAdapter.hpp"
-#include "udf.hpp"
+#include "udf_impl.hpp"
 
 #include "lowMach.hpp"
 #include "linAlg.hpp"

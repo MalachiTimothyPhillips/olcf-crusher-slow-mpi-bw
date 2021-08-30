@@ -222,7 +222,7 @@ set(SRC
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
-    src/udf/udf.cpp
+    src/udf/udf_impl.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
