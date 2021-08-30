@@ -1861,6 +1861,24 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     options.setArgs("SCALAR DISCRETIZATION", "CONTINUOUS");
   }
 
+  // check if dt is provided if numSteps or endTime > 0
+  {
+    int numSteps;
+    options.getArgs("NUMBER TIMESTEPS", numSteps);
+
+    double endTime;
+    options.getArgs("END TIME", numSteps);
+
+    if(numSteps > 0 || endTime > 0){
+      if(options.compareArgs("VARIABLE DT", "FALSE"))
+      {
+        const std::string dtString = options.getArgs("DT");
+        if(dtString.empty())
+          append_error("ERROR: dt not defined!\n");
+      }
+    }
+  }
+
   // error checking
   {
     const std::string errorMessage = errorLogger.str();
