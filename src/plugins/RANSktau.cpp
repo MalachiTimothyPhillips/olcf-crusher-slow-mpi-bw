@@ -45,12 +45,9 @@ static dfloat coeff[] = {
 };
 }
 
-void RANSktau::buildKernel(nrs_t* nrs)
+void RANSktau::buildKernel(occa::properties kernelInfo)
 {
-  mesh_t* mesh = nrs->meshV;
-  
 
-  occa::properties kernelInfo = *(nrs->kernelInfo);
   kernelInfo["defines/p_sigma_k"]       = coeff[0];
   kernelInfo["defines/p_sigma_tau"]     = coeff[1];
   kernelInfo["defines/p_alpinf_str"]    = coeff[2];
@@ -79,7 +76,10 @@ void RANSktau::buildKernel(nrs_t* nrs)
       mueKernel        = platform->device.buildKernel(fileName, "mue", kernelInfo);
   }
 
-  if(nrs->Nscalar < 2) {
+  int Nscalar;
+  platform->options.getArgs("NUMBER OF SCALARS", Nscalar);
+
+  if(Nscalar < 2) {
     if(platform->comm.mpiRank == 0) std::cout << "RANSktau: Nscalar needs to be >= 2!\n";
     ABORT(1);
   }

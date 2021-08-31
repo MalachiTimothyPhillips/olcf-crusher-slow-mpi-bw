@@ -31,15 +31,15 @@ static void dryRun(setupAide &options, int npTarget);
 void printHeader()
 {
   std::cout << R"(                 __    ____  _____)" << std::endl
-       << R"(   ____   ___   / /__ / __ \/ ___/)" << std::endl
-       << R"(  / __ \ / _ \ / //_// /_/ /\__ \ )" << std::endl
-       << R"( / / / //  __// ,<  / _, _/___/ / )" << std::endl
-       << R"(/_/ /_/ \___//_/|_|/_/ |_|/____/  )"
-       << "v" << NEKRS_VERSION << "." << NEKRS_SUBVERSION 
-       << " (" << GITCOMMITHASH << ")" << std::endl
-       << std::endl
-       << "COPYRIGHT (c) 2019-2021 UCHICAGO ARGONNE, LLC" << std::endl
-       << std::endl;
+            << R"(   ____   ___   / /__ / __ \/ ___/)" << std::endl
+            << R"(  / __ \ / _ \ / //_// /_/ /\__ \ )" << std::endl
+            << R"( / / / //  __// ,<  / _, _/___/ / )" << std::endl
+            << R"(/_/ /_/ \___//_/|_|/_/ |_|/____/  )"
+            << "v" << NEKRS_VERSION << "." << NEKRS_SUBVERSION 
+            << " (" << GITCOMMITHASH << ")" << std::endl
+            << std::endl
+            << "COPYRIGHT (c) 2019-2021 UCHICAGO ARGONNE, LLC" << std::endl
+            << std::endl;
 }
 
 namespace nekrs
@@ -114,8 +114,6 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
 
   platform->timer.tic("setup", 1);
 
-  platform->linAlg = linAlg_t::getInstance();
-
   // jit compile udf
   std::string udfFile;
   options.getArgs("UDF FILE", udfFile);
@@ -134,6 +132,11 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
   nek::bootstrap(comm, options);
 
   if(udf.setup0) udf.setup0(comm, options);
+
+
+  precompileKernels();
+
+  platform->linAlg = linAlg_t::getInstance();
 
   nrsSetup(comm, options, nrs);
 
@@ -392,8 +395,6 @@ static void dryRun(setupAide &options, int npTarget)
   options.setArgs("NP TARGET", std::to_string(npTarget));
   options.setArgs("BUILD ONLY", "TRUE");
 
-  platform->linAlg = linAlg_t::getInstance();
-
   // jit compile udf
   std::string udfFile;
   options.getArgs("UDF FILE", udfFile);
@@ -413,7 +414,10 @@ static void dryRun(setupAide &options, int npTarget)
 
   // init solver
   platform_t* platform = platform_t::getInstance();
-  nrsSetup(comm, options, nrs);
+
+  precompileKernels();
+
+  platform->linAlg = linAlg_t::getInstance();
 
   if(rank == 0) {
     std::string cache_dir;

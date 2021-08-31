@@ -97,18 +97,20 @@ void udfLoad(void)
   *(void**)(&udf.executeStep) = udfLoadFunction("UDF_ExecuteStep",0);
 }
 
-occa::kernel udfBuildKernel(nrs_t* nrs, const char* function)
+occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
 {
-  int rank;
-  mesh_t* mesh = nrs->meshV;
-  
-  MPI_Comm_rank(platform->comm.mpiComm, &rank);
-
   std::string install_dir;
-  occa::properties kernelInfo = *nrs->kernelInfo;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string bcDataFile = install_dir + "/include/core/bcData.h";
   kernelInfo["includes"] += bcDataFile.c_str();
+
+  // provide some common kernel args
+  int N;
+  platform->options.getArgs("POLYNOMIAL DEGREE", N);
+  const int Nq = N+1;
+  const int Np = Nq * Nq * Nq;
+  kernelInfo["defines/p_Nq"] = Nq;
+  kernelInfo["dfines/p_Np"] = Np;
 
   std::string oudf;
   platform->options.getArgs("DATA FILE", oudf);

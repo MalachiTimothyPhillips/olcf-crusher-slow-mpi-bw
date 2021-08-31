@@ -39,16 +39,12 @@ static dfloat wbar;
 static int Nblock;
 }
 
-void velRecycling::buildKernel(nrs_t* nrs)
+void velRecycling::buildKernel(occa::properties kernelInfo)
 {
-  mesh_t* mesh = nrs->meshV;
-  
 
   std::string fileName;
-  int rank = platform->comm.mpiRank;
   fileName.assign(getenv("NEKRS_INSTALL_DIR"));
   fileName += "/okl/plugins/velRecycling.okl";
-  occa::properties& kernelInfo = *nrs->kernelInfo;
   {
       setBCVectorValueKernel =  platform->device.buildKernel(fileName,
                                                          "setBCVectorValue",

@@ -10,22 +10,30 @@ mesh_t *createMeshV(MPI_Comm comm,
                     mesh_t* meshT,
                     occa::properties& kernelInfo);
 
-occa::properties populateMeshProperties(mesh_t* mesh)
+occa::properties populateMeshProperties(int N)
 {
   occa::properties meshProperties = platform->kernelInfo;
+  const int Nq = N+1;
+  const int Np = Nq * Nq * Nq;
+  const int Nfp = Nq * Nq;
+  constexpr int Nfaces {6};
+
+  constexpr int Nvgeo {12};
+  constexpr int Nggeo {7};
+  constexpr int Nsgeo {17};
 
   meshProperties["defines/" "p_dim"] = 3;
-  meshProperties["defines/" "p_Nfields"] = mesh->Nfields;
-  meshProperties["defines/" "p_N"] = mesh->N;
-  meshProperties["defines/" "p_Nq"] = mesh->N + 1;
-  meshProperties["defines/" "p_Np"] = mesh->Np;
-  meshProperties["defines/" "p_Nfp"] = mesh->Nfp;
-  meshProperties["defines/" "p_Nfaces"] = mesh->Nfaces;
-  meshProperties["defines/" "p_NfacesNfp"] = mesh->Nfp * mesh->Nfaces;
+  meshProperties["defines/" "p_Nfields"] = 1;
+  meshProperties["defines/" "p_N"] = N;
+  meshProperties["defines/" "p_Nq"] = Nq;
+  meshProperties["defines/" "p_Np"] = Np;
+  meshProperties["defines/" "p_Nfp"] = Nfp;
+  meshProperties["defines/" "p_Nfaces"] = Nfaces;
+  meshProperties["defines/" "p_NfacesNfp"] = Nfp * Nfaces;
 
-  meshProperties["defines/" "p_Nvgeo"] = mesh->Nvgeo;
-  meshProperties["defines/" "p_Nsgeo"] = mesh->Nsgeo;
-  meshProperties["defines/" "p_Nggeo"] = mesh->Nggeo;
+  meshProperties["defines/" "p_Nvgeo"] = Nvgeo;
+  meshProperties["defines/" "p_Nsgeo"] = Nsgeo;
+  meshProperties["defines/" "p_Nggeo"] = Nggeo;
 
   meshProperties["defines/" "p_NXID"] = NXID;
   meshProperties["defines/" "p_NYID"] = NYID;
@@ -220,7 +228,7 @@ mesh_t *createMesh(MPI_Comm comm,
 
   mesh->Nlocal = mesh->Nelements * mesh->Np;
 
-  occa::properties meshKernelInfo = populateMeshProperties(mesh);
+  occa::properties meshKernelInfo = populateMeshProperties(mesh->N);
   loadKernels(mesh, meshKernelInfo);
 
   // set up halo exchange info for MPI (do before connect face nodes)
@@ -425,37 +433,15 @@ void meshVOccaSetup3D(mesh_t* mesh, occa::properties &kernelInfo)
 void loadKernels(mesh_t* mesh, occa::properties kernelInfo)
 {
   if(platform->options.compareArgs("MOVING MESH", "TRUE")){
-    std::string install_dir;
-    install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-    std::string oklpath = install_dir + "/okl/";
     {
-        std::string filename = oklpath + "mesh/velocityBCHex3D.okl";
         mesh->velocityDirichletKernel =
-          platform->device.buildKernel(filename,
-                                   "velocityDirichletBCHex3D",
-                                   kernelInfo);
-        occa::properties meshKernelInfo = kernelInfo;
-        meshKernelInfo["defines/" "p_cubNq"] = mesh->cubNq;
-        meshKernelInfo["defines/" "p_cubNp"] = mesh->cubNp;
-
-        filename = oklpath + "mesh/geometricFactorsHex3D.okl";
+          platform->kernels.load_kernel("velocityDirichletBCHex3D");
         mesh->geometricFactorsKernel =
-          platform->device.buildKernel(filename,
-                                   "geometricFactorsHex3D",
-                                   meshKernelInfo);
-        filename = oklpath + "mesh/surfaceGeometricFactorsHex3D.okl";
+          platform->kernels.load_kernel("geometricFactorsHex3D");
         mesh->surfaceGeometricFactorsKernel =
-          platform->device.buildKernel(filename,
-                                   "surfaceGeometricFactorsHex3D",
-                                   meshKernelInfo);
-
-        meshKernelInfo = kernelInfo;
-        meshKernelInfo["defines/" "p_nAB"] = mesh->nAB;
-        filename = oklpath + "core/nStagesSum.okl";
+          platform->kernels.load_kernel("surfaceGeometricFactorsHex3D");
         mesh->nStagesSumVectorKernel =
-          platform->device.buildKernel(filename,
-                                   "nStagesSumVector",
-                                   meshKernelInfo);
+          platform->kernels.load_kernel("nStagesSumVector");
     }
   }
 }
