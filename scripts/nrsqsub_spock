@@ -4,11 +4,12 @@
 : ${QUEUE:=""}
 : ${NEKRS_HOME:="$HOME/.local/nekrs"}
 : ${OCCA_CACHE_DIR:="$PWD/.cache/occa"}
+: ${BURST_BUFFER:=0}
 
 export NVME_HOME="/mnt/bb/$USER/"
 
 if [ $# -ne 3 ]; then
-  echo "usage: [PROJ_ID] [QUEUE] $0 <casename> <number of compute nodes> <hh:mm:ss>"
+  echo "usage: [PROJ_ID] [QUEUE] [BURST_BUFFER=1] $0 <casename> <number of compute nodes> <hh:mm:ss>"
   exit 0
 fi
 
@@ -114,8 +115,10 @@ echo "export ROMIO_HINTS=$ROMIO_HINTS" >>$SFILE
 echo "# precompile" >>$SFILE
 echo "date" >>$SFILE
 echo "srun -n 1 $bin --setup $1 --backend $backend --build-only $ntasks" >>$SFILE
-echo "srun -n $nodes cp -a $OCCA_CACHE_DIR/* $NVME_HOME" >>$SFILE
-echo "export OCCA_CACHE_DIR=$NVME_HOME" >>$SFILE
+if [ $BURST_BUFFER -eq 1 ]; then
+  echo "srun -n $nodes cp -a $OCCA_CACHE_DIR/* $NVME_HOME" >>$SFILE
+  echo "export OCCA_CACHE_DIR=$NVME_HOME" >>$SFILE
+fi
 
 echo "# actual run" >>$SFILE
 echo "date" >>$SFILE

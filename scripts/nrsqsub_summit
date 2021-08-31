@@ -8,12 +8,13 @@ if [ -z "$PROJ_ID" ]; then
 fi
 
 if [ $# -ne 3 ]; then
-  echo "usage: [PROJ_ID] [CPUONLY=1] $0 <casename> <number of compute nodes> <hh:mm>"
+  echo "usage: [PROJ_ID] [CPUONLY=1] [BURST_BUFFER=1] $0 <casename> <number of compute nodes> <hh:mm>"
   exit 0
 fi
 
 : ${NEKRS_HOME:="$HOME/.local/nekrs"}
 : ${OCCA_CACHE_DIR:="$PWD/.cache/occa"}
+: ${BURST_BUFFER:=0}
 NVME_HOME="/mnt/bb/$USER/"
 
 # temporary load xl modules for OLCF_XLC_ROOT
@@ -119,9 +120,17 @@ while true; do
 done
 
 if [ $CPUONLY -eq 1 ]; then
-  jsrun="jsrun -X 1 -n$nodes -r1 -a1 -c1 -g0 -b packed:1 -d packed cp -a $OCCA_CACHE_DIR/* $NVME_HOME; export OCCA_CACHE_DIR=$NVME_HOME; jsrun -X 1 -n$nn -a$cores_per_socket -c$cores_per_socket -g0 -b packed:1 -d packed $bin --setup $case --backend $backend" 
+  if [ $BURST_BUFFER -eq 1 ]; then
+    jsrun="jsrun -X 1 -n$nodes -r1 -a1 -c1 -g0 -b packed:1 -d packed cp -a $OCCA_CACHE_DIR/* $NVME_HOME; export OCCA_CACHE_DIR=$NVME_HOME; jsrun -X 1 -n$nn -a$cores_per_socket -c$cores_per_socket -g0 -b packed:1 -d packed $bin --setup $case --backend $backend" 
+  else
+    jsrun="jsrun -X 1 -n$nn -a$cores_per_socket -c$cores_per_socket -g0 -b packed:1 -d packed $bin --setup $case --backend $backend" 
+  fi
 else
-  jsrun="jsrun -X 1 -n$nodes -r1 -a1 -c1 -g0 -b packed:1 -d packed cp -a $OCCA_CACHE_DIR/* $NVME_HOME; export OCCA_CACHE_DIR=$NVME_HOME; jsrun --smpiargs='-gpu' -X 1 -n$nn -r$gpu_per_node -a1 -c2 -g1 -b rs -d packed $bin --setup $case --backend $backend --device-id 0" 
+  if [ $BURST_BUFFER -eq 1 ]; then
+    jsrun="jsrun -X 1 -n$nodes -r1 -a1 -c1 -g0 -b packed:1 -d packed cp -a $OCCA_CACHE_DIR/* $NVME_HOME; export OCCA_CACHE_DIR=$NVME_HOME; jsrun --smpiargs='-gpu' -X 1 -n$nn -r$gpu_per_node -a1 -c2 -g1 -b rs -d packed $bin --setup $case --backend $backend --device-id 0" 
+  else
+    jsrun="jsrun --smpiargs='-gpu' -X 1 -n$nn -r$gpu_per_node -a1 -c2 -g1 -b rs -d packed $bin --setup $case --backend $backend --device-id 0" 
+  fi
 fi
 
 cmd="bsub -nnodes $nodes -alloc_flags NVME -W $time -P $PROJ_ID -J nekRS_$case \"${jsrun}\""
