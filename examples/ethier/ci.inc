@@ -275,7 +275,7 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     {
       if(rank == 0)
         printf("Unable to test moving mesh in ethier. Please re-run the case with mv_ethier!\n");
-      PASS;
+      (FAIL);
     }
   }
 
