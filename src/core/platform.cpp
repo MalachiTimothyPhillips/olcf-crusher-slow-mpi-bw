@@ -4,6 +4,7 @@
 #include "nrs.hpp"
 #include "linAlg.hpp"
 #include "omp.h"
+#include <iostream>
 
 comm_t::comm_t(MPI_Comm _comm)
 {
@@ -53,7 +54,8 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _comm)
   warpSize(32), // CUDA specific warp size
   device(options, _comm),
   timer(_comm, device, 0),
-  comm(_comm)
+  comm(_comm),
+  kernels(*this)
 {
   kernelInfo["defines/" "p_NVec"] = 3;
   kernelInfo["defines/" "p_blockSize"] = BLOCKSIZE;
@@ -169,16 +171,7 @@ device_t::buildKernel(const std::string &filename,
                          const occa::properties &props,
                          MPI_Comm comm) const
 {
-  int rank;
-  MPI_Comm_rank(comm, &rank);
-  occa::kernel _kernel;
-  for (int r = 0; r < 2; r++) {
-    if ((r == 0 && rank == 0) || (r == 1 && rank > 0)) {
-      _kernel = occa::device::buildKernel(filename, kernelName, props);
-    }
-    MPI_Barrier(comm);
-  }
-  return _kernel;
+  return occa::device::buildKernel(filename, kernelName, props);
 }
 occa::memory
 device_t::mallocHost(const dlong Nbytes)
@@ -304,3 +297,79 @@ device_t::device_t(setupAide& options, MPI_Comm comm)
 
   _device_id = device_id;
 }
+
+void
+kernelRequestManager_t::add_kernel(const std::string& m_requestName,
+                const std::string& m_fileName,
+                const std::string& m_kernelName,
+                const occa::properties& m_props,
+                std::string m_suffix)
+{
+  this->add_kernel(kernelRequest_t{m_requestName, m_fileName, m_kernelName, m_props, m_suffix});
+}
+void
+kernelRequestManager_t::add_kernel(kernelRequest_t request)
+{
+  kernels.insert(request);
+}
+occa::kernel
+kernelRequestManager_t::load_kernel(const std::string& request) const
+{
+  // TODO: disable error checking once validated
+  bool issueError = 0;
+  issueError = !processed;
+  issueError = (requestToKernelMap.count(request) == 0);
+
+  int errorFlag = issueError ? 1 : 0;
+  MPI_Allreduce(MPI_IN_PLACE, &errorFlag, 1, MPI_INT, MPI_MAX, platformRef.comm.mpiComm);
+
+  if(errorFlag){
+    if(platformRef.comm.mpiRank == 0)
+    {
+      std::cout << "Error in kernelRequestManager_t::load_kernel. Failing now.\n";
+    }
+    ABORT(1);
+  }
+
+  return requestToKernelMap.at(request);
+}
+
+void
+kernelRequestManager_t::process()
+{
+  // TODO: implement better strategy
+  // currently: rank 0 does all compilation,
+  // then all other ranks may load
+
+  if(kernelsProcessed) return;
+  kernelsProcessed = true;
+
+  auto compileKernels = [&kernels](){
+    for(auto&& kernelRequest : kernels)
+    {
+      const std::string requestName = kernelRequest.requestName;
+      const std::string fileName = kernelRequest.fileName;
+      const std::string kernelName = kernelRequest.kernelName;
+      const std::string suffix = kernelRequest.suffix;
+      const occa::properties props = kernelRequest.props;
+      auto kernel = platformRef.device.buildKernel(fileName, kernelName, props, suffix);
+      requestToKernelMap[requestName] = kernel;
+    }
+  };
+
+  // compile on rank 0
+  if(platformRef.mpiComm.mpiRank == 0)
+  {
+    compileKernels();
+  }
+
+  auto loadKernels = compileKernels;
+
+  // load on other ranks
+  if(platformRef.mpiComm.mpiRank != 0)
+  {
+    loadKernels();
+  }
+}
+
+

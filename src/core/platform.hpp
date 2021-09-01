@@ -6,8 +6,11 @@
 #include "nrssys.hpp"
 #include "timer.hpp"
 #include "inipp.hpp"
+#include <set>
+#include <map>
 class setupAide;
 class linAlg_t;
+class kernelRequestManager_t;
 
 class deviceVector_t{
 public:
@@ -40,10 +43,79 @@ struct deviceMemPool_t{
   occa::memory o_ptr;
   long long bytesAllocated;
 };
+
+struct kernelRequest_t
+{
+  bool operator==(const kernelRequest_t& other) const
+  {
+    return requestName == other.requestName;
+  }
+  bool operator!=(const kernelRequest_t& other) const
+  {
+    return !(this == other);
+  }
+  kernelRequest_t(const std::string& m_requestName,
+                  const std::string& m_fileName,
+                  const std::string& m_kernelName,
+                  const occa::properties& m_props,
+                  std::string m_suffix = std::string())
+  :
+  requestName(m_requestName),
+  fileName(m_fileName),
+  kernelName(m_kernelName),
+  suffix(m_suffix),
+  props(m_props)
+  {}
+  const std::string requestName;
+  const std::string fileName;
+  const std::string kernelName;
+  const std::string suffix;
+  const occa::properties props;
+};
+
+class kernelRequestManager_t
+{
+  public:
+  kernelRequestManager_t(const platform_t& m_platform)
+  : kernelsProcessed(false),
+    platformRef(m_platform)
+  {}
+  void add_kernel(const std::string& m_requestName,
+                  const std::string& m_fileName,
+                  const std::string& m_kernelName,
+                  const occa::properties& m_props,
+                  std::string m_suffix = std::string());
+  void add_kernel(kernelRequest_t request);
+  
+  void process_kernels();
+
+  occa::kernel
+  load_kernel(const std::string& request) const;
+
+  bool
+  processed() const { return kernelsProcessed; }
+
+  private:
+  const platform_t& platformRef;
+  bool kernelsProcessed;
+  std::set<kernelRequest_t> kernels;
+  std::map<std::string, occa::kernel> requestToKernelMap;
+
+};
+
 class device_t : public occa::device{
   public:
     device_t(setupAide& options, MPI_Comm comm);
     MPI_Comm comm;
+    occa::memory malloc(const dlong Nbytes, const void* src = nullptr, const occa::properties& properties = occa::properties());
+    occa::memory malloc(const dlong Nbytes, const occa::properties& properties);
+    occa::memory malloc(const dlong Nwords, const dlong wordSize, occa::memory src);
+    occa::memory malloc(const dlong Nwords, const dlong wordSize);
+
+    occa::memory mallocHost(const dlong Nbytes);
+
+    int id() const { return _device_id; }
+  private:
     occa::kernel buildNativeKernel(const std::string &filename,
                              const std::string &kernelName,
                              const occa::properties &props) const;
@@ -55,15 +127,7 @@ class device_t : public occa::device{
                              const std::string &kernelName,
                              const occa::properties &props,
                              MPI_Comm comm) const;
-    occa::memory malloc(const dlong Nbytes, const void* src = nullptr, const occa::properties& properties = occa::properties());
-    occa::memory malloc(const dlong Nbytes, const occa::properties& properties);
-    occa::memory malloc(const dlong Nwords, const dlong wordSize, occa::memory src);
-    occa::memory malloc(const dlong Nwords, const dlong wordSize);
-
-    occa::memory mallocHost(const dlong Nbytes);
-
-    int id() const { return _device_id; }
-  private:
+    friend class kernelRequest_t;
     dlong bufferSize;
     int _device_id;
     void* _buffer;
@@ -84,6 +148,7 @@ struct platform_t{
   linAlg_t* linAlg;
   memPool_t mempool;
   deviceMemPool_t o_mempool;
+  kernelRequestManager_t kernels;
   void create_mempool(const dlong offset, const dlong fields);
   platform_t(setupAide& _options, MPI_Comm _comm);
   inipp::Ini *par;
