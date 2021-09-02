@@ -768,7 +768,7 @@ void compileMultiGridKernels(const std::string & section)
     const std::string oklpath = install_dir + "/okl/";
     std::string fileName = oklpath + "parAlmond/convertFP64ToFP32.okl";
     std::string kernelName = "convertFP64ToFP32";
-     platform->kernels.add_kernel(kernelName,
+    platform->kernels.add_kernel(kernelName,
       fileName,
       kernelName,
       platform->kernelInfo
@@ -776,7 +776,14 @@ void compileMultiGridKernels(const std::string & section)
 
     fileName = oklpath + "parAlmond/convertFP32ToFP64.okl";
     kernelName = "convertFP32ToFP64";
-     platform->kernels.add_kernel(kernelName,
+    platform->kernels.add_kernel(kernelName,
+      fileName,
+      kernelName,
+      platform->kernelInfo
+    );
+    fileName = oklpath + "parAlmond/vectorDotStar.okl";
+    kernelName = "vectorDotStar2";
+    platform->kernels.add_kernel(kernelName,
       fileName,
       kernelName,
       platform->kernelInfo

@@ -83,6 +83,9 @@ void coarseSolver::setup(
 
     kernelName = "convertFP32ToFP64";
     convertFP32ToFP64Kernel = platform->kernels.load_kernel(kernelName);
+
+    kernelName = "vectorDotStar2";
+    vectorDotStarKernel2 = platform->kernels.load_kernel(kernelName);
   }
 
 
