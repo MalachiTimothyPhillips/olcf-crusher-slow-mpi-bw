@@ -259,8 +259,9 @@ void ellipticSolveSetup(elliptic_t* elliptic)
   }
 
   {
+      const std::string sectionIdentifier = std::to_string(elliptic->Nfields) + "-";
       kernelName = "ellipticBlockBuildDiagonal" + suffix;
-      elliptic->updateDiagonalKernel = platform->kernels.load_kernel(kernelName);
+      elliptic->updateDiagonalKernel = platform->kernels.load_kernel(sectionIdentifier + kernelName);
       if(elliptic->blockSolver) {
         if(elliptic->var_coeff && elliptic->elementType == HEXAHEDRA) {
           if(elliptic->stressForm)
@@ -330,7 +331,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
         elliptic->partialAxKernel2 = platform->kernels.load_kernel(kernelName);
       }
       elliptic->updatePCGKernel =
-        platform->kernels.load_kernel("ellipticBlockUpdatePCG");
+        platform->kernels.load_kernel(sectionIdentifier + "ellipticBlockUpdatePCG");
   }
 
   MPI_Barrier(platform->comm.mpiComm);

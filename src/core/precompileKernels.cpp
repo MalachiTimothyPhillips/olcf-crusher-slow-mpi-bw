@@ -894,7 +894,9 @@ void compileEllipticKernels(const std::string & section)
     if(platform->options.compareArgs("STRESSFORMULATION", "TRUE")) return true;
     return false;
   }();
+
   const bool serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
+  const std::string sectionIdentifier = std::to_string(Nfields) + "-";
 
   if(platform->options.compareArgs(optionsPrefix + "KRYLOV SOLVER", "PGMRES"))
   {
@@ -907,7 +909,6 @@ void compileEllipticKernels(const std::string & section)
     std::string filename, kernelName;
 
     {
-      const std::string sectionIdentifier = std::to_string(Nfields) + "-";
       occa::properties properties = platform->kernelInfo;
       properties["defines/p_Nfields"] = Nfields;
 
@@ -932,6 +933,7 @@ void compileEllipticKernels(const std::string & section)
   }
 
   kernelInfo["defines/" "p_Nverts"] = Nverts;
+  kernelInfo["defines/" "p_Nfields"] = Nfields;
 
   occa::properties dfloatKernelInfo = kernelInfo;
   occa::properties floatKernelInfo = kernelInfo;
@@ -952,7 +954,7 @@ void compileEllipticKernels(const std::string & section)
 
       filename = oklpath + "ellipticBuildDiagonal" + suffix + ".okl";
       kernelName = "ellipticBlockBuildDiagonal" + suffix;
-       platform->kernels.add_kernel(kernelName, filename,
+       platform->kernels.add_kernel(sectionIdentifier + kernelName, filename,
                                                                     kernelName,
                                                                     dfloatKernelInfo);
       if(blockSolver) {
@@ -1038,7 +1040,7 @@ void compileEllipticKernels(const std::string & section)
       } else {
         filename = oklpath + "ellipticUpdatePCG.okl";
       }
-        platform->kernels.add_kernel("ellipticBlockUpdatePCG",filename,
+        platform->kernels.add_kernel(sectionIdentifier + "ellipticBlockUpdatePCG",filename,
                                  "ellipticBlockUpdatePCG", dfloatKernelInfo);
   }
 

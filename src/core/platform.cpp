@@ -372,9 +372,9 @@ kernelRequestManager_t::process_kernels()
       const std::string kernelName = kernelRequest.kernelName;
       const std::string suffix = kernelRequest.suffix;
       const occa::properties props = kernelRequest.props;
-      std::cout << "Constructing kernel for request " << requestName << "\n";
-      std::cout << "kernelName = " << kernelName << "\n";
-      std::cout << "suffix = " << suffix << "\n";
+      //std::cout << "Constructing kernel for request " << requestName << "\n";
+      //std::cout << "kernelName = " << kernelName << "\n";
+      //std::cout << "suffix = " << suffix << "\n";
       auto kernel = device.buildKernel(fileName, kernelName, props, suffix);
       this->requestToKernelMap[requestName] = kernel;
     }

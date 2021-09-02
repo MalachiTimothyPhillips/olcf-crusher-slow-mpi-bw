@@ -133,7 +133,6 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
 
   if(udf.setup0) udf.setup0(comm, options);
 
-
   precompileKernels();
 
   platform->linAlg = linAlg_t::getInstance();
