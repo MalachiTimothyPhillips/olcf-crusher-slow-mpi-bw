@@ -1307,6 +1307,43 @@ void registerLinAlgKernels()
 
 void compileKernels(){
 
+  int buildNodeLocal;
+  if(getenv("NEKRS_BUILD_NODE_LOCAL")){
+    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  } else {
+    buildNodeLocal = 0;
+  }
+
+  const int localRank = platform->comm.localRank;
+  MPI_Comm localComm = platform->comm.localComm;
+  auto mangleOCCACacheDir = [localRank, localComm](){
+    int minRankInGroup = localRank;
+    MPI_Allreduce(MPI_IN_PLACE, &minRankInGroup, 1, MPI_INT, MPI_MIN, localComm);
+    
+    std::string previousCacheDir;
+    if(getenv("OCCA_CACHE_DIR")){
+      previousCacheDir.assign(getenv("OCCA_CACHE_DIR"));
+    }
+    else{
+      previousCacheDir = occa::env::OCCA_CACHE_DIR;
+    }
+
+    std::string newCacheDir = previousCacheDir + "/node" + std::to_string(minRankInGroup) + "/";
+
+    if(getenv("OCCA_CACHE_DIR")){
+      setenv("OCCA_CACHE_DIR", newCacheDir.c_str(), 1);
+    }
+    else{
+      occa::env::OCCA_CACHE_DIR = newCacheDir;
+    }
+    
+
+  };
+
+  if(buildNodeLocal){
+    mangleOCCACacheDir();
+  }
+
   {
     registerLinAlgKernels();
   }

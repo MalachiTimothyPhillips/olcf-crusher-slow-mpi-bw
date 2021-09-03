@@ -386,8 +386,22 @@ kernelRequestManager_t::compile()
   kernelsProcessed = true;
 
   constexpr int maxCompilingRanks {100};
-  const int rank = platformRef.comm.mpiRank;
-  const int ranksCompiling = std::min(maxCompilingRanks, platformRef.comm.mpiCommSize);
+
+  int buildNodeLocal;
+  if(getenv("NEKRS_BUILD_NODE_LOCAL")){
+    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  } else {
+    buildNodeLocal = 0;
+  }
+
+  const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
+  const int ranksCompiling =
+    std::min(
+      maxCompilingRanks,
+      buildNodeLocal ?
+        platformRef.comm.localCommSize :
+        platformRef.comm.mpiCommSize
+    );
 
   std::vector<std::string> fileNames(fileNameToRequestMap.size());
 

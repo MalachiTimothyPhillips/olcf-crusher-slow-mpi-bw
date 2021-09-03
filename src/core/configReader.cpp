@@ -110,6 +110,9 @@ void configRead(MPI_Comm comm)
   ini.extract("general", "nekrs_gpu_mpi", buf);
   if(!getenv("NEKRS_GPU_MPI")) setenv("NEKRS_GPU_MPI", buf.c_str(), 1);
 
+  ini.extract("general", "nekrs_build_node_local", buf);
+  if(!getenv("NEKRS_BUILD_NODE_LOCAL")) setenv("NEKRS_BUILD_NODE_LOCAL", buf.c_str(), 1);
+
   buf = install_dir;
   setenv("NEKRS_INSTALL_DIR", buf.c_str(), 1);
 
