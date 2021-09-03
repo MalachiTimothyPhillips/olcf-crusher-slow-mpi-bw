@@ -67,6 +67,12 @@ void registerNrsKernels() {
   constexpr int Nfaces{6};
 
   occa::properties kernelInfo = platform->kernelInfo;
+  // TODO: what does this actually do?
+  kernelInfo["defines"].asObject();
+  kernelInfo["includes"].asArray();
+  kernelInfo["header"].asArray();
+  kernelInfo["flags"].asObject();
+  kernelInfo["include_paths"].asArray();
 
   constexpr int NVfields{3};
   kernelInfo["defines/p_NVfields"] = NVfields;
@@ -339,6 +345,12 @@ void registerCdsKernels() {
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
+  // TODO: what does this actually do?
+  kernelInfo["defines"].asObject();
+  kernelInfo["includes"].asArray();
+  kernelInfo["header"].asArray();
+  kernelInfo["flags"].asObject();
+  kernelInfo["include_paths"].asArray();
 
   int N, cubN;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
@@ -943,6 +955,12 @@ void registerEllipticKernels(const std::string &section) {
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
+  // TODO: what does this actually do?
+  kernelInfo["defines"].asObject();
+  kernelInfo["includes"].asArray();
+  kernelInfo["header"].asArray();
+  kernelInfo["flags"].asObject();
+  kernelInfo["include_paths"].asArray();
   kernelInfo += ellipticKernelInfo(N);
   const int Nfields = (section.find("velocity") != std::string::npos) ? 3 : 1;
   constexpr int Nverts{8};
