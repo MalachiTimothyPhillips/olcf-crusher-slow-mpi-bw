@@ -327,6 +327,7 @@ void
 kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
 {
   auto iterAndBoolPair = kernels.insert(request);
+  if(iterAndBoolPair.second) duplicates[request] = {};
   if(checkUnique)
   {
     int unique = (iterAndBoolPair.second) ? 1 : 0;
@@ -340,6 +341,11 @@ kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
       }
       ABORT(1);
     }
+  }
+
+  if(!iterAndBoolPair.second)
+  {
+    duplicates[request].push_back(request);
   }
 
   const auto fileName = request.fileName;
@@ -476,6 +482,29 @@ kernelRequestManager_t::compile()
 
   {
     loadKernels();
+  }
+
+
+  // loop through the duplicates
+  for(auto&& entryAndVector : duplicates){
+    auto& vec = entryAndVector.second;
+    if(vec.size() > 0){
+      auto& entry = entryAndVector.first;
+      auto& propsEntry = entry.props;
+      for(auto && dup : vec){
+        auto& propsDup = dup.props;
+        if(propsDup.toString() != propsEntry.toString()){
+          std::cout << "Entry properties:\n";
+          std::cout << "{\n";
+          std::cout << entry.to_string() << "\n";
+          std::cout << "}\n";
+          std::cout << "Duplicate properties:\n";
+          std::cout << "{\n";
+          std::cout << dup.to_string() << "\n";
+          std::cout << "}\n";
+        }
+      }
+    }
   }
 }
 

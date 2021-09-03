@@ -8,6 +8,7 @@
 #include "inipp.hpp"
 #include <set>
 #include <map>
+#include <vector>
 class setupAide;
 class linAlg_t;
 class kernelRequestManager_t;
@@ -74,19 +75,19 @@ class kernelRequestManager_t
     suffix(m_suffix),
     props(m_props)
     {}
-    const std::string requestName;
-    const std::string fileName;
-    const std::string kernelName;
-    const std::string suffix;
-    const occa::properties props;
+    std::string requestName;
+    std::string fileName;
+    std::string kernelName;
+    std::string suffix;
+    occa::properties props;
 
     std::string to_string() const {
       std::ostringstream ss;
-      ss << "requestName :" << requestName << "\n";
-      ss << "fileName :" << fileName << "\n";
-      ss << "kernelName :" << kernelName << "\n";
-      ss << "suffix :" << suffix << "\n";
-      ss << "props :" << props << "\n";;
+      ss << "requestName : " << requestName << "\n";
+      ss << "fileName : " << fileName << "\n";
+      ss << "kernelName : " << kernelName << "\n";
+      ss << "suffix : " << suffix << "\n";
+      ss << "props : " << props << "\n";;
       return ss.str();
     }
   };
@@ -113,6 +114,7 @@ public:
 private:
   const platform_t& platformRef;
   bool kernelsProcessed;
+  std::map<kernelRequest_t, std::vector<kernelRequest_t>> duplicates;
   std::set<kernelRequest_t> kernels;
   std::map<std::string, std::set<kernelRequest_t>> fileNameToRequestMap;
   std::map<std::string, occa::kernel> requestToKernelMap;

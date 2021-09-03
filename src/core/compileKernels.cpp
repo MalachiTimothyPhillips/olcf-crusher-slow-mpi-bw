@@ -277,13 +277,13 @@ void registerNrsKernels() {
           kernelName,
           subCycleStrongCubatureProps);
       fileName = oklpath + "nrs/subCycle" + suffix + ".okl";
+
+      kernelName = "subCycleStrongVolume" + suffix;
       platform->kernels.add_kernel(
           section + kernelName, fileName, kernelName, prop);
 
       fileName = oklpath + "nrs/subCycleRKUpdate" + ".okl";
-      kernelName = "subCycleLSERKUpdate";
-      if (nRK == 4)
-        kernelName = "subCycleERKUpdate";
+      kernelName = "subCycleERKUpdate";
       platform->kernels.add_kernel(
           section + kernelName, fileName, kernelName, prop);
       kernelName = "subCycleRK";
@@ -480,9 +480,7 @@ void registerCdsKernels() {
           section + kernelName, fileName, kernelName, prop);
 
       fileName = oklpath + "cds/subCycleRKUpdate.okl";
-      kernelName = "subCycleLSERKUpdate";
-      if (nRK == 4)
-        kernelName = "subCycleERKUpdate";
+      kernelName = "subCycleERKUpdate";
       platform->kernels.add_kernel(
           section + kernelName, fileName, kernelName, prop);
       kernelName = "subCycleRK";
@@ -1162,10 +1160,12 @@ void registerMeshKernels() {
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   std::string oklpath = install_dir + "/okl/";
   std::string kernelName;
+
+  const std::string meshPrefix = "mesh-";
   {
     std::string filename = oklpath + "mesh/velocityBCHex3D.okl";
     kernelName = "velocityDirichletBCHex3D";
-    platform->kernels.add_kernel(kernelName, filename, kernelName, kernelInfo);
+    platform->kernels.add_kernel(meshPrefix + kernelName, filename, kernelName, kernelInfo);
     occa::properties meshKernelInfo = kernelInfo;
     meshKernelInfo["defines/p_cubNq"] = cubNq;
     meshKernelInfo["defines/p_cubNp"] = cubNp;
@@ -1173,18 +1173,18 @@ void registerMeshKernels() {
     filename = oklpath + "mesh/geometricFactorsHex3D.okl";
     kernelName = "geometricFactorsHex3D";
     platform->kernels.add_kernel(
-        kernelName, filename, kernelName, meshKernelInfo);
+        meshPrefix + kernelName, filename, kernelName, meshKernelInfo);
     filename = oklpath + "mesh/surfaceGeometricFactorsHex3D.okl";
     kernelName = "surfaceGeometricFactorsHex3D";
     platform->kernels.add_kernel(
-        kernelName, filename, kernelName, meshKernelInfo);
+        meshPrefix + kernelName, filename, kernelName, meshKernelInfo);
 
     meshKernelInfo = kernelInfo;
     meshKernelInfo["defines/p_nAB"] = nAB;
     filename = oklpath + "core/nStagesSum.okl";
     kernelName = "nStagesSumVector";
     platform->kernels.add_kernel(
-        kernelName, filename, kernelName, meshKernelInfo);
+        meshPrefix + kernelName, filename, kernelName, meshKernelInfo);
   }
 }
 
