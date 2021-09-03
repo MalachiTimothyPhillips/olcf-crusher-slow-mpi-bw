@@ -17,7 +17,11 @@
 ## What you may have to change to be compatible 
 
 * [par] Use `preconditioner = multigrid+coarse` instead of `multigrid` 
-* [udf] Add namespace qualifier std e.g. std::cout instead of cout
+* [udf] Add namespace qualifier std e.g. `std::cout` instead of `cout`
+* [udf] Change `void UDF_LoadKernels(nrs_t* nrs);`  to
+               `void UDF_LoadKernels(occa::properties& kernelInfo);`
+* [udf] Change `occa::kernel udfBuildKernel(nrs_t* nrs, const char* function);`  to
+               `occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function);`  to
 
 ## Known Bugs / Restrictions
 
