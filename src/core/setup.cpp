@@ -140,9 +140,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   kernelInfo["include_paths"].asArray();
 
   int N, cubN;
-  int buildOnly = 0;
   std::string install_dir;
-  if(platform->options.compareArgs("BUILD ONLY", "TRUE")) buildOnly = 1;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   platform->options.getArgs("CUBATURE POLYNOMIAL DEGREE", cubN);
   platform->options.getArgs("NUMBER OF SCALARS", nrs->Nscalar);
@@ -197,12 +195,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     std::string casename;
     platform->options.getArgs("CASENAME", casename);
 
-    if (!buildOnly) {
-      nek::setup(comm, platform->options, nrs);
-      nek::setic();
-      nek::userchk();
-      if (platform->comm.mpiRank == 0) std::cout << "\n";
-    }
+    nek::setup(comm, platform->options, nrs);
+    nek::setic();
+    nek::userchk();
+    if (platform->comm.mpiRank == 0) std::cout << "\n";
   }
 
   nrs->cht = 0;
@@ -387,40 +383,38 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   linAlg_t * linAlg = platform->linAlg;
 
-  if(!buildOnly) {
-    int err = 0;
-    dlong gNelements = mesh->Nelements;
-    MPI_Allreduce(MPI_IN_PLACE, &gNelements, 1, MPI_DLONG, MPI_SUM, platform->comm.mpiComm);
-    const dfloat sum2 = (dfloat)gNelements * mesh->Np;
-    linAlg->fillKernel(nrs->fieldOffset, 1.0, platform->o_mempool.slice0);
-    ogsGatherScatter(platform->o_mempool.slice0, ogsDfloat, ogsAdd, mesh->ogs);
-    linAlg->axmyKernel(Nlocal, 1.0, mesh->ogs->o_invDegree, platform->o_mempool.slice0); 
-    dfloat* tmp = (dfloat*) calloc(Nlocal, sizeof(dfloat));
-    platform->o_mempool.slice0.copyTo(tmp, Nlocal * sizeof(dfloat));
-    dfloat sum1 = 0;
-    for(int i = 0; i < Nlocal; i++) sum1 += tmp[i];
-    MPI_Allreduce(MPI_IN_PLACE, &sum1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-    sum1 = abs(sum1 - sum2) / sum2;
-    if(sum1 > 1e-15) {
-      if(platform->comm.mpiRank == 0) printf("ogsGatherScatter test err=%g!\n", sum1);
-      fflush(stdout);
-      err++;
-    }
-
-    mesh->ogs->o_invDegree.copyTo(tmp, Nlocal * sizeof(dfloat));
-    double* vmult = (double*) nek::ptr("vmult");
-    sum1 = 0;
-    for(int i = 0; i < Nlocal; i++) sum1 += abs(tmp[i] - vmult[i]);
-    MPI_Allreduce(MPI_IN_PLACE, &sum1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-    if(sum1 > 1e-15) {
-      if(platform->comm.mpiRank == 0) printf("multiplicity test err=%g!\n", sum1);
-      fflush(stdout);
-      err++;
-    }
-
-    if(err) ABORT(1);
-    free(tmp);
+  int err = 0;
+  dlong gNelements = mesh->Nelements;
+  MPI_Allreduce(MPI_IN_PLACE, &gNelements, 1, MPI_DLONG, MPI_SUM, platform->comm.mpiComm);
+  const dfloat sum2 = (dfloat)gNelements * mesh->Np;
+  linAlg->fillKernel(nrs->fieldOffset, 1.0, platform->o_mempool.slice0);
+  ogsGatherScatter(platform->o_mempool.slice0, ogsDfloat, ogsAdd, mesh->ogs);
+  linAlg->axmyKernel(Nlocal, 1.0, mesh->ogs->o_invDegree, platform->o_mempool.slice0); 
+  dfloat* tmp = (dfloat*) calloc(Nlocal, sizeof(dfloat));
+  platform->o_mempool.slice0.copyTo(tmp, Nlocal * sizeof(dfloat));
+  dfloat sum1 = 0;
+  for(int i = 0; i < Nlocal; i++) sum1 += tmp[i];
+  MPI_Allreduce(MPI_IN_PLACE, &sum1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  sum1 = abs(sum1 - sum2) / sum2;
+  if(sum1 > 1e-15) {
+    if(platform->comm.mpiRank == 0) printf("ogsGatherScatter test err=%g!\n", sum1);
+    fflush(stdout);
+    err++;
   }
+
+  mesh->ogs->o_invDegree.copyTo(tmp, Nlocal * sizeof(dfloat));
+  double* vmult = (double*) nek::ptr("vmult");
+  sum1 = 0;
+  for(int i = 0; i < Nlocal; i++) sum1 += abs(tmp[i] - vmult[i]);
+  MPI_Allreduce(MPI_IN_PLACE, &sum1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  if(sum1 > 1e-15) {
+    if(platform->comm.mpiRank == 0) printf("multiplicity test err=%g!\n", sum1);
+    fflush(stdout);
+    err++;
+  }
+
+  if(err) ABORT(1);
+  free(tmp);
 
   nrs->EToB = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
@@ -476,143 +470,143 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       const std::string section = "nrs-";
       kernelName = "nStagesSum3";
       nrs->nStagesSum3Kernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "computeFieldDotNormal";
       nrs->computeFieldDotNormalKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "computeFaceCentroid";
       nrs->computeFaceCentroidKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       {
         kernelName = "strongAdvectionVolume" + suffix;
         nrs->advectionStrongVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
         kernelName = "strongAdvectionCubatureVolume" + suffix;
         nrs->advectionStrongCubatureVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
       }
 
       kernelName = "curl" + suffix;
       nrs->curlKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "gradientVolume" + suffix;
-      nrs->gradientVolumeKernel =  platform->kernels.load_kernel( section + kernelName);
+      nrs->gradientVolumeKernel =  platform->kernels.load( section + kernelName);
 
       kernelName = "nrswGradientVolume" + suffix;
       nrs->wgradientVolumeKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       {
         kernelName = "sumMakef";
-        nrs->sumMakefKernel =  platform->kernels.load_kernel( section + kernelName);
+        nrs->sumMakefKernel =  platform->kernels.load( section + kernelName);
       }
 
       kernelName = "nrswDivergenceVolume" + suffix;
       nrs->wDivergenceVolumeKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
       kernelName = "divergenceVolume" + suffix;
       nrs->divergenceVolumeKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "divergenceSurfaceTOMBO" + suffix;
       nrs->divergenceSurfaceKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "advectMeshVelocityHex3D";
       nrs->advectMeshVelocityKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "pressureRhsTOMBO" + suffix;
       nrs->pressureRhsKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "pressureStress" + suffix;
       nrs->pressureStressKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "pressureDirichletBC" + suffix;
       nrs->pressureDirichletBCKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "pressureUpdate";
-      nrs->pressureUpdateKernel =  platform->kernels.load_kernel( section + kernelName);
+      nrs->pressureUpdateKernel =  platform->kernels.load( section + kernelName);
 
       kernelName = "velocityRhsTOMBO" + suffix;
       nrs->velocityRhsKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "velocityDirichletBC" + suffix;
       nrs->velocityDirichletBCKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "velocityNeumannBC" + suffix;
       nrs->velocityNeumannBCKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "UrstCubature" + suffix;
       nrs->UrstCubatureKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "Urst" + suffix;
       nrs->UrstKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
 
       if(nrs->Nsubsteps){
         kernelName = "subCycleStrongCubatureVolume" + suffix;
         nrs->subCycleStrongCubatureVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
         nrs->subCycleStrongVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
 
         kernelName = "subCycleERKUpdate";
         nrs->subCycleRKUpdateKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
         kernelName = "subCycleRK";
         nrs->subCycleRKKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
 
         kernelName = "subCycleInitU0";
-        nrs->subCycleInitU0Kernel =  platform->kernels.load_kernel( section + kernelName);
+        nrs->subCycleInitU0Kernel =  platform->kernels.load( section + kernelName);
       }
 
       kernelName = "multiExtrapolate";
       nrs->extrapolateKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "maskCopy";
       nrs->maskCopyKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
       kernelName = "mask";
       nrs->maskKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "filterRT" + suffix;
       nrs->filterRTKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "cfl" + suffix;
       nrs->cflKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "pressureAddQtl";
       nrs->pressureAddQtlKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "setEllipticCoeff";
       nrs->setEllipticCoeffKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
       kernelName = "setEllipticCoeffPressure";
       nrs->setEllipticCoeffPressureKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "mueDiv";
       nrs->mueDivKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
   }
 
   MPI_Barrier(platform->comm.mpiComm);
@@ -622,16 +616,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->cds = cdsSetup(nrs, platform->options);
   }
 
-  if(!buildOnly) {
-    // get IC + t0 from nek
-    double startTime;
-    nek::copyFromNek(startTime);
-    platform->options.setArgs("START TIME", to_string_f(startTime));
+  // get IC + t0 from nek
+  double startTime;
+  nek::copyFromNek(startTime);
+  platform->options.setArgs("START TIME", to_string_f(startTime));
 
-    if(platform->comm.mpiRank == 0)  printf("calling udf_setup ... "); fflush(stdout);
-    udf.setup(nrs);
-    if(platform->comm.mpiRank == 0)  printf("done\n"); fflush(stdout);
-   }
+  if(platform->comm.mpiRank == 0)  printf("calling udf_setup ... "); fflush(stdout);
+  udf.setup(nrs);
+  if(platform->comm.mpiRank == 0)  printf("done\n"); fflush(stdout);
 
   // setup elliptic solvers
 
@@ -1244,58 +1236,58 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
    {
         kernelName = "strongAdvectionVolume" + suffix;
         cds->advectionStrongVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
 
         kernelName = "strongAdvectionCubatureVolume" + suffix;
         cds->advectionStrongCubatureVolumeKernel =  
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
 
   	kernelName = "advectMeshVelocityHex3D";
       cds->advectMeshVelocityKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "maskCopy";
       cds->maskCopyKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       {
         kernelName = "sumMakef";
-        cds->sumMakefKernel =  platform->kernels.load_kernel( section + kernelName);
+        cds->sumMakefKernel =  platform->kernels.load( section + kernelName);
       }
 
       kernelName = "helmholtzBC" + suffix;
-      cds->helmholtzRhsBCKernel =  platform->kernels.load_kernel( section + kernelName);
+      cds->helmholtzRhsBCKernel =  platform->kernels.load( section + kernelName);
       kernelName = "dirichletBC";
-      cds->dirichletBCKernel =  platform->kernels.load_kernel( section + kernelName);
+      cds->dirichletBCKernel =  platform->kernels.load( section + kernelName);
 
       kernelName = "setEllipticCoeff";
       cds->setEllipticCoeffKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "filterRT" + suffix;
       cds->filterRTKernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       kernelName = "nStagesSum3";
       cds->nStagesSum3Kernel =
-        platform->kernels.load_kernel( section + kernelName);
+        platform->kernels.load( section + kernelName);
 
       if(cds->Nsubsteps) {
         kernelName = "subCycleStrongCubatureVolume" + suffix;
         cds->subCycleStrongCubatureVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
         kernelName = "subCycleStrongVolume" + suffix;
         cds->subCycleStrongVolumeKernel =
-          platform->kernels.load_kernel( section + kernelName);
+          platform->kernels.load( section + kernelName);
 
 
         kernelName = "subCycleERKUpdate";
-        cds->subCycleRKUpdateKernel =  platform->kernels.load_kernel( section + kernelName);
+        cds->subCycleRKUpdateKernel =  platform->kernels.load( section + kernelName);
         kernelName = "subCycleRK";
-        cds->subCycleRKKernel =  platform->kernels.load_kernel( section + kernelName);
+        cds->subCycleRKKernel =  platform->kernels.load( section + kernelName);
 
         kernelName = "subCycleInitU0";
-        cds->subCycleInitU0Kernel =  platform->kernels.load_kernel( section + kernelName);
+        cds->subCycleInitU0Kernel =  platform->kernels.load( section + kernelName);
       }
   }
 

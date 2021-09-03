@@ -170,7 +170,7 @@ static occa::memory o_y;
 static occa::memory o_z;
 static bool constructOnHost = false;
 
-void load_kernel();
+void load();
 
 void construct_coo_graph();
 void fem_assembly_device();
@@ -249,7 +249,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     ||
     platform->device.mode() == std::string("Serial");
 
-  if(!constructOnHost) load_kernel();
+  if(!constructOnHost) load();
 
   if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return NULL;
 
@@ -857,8 +857,8 @@ void fem_assembly() {
   if(comm.id == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 
-void load_kernel(){
-  computeStiffnessMatrixKernel = platform->kernels.load_kernel(
+void load(){
+  computeStiffnessMatrixKernel = platform->kernels.load(
     "computeStiffnessMatrix"
   );
 }

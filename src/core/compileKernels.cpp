@@ -18,7 +18,7 @@ std::string createOptionsPrefix(const std::string& section){
     return prefix;
   }
 
-void compileGMRESKernels(const std::string & section, int Nfields)
+void registerGMRESKernels(const std::string & section, int Nfields)
 {
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -47,7 +47,7 @@ void compileGMRESKernels(const std::string & section, int Nfields)
                              gmresKernelInfo);
 }
 
-void compileNrsKernels()
+void registerNrsKernels()
 {
   const device_t& device = platform->device;
   std::string install_dir;
@@ -94,7 +94,7 @@ void compileNrsKernels()
   constexpr int nRK = 4;
 
 
-  auto jit_compile_udf = [N,kernelInfo,install_dir](){
+  auto jit_register_udf = [N,kernelInfo,install_dir](){
     auto bc_kernelInfo = kernelInfo;
     if (udf.loadKernels) {
       // side-effect: kernelInfoBC will include any relevant user-defined kernel info
@@ -112,13 +112,13 @@ void compileNrsKernels()
   };
 
   if(platform->comm.mpiRank == 0){
-    kernelInfoBC = jit_compile_udf();
+    kernelInfoBC = jit_register_udf();
   }
 
   MPI_Barrier(platform->comm.mpiComm);
 
   if(platform->comm.mpiRank != 0){
-    kernelInfoBC = jit_compile_udf();
+    kernelInfoBC = jit_register_udf();
   }
 
   {
@@ -297,7 +297,7 @@ void compileNrsKernels()
         platform->kernels.add_kernel(section + kernelName, fileName, kernelName, kernelInfo);
   }
 }
-void compileCdsKernels()
+void registerCdsKernels()
 {
   const device_t& device = platform->device;
   std::string install_dir;
@@ -436,7 +436,7 @@ void compileCdsKernels()
       }
   }
 }
-void compileCommonMGPreconditionerKernels(int N, occa::properties kernelInfo)
+void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo)
 {
   const std::string prefix = "Hex3D";
   std::string filename, kernelName;
@@ -519,7 +519,7 @@ void compileCommonMGPreconditionerKernels(int N, occa::properties kernelInfo)
   }
 }
 
-void compileSchwarzKernels(const std::string& section, int N)
+void registerSchwarzKernels(const std::string& section, int N)
 {
   const std::string optionsPrefix = createOptionsPrefix(section);
   const int Nq = N+1;
@@ -555,7 +555,7 @@ void compileSchwarzKernels(const std::string& section, int N)
       platform->kernels.add_kernel("postFDM" + suffix, filename, "postFDM", properties, suffix);
   }
 }
-void compileFineLevelKernels(const std::string& section, int N)
+void registerFineLevelKernels(const std::string& section, int N)
 {
   auto gen_suffix = [N](const char * floatString)
   {
@@ -569,7 +569,7 @@ void compileFineLevelKernels(const std::string& section, int N)
   };
 
   auto kernelInfo = ellipticKernelInfo(N);
-  compileCommonMGPreconditionerKernels(N, kernelInfo);
+  registerCommonMGPreconditionerKernels(N, kernelInfo);
 
   const std::string suffix = "Hex3D";
   constexpr int Nverts {8};
@@ -625,11 +625,11 @@ void compileFineLevelKernels(const std::string& section, int N)
   }
 
   {
-    compileSchwarzKernels(section, N);
+    registerSchwarzKernels(section, N);
   }
 }
-void compileSEMFEMKernels(const std::string& section, int N);
-void compileLevelKernels(const std::string& section, int Nf, int N)
+void registerSEMFEMKernels(const std::string& section, int N);
+void registerLevelKernels(const std::string& section, int Nf, int N)
 {
   const int Nc = N;
   auto gen_suffix = [N](const char * floatString)
@@ -652,7 +652,7 @@ void compileLevelKernels(const std::string& section, int Nf, int N)
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string oklpath = install_dir + "/okl/elliptic/";
-  compileCommonMGPreconditionerKernels(N, kernelInfo);
+  registerCommonMGPreconditionerKernels(N, kernelInfo);
 
   constexpr int Nverts {8};
   const bool serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
@@ -740,27 +740,27 @@ void compileLevelKernels(const std::string& section, int Nf, int N)
 
   }
   {
-    compileSchwarzKernels(section, N);
+    registerSchwarzKernels(section, N);
   }
 }
-void compileMultiGridKernels(const std::string & section)
+void registerMultiGridKernels(const std::string & section)
 {
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   const std::string optionsPrefix = createOptionsPrefix(section);
 
-  compileFineLevelKernels(section,N);
+  registerFineLevelKernels(section,N);
 
   auto levels = determineMGLevels(section);
 
   for(unsigned levelIndex = 1U; levelIndex < levels.size(); ++levelIndex){
     const int levelFine = levels[levelIndex-1];
     const int levelCoarse = levels[levelIndex];
-    compileLevelKernels(section,levelFine, levelCoarse);
+    registerLevelKernels(section,levelFine, levelCoarse);
   }
   if(platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")){
     if(platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE")){
-      compileSEMFEMKernels(section, N);
+      registerSEMFEMKernels(section, N);
     } else {
   {
     std::string install_dir;
@@ -793,7 +793,7 @@ void compileMultiGridKernels(const std::string & section)
   }
 
 }
-void compileSEMFEMKernels(const std::string& section, int N)
+void registerSEMFEMKernels(const std::string& section, int N)
 {
   const int Nq = N + 1;
   const int Np = Nq * Nq * Nq;
@@ -845,16 +845,16 @@ void compileSEMFEMKernels(const std::string& section, int N)
     );
   }
 }
-void compileEllipticPreconditionerKernels(const std::string & section)
+void registerEllipticPreconditionerKernels(const std::string & section)
 {
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
   const std::string optionsPrefix = createOptionsPrefix(section);
   if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "MULTIGRID")) {
-    compileMultiGridKernels(section);
+    registerMultiGridKernels(section);
   } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "SEMFEM")) {
-    compileSEMFEMKernels(section, N);
+    registerSEMFEMKernels(section, N);
   } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "JACOBI")) {
     // no kernels built here
   } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "NONE")) {
@@ -864,7 +864,7 @@ void compileEllipticPreconditionerKernels(const std::string & section)
     ABORT(EXIT_FAILURE);
   }
 }
-void compileEllipticKernels(const std::string & section)
+void registerEllipticKernels(const std::string & section)
 {
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
@@ -900,7 +900,7 @@ void compileEllipticKernels(const std::string & section)
 
   if(platform->options.compareArgs(optionsPrefix + "KRYLOV SOLVER", "PGMRES"))
   {
-    compileGMRESKernels(section, Nfields);
+    registerGMRESKernels(section, Nfields);
   }
 
   // solution projection kernels
@@ -1049,7 +1049,7 @@ void compileEllipticKernels(const std::string & section)
   }
 
 }
-void compileMeshKernels()
+void registerMeshKernels()
 {
   int N, cubN;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
@@ -1100,7 +1100,7 @@ void compileMeshKernels()
   }
 }
 
-void compileLinAlgKernels()
+void registerLinAlgKernels()
 {
   occa::properties kernelInfo = platform->kernelInfo;
 
@@ -1314,30 +1314,30 @@ void compileLinAlgKernels()
 }
 }
 
-void precompileKernels(){
+void compileKernels(){
 
   {
-    compileLinAlgKernels();
+    registerLinAlgKernels();
   }
 
   {
     ogs::initKernels(platform->comm.mpiComm, platform->device);
-    oogs::precompile(platform->device, platform->device.mode(), platform->comm.mpiRank);
+    oogs::compile(platform->device, platform->device.mode(), platform->comm.mpiRank);
   }
 
   {
-    compileMeshKernels();
+    registerMeshKernels();
   }
 
   {
-    compileNrsKernels();
+    registerNrsKernels();
   }
   
   {
     int Nscalars;
     platform->options.getArgs("NUMBER OF SCALARS", Nscalars);
     if(Nscalars){
-      compileCdsKernels();
+      registerCdsKernels();
     }
   }
 
@@ -1347,7 +1347,7 @@ void precompileKernels(){
       "velocity",
     };
     for(auto && section : sections){
-      compileEllipticKernels(section);
+      registerEllipticKernels(section);
     }
   }
 
@@ -1358,21 +1358,8 @@ void precompileKernels(){
     };
     int Nscalar;
     platform->options.getArgs("NUMBER OF SCALARS", Nscalar);
-    if(Nscalar > 0){
-      if(platform->options.compareArgs("SCALAR00 IS TEMPERATURE", "TRUE"))
-      {
-        sections.push_back("temperature");
-      }
-      for(int scalarId = 1; scalarId < Nscalar; ++scalarId)
-      {
-        std::stringstream ss;
-        ss << "scalar";
-        ss << std::setfill('0') << std::setw(2) << scalarId;
-        sections.push_back(ss.str());
-      }
-    }
     for(auto && section : sections){
-      compileEllipticPreconditionerKernels(section);
+      registerEllipticPreconditionerKernels(section);
     }
   }
 
@@ -1381,7 +1368,7 @@ void precompileKernels(){
     double tStart = MPI_Wtime();
     if(platform->comm.mpiRank == 0)  printf("compiling all kernels ... "); fflush(stdout);
 
-    platform->kernels.process_kernels();
+    platform->kernels.compile();
 
     MPI_Barrier(platform->comm.mpiComm);
     if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);

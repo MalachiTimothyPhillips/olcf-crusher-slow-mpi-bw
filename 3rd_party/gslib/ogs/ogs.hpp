@@ -283,7 +283,7 @@ void start(occa::memory &o_v, const int k, const int stride, const char *type, c
 void finish(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
 void startFinish(void *v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
 void startFinish(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
-void precompile(const occa::device& device, std::string mode, int rank);
+void compile(const occa::device& device, std::string mode, int rank);
 oogs_t *setup(ogs_t *ogs, int nVec, int stride, const char *type, std::function<void()> callback, oogs_mode gsMode);
 oogs_t *setup(int N, long long int *ids, const int k, const int stride, const char *type, MPI_Comm &comm,
               int verbose, occa::device device, std::function<void()> callback, oogs_mode mode);

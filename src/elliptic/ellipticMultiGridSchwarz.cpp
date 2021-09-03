@@ -888,9 +888,9 @@ void MGLevel::build(
   const std::string suffix = std::string("_") + std::to_string(Nq_e-1) + std::string("pfloat");
 
   {
-    preFDMKernel = platform->kernels.load_kernel("preFDM" + suffix);
-    fusedFDMKernel = platform->kernels.load_kernel("fusedFDM" + suffix);
-    postFDMKernel = platform->kernels.load_kernel("postFDM" + suffix);
+    preFDMKernel = platform->kernels.load("preFDM" + suffix);
+    fusedFDMKernel = platform->kernels.load("fusedFDM" + suffix);
+    postFDMKernel = platform->kernels.load("postFDM" + suffix);
   }
 }
 

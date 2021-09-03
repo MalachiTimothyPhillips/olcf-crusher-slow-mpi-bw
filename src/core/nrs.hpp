@@ -216,7 +216,7 @@ static std::vector<std::string> serializeString(const std::string sin, char dlim
 
 void evaluateProperties(nrs_t* nrs, const double timeNew);
 
-void precompileKernels();
+void compileKernels();
 
 std::vector<int>
 determineMGLevels(std::string section);

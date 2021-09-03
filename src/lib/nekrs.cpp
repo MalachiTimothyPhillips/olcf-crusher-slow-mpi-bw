@@ -55,17 +55,7 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
            int ciMode, std::string cacheDir, std::string _setupFile,
            std::string _backend, std::string _deviceID)
 {
-  if(buildOnly) {
-    int rank, size;
-    MPI_Comm_rank(comm_in, &rank);
-    MPI_Comm_size(comm_in, &size);
-    int color = MPI_UNDEFINED;
-    if (rank == 0) color = 1;     
-    MPI_Comm_split(comm_in, color, 0, &comm);
-    if (rank != 0) return;
-  } else {
-    MPI_Comm_dup(comm_in, &comm);
-  }
+  MPI_Comm_dup(comm_in, &comm);
     
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
@@ -133,7 +123,7 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
 
   if(udf.setup0) udf.setup0(comm, options);
 
-  precompileKernels();
+  compileKernels();
 
   platform->linAlg = linAlg_t::getInstance();
 
@@ -414,7 +404,7 @@ static void dryRun(setupAide &options, int npTarget)
   // init solver
   platform_t* platform = platform_t::getInstance();
 
-  precompileKernels();
+  compileKernels();
 
   platform->linAlg = linAlg_t::getInstance();
 
@@ -424,9 +414,9 @@ static void dryRun(setupAide &options, int npTarget)
     std::ofstream ofs;
     ofs.open(cache_dir + "/build-only.timestamp", std::ofstream::out | std::ofstream::trunc);
     ofs.close();
+    std::cout << "\nBuild successful." << std::endl;
   }
 
-  std::cout << "\nBuild successful." << std::endl;
 }
 
 static void setOUDF(setupAide &options)

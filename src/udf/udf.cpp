@@ -29,8 +29,6 @@ int udfBuild(const char* udfFile, setupAide& options)
   const char* cache_dir = getenv("NEKRS_CACHE_DIR");
   const char* udf_dir = getenv("NEKRS_UDF_DIR");
 
-  int buildOnly = 0;
-  options.getArgs("BUILD ONLY", buildOnly);
   const int verbose = options.compareArgs("VERBOSE","TRUE") ? 1:0;
 
   if(!fileExists(udfFile)) {

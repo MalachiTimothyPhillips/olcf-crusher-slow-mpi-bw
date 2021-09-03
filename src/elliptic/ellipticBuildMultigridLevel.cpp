@@ -238,13 +238,13 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       kernelName = "ellipticAx" + suffix;
       {
         const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-        elliptic->AxKernel = platform->kernels.load_kernel(kernelName + kernelSuffix);
+        elliptic->AxKernel = platform->kernels.load(kernelName + kernelSuffix);
       }
       if(!strstr(pfloatString,dfloatString)) {
         kernelName = "ellipticAx" + suffix;
         {
           const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-          elliptic->AxPfloatKernel = platform->kernels.load_kernel(kernelName + kernelSuffix);
+          elliptic->AxPfloatKernel = platform->kernels.load(kernelName + kernelSuffix);
         }
       }
 
@@ -261,12 +261,12 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       if(!serial) {
         {
           const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-          elliptic->partialAxKernel = platform->kernels.load_kernel(kernelName + kernelSuffix);
+          elliptic->partialAxKernel = platform->kernels.load(kernelName + kernelSuffix);
         }
         if(!strstr(pfloatString,dfloatString)) {
           const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
           elliptic->partialAxPfloatKernel =
-            platform->kernels.load_kernel( kernelName + kernelSuffix);
+            platform->kernels.load( kernelName + kernelSuffix);
         }
       }
   }
@@ -283,9 +283,9 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
     const std::string kernelSuffix = std::string("_") + std::to_string(Nf);
 
     kernelName = "ellipticPreconCoarsen" + suffix;
-    elliptic->precon->coarsenKernel = platform->kernels.load_kernel(kernelName + kernelSuffix);
+    elliptic->precon->coarsenKernel = platform->kernels.load(kernelName + kernelSuffix);
     kernelName = "ellipticPreconProlongate" + suffix;
-    elliptic->precon->prolongateKernel = platform->kernels.load_kernel(kernelName + kernelSuffix);
+    elliptic->precon->prolongateKernel = platform->kernels.load(kernelName + kernelSuffix);
 
   }
 

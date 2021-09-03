@@ -102,10 +102,10 @@ public:
                   std::string m_suffix = std::string(),
                   bool assertUnique = false);
   
-  void process_kernels();
+  void compile();
 
   occa::kernel
-  load_kernel(const std::string& request, bool checkValid = true) const;
+  load(const std::string& request, bool checkValid = true) const;
 
   bool
   processed() const { return kernelsProcessed; }
@@ -114,6 +114,7 @@ private:
   const platform_t& platformRef;
   bool kernelsProcessed;
   std::set<kernelRequest_t> kernels;
+  std::map<std::string, std::set<kernelRequest_t>> fileNameToRequestMap;
   std::map<std::string, occa::kernel> requestToKernelMap;
 
   void add_kernel(kernelRequest_t request, bool assertUnique = true);
@@ -149,6 +150,10 @@ struct comm_t{
   MPI_Comm mpiComm;
   int mpiRank;
   int mpiCommSize;
+
+  MPI_Comm localComm;
+  int localCommSize;
+  int localRank;
 };
 struct platform_t{
   setupAide& options;

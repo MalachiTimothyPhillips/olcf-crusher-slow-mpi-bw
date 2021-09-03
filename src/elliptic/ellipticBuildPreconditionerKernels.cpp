@@ -47,40 +47,40 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
   {
     kernelName = "mask";
     mesh->maskKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     mesh->maskPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix + "pfloat");
+      platform->kernels.load(kernelName + orderSuffix + "pfloat");
                                  kernelName = "fusedCopyDfloatToPfloat";
     elliptic->fusedCopyDfloatToPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
     kernelName = "copyDfloatToPfloat";
     elliptic->copyDfloatToPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "copyPfloatToDfloat";
     elliptic->copyPfloatToDPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "scaledAdd";
     elliptic->scaledAddPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "dotMultiply";
     elliptic->dotMultiplyPfloatKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "updateSmoothedSolutionVec";
     elliptic->updateSmoothedSolutionVecKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "updateChebyshevSolutionVec";
     elliptic->updateChebyshevSolutionVecKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
 
     kernelName = "updateIntermediateSolutionVec";
     elliptic->updateIntermediateSolutionVecKernel =
-      platform->kernels.load_kernel(kernelName + orderSuffix);
+      platform->kernels.load(kernelName + orderSuffix);
   }
 
   MPI_Barrier(platform->comm.mpiComm);
