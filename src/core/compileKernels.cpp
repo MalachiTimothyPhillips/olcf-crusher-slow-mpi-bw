@@ -29,7 +29,7 @@ void registerGMRESKernels(const std::string & section, int Nfields)
   const std::string sectionIdentifier = std::to_string(Nfields) + "-";
 
   occa::properties gmresKernelInfo = platform->kernelInfo;
-  gmresKernelInfo["defines/" "p_Nfields"] = Nfields;
+  gmresKernelInfo["defines/p_Nfields"] = Nfields;
   std::string kernelName = "gramSchmidtOrthogonalization";
   filename = serial ? oklpath + "ellipticGramSchmidtOrthogonalization.c" : oklpath + "ellipticGramSchmidtOrthogonalization.okl";
     platform->kernels.add_kernel(sectionIdentifier + kernelName, filename,
@@ -277,7 +277,7 @@ void registerNrsKernels()
         platform->kernels.add_kernel(section + kernelName, fileName, kernelName, meshProps);
 
       occa::properties cflProps = meshProps;
-      cflProps["defines/ " "p_MovingMesh"] = movingMesh;
+      cflProps["defines/p_MovingMesh"] = movingMesh;
       fileName = oklpath + "nrs/cfl" + suffix + ".okl";
       kernelName = "cfl" + suffix;
       platform->kernels.add_kernel(section + kernelName, fileName, kernelName, cflProps);
@@ -443,7 +443,7 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo)
 
   kernelInfo["defines/pfloat"] = pfloatString;
 
-  kernelInfo["defines/" "p_Nfields"] = 1;
+  kernelInfo["defines/p_Nfields"] = 1;
 
   occa::properties pfloatKernelInfo = kernelInfo;
   pfloatKernelInfo["defines/dfloat"] = pfloatString;
@@ -575,7 +575,7 @@ void registerFineLevelKernels(const std::string& section, int N)
   constexpr int Nverts {8};
   constexpr int Nfields {1};
 
-  kernelInfo["defines/" "p_Nverts"] = Nverts;
+  kernelInfo["defines/p_Nverts"] = Nverts;
 
   std::string filename, kernelName;
 
@@ -598,11 +598,11 @@ void registerFineLevelKernels(const std::string& section, int N)
       }
 
       if(!strstr(pfloatString,dfloatString)) {
-        AxKernelInfo["defines/" "dfloat"] = pfloatString;
+        AxKernelInfo["defines/dfloat"] = pfloatString;
         kernelName = "ellipticAx" + suffix;
         const std::string kernelSuffix = gen_suffix( pfloatString);
          platform->kernels.add_kernel(kernelName + kernelSuffix,filename,kernelName,AxKernelInfo, kernelSuffix);
-        AxKernelInfo["defines/" "dfloat"] = dfloatString;
+        AxKernelInfo["defines/dfloat"] = dfloatString;
       }
 
       if(platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
@@ -616,10 +616,10 @@ void registerFineLevelKernels(const std::string& section, int N)
            platform->kernels.add_kernel(kernelName + kernelSuffix,filename,kernelName,AxKernelInfo, kernelSuffix);
         }
         if(!strstr(pfloatString,dfloatString)) {
-          AxKernelInfo["defines/" "dfloat"] = pfloatString;
+          AxKernelInfo["defines/dfloat"] = pfloatString;
           const std::string kernelSuffix = gen_suffix( pfloatString);
             platform->kernels.add_kernel(kernelName + kernelSuffix,filename, kernelName, AxKernelInfo, kernelSuffix);
-          AxKernelInfo["defines/" "dfloat"] = dfloatString;
+          AxKernelInfo["defines/dfloat"] = dfloatString;
         }
       }
   }
@@ -660,7 +660,7 @@ void registerLevelKernels(const std::string& section, int Nf, int N)
   constexpr int elementType = HEXAHEDRA;
 
   {
-      kernelInfo["defines/" "p_Nverts"] = Nverts;
+      kernelInfo["defines/p_Nverts"] = Nverts;
       occa::properties AxKernelInfo = kernelInfo;
       filename = oklpath + "ellipticAx" + suffix + ".okl";
       kernelName = "ellipticAx" + suffix;
@@ -672,13 +672,13 @@ void registerLevelKernels(const std::string& section, int Nf, int N)
          platform->kernels.add_kernel(kernelName + kernelSuffix,filename,kernelName,AxKernelInfo, kernelSuffix);
       }
       if(!strstr(pfloatString,dfloatString)) {
-        AxKernelInfo["defines/" "dfloat"] = pfloatString;
+        AxKernelInfo["defines/dfloat"] = pfloatString;
         kernelName = "ellipticAx" + suffix;
         {
           const std::string kernelSuffix = gen_suffix( pfloatString);
            platform->kernels.add_kernel(kernelName + kernelSuffix,filename,kernelName,AxKernelInfo, kernelSuffix);
         }
-        AxKernelInfo["defines/" "dfloat"] = dfloatString;
+        AxKernelInfo["defines/dfloat"] = dfloatString;
       }
 
       // check for trilinear
@@ -697,10 +697,10 @@ void registerLevelKernels(const std::string& section, int Nf, int N)
            platform->kernels.add_kernel(kernelName + kernelSuffix,filename,kernelName,AxKernelInfo, kernelSuffix);
         }
         if(!strstr(pfloatString,dfloatString)) {
-          AxKernelInfo["defines/" "dfloat"] = pfloatString;
+          AxKernelInfo["defines/dfloat"] = pfloatString;
           const std::string kernelSuffix = gen_suffix( pfloatString);
             platform->kernels.add_kernel(kernelName + kernelSuffix,filename, kernelName, AxKernelInfo, kernelSuffix);
-          AxKernelInfo["defines/" "dfloat"] = dfloatString;
+          AxKernelInfo["defines/dfloat"] = dfloatString;
         }
       }
   }
@@ -712,13 +712,13 @@ void registerLevelKernels(const std::string& section, int Nf, int N)
       int NqFine   = (Nf + 1);
       int NqCoarse = (Nc + 1);
       occa::properties coarsenProlongateKernelInfo = kernelInfo;
-      coarsenProlongateKernelInfo["defines/" "p_NqFine"] = Nf + 1;
-      coarsenProlongateKernelInfo["defines/" "p_NqCoarse"] = Nc + 1;
+      coarsenProlongateKernelInfo["defines/p_NqFine"] = Nf + 1;
+      coarsenProlongateKernelInfo["defines/p_NqCoarse"] = Nc + 1;
 
       const int NpFine   = (Nf + 1) * (Nf + 1) * (Nf + 1);
       const int NpCoarse = (Nc + 1) * (Nc + 1) * (Nc + 1);
-      coarsenProlongateKernelInfo["defines/" "p_NpFine"] = NpFine;
-      coarsenProlongateKernelInfo["defines/" "p_NpCoarse"] = NpCoarse;
+      coarsenProlongateKernelInfo["defines/p_NpFine"] = NpFine;
+      coarsenProlongateKernelInfo["defines/p_NpCoarse"] = NpCoarse;
 
       const std::string orderSuffix = std::string("_") + std::to_string(Nf);
 
@@ -801,9 +801,9 @@ void registerSEMFEMKernels(const std::string& section, int N)
     const int useFP32 = platform->options.compareArgs(optionsPrefix + "SEMFEM SOLVER PRECISION", "FP32");
     occa::properties SEMFEMKernelProps = platform->kernelInfo;
     if(useFP32){
-      SEMFEMKernelProps["defines/" "pfloat"] = "float";
+      SEMFEMKernelProps["defines/pfloat"] = "float";
     } else {
-      SEMFEMKernelProps["defines/" "pfloat"] = "double";
+      SEMFEMKernelProps["defines/pfloat"] = "double";
     }
     std::string install_dir;
     install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -824,10 +824,10 @@ void registerSEMFEMKernels(const std::string& section, int N)
     );
   occa::properties stiffnessKernelInfo = platform->kernelInfo;
   filename = oklpath + "elliptic/ellipticSEMFEMStiffness.okl";
-  stiffnessKernelInfo["defines/" "p_Nq"] = Nq;
-  stiffnessKernelInfo["defines/" "p_Np"] = Np;
-  stiffnessKernelInfo["defines/" "p_rows_sorted"] = 1;
-  stiffnessKernelInfo["defines/" "p_cols_sorted"] = 0;
+  stiffnessKernelInfo["defines/p_Nq"] = Nq;
+  stiffnessKernelInfo["defines/p_Np"] = Np;
+  stiffnessKernelInfo["defines/p_rows_sorted"] = 1;
+  stiffnessKernelInfo["defines/p_cols_sorted"] = 0;
 
   const bool constructOnHost = 
     platform->device.mode() == std::string("OpenCL")
@@ -925,14 +925,14 @@ void registerEllipticKernels(const std::string & section)
                                  kernelInfo);
   }
 
-  kernelInfo["defines/" "p_Nverts"] = Nverts;
-  kernelInfo["defines/" "p_Nfields"] = Nfields;
+  kernelInfo["defines/p_Nverts"] = Nverts;
+  kernelInfo["defines/p_Nfields"] = Nfields;
 
   occa::properties dfloatKernelInfo = kernelInfo;
   occa::properties floatKernelInfo = kernelInfo;
-  floatKernelInfo["defines/" "pfloat"] = pfloatString;
-  floatKernelInfo["defines/" "dfloat"] = pfloatString;
-  dfloatKernelInfo["defines/" "pfloat"] = dfloatString;
+  floatKernelInfo["defines/pfloat"] = pfloatString;
+  floatKernelInfo["defines/dfloat"] = pfloatString;
+  dfloatKernelInfo["defines/pfloat"] = dfloatString;
 
   constexpr bool var_coeff = true;
   constexpr int elementType {HEXAHEDRA};
@@ -1067,8 +1067,8 @@ void registerMeshKernels()
                                  kernelName,
                                  kernelInfo);
       occa::properties meshKernelInfo = kernelInfo;
-      meshKernelInfo["defines/" "p_cubNq"] = cubNq;
-      meshKernelInfo["defines/" "p_cubNp"] = cubNp;
+      meshKernelInfo["defines/p_cubNq"] = cubNq;
+      meshKernelInfo["defines/p_cubNp"] = cubNp;
 
       filename = oklpath + "mesh/geometricFactorsHex3D.okl";
                                  kernelName = "geometricFactorsHex3D";
@@ -1082,7 +1082,7 @@ void registerMeshKernels()
                                  meshKernelInfo);
 
       meshKernelInfo = kernelInfo;
-      meshKernelInfo["defines/" "p_nAB"] = nAB;
+      meshKernelInfo["defines/p_nAB"] = nAB;
       filename = oklpath + "core/nStagesSum.okl";
                                  kernelName = "nStagesSumVector";
         platform->kernels.add_kernel(kernelName, filename,
