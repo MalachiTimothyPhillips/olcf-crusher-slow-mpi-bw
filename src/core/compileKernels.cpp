@@ -67,7 +67,6 @@ void registerNrsKernels() {
   constexpr int Nfaces{6};
 
   occa::properties kernelInfo = platform->kernelInfo;
-  // TODO: what does this actually do?
   kernelInfo["defines"].asObject();
   kernelInfo["includes"].asArray();
   kernelInfo["header"].asArray();
@@ -345,7 +344,6 @@ void registerCdsKernels() {
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
-  // TODO: what does this actually do?
   kernelInfo["defines"].asObject();
   kernelInfo["includes"].asArray();
   kernelInfo["header"].asArray();
@@ -919,7 +917,7 @@ void registerSEMFEMKernels(const std::string &section, int N) {
   platform->kernels.add_kernel(
       "scatter", filename, "scatter", SEMFEMKernelProps);
   occa::properties stiffnessKernelInfo = platform->kernelInfo;
-  filename = oklpath + "elliptic/ellipticSEMFEMStiffness.okl";
+  filename = oklpath + "ellipticSEMFEMStiffness.okl";
   stiffnessKernelInfo["defines/p_Nq"] = Nq;
   stiffnessKernelInfo["defines/p_Np"] = Np;
   stiffnessKernelInfo["defines/p_rows_sorted"] = 1;
@@ -955,7 +953,6 @@ void registerEllipticKernels(const std::string &section) {
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
-  // TODO: what does this actually do?
   kernelInfo["defines"].asObject();
   kernelInfo["includes"].asArray();
   kernelInfo["header"].asArray();

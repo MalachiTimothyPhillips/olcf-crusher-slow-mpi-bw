@@ -42,6 +42,10 @@ static int Nblock;
 void velRecycling::buildKernel(occa::properties kernelInfo)
 {
 
+  int N;
+  platform->options.getArgs("POLYNOMIAL DEGREE", N);
+  kernelInfo += populateMeshProperties(N);
+
   std::string fileName;
   fileName.assign(getenv("NEKRS_INSTALL_DIR"));
   fileName += "/okl/plugins/velRecycling.okl";

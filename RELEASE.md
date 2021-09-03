@@ -22,6 +22,8 @@
                `void UDF_LoadKernels(occa::properties& kernelInfo);`
 * [udf] Change `occa::kernel udfBuildKernel(nrs_t* nrs, const char* function);`  to
                `occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function);`  to
+* [udf] Change `(plugin)::buildKernel(nrs_t* nrs);`  to
+               `(plugin)::buildKernel(occa::properties kernelInfo);
 
 ## Known Bugs / Restrictions
 

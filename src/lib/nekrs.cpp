@@ -376,9 +376,11 @@ void processUpdFile()
 
 static void dryRun(setupAide &options, int npTarget)
 {
-  std::cout << "performing dry-run to jit-compile for >="
-       << npTarget 
-       << " MPI tasks ...\n" << std::endl;
+  if(platform->comm.mpiRank == 0){
+    std::cout << "performing dry-run to jit-compile for >="
+         << npTarget 
+         << " MPI tasks ...\n" << std::endl;
+  }
   fflush(stdout);	
 
   options.setArgs("NP TARGET", std::to_string(npTarget));

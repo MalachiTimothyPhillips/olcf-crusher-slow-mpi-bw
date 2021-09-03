@@ -68,6 +68,9 @@ determineMGLevels(std::string section)
         }
       }
     }
+
+    return levels;
+
   } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","ASM") ||
             platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","RAS")) {
     std::map<int,std::vector<int> > mg_level_lookup =
@@ -112,6 +115,8 @@ determineMGLevels(std::string section)
 
     return mg_level_lookup.at(N);
   }
+
+  return {};
 }
 
 void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
