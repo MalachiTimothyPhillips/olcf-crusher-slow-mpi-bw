@@ -1294,7 +1294,7 @@ void compileKernels() {
     }
 
     std::string newCacheDir =
-        previousCacheDir + "/node" + std::to_string(minRankInGroup) + "/";
+        previousCacheDir + "node" + std::to_string(minRankInGroup) + "/";
 
     if (getenv("OCCA_CACHE_DIR")) {
       setenv("OCCA_CACHE_DIR", newCacheDir.c_str(), 1);
