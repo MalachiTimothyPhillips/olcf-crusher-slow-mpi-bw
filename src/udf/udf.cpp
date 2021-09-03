@@ -108,7 +108,7 @@ occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
   const int Nq = N+1;
   const int Np = Nq * Nq * Nq;
   kernelInfo["defines/p_Nq"] = Nq;
-  kernelInfo["dfines/p_Np"] = Np;
+  kernelInfo["defines/p_Np"] = Np;
 
   std::string oudf;
   platform->options.getArgs("DATA FILE", oudf);
