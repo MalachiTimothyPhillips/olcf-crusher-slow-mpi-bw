@@ -79,13 +79,13 @@ void coarseSolver::setup(
 
   {
     std::string kernelName = "convertFP64ToFP32";
-    convertFP64ToFP32Kernel = platform->kernels.load(kernelName);
+    convertFP64ToFP32Kernel = platform->kernels.get(kernelName);
 
     kernelName = "convertFP32ToFP64";
-    convertFP32ToFP64Kernel = platform->kernels.load(kernelName);
+    convertFP32ToFP64Kernel = platform->kernels.get(kernelName);
 
     kernelName = "vectorDotStar2";
-    vectorDotStarKernel2 = platform->kernels.load(kernelName);
+    vectorDotStarKernel2 = platform->kernels.get(kernelName);
   }
 
 

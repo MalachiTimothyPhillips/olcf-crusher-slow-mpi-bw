@@ -327,7 +327,6 @@ void
 kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
 {
   auto iterAndBoolPair = kernels.insert(request);
-  if(iterAndBoolPair.second) duplicates[request] = {};
   if(checkUnique)
   {
     int unique = (iterAndBoolPair.second) ? 1 : 0;
@@ -347,7 +346,7 @@ kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
   fileNameToRequestMap[fileName].insert(request);
 }
 occa::kernel
-kernelRequestManager_t::load(const std::string& request, bool checkValid) const
+kernelRequestManager_t::get(const std::string& request, bool checkValid) const
 {
   if(checkValid){
     bool issueError = 0;
@@ -362,7 +361,7 @@ kernelRequestManager_t::load(const std::string& request, bool checkValid) const
       {
         std::cout << "\n";
         std::cout << "===========================================================\n";
-        std::cout << "Error in kernelRequestManager_t::load. Failing now.\n";
+        std::cout << "Error in kernelRequestManager_t::get. Failing now.\n";
         std::cout << "Requested kernel : " << request << "\n";
 
         std::cout << "All entries:\n";

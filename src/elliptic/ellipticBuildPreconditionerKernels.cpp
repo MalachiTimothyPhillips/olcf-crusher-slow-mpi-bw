@@ -47,40 +47,40 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
   {
     kernelName = "mask";
     mesh->maskKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     mesh->maskPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix + "pfloat");
+      platform->kernels.get(kernelName + orderSuffix + "pfloat");
                                  kernelName = "fusedCopyDfloatToPfloat";
     elliptic->fusedCopyDfloatToPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
     kernelName = "copyDfloatToPfloat";
     elliptic->copyDfloatToPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "copyPfloatToDfloat";
     elliptic->copyPfloatToDPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "scaledAdd";
     elliptic->scaledAddPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "dotMultiply";
     elliptic->dotMultiplyPfloatKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateSmoothedSolutionVec";
     elliptic->updateSmoothedSolutionVecKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateChebyshevSolutionVec";
     elliptic->updateChebyshevSolutionVecKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateIntermediateSolutionVec";
     elliptic->updateIntermediateSolutionVecKernel =
-      platform->kernels.load(kernelName + orderSuffix);
+      platform->kernels.get(kernelName + orderSuffix);
   }
 
   MPI_Barrier(platform->comm.mpiComm);

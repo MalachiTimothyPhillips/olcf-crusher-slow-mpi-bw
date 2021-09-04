@@ -320,13 +320,13 @@ void loadKernels(mesh_t* mesh, occa::properties kernelInfo)
   if(platform->options.compareArgs("MOVING MESH", "TRUE")){
     {
         mesh->velocityDirichletKernel =
-          platform->kernels.load(meshPrefix + "velocityDirichletBCHex3D");
+          platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
         mesh->geometricFactorsKernel =
-          platform->kernels.load(meshPrefix + "geometricFactorsHex3D");
+          platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
         mesh->surfaceGeometricFactorsKernel =
-          platform->kernels.load(meshPrefix + "surfaceGeometricFactorsHex3D");
+          platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
         mesh->nStagesSumVectorKernel =
-          platform->kernels.load(meshPrefix + "nStagesSumVector");
+          platform->kernels.get(meshPrefix + "nStagesSumVector");
     }
   }
 }

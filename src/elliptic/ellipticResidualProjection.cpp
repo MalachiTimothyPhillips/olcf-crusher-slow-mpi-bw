@@ -184,8 +184,8 @@ ResidualProjection::ResidualProjection(elliptic_t& elliptic,
   const std::string sectionIdentifier = std::to_string(Nfields) + "-";
 
   {
-    multiScaledAddwOffsetKernel = platform->kernels.load(sectionIdentifier + "multiScaledAddwOffset");
-    accumulateKernel = platform->kernels.load(sectionIdentifier + "accumulate");
+    multiScaledAddwOffsetKernel = platform->kernels.get(sectionIdentifier + "multiScaledAddwOffset");
+    accumulateKernel = platform->kernels.get(sectionIdentifier + "accumulate");
   }
 
   matvecOperator = [&](occa::memory& o_x, occa::memory & o_Ax)
