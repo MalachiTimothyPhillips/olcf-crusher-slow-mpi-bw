@@ -111,14 +111,22 @@ void registerNrsKernels() {
 
     return bc_kernelInfo;
   };
+  int buildNodeLocal;
+  if (getenv("NEKRS_BUILD_NODE_LOCAL")) {
+    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  } else {
+    buildNodeLocal = 0;
+  }
+  auto communicator = buildNodeLocal ? platform->comm.localComm : platform->comm.mpiComm;
+  auto rank = buildNodeLocal ? platform->comm.localRank : platform->comm.mpiRank;
 
-  if (platform->comm.mpiRank == 0) {
+  if (rank == 0) {
     kernelInfoBC = jit_compile_udf();
   }
 
-  MPI_Barrier(platform->comm.mpiComm);
+  MPI_Barrier(communicator);
 
-  if (platform->comm.mpiRank != 0) {
+  if (rank != 0) {
     kernelInfoBC = jit_compile_udf();
   }
 
@@ -1303,28 +1311,20 @@ void compileKernels() {
     buildNodeLocal = 0;
   }
 
-  const int localRank = platform->comm.localRank;
+  const int globalRank = platform->comm.mpiRank;
   MPI_Comm localComm = platform->comm.localComm;
-  auto mangleOCCACacheDir = [localRank, localComm]() {
-    int minRankInGroup = localRank;
+  auto mangleOCCACacheDir = [globalRank, localComm]() {
+    int minRankInGroup = globalRank;
     MPI_Allreduce(
         MPI_IN_PLACE, &minRankInGroup, 1, MPI_INT, MPI_MIN, localComm);
 
     std::string previousCacheDir;
-    if (getenv("OCCA_CACHE_DIR")) {
-      previousCacheDir.assign(getenv("OCCA_CACHE_DIR"));
-    } else {
-      previousCacheDir = occa::env::OCCA_CACHE_DIR;
-    }
+    previousCacheDir = occa::env::OCCA_CACHE_DIR;
 
     std::string newCacheDir =
-        previousCacheDir + "node" + std::to_string(minRankInGroup) + "/";
+        previousCacheDir + "node/" + std::to_string(minRankInGroup) + "/";
 
-    if (getenv("OCCA_CACHE_DIR")) {
-      setenv("OCCA_CACHE_DIR", newCacheDir.c_str(), 1);
-    } else {
-      occa::env::OCCA_CACHE_DIR = newCacheDir;
-    }
+    occa::env::OCCA_CACHE_DIR = newCacheDir;
   };
 
   if (buildNodeLocal) {
@@ -1334,9 +1334,11 @@ void compileKernels() {
   { registerLinAlgKernels(); }
 
   {
-    ogs::initKernels(platform->comm.mpiComm, platform->device);
+    auto communicator = buildNodeLocal ? platform->comm.localComm : platform->comm.mpiComm;
+    auto rank = buildNodeLocal ? platform->comm.localRank : platform->comm.mpiRank;
+    ogs::initKernels(communicator, platform->device);
     oogs::compile(
-        platform->device, platform->device.mode(), platform->comm.mpiRank);
+        platform->device, platform->device.mode(), rank);
   }
 
   { registerMeshKernels(); }
