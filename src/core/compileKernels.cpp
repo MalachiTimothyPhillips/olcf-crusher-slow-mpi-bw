@@ -644,6 +644,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
   constexpr int Nfields{1};
 
   kernelInfo["defines/p_Nverts"] = Nverts;
+  kernelInfo["defines/p_Nfields"] = Nfields;
 
   std::string filename, kernelName;
 
@@ -867,11 +868,12 @@ void registerMultiGridKernels(const std::string &section) {
     const int levelCoarse = levels[levelIndex];
     registerLevelKernels(section, levelFine, levelCoarse);
   }
+  const int coarseLevel = levels.back();
   if (platform->options.compareArgs(
           optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
     if (platform->options.compareArgs(
             optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE")) {
-      registerSEMFEMKernels(section, N);
+      registerSEMFEMKernels(section, coarseLevel);
     } else {
       {
         std::string install_dir;
@@ -934,13 +936,20 @@ void registerSEMFEMKernels(const std::string &section, int N) {
   }
 }
 void registerEllipticPreconditionerKernels(const std::string &section) {
+  const std::string optionsPrefix = createOptionsPrefix(section);
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
-  // compile all kernels, regardless of preconditioner selection
-  if (section.find("pressure") != std::string::npos) {
+  if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "MULTIGRID")) {
     registerMultiGridKernels(section);
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "SEMFEM")) {
     registerSEMFEMKernels(section, N);
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "JACOBI")) {
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "NONE")) {
+    // nothing 
+  } else {
+    printf("ERROR: Unknown preconditioner!\n");
+    ABORT(EXIT_FAILURE);
   }
 }
 void registerEllipticKernels(const std::string &section) {

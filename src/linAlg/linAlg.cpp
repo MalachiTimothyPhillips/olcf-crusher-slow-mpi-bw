@@ -92,7 +92,7 @@ void linAlg_t::setup() {
     axdyKernel = kernels.load("axdy");
     aydxKernel = kernels.load("aydx");
     aydxManyKernel = kernels.load("aydxMany");
-    axmyzKernel = kernels.load("axdyz");
+    axdyzKernel = kernels.load("axdyz");
     sumKernel = kernels.load("sum");
     sumManyKernel = kernels.load("sumMany");
     minKernel = kernels.load("min");
