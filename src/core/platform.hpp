@@ -114,7 +114,6 @@ public:
 private:
   const platform_t& platformRef;
   bool kernelsProcessed;
-  std::map<kernelRequest_t, std::vector<kernelRequest_t>> duplicates;
   std::set<kernelRequest_t> kernels;
   std::map<std::string, std::set<kernelRequest_t>> fileNameToRequestMap;
   std::map<std::string, occa::kernel> requestToKernelMap;

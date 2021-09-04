@@ -343,11 +343,6 @@ kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
     }
   }
 
-  if(!iterAndBoolPair.second)
-  {
-    duplicates[request].push_back(request);
-  }
-
   const auto fileName = request.fileName;
   fileNameToRequestMap[fileName].insert(request);
 }
@@ -433,15 +428,6 @@ kernelRequestManager_t::compile()
           const std::string kernelName = kernelRequest.kernelName;
           const std::string suffix = kernelRequest.suffix;
           const occa::properties props = kernelRequest.props;
-
-#if 0
-          std::ostringstream ss;
-          ss << "requestName = " << requestName << "\n";
-          ss << "fileName = " << fileName << "\n";
-          ss << "kernelName = " << kernelName << "\n";
-          ss << "suffix = " << suffix << "\n";
-          std::cout << ss.str() << std::endl;
-#endif
           auto kernel = device.buildKernel(fileName, kernelName, props, suffix);
           requestToKernel[requestName] = kernel;
         }
@@ -468,6 +454,7 @@ kernelRequestManager_t::compile()
   MPI_Barrier(platform->comm.mpiComm);
   if(rank == 0)
   {
+    std::cout << std::endl;
     std::cout << "Calling compileKernels\n";
   }
   {
@@ -482,29 +469,6 @@ kernelRequestManager_t::compile()
 
   {
     loadKernels();
-  }
-
-
-  // loop through the duplicates
-  for(auto&& entryAndVector : duplicates){
-    auto& vec = entryAndVector.second;
-    if(vec.size() > 0){
-      auto& entry = entryAndVector.first;
-      auto& propsEntry = entry.props;
-      for(auto && dup : vec){
-        auto& propsDup = dup.props;
-        if(propsDup.toString() != propsEntry.toString()){
-          std::cout << "Entry properties:\n";
-          std::cout << "{\n";
-          std::cout << entry.to_string() << "\n";
-          std::cout << "}\n";
-          std::cout << "Duplicate properties:\n";
-          std::cout << "{\n";
-          std::cout << dup.to_string() << "\n";
-          std::cout << "}\n";
-        }
-      }
-    }
   }
 }
 
