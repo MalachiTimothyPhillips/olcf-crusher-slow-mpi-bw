@@ -6,35 +6,6 @@
 #include "omp.h"
 #include <iostream>
 
-#include <unistd.h>
-#include <fcntl.h>
-#include <libgen.h>
-
-void
-fileSync(occa::kernel kernel)
-{
-  const std::string binDir(dirname((char*) kernel.sourceFilename().c_str()));
-  std::string file;
-  int fd;
-
-  file = binDir + "/binary";
-  fd = open(file.c_str(), O_RDONLY);
-  fsync(fd);
-  close(fd);
-
-  file = binDir + "/launcher_binary";
-  fd = open(file.c_str(), O_RDONLY);
-  fsync(fd);
-  close(fd);
-
-  file = binDir;
-  fd = open(file.c_str(), O_RDONLY);
-  fsync(fd);
-  close(fd);
-  std::cout << "dir:" << binDir << std::endl;
-  std::cout << "file:" << file << std::endl;
-}
-
 comm_t::comm_t(MPI_Comm _comm)
 {
   mpiComm = _comm;
@@ -194,9 +165,7 @@ device_t::buildNativeKernel(const std::string &filename,
 {
   occa::properties nativeProperties = props;
   nativeProperties["okl/enabled"] = false;
-  occa::kernel kernel = occa::device::buildKernel(filename, kernelName, nativeProperties);
-  fileSync(kernel);
-  return kernel;
+  return occa::device::buildKernel(filename, kernelName, nativeProperties);
 }
 occa::kernel
 device_t::buildKernel(const std::string &filename,
@@ -207,9 +176,7 @@ device_t::buildKernel(const std::string &filename,
   if(filename.find(".okl") != std::string::npos){
     occa::properties propsWithSuffix = props;
     propsWithSuffix["kernelNameSuffix"] = suffix;
-    occa::kernel kernel = occa::device::buildKernel(filename, kernelName, propsWithSuffix);
-    fileSync(kernel);
-    return kernel;
+    return occa::device::buildKernel(filename, kernelName, propsWithSuffix);
   }
   else{
     occa::properties propsWithSuffix = props;
