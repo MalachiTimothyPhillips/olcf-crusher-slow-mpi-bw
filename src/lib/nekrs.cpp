@@ -403,12 +403,9 @@ static void dryRun(setupAide &options, int npTarget)
 
   if(udf.setup0) udf.setup0(comm, options);
 
-  // init solver
   platform_t* platform = platform_t::getInstance();
 
   compileKernels();
-
-  platform->linAlg = linAlg_t::getInstance();
 
   if(rank == 0) {
     std::string cache_dir;

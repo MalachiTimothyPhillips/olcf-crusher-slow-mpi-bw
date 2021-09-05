@@ -18,7 +18,7 @@ static const unsigned transpose = 0;
 static const unsigned recv = 0^transpose, send = 1^transpose;
 
 static int OGS_MPI_SUPPORT = 0;
-static int compileCalls = 0;
+static int compiled = 0;
 
 typedef enum { mode_plain, mode_vec, mode_many,
                mode_dry_run } gs_mode;
@@ -175,7 +175,6 @@ int oogs::gpu_mpi()
 
 void oogs::compile(const occa::device& device, std::string mode, int rank)
 {
-  compileCalls++;
   if(rank == 0){
      device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", ogs::kernelInfo);
      device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_floatAdd", ogs::kernelInfo);
@@ -196,6 +195,7 @@ void oogs::compile(const occa::device& device, std::string mode, int rank)
       device.buildKernel(fileName.c_str(), "unpackBuf_halfAdd", nativeProperties);
     }
   }
+  compiled++;
 }
 oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::function<void()> callback, oogs_mode gsMode)
 {
@@ -216,7 +216,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
   gs->rank = rank; 
   gs->mode = gsMode;
 
-  if(!compileCalls) oogs::compile(device, device.mode(), rank);
+  if(!compiled) oogs::compile(device, device.mode(), rank);
 
   if(gsMode == OOGS_DEFAULT) return gs; 
   gs->packBufFloatAddKernel = device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", ogs::kernelInfo);
