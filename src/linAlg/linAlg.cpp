@@ -70,8 +70,6 @@ void linAlg_t::setup() {
 
   MPI_Barrier(platform->comm.mpiComm);
   double tStartLoadKernel = MPI_Wtime();
-  if(platform->comm.mpiRank == 0)  printf("loading linAlg kernels ... "); fflush(stdout);
-
   {
     fillKernel = kernels.get("fill");
     absKernel = kernels.get("vabs");
@@ -106,8 +104,6 @@ void linAlg_t::setup() {
     weightedInnerProdManyKernel = kernels.get("weightedInnerProdMany");
     weightedInnerProdMultiKernel = kernels.get("weightedInnerProdMulti");
   }
-
-  if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStartLoadKernel); fflush(stdout);
 }
 
 linAlg_t::~linAlg_t() {

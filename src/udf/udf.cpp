@@ -55,6 +55,8 @@ int udfBuild(const char* udfFile, setupAide& options)
              udfFileResolved,
              udf_dir,
              udf_dir);
+    fileSync(udfFileCache);
+    fileSync(udfLib);
     if(verbose) printf("%s\n", cmd);
     if(system(cmd)) return EXIT_FAILURE; 
   }
