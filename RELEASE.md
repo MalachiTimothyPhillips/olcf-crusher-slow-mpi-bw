@@ -18,10 +18,10 @@
 
 * [par] Use `preconditioner = multigrid+coarse` instead of `multigrid` 
 * [udf] Add namespace qualifier std e.g. `std::cout` instead of `cout`
-* [udf] Change `void UDF_LoadKernels(nrs_t* nrs);`  to
+* [udf] Change `void UDF_LoadKernels(nrs_t* nrs);` to
                `void UDF_LoadKernels(occa::properties& kernelInfo);`
-* [udf] Change `occa::kernel udfBuildKernel(nrs_t* nrs, const char* function);`  to
-               `occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function);`  to
+* [udf] Change `occa::kernel udfBuildKernel(nrs_t* nrs, const char* function);` to
+               `occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function);` to
 * [udf] Change `(plugin)::buildKernel(nrs_t* nrs);`  to
                `(plugin)::buildKernel(occa::properties kernelInfo);
 
@@ -30,8 +30,6 @@
 * [300](https://github.com/Nek5000/nekRS/issues/300)
 * [258](https://github.com/Nek5000/nekRS/issues/258)
 * [201](https://github.com/Nek5000/nekRS/issues/201)
-* [166](https://github.com/Nek5000/nekRS/issues/166)
-* [2](https://github.com/Nek5000/nekRS/issues/2)
 
 ## Thanks to our Contributors
 
