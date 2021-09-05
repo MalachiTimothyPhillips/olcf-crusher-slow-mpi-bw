@@ -534,7 +534,7 @@ int buildNekInterface(int ldimt, int N, int np, setupAide& options)
     printf("building nek ... "); fflush(stdout);
     double tStart = MPI_Wtime();
     sprintf(buf, "cd %s && cp %s/makefile.template makefile && \
-		 make -s -j4 S=%s CASENAME=%s CASEDIR=%s NEKRS_WORKING_DIR=%s NEKRS_NEKINTERFACE_DIR=%s \
+		 make -s -j8 S=%s CASENAME=%s CASEDIR=%s NEKRS_WORKING_DIR=%s NEKRS_NEKINTERFACE_DIR=%s \
 		 -f %s/Makefile lib usr libnekInterface",
          cache_dir, nek5000_dir, nek5000_dir, usrname.c_str(), cache_dir, cache_dir, 
          nekInterface_dir, nekInterface_dir);
