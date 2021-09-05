@@ -165,6 +165,8 @@ device_t::buildNativeKernel(const std::string &filename,
 {
   occa::properties nativeProperties = props;
   nativeProperties["okl/enabled"] = false;
+  if(platform->options.compareArgs("BUILD ONLY", "TRUE"))
+    nativeProperties["verbose"] = true;
   return occa::device::buildKernel(filename, kernelName, nativeProperties);
 }
 occa::kernel
@@ -176,6 +178,8 @@ device_t::buildKernel(const std::string &filename,
   if(filename.find(".okl") != std::string::npos){
     occa::properties propsWithSuffix = props;
     propsWithSuffix["kernelNameSuffix"] = suffix;
+    if(platform->options.compareArgs("BUILD ONLY", "TRUE"))
+      propsWithSuffix["verbose"] = true;
     return occa::device::buildKernel(filename, kernelName, propsWithSuffix);
   }
   else{
