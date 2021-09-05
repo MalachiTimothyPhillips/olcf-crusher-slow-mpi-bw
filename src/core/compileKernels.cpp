@@ -1379,7 +1379,7 @@ void compileKernels() {
     MPI_Barrier(platform->comm.mpiComm);
     double tStart = MPI_Wtime();
     if (platform->comm.mpiRank == 0)
-      printf("compiling all kernels ... ");
+      printf("loading kernels ... ");
     fflush(stdout);
 
     platform->kernels.compile();

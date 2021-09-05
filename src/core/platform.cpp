@@ -6,6 +6,10 @@
 #include "omp.h"
 #include <iostream>
 
+#include <unistd.h>
+#include <fcntl.h>
+#include <libgen.h>
+
 comm_t::comm_t(MPI_Comm _comm)
 {
   mpiComm = _comm;
@@ -165,7 +169,9 @@ device_t::buildNativeKernel(const std::string &filename,
 {
   occa::properties nativeProperties = props;
   nativeProperties["okl/enabled"] = false;
-  return occa::device::buildKernel(filename, kernelName, nativeProperties);
+  occa::memory kernel = occa::device::buildKernel(filename, kernelName, nativeProperties);
+  sync(kernel);
+  return kernel;
 }
 occa::kernel
 device_t::buildKernel(const std::string &filename,
@@ -176,7 +182,9 @@ device_t::buildKernel(const std::string &filename,
   if(filename.find(".okl") != std::string::npos){
     occa::properties propsWithSuffix = props;
     propsWithSuffix["kernelNameSuffix"] = suffix;
-    return occa::device::buildKernel(filename, kernelName, propsWithSuffix);
+    occa::memory kernel = occa::device::buildKernel(filename, kernelName, propsWithSuffix);
+    sync(kernel);
+    return kernel;
   }
   else{
     occa::properties propsWithSuffix = props;
@@ -379,6 +387,31 @@ kernelRequestManager_t::get(const std::string& request, bool checkValid) const
 }
 
 void
+sync(occa::kernel kernel)
+{
+  const std::string binDir(dirname((char*) kernel.sourceFilename().c_str()));
+  std::string file;
+  int fd;
+
+  file = binDir + "/binary";
+  fd = open(file.c_str(), O_RDONLY);
+  fsync(fd);
+  close(fd);
+
+  file = binDir + "/launcher_binary";
+  fd = open(file.c_str(), O_RDONLY);
+  fsync(fd);
+  close(fd);
+
+  file = binDir;
+  fd = open(file.c_str(), O_RDONLY);
+  fsync(fd);
+  close(fd);
+  std::cout << "dir:" << binDir << std::endl;
+  std::cout << "file:" << file << std::endl;
+}
+
+void
 kernelRequestManager_t::compile()
 {
 
@@ -387,12 +420,9 @@ kernelRequestManager_t::compile()
 
   constexpr int maxCompilingRanks {100};
 
-  int buildNodeLocal;
-  if(getenv("NEKRS_BUILD_NODE_LOCAL")){
+  int buildNodeLocal = 0;
+  if(getenv("NEKRS_BUILD_NODE_LOCAL"))
     buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
-  } else {
-    buildNodeLocal = 0;
-  }
 
   const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
   const int ranksCompiling =
@@ -451,24 +481,9 @@ kernelRequestManager_t::compile()
   };
 
   MPI_Barrier(platform->comm.mpiComm);
-  if(rank == 0)
-  {
-    std::cout << std::endl;
-    std::cout << "Calling compileKernels\n";
-  }
-  {
-    compileKernels();
-  }
-
+  compileKernels();
   MPI_Barrier(platform->comm.mpiComm);
-  if(rank == 0)
-  {
-    std::cout << "Calling loadKernels\n";
-  }
-
-  {
-    loadKernels();
-  }
+  loadKernels();
 }
 
 
