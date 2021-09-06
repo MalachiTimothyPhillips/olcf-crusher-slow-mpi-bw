@@ -230,11 +230,6 @@ void registerNrsKernels() {
     platform->kernels.add_kernel(
         section + kernelName, fileName, kernelName, kernelInfoBC);
 
-    fileName = oklpath + "nrs/pressureUpdate" + ".okl";
-    kernelName = "pressureUpdate";
-    platform->kernels.add_kernel(
-        section + kernelName, fileName, kernelName, meshProps);
-
     fileName = oklpath + "nrs/velocityRhs" + suffix + ".okl";
     kernelName = "velocityRhsTOMBO" + suffix;
     platform->kernels.add_kernel(
@@ -338,11 +333,6 @@ void registerNrsKernels() {
     platform->kernels.add_kernel(
         section + kernelName, fileName, kernelName, kernelInfo);
     kernelName = "setEllipticCoeffPressure";
-    platform->kernels.add_kernel(
-        section + kernelName, fileName, kernelName, kernelInfo);
-
-    fileName = oklpath + "nrs/mueDiv.okl";
-    kernelName = "mueDiv";
     platform->kernels.add_kernel(
         section + kernelName, fileName, kernelName, kernelInfo);
   }
