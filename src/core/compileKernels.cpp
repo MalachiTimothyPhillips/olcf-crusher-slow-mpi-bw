@@ -1335,10 +1335,9 @@ void compileKernels() {
 
   {
     auto communicator = buildNodeLocal ? platform->comm.localComm : platform->comm.mpiComm;
-    auto rank = buildNodeLocal ? platform->comm.localRank : platform->comm.mpiRank;
     ogs::initKernels(communicator, platform->device);
     oogs::compile(
-        platform->device, platform->device.mode(), rank);
+        platform->device, platform->device.mode(), communicator);
   }
 
   { registerMeshKernels(); }

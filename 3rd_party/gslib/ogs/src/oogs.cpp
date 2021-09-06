@@ -173,8 +173,10 @@ int oogs::gpu_mpi()
   return OGS_MPI_SUPPORT;
 }
 
-void oogs::compile(const occa::device& device, std::string mode, int rank)
+void oogs::compile(const occa::device& device, std::string mode, MPI_Comm comm)
 {
+  int rank;
+  MPI_Comm_rank(comm, &rank);
   if(rank == 0){
      device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", ogs::kernelInfo);
      device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_floatAdd", ogs::kernelInfo);
@@ -216,7 +218,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
   gs->rank = rank; 
   gs->mode = gsMode;
 
-  if(!compiled) oogs::compile(device, device.mode(), rank);
+  if(!compiled) oogs::compile(device, device.mode(), gs->comm);
 
   if(gsMode == OOGS_DEFAULT) return gs; 
   gs->packBufFloatAddKernel = device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", ogs::kernelInfo);
