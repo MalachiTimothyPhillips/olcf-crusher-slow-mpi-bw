@@ -173,25 +173,30 @@ int oogs::gpu_mpi()
   return OGS_MPI_SUPPORT;
 }
 
-void oogs::compile(const occa::device& device, std::string mode, MPI_Comm comm)
+void oogs::compile(const occa::device& device, std::string mode, MPI_Comm comm, bool verbose)
 {
+  occa::properties props = ogs::kernelInfo;
+  if(verbose){
+    props["verbose"] = true;
+  }
+
   int rank;
   MPI_Comm_rank(comm, &rank);
   if(rank == 0){
-     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_floatAdd", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleAdd", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleAdd", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleMin", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleMin", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleMax", ogs::kernelInfo);
-     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleMax", ogs::kernelInfo);
+     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_floatAdd", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_floatAdd", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleAdd", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleAdd", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleMin", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleMin", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "packBuf_doubleMax", props);
+     device.buildKernel(DOGS "/okl/oogs.okl", "unpackBuf_doubleMax", props);
 
     if(mode == "HIP" || mode == "CUDA") {
       std::string fileName = DOGS;
       if(mode == "CUDA") fileName += "/okl/oogs-half.cu";
       if(mode == "HIP") fileName += "/okl/oogs-half.hip";
-      occa::properties nativeProperties = ogs::kernelInfo;
+      occa::properties nativeProperties = props;
       nativeProperties["okl/enabled"] = false;
       device.buildKernel(fileName.c_str(), "packBuf_halfAdd", nativeProperties);
       device.buildKernel(fileName.c_str(), "unpackBuf_halfAdd", nativeProperties);
