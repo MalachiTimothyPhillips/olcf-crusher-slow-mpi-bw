@@ -397,7 +397,8 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'NEKINTF'
 
-      character*3 suffix
+      character suffix*(*)
+
       common /scrcg/ pm1(lx1,ly1,lz1,lelv)
 
       call copy(pm1,pr,nx1*ny1*nz1*nelv)

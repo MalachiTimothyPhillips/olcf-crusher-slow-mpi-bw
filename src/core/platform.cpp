@@ -149,6 +149,8 @@ device_t::buildNativeKernel(const std::string &filename,
   nativeProperties["okl/enabled"] = false;
   if(platform->options.compareArgs("BUILD ONLY", "TRUE"))
     nativeProperties["verbose"] = true;
+  if(platform->device.mode() == "OpenMP")
+    nativeProperties["defines/__NEKRS__OMP__"] = 1;
   return occa::device::buildKernel(filename, kernelName, nativeProperties);
 }
 occa::kernel
@@ -290,9 +292,6 @@ device_t::device_t(setupAide& options, MPI_Comm comm)
     buf.assign(getenv("NEKRS_CXXFLAGS"));
     setenv("OCCA_CXXFLAGS", buf.c_str(), 1);
   }
-
-  int Nthreads = 1;
-  if(this->mode() != "OpenMP") omp_set_num_threads(Nthreads);
 
   bufferSize = 0;
 

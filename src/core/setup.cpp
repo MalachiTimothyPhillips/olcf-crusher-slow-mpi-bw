@@ -537,9 +537,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->pressureDirichletBCKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "pressureUpdate";
-      nrs->pressureUpdateKernel =  platform->kernels.get( section + kernelName);
-
       kernelName = "velocityRhsTOMBO" + suffix;
       nrs->velocityRhsKernel =
         platform->kernels.get( section + kernelName);
@@ -608,10 +605,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         platform->kernels.get( section + kernelName);
       kernelName = "setEllipticCoeffPressure";
       nrs->setEllipticCoeffPressureKernel =
-        platform->kernels.get( section + kernelName);
-
-      kernelName = "mueDiv";
-      nrs->mueDivKernel =
         platform->kernels.get( section + kernelName);
   }
 

@@ -46,6 +46,7 @@ struct nrs_t
 
   int NVfields, NTfields;
 
+  int converged;
 
   dfloat dt[3], idt;
   dfloat p0th[3] = {0.0, 0.0, 0.0};
@@ -110,8 +111,6 @@ struct nrs_t
   occa::kernel pressureAddQtlKernel;
   occa::kernel pressureStressKernel;
 
-  occa::kernel mueDivKernel;
-
   occa::kernel subCycleVolumeKernel,  subCycleCubatureVolumeKernel;
   occa::kernel subCycleSurfaceKernel, subCycleCubatureSurfaceKernel;
   occa::kernel subCycleRKUpdateKernel;
@@ -164,7 +163,6 @@ struct nrs_t
   occa::kernel sumMakefKernel;
   occa::kernel pressureRhsKernel;
   occa::kernel pressureDirichletBCKernel;
-  occa::kernel pressureUpdateKernel;
 
   occa::kernel velocityRhsKernel;
   occa::kernel velocityNeumannBCKernel;
