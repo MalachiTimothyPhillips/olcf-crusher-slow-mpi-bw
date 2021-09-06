@@ -377,12 +377,16 @@ kernelRequestManager_t::compile()
 
   const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
   const int ranksCompiling =
+#if 0
     std::min(
       maxCompilingRanks,
       buildNodeLocal ?
         platformRef.comm.localCommSize :
         platformRef.comm.mpiCommSize
     );
+#else
+    1;
+#endif
 
   std::vector<kernelRequest_t> kernelRequestVec(kernels.begin(), kernels.end());
 
