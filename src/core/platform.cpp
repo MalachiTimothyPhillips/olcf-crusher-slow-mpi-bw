@@ -12,27 +12,9 @@ comm_t::comm_t(MPI_Comm _comm)
   MPI_Comm_rank(_comm, &mpiRank);
   MPI_Comm_size(_comm, &mpiCommSize);
 
-  long int hostId = gethostid();
-
-  std::vector<long int> hostIds(mpiCommSize, 0);
-  MPI_Allgather(&hostId,1,MPI_LONG,hostIds.data(),1,MPI_LONG,_comm);
-
-  std::vector<int> ranksInLocalComm;
-  for (int r = 0; r < mpiCommSize; r++){
-    if (hostIds[r] == hostId) {
-      ranksInLocalComm.push_back(r);
-    }
-  }
-
-  localCommSize = ranksInLocalComm.size();
-  MPI_Group local_group;
-  MPI_Group global_group;
-  MPI_Comm_group(_comm, &global_group);
-  MPI_Group_incl(global_group, localCommSize, ranksInLocalComm.data(), &local_group);
-
-  MPI_Comm_create_group(_comm, local_group, 0, &localComm);
-
+  MPI_Comm_split_type(_comm, MPI_COMM_TYPE_SHARED, mpiRank, MPI_INFO_NULL, &localComm);
   MPI_Comm_rank(localComm, &localRank);
+  MPI_Comm_size(localComm, &localCommSize);
 
 }
 
