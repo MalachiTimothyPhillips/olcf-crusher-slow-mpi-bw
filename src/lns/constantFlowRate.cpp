@@ -224,7 +224,28 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   }
 
   if (recomputeBaseFlowRate) {
+    int NiterU, NiterV, NiterW, NiterUVW, NiterP;
+    if(nrs->uvwSolver){
+      NiterUVW = nrs->uvwSolver->Niter;
+    }
+    else {
+      NiterU = nrs->uSolver->Niter;
+      NiterV = nrs->vSolver->Niter;
+      NiterW = nrs->wSolver->Niter;
+    }
+    NiterP = nrs->pSolver->Niter;
+
     ConstantFlowRate::compute(nrs, lengthScale, time);
+
+    if(nrs->uvwSolver){
+      nrs->uvwSolver->Niter += NiterUVW;
+    }
+    else {
+      nrs->uSolver->Niter += NiterU;
+      nrs->vSolver->Niter += NiterV;
+      nrs->wSolver->Niter += NiterW;
+    }
+    nrs->pSolver->Niter += NiterP;
   }
 
   occa::memory &o_currentFlowRate = platform->o_mempool.slice0;

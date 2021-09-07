@@ -668,26 +668,7 @@ void fluidSolve(
   platform->timer.toc("velocitySolve");
 
   if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE")){
-    int NiterU, NiterV, NiterW, NiterUVW, NiterP;
-    if(nrs->uvwSolver){
-      NiterUVW = nrs->uvwSolver->Niter;
-    }
-    else {
-      NiterU = nrs->uSolver->Niter;
-      NiterV = nrs->vSolver->Niter;
-      NiterW = nrs->wSolver->Niter;
-    }
-    NiterP = nrs->pSolver->Niter;
     ConstantFlowRate::apply(nrs, tstep, time);
-    if(nrs->uvwSolver){
-      nrs->uvwSolver->Niter += NiterUVW;
-    }
-    else {
-      nrs->uSolver->Niter += NiterU;
-      nrs->vSolver->Niter += NiterV;
-      nrs->wSolver->Niter += NiterW;
-    }
-    nrs->pSolver->Niter += NiterP;
   }
 
 }
