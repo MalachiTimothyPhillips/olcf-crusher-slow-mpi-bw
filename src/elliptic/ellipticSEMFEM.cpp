@@ -31,9 +31,9 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string oklpath = install_dir + "/okl/elliptic/";
   std::string filename = oklpath + "ellipticGather.okl";
-  gatherKernel = platform->kernels.get("gather");
+  gatherKernel = platform->kernels.getKernel("gather");
   filename = oklpath + "ellipticScatter.okl";
-  scatterKernel = platform->kernels.get("scatter");
+  scatterKernel = platform->kernels.getKernel("scatter");
 
   MPI_Barrier(platform->comm.mpiComm);
   double tStart = MPI_Wtime();

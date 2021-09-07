@@ -858,7 +858,7 @@ void fem_assembly() {
 }
 
 void load(){
-  computeStiffnessMatrixKernel = platform->kernels.get(
+  computeStiffnessMatrixKernel = platform->kernels.getKernel(
     "computeStiffnessMatrix"
   );
 }
