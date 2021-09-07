@@ -145,11 +145,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   kernelInfo["include_paths"].asArray();
 
   int N, cubN;
-  std::string install_dir;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   platform->options.getArgs("CUBATURE POLYNOMIAL DEGREE", cubN);
   platform->options.getArgs("NUMBER OF SCALARS", nrs->Nscalar);
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
   platform->options.getArgs("MESH DIMENSION", nrs->dim);
   platform->options.getArgs("ELEMENT TYPE", nrs->elementType);
   if(platform->device.mode() == "Serial")
@@ -223,11 +221,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     if(platform->comm.mpiRank == 0) 
       printf("min %2.0f%% of the local elements are internal\n", 100*val);
   }
-
-  occa::properties kernelInfoV  = kernelInfo;
-  occa::properties kernelInfoM  = kernelInfo;
-  occa::properties kernelInfoP  = kernelInfo;
-  occa::properties kernelInfoS  = kernelInfo;
 
   nrs->NVfields = 3;
   nrs->NTfields = nrs->NVfields + 1;   // Total Velocity + Pressure
@@ -1023,8 +1016,6 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
   cds_t* cds = new cds_t();
   platform_t* platform = platform_t::getInstance();
   device_t& device = platform->device;
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
 
   cds->mesh[0]     = nrs->_mesh;
   mesh_t* mesh     = cds->mesh[0];
@@ -1220,13 +1211,8 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
 
   if(avmEnabled) avm::setup(cds);
 
-  // build kernels
-  occa::properties kernelInfo = *nrs->kernelInfo;
-  //kernelInfo["defines/" "p_NSfields"]  = cds->NSfields;
-
-  std::string fileName, kernelName;
+  std::string kernelName;
   const std::string suffix = "Hex3D";
-  const std::string oklpath = install_dir + "/okl/";
 
   MPI_Barrier(platform->comm.mpiComm);
   double tStartLoadKernel = MPI_Wtime();
