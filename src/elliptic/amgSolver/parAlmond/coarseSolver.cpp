@@ -89,10 +89,6 @@ void coarseSolver::setup(
   }
 
 
-   if(options.compareArgs("BUILD ONLY", "TRUE"))
-    return; // bail early as this will not get used
-
-
   if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
     if(useFP32)

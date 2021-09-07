@@ -251,8 +251,6 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
 
   if(!constructOnHost) load();
 
-  if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return NULL;
-
   matrix_distribution();
 
   fem_assembly();
