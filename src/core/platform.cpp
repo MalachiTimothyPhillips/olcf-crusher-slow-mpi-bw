@@ -286,8 +286,7 @@ device_t::device_t(setupAide& options, MPI_Comm comm)
   // overwrite compiler settings to ensure
   // compatability of libocca and kernelLauchner 
   if(this->mode() != "Serial") {
-    std::string buf;
-    buf.assign(getenv("NEKRS_CXX"));
+    std::string buf = "g++";
     setenv("OCCA_CXX", buf.c_str(), 1);
     buf.assign(getenv("NEKRS_CXXFLAGS"));
     setenv("OCCA_CXXFLAGS", buf.c_str(), 1);
