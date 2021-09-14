@@ -8,6 +8,7 @@
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 : elliptic(m_elliptic),
   solveCount(0),
+  trialCount(0),
   gen(rd())
 {
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
