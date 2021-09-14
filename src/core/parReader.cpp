@@ -1442,15 +1442,11 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
           append_error("subCycling = auto requires the targetCFL to be set");
         }
       }
-      const int nSteps = [targetCFL](){
-        if (targetCFL <= 0.5){
-          return 0;
-        } else if (targetCFL > 0.5 && targetCFL <= 2.0){
-          return 1;
-        } else {
-          return 2;
-        }
-      }();
+      int nSteps;
+      if (targetCFL <= 0.5){
+        nSteps = 0;
+      }
+      nSteps = std::ceil(targetCFL / 2.0);
       options.setArgs("SUBCYCLING STEPS", std::to_string(nSteps));
     }
   }
