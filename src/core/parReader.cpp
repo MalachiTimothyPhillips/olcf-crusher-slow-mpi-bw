@@ -689,6 +689,7 @@ void parsePreconditioner(const int rank, setupAide &options,
     {"multiplicative"},
     {"overlap"},
     {"coarse"},
+    {"auto"},
   };
 
 
@@ -707,6 +708,13 @@ void parsePreconditioner(const int rank, setupAide &options,
   for(std::string s : list)
   {
     checkValidity(rank, validValues, s);
+  }
+
+  if(p_preconditioner == "auto"){
+    options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
+
+    // set up initial preconditioner
+    p_preconditioner = "pmg+coarse";
   }
 
   if (p_preconditioner == "none") {
@@ -1147,6 +1155,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE KRYLOV SOLVER", "PGMRES+FLEXIBLE");
   options.setArgs("PRESSURE PRECONDITIONER", "MULTIGRID");
   options.setArgs("PRESSURE DISCRETIZATION", "CONTINUOUS");
+  options.setArgs("PRESSURE AUTO PRECONDITIONER", "FALSE");
   options.setArgs("PRESSURE BASIS", "NODAL");
   options.setArgs("AMG SOLVER", "BOOMERAMG");
   options.setArgs("AMG SOLVER PRECISION", "FP64");
