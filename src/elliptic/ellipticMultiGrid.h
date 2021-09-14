@@ -33,10 +33,11 @@ enum class SmootherType
   SCHWARZ,
   JACOBI,
 };
-enum class SecondarySmootherType
+enum class ChebyshevSmootherType
 {  
   JACOBI,
-  SCHWARZ,
+  ASM,
+  RAS,
 };
 
 class MGLevel : public parAlmond::multigridLevel
@@ -57,8 +58,11 @@ public:
 
   //smoothing params
   SmootherType stype;
-  SecondarySmootherType smtypeUp;
-  SecondarySmootherType smtypeDown;
+  ChebyshevSmootherType chebyshevSmoother;
+
+  static constexpr int Nsmoothers {3};
+
+  dfloat lambdaMax[Nsmoothers];
 
   dfloat lambda1, lambda0;
   int ChebyshevIterations;
@@ -70,7 +74,8 @@ public:
   static occa::memory o_smootherUpdate;
   occa::kernel preFDMKernel;
   bool overlap;
-  occa::kernel fusedFDMKernel;
+  occa::kernel fusedRASKernel;
+  occa::kernel fusedASMKernel;
   occa::kernel postFDMKernel;
   // Eigenvectors
   occa::memory o_Sx;
@@ -148,7 +153,9 @@ public:
   void Report();
 
   void setupSmoother(elliptic_t* base);
+  void computeMaxEigs(elliptic_t* base);
   dfloat maxEigSmoothAx();
+
 
   void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
 private:

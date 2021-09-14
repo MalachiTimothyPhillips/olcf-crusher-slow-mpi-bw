@@ -28,6 +28,7 @@
 #include "platform.hpp"
 #include "timer.hpp"
 #include "linAlg.hpp"
+#include "ellipticAutomaticPreconditioner.h"
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 {
@@ -38,6 +39,11 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   options.getArgs("MAXIMUM ITERATIONS", maxIter);
   const int verbose = options.compareArgs("VERBOSE", "TRUE");
   elliptic->resNormFactor = 1 / (elliptic->Nfields * mesh->volume);
+
+  const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
+  if(useAutoPreconditioner){
+    elliptic->autoPreconditioner->apply();
+  }
 
   if(verbose) {
     const dfloat rhsNorm = 

@@ -71,8 +71,8 @@ determineMGLevels(std::string section)
 
     return levels;
 
-  } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","ASM") ||
-            platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","RAS")) {
+  } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER","ASM") ||
+            platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER","RAS")) {
     std::map<int,std::vector<int> > mg_level_lookup =
     {
       {1,{1}},
@@ -93,7 +93,7 @@ determineMGLevels(std::string section)
     };
 
     return mg_level_lookup.at(N);
-  } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","JAC")) {
+  } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER","JAC")) {
     std::map<int,std::vector<int> > mg_level_lookup =
     {
       {1,{1}},
@@ -886,6 +886,21 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("MAXIMUM ITERATIONS", options.getArgs("PRESSURE MAXIMUM ITERATIONS"));
     nrs->pOptions.setArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR"));
     nrs->pOptions.setArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR"));
+
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER START",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER START"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER TRIAL FREQUENCY",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER TRIAL FREQUENCY"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER MAX CHEBY ORDER",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER MAX CHEBY ORDER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER MIN CHEBY ORDER",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER MIN CHEBY ORDER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER MAX TRIALS",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER MAX TRIALS"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER SAMPLING",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER SAMPLING"));
 
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";

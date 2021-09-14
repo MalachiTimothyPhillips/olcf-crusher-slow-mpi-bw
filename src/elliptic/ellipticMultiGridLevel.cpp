@@ -96,18 +96,10 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
 void MGLevel::smoother(occa::memory o_x, occa::memory o_Sx, bool x_is_zero)
 {
-  // x_is_zero = true <-> downward leg
-  if(x_is_zero) {
-    if (smtypeDown == SecondarySmootherType::JACOBI)
-      this->smootherJacobi(o_x, o_Sx);
-    else
-      this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
-  } else {
-    if (smtypeUp == SecondarySmootherType::JACOBI)
-      this->smootherJacobi(o_x, o_Sx);
-    else
-      this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
-  }
+  if (chebyshevSmoother == ChebyshevSmootherType::JACOBI)
+    this->smootherJacobi(o_x, o_Sx);
+  else
+    this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
 }
 
 void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
