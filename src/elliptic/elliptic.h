@@ -44,6 +44,7 @@
 
 class ResidualProjection;
 class elliptic_t;
+class automaticPreconditioner_t;
 
 struct GmresData{
   GmresData(elliptic_t*);
@@ -180,6 +181,7 @@ struct elliptic_t
   int* levels;
 
   ResidualProjection* residualProjection;
+  automaticPreconditioner_t* autoPreconditioner;
   GmresData* gmresData;
 };
 

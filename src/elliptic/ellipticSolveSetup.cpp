@@ -28,9 +28,14 @@
 #include <string>
 #include "platform.hpp"
 #include "linAlg.hpp"
+#include "ellipticAutomaticPreconditioner.h"
 
 void ellipticSolveSetup(elliptic_t* elliptic)
 {
+
+  if(elliptic->options.compareArgs("AUTO PRECONDITIONER", "TRUE")){
+    elliptic->autoPreconditioner = new automaticPreconditioner_t(*elliptic);
+  }
   
   mesh_t* mesh      = elliptic->mesh;
   
