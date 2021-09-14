@@ -35,12 +35,12 @@ void
 automaticPreconditioner_t::apply()
 {
   if(trialCount > maxTrials) return;
-  solveCount++;
   if(solveCount % trialFrequency == 0){
     trialCount++;
     evaluate_current_solver();
     select_solver();
   }
+  solveCount++;
 }
 
 void
@@ -132,4 +132,20 @@ automaticPreconditioner_t::reinitializePreconditioner()
 #endif
   }
 
+}
+
+std::string
+automaticPreconditioner_t::to_string() const
+{
+  std::ostringstream ss;
+  std::cout.setf(std::ios::scientific);
+  int outPrecisionSave = std::cout.precision();
+  std::cout.precision(5);
+  for(auto && solver : visitedSolvers){
+    ss << "Solver : " << solver.to_string() << " took " << solverToTime.at(solver) << " s\n";
+  }
+  std::cout.unsetf(std::ios::scientific);
+  std::cout.precision(outPrecisionSave);
+
+  return ss.str();
 }

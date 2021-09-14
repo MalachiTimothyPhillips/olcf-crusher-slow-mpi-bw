@@ -4,11 +4,26 @@
 #include <map>
 #include <tuple>
 #include <random>
+#include <string>
+#include <iostream>
 class elliptic_t;
 
 struct solverDescription_t{
 
   solverDescription_t(){}
+
+  std::string to_string() const {
+    std::ostringstream ss;
+    ss << "Chebyshev+";
+    if(smoother == 0)
+      ss << "Jacobi";
+    else if(smoother == 1)
+      ss << "ASM";
+    else if(smoother == 2)
+      ss << "RAS";
+    ss << "+Degree=" << chebyOrder;
+    return ss.str();
+  }
 
   solverDescription_t(unsigned m_smoother, unsigned m_chebyOrder)
   : smoother(m_smoother), chebyOrder(m_chebyOrder) {}
@@ -41,6 +56,9 @@ class automaticPreconditioner_t{
   };
   public:
   automaticPreconditioner_t(elliptic_t& m_elliptic);
+
+  std::string
+  to_string() const;
 
   void apply();
 
