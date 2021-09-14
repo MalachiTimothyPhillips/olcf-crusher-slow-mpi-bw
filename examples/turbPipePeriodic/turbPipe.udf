@@ -54,6 +54,12 @@ void UDF_Setup(nrs_t *nrs)
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
+  if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE")){
+    if(platform->comm.mpiRank == 0){
+      printf("constantFlowScale = %g\n", ConstantFlowRate::scaleFactor());
+    }
+    fflush(stdout);
+  }
   if (nrs->lastStep)
     if (ciMode) ciTestErrors(nrs, time, tstep);
 }
