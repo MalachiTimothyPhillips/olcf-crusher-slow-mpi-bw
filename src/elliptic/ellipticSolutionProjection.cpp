@@ -138,6 +138,7 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
 
 void SolutionProjection::computePostProjection(occa::memory & o_x)
 {
+
   const dfloat one = 1.0;
   const dfloat zero = 0.0;
 

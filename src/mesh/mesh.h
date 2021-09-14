@@ -252,7 +252,7 @@ void parallelSort(int size, int rank, MPI_Comm comm,
 #define mymax(a,b) (((a) > (b))?(a):(b))
 #define mymin(a,b) (((a) < (b))?(a):(b))
 
-void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage);
+void meshSolve(nrs_t *nrs, dfloat time, occa::memory o_U, int stage, int tstep);
 
 /* dimension independent mesh operations */
 void meshConnect(mesh_t* mesh);

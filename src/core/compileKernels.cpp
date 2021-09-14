@@ -18,6 +18,56 @@ std::string createOptionsPrefix(std::string section) {
       });
   return prefix;
 }
+void constructCoarseningAndProlongationKernels(occa::properties kernelInfo)
+{
+  const std::string suffix = "Hex3D";
+  const bool serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
+  std::string install_dir;
+  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+  const std::string oklpath = install_dir + "/okl/elliptic/";
+  std::string filename, kernelName;
+  for (int pass = 0; pass < 2; ++pass) {
+    auto levels = determineMGLevels("pressure", pass);
+
+    for (int levelIndex = 1; levelIndex < levels.size(); ++levelIndex) {
+
+      const int Nf = levels[levelIndex - 1];
+      const int Nc = levels[levelIndex];
+
+      // sizes for the coarsen and prolongation kernels. degree NFine to degree N
+      int NqFine = (Nf + 1);
+      int NqCoarse = (Nc + 1);
+      occa::properties coarsenProlongateKernelInfo = kernelInfo;
+      coarsenProlongateKernelInfo["defines/p_NqFine"] = Nf + 1;
+      coarsenProlongateKernelInfo["defines/p_NqCoarse"] = Nc + 1;
+
+      const int NpFine = (Nf + 1) * (Nf + 1) * (Nf + 1);
+      const int NpCoarse = (Nc + 1) * (Nc + 1) * (Nc + 1);
+      coarsenProlongateKernelInfo["defines/p_NpFine"] = NpFine;
+      coarsenProlongateKernelInfo["defines/p_NpCoarse"] = NpCoarse;
+
+      const std::string orderSuffix =
+          std::string("_") + std::to_string(Nf) + std::string("_") + std::to_string(Nc);
+
+      if (serial) {
+        filename = oklpath + "ellipticPreconCoarsen" + suffix + ".c";
+        kernelName = "ellipticPreconCoarsen" + suffix;
+        platform->kernels.add(kernelName + orderSuffix, filename, coarsenProlongateKernelInfo, orderSuffix);
+        filename = oklpath + "ellipticPreconProlongate" + suffix + ".c";
+        kernelName = "ellipticPreconProlongate" + suffix;
+        platform->kernels.add(kernelName + orderSuffix, filename, coarsenProlongateKernelInfo, orderSuffix);
+      }
+      else {
+        filename = oklpath + "ellipticPreconCoarsen" + suffix + ".okl";
+        kernelName = "ellipticPreconCoarsen" + suffix;
+        platform->kernels.add(kernelName + orderSuffix, filename, coarsenProlongateKernelInfo, orderSuffix);
+        filename = oklpath + "ellipticPreconProlongate" + suffix + ".okl";
+        kernelName = "ellipticPreconProlongate" + suffix;
+        platform->kernels.add(kernelName + orderSuffix, filename, coarsenProlongateKernelInfo, orderSuffix);
+      }
+    }
+  }
+}
 
 void compileKernels() {
 

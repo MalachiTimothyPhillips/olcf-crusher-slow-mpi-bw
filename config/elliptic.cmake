@@ -22,6 +22,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/ellipticMultiGridSchwarz.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticMultiGridSetup.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticOperator.cpp
+        ${ELLIPTIC_SOURCE_DIR}/ellipticAutomaticPreconditioner.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticPreconditioner.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticPreconditionerSetup.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticSolutionProjection.cpp

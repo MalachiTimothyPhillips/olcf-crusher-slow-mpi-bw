@@ -344,6 +344,7 @@ void timer_t::printRunStat(int step)
   const double tPressure = query("pressureSolve", "DEVICE:MAX");
   printStatEntry("    pressureSolve       ", "pressureSolve", "DEVICE:MAX", tSolve);
   printStatEntry("      rhs               ", "pressure rhs", "DEVICE:MAX", tPressure);
+  printStatEntry("      tuner             ", "autoPreconditioner", "DEVICE:MAX", tPressure);
 
   const double tPressurePreco = query("pressure preconditioner", "DEVICE:MAX");
   printStatEntry("      preconditioner    ", "pressure preconditioner", "DEVICE:MAX", tPressure);

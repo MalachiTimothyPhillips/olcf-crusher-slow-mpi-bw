@@ -84,6 +84,12 @@ initialGuess                previous [D]
 preconditioner              Jacobi [D]
                             <multigrid | pMG> [D for PRESSURE]         polynomial multigrid
                               +coarse [D for PRESSURE]                 coarse grid correction for polynomial multigrid
+                            auto                                       automatically tune solver params [PRESSURE only]
+                              + maxTrials = <int>                      maximum number of tuner trials
+                              + start     = <int>                      timestep to begin tuner
+                              + frequency = <int>                      number of steps to re-apply tuner
+                              + minDegree = <int>                      minimum Chebyshev degree
+                              + maxDegree = <int>                      maximum Chebyshev degree
 
 pMultigridCoarsening        <int>, <int>, ...                          custom polynomial order for each pMG level
 

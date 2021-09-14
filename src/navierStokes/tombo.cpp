@@ -5,7 +5,7 @@
 
 namespace tombo
 {
-occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage, int tstep, bool &evaluatesPreconditioner)
 {
   platform->timer.tic("pressure rhs", 1);
   double flopCount = 0.0;
@@ -119,14 +119,15 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   platform->timer.toc("pressure rhs");
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
-  ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
+  evaluatesPreconditioner =
+      ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1, tstep);
 
   platform->flopCounter->add("pressure RHS", flopCount);
 
   return platform->o_mempool.slice1;
 }
 
-occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory velocitySolve(nrs_t *nrs, dfloat time, int stage, int tstep)
 {
   platform->timer.tic("velocity rhs", 1);
   double flopCount = 0.0;
@@ -199,11 +200,11 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
   platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
   if(nrs->uvwSolver) {
-    ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
+    ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0, tstep);
   } else {
-    ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
-    ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
-    ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2);
+    ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0, tstep);
+    ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1, tstep);
+    ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2, tstep);
   }
 
   platform->flopCounter->add("velocity RHS", flopCount);

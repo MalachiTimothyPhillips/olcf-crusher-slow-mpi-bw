@@ -13,7 +13,7 @@
 
 #include "cdsSetup.cpp"
 
-std::vector<int> determineMGLevels(std::string section)
+std::vector<int> determineMGLevels(std::string section, int version)
 {
   const std::string optionsPrefix = [section]() {
     std::string prefix = section + std::string(" ");

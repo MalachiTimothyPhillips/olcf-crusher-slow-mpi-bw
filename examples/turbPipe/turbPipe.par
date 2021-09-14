@@ -21,6 +21,7 @@ writeInterval = 1
 regularization = hpfrt + nModes=1 + scalingCoeff=10
 
 [PRESSURE]
+#preconditioner = auto
 residualTol = 1e-04
 #initialGuess = projectionAconj+nVector=10
 

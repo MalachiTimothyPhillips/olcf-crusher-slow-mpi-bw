@@ -275,7 +275,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
     res0NormP = nrs->pSolver->res0Norm;
     resNormP = nrs->pSolver->resNorm;
 
-    ConstantFlowRate::compute(nrs, lengthScale, time);
+    ConstantFlowRate::compute(nrs, lengthScale, time, tstep);
 
     if(nrs->uvwSolver){
       nrs->uvwSolver->Niter += NiterUVW;
@@ -391,7 +391,8 @@ dfloat scaleFactor(){
   return constantFlowScale;
 }
 
-void compute(nrs_t *nrs, double lengthScale, dfloat time) {
+void compute(nrs_t *nrs, double lengthScale, dfloat time, int tstep)
+{
 
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
@@ -472,7 +473,7 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time) {
           nrs->o_Pc);
 
     platform->timer.toc("pressure rhs");
-    ellipticSolve(nrs->pSolver, o_Prhs, nrs->o_Pc);
+    ellipticSolve(nrs->pSolver, o_Prhs, nrs->o_Pc, tstep);
   }
   platform->timer.toc("pressureSolve");
 
@@ -626,20 +627,19 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time) {
     platform->timer.toc("velocity rhs");
 
     if (nrs->uvwSolver) {
-      ellipticSolve(nrs->uvwSolver, o_RhsVel, nrs->o_Uc);
+      ellipticSolve(nrs->uvwSolver, o_RhsVel, nrs->o_Uc, tstep);
     } else {
       occa::memory o_Ucx = nrs->o_Uc + 0 * nrs->fieldOffset * sizeof(dfloat);
       occa::memory o_Ucy = nrs->o_Uc + 1 * nrs->fieldOffset * sizeof(dfloat);
       occa::memory o_Ucz = nrs->o_Uc + 2 * nrs->fieldOffset * sizeof(dfloat);
-      ellipticSolve(nrs->uSolver, platform->o_mempool.slice0, o_Ucx);
-      ellipticSolve(nrs->vSolver, platform->o_mempool.slice1, o_Ucy);
-      ellipticSolve(nrs->wSolver, platform->o_mempool.slice2, o_Ucz);
+      ellipticSolve(nrs->uSolver, platform->o_mempool.slice0, o_Ucx, tstep);
+      ellipticSolve(nrs->vSolver, platform->o_mempool.slice1, o_Ucy, tstep);
+      ellipticSolve(nrs->wSolver, platform->o_mempool.slice2, o_Ucz, tstep);
     }
   }
   platform->timer.toc("velocitySolve");
 
   platform->flopCounter->add("ConstantFlowRate::compute", flops);
-
 }
 
 void printInfo(mesh_t* mesh, bool verboseInfo)

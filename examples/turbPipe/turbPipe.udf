@@ -60,4 +60,12 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
     tavg::outfld();
   }
+  
+  if(nrs->lastStep){
+    if(platform->options.compareArgs("PRESSURE AUTO PRECONDITIONER", "TRUE")){
+      if(platform->comm.mpiRank == 0){
+        std::cout << nrs->pSolver->autoPreconditioner->to_string();
+      }
+    }
+  }
 }

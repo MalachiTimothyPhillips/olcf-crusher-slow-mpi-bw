@@ -30,18 +30,19 @@
 #include "elliptic.h"
 #include "amgSolver/parAlmond/level.hpp"
 #include <vector>
+#include <map>
 
-enum class SmootherType
-{
+enum class SmootherType {
   CHEBYSHEV,
   OPT_CHEBYSHEV,
+  FOURTH_CHEBYSHEV,
   SCHWARZ,
   JACOBI,
 };
-enum class SecondarySmootherType
-{  
+enum class ChebyshevSmootherType {
   JACOBI,
-  SCHWARZ,
+  ASM,
+  RAS,
 };
 
 std::vector<pfloat>
@@ -64,8 +65,11 @@ public:
 
   //smoothing params
   SmootherType stype;
-  SecondarySmootherType smtypeUp;
-  SecondarySmootherType smtypeDown;
+  ChebyshevSmootherType chebyshevSmoother;
+
+  static constexpr int Nsmoothers{3};
+
+  dfloat lambdaMax[Nsmoothers];
 
   dfloat lambda1, lambda0;
   dfloat maxEig;
@@ -78,7 +82,8 @@ public:
   static occa::memory o_smootherUpdate;
   occa::kernel preFDMKernel;
   bool overlap;
-  occa::kernel fusedFDMKernel;
+  occa::kernel fusedRASKernel;
+  occa::kernel fusedASMKernel;
   occa::kernel postFDMKernel;
   // Eigenvectors
   occa::memory o_Sx;
@@ -111,7 +116,8 @@ public:
 
   bool isCoarse;
 
-  std::vector<pfloat> betas;
+  std::vector<pfloat> betas_fourth;
+  std::vector<pfloat> betas_opt;
 
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,
@@ -158,9 +164,12 @@ public:
   void Report();
 
   void setupSmoother(elliptic_t* base);
+  void computeMaxEigs(elliptic_t *base);
   dfloat maxEigSmoothAx();
 
-  void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
+  void buildCoarsenerQuadHex(int Nf, int Nc);
+  std::map<int, mesh_t *> orderToMeshLevel;
+
 private:
   void smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);

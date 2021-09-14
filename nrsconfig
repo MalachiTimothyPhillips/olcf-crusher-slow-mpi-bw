@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e -a
 
-: ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
+: ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs-auto-tune}
 
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}

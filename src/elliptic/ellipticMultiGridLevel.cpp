@@ -85,7 +85,7 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
     elliptic->fusedCopyDfloatToPfloatKernel(Nrows, o_x, o_rhs, o_xPfloat, o_rhsPfloat);
     if (stype == SmootherType::CHEBYSHEV)
       this->smoothChebyshev(o_rhsPfloat, o_xPfloat, x_is_zero);
-    else if (stype == SmootherType::OPT_CHEBYSHEV)
+    else if (stype == SmootherType::OPT_CHEBYSHEV || stype == SmootherType::FOURTH_CHEBYSHEV)
       this->smoothOptChebyshev(o_rhsPfloat, o_xPfloat, x_is_zero);
     else if (stype == SmootherType::SCHWARZ)
       this->smoothSchwarz(o_rhsPfloat, o_xPfloat, x_is_zero);
@@ -96,7 +96,7 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
   } else {
     if (stype == SmootherType::CHEBYSHEV)
       this->smoothChebyshev(o_rhs, o_x, x_is_zero);
-    else if (stype == SmootherType::OPT_CHEBYSHEV)
+    else if (stype == SmootherType::OPT_CHEBYSHEV || stype == SmootherType::FOURTH_CHEBYSHEV)
       this->smoothOptChebyshev(o_rhs, o_x, x_is_zero);
     else if (stype == SmootherType::SCHWARZ)
       this->smoothSchwarz(o_rhs, o_x, x_is_zero);
@@ -108,18 +108,10 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
 void MGLevel::smoother(occa::memory o_x, occa::memory o_Sx, bool x_is_zero)
 {
-  // x_is_zero = true <-> downward leg
-  if(x_is_zero) {
-    if (smtypeDown == SecondarySmootherType::JACOBI)
-      this->smootherJacobi(o_x, o_Sx);
-    else
-      this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
-  } else {
-    if (smtypeUp == SecondarySmootherType::JACOBI)
-      this->smootherJacobi(o_x, o_Sx);
-    else
-      this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
-  }
+  if (chebyshevSmoother == ChebyshevSmootherType::JACOBI)
+    this->smootherJacobi(o_x, o_Sx);
+  else
+    this->smoothSchwarz(o_x, o_Sx, true); // no-op if false
 }
 
 void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
@@ -335,6 +327,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 
 void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
 {
+  auto &betas = stype == SmootherType::OPT_CHEBYSHEV ? betas_opt : betas_fourth;
   pfloat one = 1., mone = -1., zero = 0.0;
 
   occa::memory o_res = o_smootherResidual;
@@ -370,10 +363,10 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
   for (int k = 0; k < ChebyshevIterations; k++) {
     //x_k+1 = x_k + \beta_k d_k
     if (xIsZero && (k == 0)) {
-      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, zero, o_x);
+      elliptic->scaledAddPfloatKernel(Nrows, betas.at(k), o_z, zero, o_x);
     }
     else {
-      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, one, o_x);
+      elliptic->scaledAddPfloatKernel(Nrows, betas.at(k), o_z, one, o_x);
       flopCount += 2 * Nrows;
     }
 
@@ -397,7 +390,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
   }
 
   //x_k+1 = x_k + \beta_k d_k
-  elliptic->scaledAddPfloatKernel(Nrows, this->betas.back(), o_z, one, o_x);
+  elliptic->scaledAddPfloatKernel(Nrows, betas.back(), o_z, one, o_x);
   flopCount += 2 * Nrows;
   ellipticApplyMask(elliptic, o_x, pfloatString);
   const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;

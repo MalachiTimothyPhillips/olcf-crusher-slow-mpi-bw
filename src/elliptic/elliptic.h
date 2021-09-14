@@ -37,6 +37,7 @@
 #include "amgSolver/parAlmond/parAlmond.hpp"
 #include "ellipticPrecon.h"
 #include "platform.hpp"
+#include <map>
 
 #include "timer.hpp"
 #include <functional>
@@ -52,6 +53,8 @@
 
 class SolutionProjection;
 class elliptic_t;
+class automaticPreconditioner_t;
+class MGLevel;
 
 struct GmresData{
   GmresData(elliptic_t*);
@@ -174,8 +177,10 @@ struct elliptic_t
   dlong loffset;
   int nLevels;
   int* levels;
+  std::map<unsigned, MGLevel *> orderToLevelMap;
 
   SolutionProjection* solutionProjection;
+  automaticPreconditioner_t *autoPreconditioner;
   GmresData *gmresData;
 
   std::function<void(dlong Nelements, occa::memory &o_elementList, occa::memory &o_x)> applyZeroNormalMask;
@@ -193,7 +198,7 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic);
 void ellipticSEMFEMSetup(elliptic_t*);
 void ellipticSEMFEMSolve(elliptic_t*, occa::memory&, occa::memory&);
 
-void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x);
+bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep);
 
 void ellipticSolveSetup(elliptic_t* elliptic);
 

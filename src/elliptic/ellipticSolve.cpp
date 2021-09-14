@@ -28,8 +28,9 @@
 #include "platform.hpp"
 #include "timer.hpp"
 #include "linAlg.hpp"
+#include "ellipticAutomaticPreconditioner.h"
 
-void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
+bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep)
 {
   setupAide& options = elliptic->options;
   if(elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "JACOBI"))
@@ -37,6 +38,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   else if(elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "MULTIGRID"))
     ellipticMultiGridUpdateLambda(elliptic);
 
+  bool autoTunePreconditioner = false;
   mesh_t* mesh = elliptic->mesh;
 
   std::string name = elliptic->name;
@@ -48,6 +50,11 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   options.getArgs("MAXIMUM ITERATIONS", maxIter);
   const int verbose = options.compareArgs("VERBOSE", "TRUE");
   elliptic->resNormFactor = 1 / mesh->volume;
+
+  const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
+  if (useAutoPreconditioner) {
+    autoTunePreconditioner = elliptic->autoPreconditioner->apply(tstep);
+  }
 
   if(verbose) {
     const dfloat rhsNorm = 
@@ -95,9 +102,12 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
   elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
-  if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
-     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
-    
+
+  const bool useProjection = options.compareArgs("INITIAL GUESS", "PROJECTION") ||
+                             options.compareArgs("INITIAL GUESS", "PROJECTION-ACONJ");
+
+  if (useProjection && !autoTunePreconditioner) {
+
     platform->timer.tic(name + " proj pre",1);
     elliptic->res00Norm = 
       platform->linAlg->weightedNorm2Many(
@@ -152,13 +162,12 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
     ABORT(EXIT_FAILURE);
   }
 
-
-  if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
-     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) { 
+  if (useProjection && !autoTunePreconditioner) {
     platform->timer.tic(name + " proj post",1);
     elliptic->solutionProjection->post(o_x);
     platform->timer.toc(name + " proj post");
-  } else {
+  }
+  else {
     elliptic->res00Norm = elliptic->res0Norm;
   }
 
@@ -174,4 +183,10 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
   if(elliptic->allNeumann)
     ellipticZeroMean(elliptic, o_x);
+
+  if (useAutoPreconditioner) {
+    elliptic->autoPreconditioner->measure(autoTunePreconditioner);
+  }
+
+  return autoTunePreconditioner;
 }

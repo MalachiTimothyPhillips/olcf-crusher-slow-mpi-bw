@@ -720,10 +720,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
                           to_string_f(value));
         } else if (s.find("jac") != std::string::npos) {
           surrogateSmootherSet = true;
-          options.setArgs(parSection + " MULTIGRID SMOOTHER",
-                          "DAMPEDJACOBI,CHEBYSHEV");
-          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "JACOBI");
-          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "JACOBI");
+          options.setArgs(parSection + " MULTIGRID SMOOTHER", "DAMPEDJACOBI,CHEBYSHEV");
           options.setArgs("BOOMERAMG ITERATIONS", "2");
           if (p_preconditioner.find("additive") != std::string::npos) {
             append_error("Additive vcycle is not supported for Chebyshev smoother");
@@ -738,8 +735,6 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
         {
           surrogateSmootherSet = true;
           options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
-          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "ASM");
-          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "ASM");
           if (p_preconditioner.find("additive") != std::string::npos) {
             append_error("Additive vcycle is not supported for hybrid Schwarz/Chebyshev smoother");
           } else {
@@ -753,8 +748,6 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
         {
           surrogateSmootherSet = true;
           options.setArgs(parSection + " MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
-          options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "RAS");
-          options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "RAS");
           if (p_preconditioner.find("additive") != std::string::npos) {
             append_error("Additive vcycle is not supported for hybrid Schwarz/Chebyshev smoother");
           } else {
@@ -803,10 +796,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
                         "VCYCLE+ADDITIVE+OVERLAPCRS");
       }
     } else if (p_smoother.find("jac") == 0) {
-      options.setArgs(parSection + " MULTIGRID SMOOTHER",
-                      "DAMPEDJACOBI");
-      options.setArgs(parSection + " MULTIGRID DOWNWARD SMOOTHER", "JACOBI");
-      options.setArgs(parSection + " MULTIGRID UPWARD SMOOTHER", "JACOBI");
+      options.setArgs(parSection + " MULTIGRID SMOOTHER", "DAMPEDJACOBI");
       options.setArgs("BOOMERAMG ITERATIONS", "2");
       if (p_preconditioner.find("additive") != std::string::npos) {
         append_error("Additive vcycle is not supported for Jacobi smoother");
@@ -838,6 +828,13 @@ void parsePreconditioner(const int rank, setupAide &options,
       {"multiplicative"},
       {"overlap"},
       {"coarse"},
+      // auto preconditioner params
+      {"auto"},
+      {"maxtrials"},
+      {"minDegree"},
+      {"maxDegree"},
+      {"start"},
+      {"frequency"},
   };
 
   std::string parSection =
@@ -854,6 +851,96 @@ void parsePreconditioner(const int rank, setupAide &options,
   for(std::string s : list)
   {
     checkValidity(rank, validValues, s);
+  }
+
+  if (p_preconditioner.find("auto") != std::string::npos) {
+
+    if (parScope != "pressure") {
+      std::string error = "Error: preconditioner = auto is only supported for pressure!\n";
+      append_error(error);
+    }
+
+    // default params
+    constexpr int trialFrequency{500};
+    constexpr int autoStart{100};
+    constexpr int maxChebyOrder{3};
+    constexpr int minChebyOrder{1};
+    constexpr int Nsamples{3};
+
+    options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
+    options.setArgs(parSection + " AUTO PRECONDITIONER TRIAL FREQUENCY", std::to_string(trialFrequency));
+    options.setArgs(parSection + " AUTO PRECONDITIONER START", std::to_string(autoStart));
+    options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(maxChebyOrder));
+    options.setArgs(parSection + " AUTO PRECONDITIONER MIN CHEBY ORDER", std::to_string(minChebyOrder));
+    options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES", std::to_string(Nsamples));
+
+    // set up initial preconditioner
+    p_preconditioner = "pmg+coarse";
+
+    std::vector<std::string> list;
+    list = serializeString(p_preconditioner, '+');
+    for (std::string s : list) {
+      if (s.find("frequency") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse frequency " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER TRIAL FREQUENCY", std::to_string(value));
+      }
+      if (s.find("start") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse start " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER START", std::to_string(value));
+      }
+      if (s.find("mindegree") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse minDegree " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER MIN CHEBY ORDER", std::to_string(value));
+      }
+      if (s.find("maxdegree") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse maxDegree " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(value));
+      }
+      if (s.find("maxtrials") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse maxTrials " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER MAX TRIALS", std::to_string(value));
+      }
+      if (s.find("nsamples") != std::string::npos) {
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse nSamples " << s << "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES", std::to_string(value));
+      }
+    }
   }
 
   if (p_preconditioner == "none") {
@@ -1291,6 +1378,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE KRYLOV SOLVER", "PGMRES+FLEXIBLE");
   options.setArgs("PRESSURE PRECONDITIONER", "MULTIGRID");
   options.setArgs("PRESSURE DISCRETIZATION", "CONTINUOUS");
+  options.setArgs("PRESSURE AUTO PRECONDITIONER", "FALSE");
   options.setArgs("PRESSURE BASIS", "NODAL");
   options.setArgs("AMG SOLVER", "BOOMERAMG");
   options.setArgs("AMG SOLVER PRECISION", "FP64");
@@ -1300,8 +1388,6 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
   options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "FALSE");
   options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
-  options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
-  options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "2");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", "0.1");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", "1.1");
