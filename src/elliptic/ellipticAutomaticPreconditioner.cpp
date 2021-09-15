@@ -18,7 +18,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   const std::string sampling = 
     elliptic.options.getArgs("AUTO PRECONDITIONER SAMPLING");
 
-  constexpr unsigned NSmoothers {3}; // Whatever is currently the selected smoother
+  constexpr unsigned NSmoothers {3};
   for(unsigned smoother = 0; smoother < NSmoothers; ++smoother)
   {
     for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
@@ -35,7 +35,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 void
 automaticPreconditioner_t::apply()
 {
-  if(trialCount > maxTrials) return;
+  if(trialCount >= maxTrials) return;
   if(solveCount % trialFrequency == 0){
     trialCount++;
     evaluate_current_solver();
@@ -57,10 +57,9 @@ automaticPreconditioner_t::evaluate_current_solver()
 void
 automaticPreconditioner_t::select_solver()
 {
-  if(trialCount > maxTrials)
+  if(trialCount >= maxTrials)
   {
     currentSolver = fastest_solver();
-    std::cout << "Fastest solver = " << currentSolver.to_string();
   } else {
     if(strategy == Strategy::RANDOM_SAMPLE){
       std::uniform_int_distribution<> dist(0, allSolvers.size()-1);
