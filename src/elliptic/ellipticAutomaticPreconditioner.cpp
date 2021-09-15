@@ -64,6 +64,7 @@ automaticPreconditioner_t::select_solver()
     if(strategy == Strategy::RANDOM_SAMPLE){
       std::uniform_int_distribution<> dist(0, allSolvers.size()-1);
       unsigned randomIndex = dist(gen);
+      MPI_Bcast(&randomIndex, 1, MPI_UNSIGNED, 0, platform->comm.mpiComm);
       auto it = allSolvers.begin();
       std::advance(it, randomIndex);
       currentSolver = *it;
@@ -78,6 +79,7 @@ automaticPreconditioner_t::select_solver()
 
       std::uniform_int_distribution<> dist(0, unvisitedSolvers.size()-1);
       unsigned randomIndex = dist(gen);
+      MPI_Bcast(&randomIndex, 1, MPI_UNSIGNED, 0, platform->comm.mpiComm);
 
       currentSolver = unvisitedSolvers[randomIndex];
     }
