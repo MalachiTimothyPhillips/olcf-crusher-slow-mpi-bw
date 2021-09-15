@@ -73,6 +73,8 @@ automaticPreconditioner_t::select_solver()
       std::set_difference(allSolvers.begin(), allSolvers.end(), 
         visitedSolvers.begin(), visitedSolvers.end(),
         std::inserter(unvisitedSolvers, unvisitedSolvers.begin()));
+      
+      if(unvisitedSolvers.empty()) return;
 
       std::uniform_int_distribution<> dist(0, unvisitedSolvers.size()-1);
       unsigned randomIndex = dist(gen);
