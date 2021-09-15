@@ -871,7 +871,7 @@ void MGLevel::build(
   o_Sz = platform->device.malloc  (Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_invL = platform->device.malloc  (Nlocal_e * sizeof(pfloat));
   o_work1 = platform->device.malloc  (Nlocal_e * sizeof(pfloat));
-  if(!options.compareArgs("MULTIGRID SMOOTHER","RAS"))
+  //if(!options.compareArgs("MULTIGRID SMOOTHER","RAS"))
     o_work2 = platform->device.malloc  (Nlocal_e * sizeof(pfloat));
   o_Sx.copyFrom(casted_Sx, Nq_e * Nq_e * Nelements * sizeof(pfloat));
   o_Sy.copyFrom(casted_Sy, Nq_e * Nq_e * Nelements * sizeof(pfloat));
