@@ -146,8 +146,7 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
   std::string udfFile;
   options.getArgs("UDF FILE", udfFile);
   if (!udfFile.empty()) {
-    int err = 0;
-    if(buildRank == 0) err = udfBuild(udfFile.c_str(), options);
+    int err = udfBuild(udfFile.c_str(), options);
 
     MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, comm);
     if(err) ABORT(EXIT_FAILURE);
@@ -180,7 +179,7 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
       std::ofstream ofs;
       ofs.open(file, std::ofstream::out);
       ofs.close();
-      std::cout << "\nBuild successful." << std::endl;
+      if(rank == 0) std::cout << "\nBuild successful." << std::endl;
     }
     return;
   }
