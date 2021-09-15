@@ -60,7 +60,7 @@ public:
   SecondarySmootherType smtypeUp;
   SecondarySmootherType smtypeDown;
 
-  static constexpr Nsmoothers {3};
+  static constexpr int Nsmoothers {3};
 
   dfloat lambdaMax[Nsmoothers];
 

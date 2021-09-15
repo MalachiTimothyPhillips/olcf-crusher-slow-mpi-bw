@@ -119,14 +119,14 @@ void MGLevel::computeMaxEigs(elliptic_t* ellipticBase)
     smtypeDown = SecondarySmootherType::SCHWARZ;
     smtypeUp = SecondarySmootherType::SCHWARZ;
     build(ellipticBase);
-    options.setArgs("MULTIGRID SMOOTHER","ASM")) {
+    options.setArgs("MULTIGRID SMOOTHER","ASM");
     dfloat rho = this->maxEigSmoothAx();
     this->lambdaMax[0] = rho;
   }
   {
     smtypeDown = SecondarySmootherType::SCHWARZ;
     smtypeUp = SecondarySmootherType::SCHWARZ;
-    options.setArgs("MULTIGRID SMOOTHER","RAS")) {
+    options.setArgs("MULTIGRID SMOOTHER","RAS");
     dfloat rho = this->maxEigSmoothAx();
     this->lambdaMax[1] = rho;
   }

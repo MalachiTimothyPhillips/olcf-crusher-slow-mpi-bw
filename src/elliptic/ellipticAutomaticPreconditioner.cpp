@@ -18,7 +18,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   const std::string sampling = 
     elliptic.options.getArgs("AUTO PRECONDITIONER SAMPLING");
 
-  constexpr unsigned NSmoothers {1}; // Whatever is currently the selected smoother
+  constexpr unsigned NSmoothers {3}; // Whatever is currently the selected smoother
   for(unsigned smoother = 0; smoother < NSmoothers; ++smoother)
   {
     for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
@@ -60,6 +60,7 @@ automaticPreconditioner_t::select_solver()
   if(trialCount > maxTrials)
   {
     currentSolver = fastest_solver();
+    std::cout << "Fastest solver = " << currentSolver.to_string();
   } else {
     if(strategy == Strategy::RANDOM_SAMPLE){
       std::uniform_int_distribution<> dist(0, allSolvers.size()-1);
@@ -109,28 +110,40 @@ automaticPreconditioner_t::fastest_solver()
 void
 automaticPreconditioner_t::reinitializePreconditioner()
 {
+  dfloat minMultiplier;
+  elliptic.options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", minMultiplier);
+
+  dfloat maxMultiplier;
+  elliptic.options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
   auto** levels = elliptic.precon->parAlmond->levels;
   for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
   {
     auto level = dynamic_cast<MGLevel*>(levels[levelIndex]);
     level->ChebyshevIterations = currentSolver.chebyOrder;
-#ifdef READY_FOR_SMOOTHERS
-    if(currentSolver.smoother == 1 || currentSolver.smoother == 2){
+    if(currentSolver.smoother == 0 || currentSolver.smoother == 1){
       level->smtypeDown = SecondarySmootherType::SCHWARZ;
       level->smtypeUp = SecondarySmootherType::SCHWARZ;
-      if(currentSolver.smoother == 1){
-        options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
+      if(currentSolver.smoother == 0){
+        elliptic.options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
+        const dfloat rho = level->lambdaMax[0];
+        level->lambda1 = maxMultiplier * rho;
+        level->lambda0 = minMultiplier * rho;
       }
-      if(currentSolver.smoother == 2){
-        options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
+      if(currentSolver.smoother == 1){
+        elliptic.options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
+        const dfloat rho = level->lambdaMax[1];
+        level->lambda1 = maxMultiplier * rho;
+        level->lambda0 = minMultiplier * rho;
       }
 
     } else {
       level->smtypeDown = SecondarySmootherType::JACOBI;
       level->smtypeUp = SecondarySmootherType::JACOBI;
-      options.setArgs("MULTIGRID SMOOTHER", "DAMPEDJACOBI,CHEBYSHEV");
+      elliptic.options.setArgs("MULTIGRID SMOOTHER", "DAMPEDJACOBI,CHEBYSHEV");
+      const dfloat rho = level->lambdaMax[2];
+      level->lambda1 = maxMultiplier * rho;
+      level->lambda0 = minMultiplier * rho;
     }
-#endif
   }
 
 }

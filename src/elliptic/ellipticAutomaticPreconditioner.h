@@ -16,11 +16,11 @@ struct solverDescription_t{
     std::ostringstream ss;
     ss << "Chebyshev+";
     if(smoother == 0)
-      ss << "Jacobi";
-    else if(smoother == 1)
       ss << "ASM";
-    else if(smoother == 2)
+    else if(smoother == 1)
       ss << "RAS";
+    else if(smoother == 2)
+      ss << "Jacobi";
     ss << "+Degree=" << chebyOrder;
     return ss.str();
   }
@@ -28,7 +28,7 @@ struct solverDescription_t{
   solverDescription_t(unsigned m_smoother, unsigned m_chebyOrder)
   : smoother(m_smoother), chebyOrder(m_chebyOrder) {}
 
-  unsigned smoother; // 0 - JAC, 1 - ASM, 2 - RAS
+  unsigned smoother; // 0 - ASM, 1 - RAS, 2 - Jacobi
   unsigned chebyOrder;
 
   solverDescription_t(const solverDescription_t& rhs) = default;

@@ -580,9 +580,9 @@ void registerSchwarzKernels(const std::string &section, int N) {
     platform->kernels.add_kernel(
         "preFDM" + suffix, filename, "preFDM", properties, suffix);
     platform->kernels.add_kernel(
-        "fusedASM" + suffix, filename, "fusedASM", properties, suffix);
+        "fusedASM" + suffix, filename, "fusedFDM", properties, suffix);
     platform->kernels.add_kernel(
-        "fusedRAS" + suffix, filename, "fusedRAS", properties, RASProperties);
+        "fusedRAS" + suffix, filename, "fusedFDM", RASProperties, suffix);
     platform->kernels.add_kernel(
         "postFDM" + suffix, filename, "postFDM", properties, suffix);
   }
