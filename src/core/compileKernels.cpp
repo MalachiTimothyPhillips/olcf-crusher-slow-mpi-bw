@@ -569,9 +569,9 @@ void registerSchwarzKernels(const std::string &section, int N) {
     const std::string suffix =
         std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
     properties["defines/p_overlap"] = (int)overlap;
-    if (platform->options.compareArgs(
-            optionsPrefix + "MULTIGRID SMOOTHER", "RAS"))
-      properties["defines/p_restrict"] = 1;
+
+    occa::properties RASProperties = properties;
+    RASProperties["defines/p_restrict"] = 1;
 
     filename = oklpath + "ellipticSchwarzSolverHex3D.okl";
     if (serial) {
@@ -580,7 +580,9 @@ void registerSchwarzKernels(const std::string &section, int N) {
     platform->kernels.add_kernel(
         "preFDM" + suffix, filename, "preFDM", properties, suffix);
     platform->kernels.add_kernel(
-        "fusedFDM" + suffix, filename, "fusedFDM", properties, suffix);
+        "fusedASM" + suffix, filename, "fusedASM", properties, suffix);
+    platform->kernels.add_kernel(
+        "fusedRAS" + suffix, filename, "fusedRAS", properties, RASProperties);
     platform->kernels.add_kernel(
         "postFDM" + suffix, filename, "postFDM", properties, suffix);
   }

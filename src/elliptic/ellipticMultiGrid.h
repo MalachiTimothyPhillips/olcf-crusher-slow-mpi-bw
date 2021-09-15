@@ -70,7 +70,8 @@ public:
   static occa::memory o_smootherUpdate;
   occa::kernel preFDMKernel;
   bool overlap;
-  occa::kernel fusedFDMKernel;
+  occa::kernel fusedRASKernel;
+  occa::kernel fusedASMKernel;
   occa::kernel postFDMKernel;
   // Eigenvectors
   occa::memory o_Sx;
