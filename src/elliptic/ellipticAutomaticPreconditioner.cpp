@@ -19,7 +19,6 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   const std::string sampling = 
     elliptic.options.getArgs("AUTO PRECONDITIONER SAMPLING");
 
-  constexpr unsigned NSmoothers {3};
   for(unsigned smoother = 0; smoother < NSmoothers; ++smoother)
   {
     for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
@@ -31,6 +30,8 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     strategy = Strategy::RANDOM_SAMPLE;
   if(sampling == "RANDOM")
     strategy = Strategy::RANDOM_SAMPLE_NO_REPLACEMENT;
+  if(sampling == "STEPWISE")
+    strategy = Strategy::STEPWISE;
 }
 
 void
@@ -61,6 +62,11 @@ automaticPreconditioner_t::select_solver()
   if(trialCount >= maxTrials)
   {
     currentSolver = fastest_solver();
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Determined fastest solver is : " << currentSolver.to_string() << "\n";
+      std::cout << "Will now continue using this solver for the remainder of the simulation!\n";
+      fflush(stdout);
+    }
   } else {
     if(strategy == Strategy::RANDOM_SAMPLE){
       std::uniform_int_distribution<> dist(0, allSolvers.size()-1);
@@ -83,6 +89,63 @@ automaticPreconditioner_t::select_solver()
       MPI_Bcast(&randomIndex, 1, MPI_UNSIGNED, 0, platform->comm.mpiComm);
 
       currentSolver = unvisitedSolvers[randomIndex];
+    }
+    else if(strategy == Strategy::STEPWISE){
+      constexpr unsigned int evaluationChebyOrder {2};
+      if(visitedSmoothers.size() < NSmoothers){
+        std::set<unsigned int> allSmoothers;
+        for(unsigned int smoother = 0; smoother < NSmoothers; ++smoother){
+          allSmoothers.insert(smoother);
+        }
+        std::vector<unsigned int> unvisitedSmoothers;
+        std::set_difference(allSmoothers.begin(), allSmoothers.end(),
+          visitedSmoothers.begin(), visitedSmoothers.end(),
+          std::inserter(unvisitedSmoothers, unvisitedSmoothers.begin()));
+        unsigned int smoother = unvisitedSmoothers.front();
+        visitedSmoothers.insert(smoother);
+        currentSolver = {smoother, evaluationChebyOrder};
+      } else {
+        if(visitedChebyOrders.empty()){
+          // choose fastest smoother for the evaluationChebyOrder
+          dfloat fastestTime = std::numeric_limits<dfloat>::max();
+          fastestSmoother = 0;
+          for(auto&& smoother : visitedSmoothers){
+            const dfloat smootherTime = solverToTime[{smoother, evaluationChebyOrder}];
+            if(smootherTime < fastestTime){
+              fastestTime = smootherTime;
+              fastestSmoother = smoother;
+            }
+          }
+
+          visitedChebyOrders.insert(evaluationChebyOrder);
+        }
+        const unsigned int newOrder = 
+          [&](){
+            std::set<unsigned int> allOrders;
+            for(unsigned int order = minChebyOrder; order <= maxChebyOrder; ++order){
+              allOrders.insert(order);
+            }
+            std::vector<unsigned int> unvisitedOrders;
+            std::set_difference(allOrders.begin(), allOrders.end(),
+              visitedChebyOrders.begin(), visitedChebyOrders.end(),
+              std::inserter(unvisitedOrders, unvisitedOrders.begin()));
+            if(unvisitedOrders.empty()){
+              dfloat fastestTime = std::numeric_limits<dfloat>::max();
+              unsigned int fastestOrder = 0;
+              for(auto && order : visitedChebyOrders){
+                const dfloat smootherTime = solverToTime[{fastestSmoother, order}];
+                if(smootherTime < fastestTime){
+                  fastestTime = smootherTime;
+                  fastestOrder = order;
+                }
+              }
+              return fastestOrder;
+            }
+            return unvisitedOrders.front();
+          }();
+        visitedChebyOrders.insert(newOrder);
+        currentSolver = {fastestSmoother, newOrder};
+      }
     }
 
     if(platform->comm.mpiRank == 0){

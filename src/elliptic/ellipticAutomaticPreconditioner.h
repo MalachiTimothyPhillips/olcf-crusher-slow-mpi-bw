@@ -53,7 +53,9 @@ class automaticPreconditioner_t{
   enum class Strategy{
     RANDOM_SAMPLE,
     RANDOM_SAMPLE_NO_REPLACEMENT,
+    STEPWISE,
   };
+  static constexpr int NSmoothers {3};
   public:
   automaticPreconditioner_t(elliptic_t& m_elliptic);
 
@@ -75,10 +77,13 @@ class automaticPreconditioner_t{
   unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
+  unsigned int fastestSmoother;
 
   solverDescription_t currentSolver;
   std::set<solverDescription_t> allSolvers;
   std::set<solverDescription_t> visitedSolvers;
+  std::set<unsigned int> visitedSmoothers;
+  std::set<unsigned int> visitedChebyOrders;
   std::map<solverDescription_t, double> solverToTime;
 
   Strategy strategy;
