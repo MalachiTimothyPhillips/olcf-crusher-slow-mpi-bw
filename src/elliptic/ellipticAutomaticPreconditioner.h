@@ -72,6 +72,7 @@ class automaticPreconditioner_t{
   unsigned long trialFrequency;
   unsigned long trialCount;
   unsigned long maxTrials;
+  unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
 

@@ -889,6 +889,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     nrs->pOptions.setArgs("AUTO PRECONDITIONER",
       options.getArgs("PRESSURE AUTO PRECONDITIONER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER START",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER START"));
     nrs->pOptions.setArgs("AUTO PRECONDITIONER TRIAL FREQUENCY",
       options.getArgs("PRESSURE AUTO PRECONDITIONER TRIAL FREQUENCY"));
     nrs->pOptions.setArgs("AUTO PRECONDITIONER MAX CHEBY ORDER",

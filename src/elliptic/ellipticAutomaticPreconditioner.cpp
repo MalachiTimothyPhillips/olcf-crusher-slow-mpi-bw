@@ -11,6 +11,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   trialCount(0),
   gen(rd())
 {
+  elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
@@ -36,7 +37,7 @@ void
 automaticPreconditioner_t::apply()
 {
   if(trialCount >= maxTrials) return;
-  if(solveCount % trialFrequency == 0){
+  if(solveCount % trialFrequency == 0 && solveCount >= autoStart){
     trialCount++;
     evaluate_current_solver();
     select_solver();
