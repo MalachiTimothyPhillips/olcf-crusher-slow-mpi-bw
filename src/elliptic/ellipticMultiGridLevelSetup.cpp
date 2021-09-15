@@ -112,6 +112,39 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
 }
 
+void MGLevel::computeMaxEigs(elliptic_t* ellipticBase)
+{
+  std::string oldSettings = options.getArgs("MULTIGRID SMOOTHER");
+  {
+    smtypeDown = SecondarySmootherType::SCHWARZ;
+    smtypeUp = SecondarySmootherType::SCHWARZ;
+    build(ellipticBase);
+    options.setArgs("MULTIGRID SMOOTHER","ASM")) {
+    dfloat rho = this->maxEigSmoothAx();
+    this->lambdaMax[0] = rho;
+  }
+  {
+    smtypeDown = SecondarySmootherType::SCHWARZ;
+    smtypeUp = SecondarySmootherType::SCHWARZ;
+    options.setArgs("MULTIGRID SMOOTHER","RAS")) {
+    dfloat rho = this->maxEigSmoothAx();
+    this->lambdaMax[1] = rho;
+  }
+  {
+    smtypeDown = SecondarySmootherType::JACOBI;
+    smtypeUp = SecondarySmootherType::JACOBI;
+    dfloat* invDiagA;
+    std::vector<pfloat> casted_invDiagA(mesh->Np * mesh->Nelements, 0.0);
+    ellipticBuildJacobi(elliptic,&invDiagA);
+    for(dlong i = 0; i < mesh->Np * mesh->Nelements; ++i)
+      casted_invDiagA[i] = static_cast<pfloat>(invDiagA[i]);
+    o_invDiagA = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat), casted_invDiagA.data());
+    free(invDiagA);
+    dfloat rho = this->maxEigSmoothAx();
+    this->lambdaMax[2] = rho;
+  }
+  options.setArgs("MULTIGRID SMOOTHER",oldSettings);
+}
 void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 {
 
@@ -120,6 +153,8 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 
   dfloat maxMultiplier;
   options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
+
+  this->computeMaxEigs(ellipticBase);
 
   if (options.compareArgs("MULTIGRID SMOOTHER","ASM") ||
       options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
@@ -135,7 +170,10 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       if (!options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations))
         ChebyshevIterations = 2;   //default to degree 2
       //estimate the max eigenvalue of S*A
-      dfloat rho = this->maxEigSmoothAx();
+      const dfloat rho = options.compareArgs("MULTIGRID SMOOTHER", "ASM") ?
+        this->lambdaMax[0] :
+        this->lambdaMax[1];
+
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;
     }
@@ -171,7 +209,7 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
         ChebyshevIterations = 2; //default to degree 2
 
       //estimate the max eigenvalue of S*A
-      dfloat rho = this->maxEigSmoothAx();
+      const dfloat rho = this->lambdaMax[2];
 
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;

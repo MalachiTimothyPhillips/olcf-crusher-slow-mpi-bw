@@ -60,6 +60,10 @@ public:
   SecondarySmootherType smtypeUp;
   SecondarySmootherType smtypeDown;
 
+  static constexpr Nsmoothers {3};
+
+  dfloat lambdaMax[Nsmoothers];
+
   dfloat lambda1, lambda0;
   int ChebyshevIterations;
 
@@ -149,7 +153,9 @@ public:
   void Report();
 
   void setupSmoother(elliptic_t* base);
+  void computeMaxEigs(elliptic_t* base);
   dfloat maxEigSmoothAx();
+
 
   void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
 private:
