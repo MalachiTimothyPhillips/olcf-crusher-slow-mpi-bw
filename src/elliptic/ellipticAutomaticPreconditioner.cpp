@@ -84,6 +84,11 @@ automaticPreconditioner_t::select_solver()
       currentSolver = unvisitedSolvers[randomIndex];
     }
 
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Evaluating : " << currentSolver.to_string() << std::endl;
+    }
+    fflush(stdout);
+
     visitedSolvers.insert(currentSolver);
     const dfloat currentSolverTime = 
       platform->timer.query(elliptic.name + std::string("Solve"), "DEVICE:MAX");
