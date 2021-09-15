@@ -1613,6 +1613,7 @@ void computeDivUErr(nrs_t* nrs, dfloat& divUErrVolAvg, dfloat& divUErrL2)
       mesh->o_LMM,
       platform->o_mempool.slice0,
       platform->comm.mpiComm) / mesh->volume;
+  divUErrVolAvg = std::abs(divUErrVolAvg);
 }
 
 } // namespace timeStepper
