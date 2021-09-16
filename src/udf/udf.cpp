@@ -199,7 +199,7 @@ void udfBuild(const char* udfFile, setupAide& options)
         if(verbose && platform->comm.mpiRank == 0) printf("%s\n", cmd);
         if(system(cmd)) return EXIT_FAILURE; 
       }
-      sprintf(cmd, "cd %s/udf && make", cache_dir.c_str());
+      sprintf(cmd, "cd %s/udf && make %s", cache_dir.c_str(), pipeToNull.c_str());
       if(system(cmd)) return EXIT_FAILURE; 
       fileSync(udfLib.c_str());
       if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
