@@ -97,6 +97,8 @@ struct nrs_t
   occa::memory o_rho, o_mue;
   occa::memory o_meshRho, o_meshMue;
 
+  dfloat divUErrL2;
+
   dfloat* usrwrk;
   occa::memory o_usrwrk;
 

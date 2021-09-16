@@ -69,6 +69,12 @@ solver                      PFCG [D], PFGMRES [D for PRESSURE], none   linear so
 
 residualTol                 <float>                                    absolute residual tolerance  
                             +relative                                  use relative residual
+                            +auto                                      (only for pressure)
+                              +frequency=<int>                         steps until adjusting tolerance
+                              +maxAbsErr=<float>                       maximum L2 divergence error
+                              +maxRelErr=<float>                       maximum increase in L2 divergence error for a step
+                              +maxTol=<float>                          maximum residual tolerance
+                              +multiplier=<float>                      amount to increase/decrease tolerance during adjustment
 
 maxIterations               <int>                                      maximum number of iterations
                             200 [D]

@@ -695,6 +695,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       wBCType[bID] = bcMap::type(bID, "z-velocity");
     }
 
+    nrs->divUErrL2 = 0.0;
+
     nrs->vOptions = options;
     nrs->vOptions.setArgs("PGMRES RESTART",        options.getArgs("VELOCITY PGMRES RESTART"));
     nrs->vOptions.setArgs("KRYLOV SOLVER",        options.getArgs("VELOCITY KRYLOV SOLVER"));

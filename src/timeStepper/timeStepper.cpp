@@ -314,6 +314,8 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
       meshSolve(nrs, timeNew, nrs->meshV->o_U, stage);
 
     nrs->converged = (udf.converged) ? udf.converged(nrs, stage) : true; 
+    if(platform->options.compareArgs("PRESSURE AUTO SOLVER TOLERANCE", "TRUE"))
+      nrs->converged &= adjustSolverTolerances(nrs, tstep, stage);
 
     platform->device.finish();
     MPI_Barrier(platform->comm.mpiComm);
@@ -1481,6 +1483,7 @@ void printInfo(
   cds_t *cds = nrs->cds;
 
   const int enforceVerbose = tstep < 1001;
+  const int autoTolerance = platform->options.compareArgs("PRESSURE AUTO SOLVER TOLERANCE", "TRUE");
   const dfloat cfl = computeCFL(nrs);
   dfloat divUErrVolAvg, divUErrL2;
   if (platform->options.compareArgs("VERBOSE SOLVER INFO", "TRUE") || enforceVerbose){
@@ -1491,11 +1494,22 @@ void printInfo(
         enforceVerbose) {
       if (nrs->flow) {
         elliptic_t *solver = nrs->pSolver;
-        printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
-            solver->Niter,
-            solver->res00Norm,
-            solver->res0Norm,
-            solver->resNorm);
+        if(autoTolerance){
+          dfloat pressureTolerance;
+          nrs->pSolver->options.getArgs("SOLVER TOLERANCE", pressureTolerance);
+          printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e  tol %e\n",
+              solver->Niter,
+              solver->res00Norm,
+              solver->res0Norm,
+              solver->resNorm,
+              pressureTolerance);
+        } else {
+          printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
+              solver->Niter,
+              solver->res00Norm,
+              solver->res0Norm,
+              solver->resNorm);
+        }
 
         if (nrs->uvwSolver) {
           solver = nrs->uvwSolver;
@@ -1614,6 +1628,75 @@ void computeDivUErr(nrs_t* nrs, dfloat& divUErrVolAvg, dfloat& divUErrL2)
       platform->o_mempool.slice0,
       platform->comm.mpiComm) / mesh->volume;
   divUErrVolAvg = std::abs(divUErrVolAvg);
+}
+
+bool adjustSolverTolerances(nrs_t* nrs, int tstep, int stage)
+{
+  constexpr int maxStagesAdjust {2};
+  if(stage > maxStagesAdjust) return true;
+
+  int frequency;
+  platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE FREQUENCY", frequency);
+  if(tstep % frequency == 0 && tstep > 0){
+
+    double currentTolerance;
+    nrs->pSolver->options.getArgs("SOLVER TOLERANCE", currentTolerance);
+
+    double maxTolerance;
+    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX", maxTolerance);
+
+    double multiplier;
+    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MULTIPLIER", multiplier);
+
+    double maxAbsoluteDivErr;
+    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX ABSOLUTE ERROR", maxAbsoluteDivErr);
+    double maxRelativeDivErr;
+    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX RELATIVE ERROR", maxRelativeDivErr);
+
+    dfloat divUErrL2, divUErrVolAvg;
+    computeDivUErr(nrs, divUErrVolAvg, divUErrL2);
+
+    dfloat previousDivUErrL2 = nrs->divUErrL2;
+
+    nrs->divUErrL2 = divUErrL2;
+
+    if(previousDivUErrL2 > maxAbsoluteDivErr && stage > 1) {
+      // previous step failed -- bail here after retrying the step
+      // with a tighter tolerance
+      return true;
+    }
+
+    if(divUErrL2 > maxAbsoluteDivErr){
+      // fail step + tighten tolerances
+      const dfloat tigherTolerance = currentTolerance / multiplier;
+      nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(tigherTolerance));
+      return false;
+    }
+
+    if(stage == 1){
+      // all good, try to loosen tolerance
+      const dfloat looserTolerance = std::min(multiplier * currentTolerance, maxTolerance);
+      nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(looserTolerance));
+      return false;
+    } else {
+      // evaluate fidelity of loosened tolerance
+      const dfloat TOL = 1e-10;
+      const dfloat relativeError = (previousDivUErrL2 > TOL) ?
+        divUErrL2 / previousDivUErrL2 :
+        0.0;
+      if(relativeError <= maxRelativeDivErr){
+        // all good, accept looser tolerance
+        return true;
+      } else {
+        // revert tolerance change + retry the step
+        const dfloat tigherTolerance = currentTolerance / multiplier;
+        nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(tigherTolerance));
+        return false;
+      }
+    }
+  }
+
+  return true; // no change, don't fail the step on account of me!
 }
 
 } // namespace timeStepper
