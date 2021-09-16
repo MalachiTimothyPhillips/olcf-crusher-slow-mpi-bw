@@ -1497,14 +1497,14 @@ void printInfo(
         if(autoTolerance){
           dfloat pressureTolerance;
           nrs->pSolver->options.getArgs("SOLVER TOLERANCE", pressureTolerance);
-          printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e  tol %e\n",
+          printf("  P  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  resNorm %.2e  tol %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
               solver->resNorm,
               pressureTolerance);
         } else {
-          printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
+          printf("  P  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  resNorm %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
@@ -1513,8 +1513,8 @@ void printInfo(
 
         if (nrs->uvwSolver) {
           solver = nrs->uvwSolver;
-          printf("  UVW: iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e  divErrNorms %e %e\n",
+          printf("  UVW: iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e  divErrNorms %.2e %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
@@ -1523,8 +1523,8 @@ void printInfo(
               divUErrL2);
         } else {
           solver = nrs->uSolver;
-          printf("  U  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e  divErrNorms %e %e\n",
+          printf("  U  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e  divErrNorms %.2e %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
@@ -1532,15 +1532,15 @@ void printInfo(
               divUErrVolAvg,
               divUErrL2);
           solver = nrs->vSolver;
-          printf("  V  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  V  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
               solver->resNorm);
           solver = nrs->wSolver;
-          printf("  W  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  W  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
@@ -1551,15 +1551,15 @@ void printInfo(
       if(nrs->meshSolver)
       {
         elliptic_t* solver = nrs->meshSolver;
-        printf("  MSH: iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
+        printf("  MSH: iter %03d  resNorm00 %.2e  resNorm0 %.2e  resNorm %.2e\n",
                solver->Niter, solver->res00Norm, solver->res0Norm, solver->resNorm);
       }
  
       for(int is = 0; is < nrs->Nscalar; is++) {
         if (cds->compute[is]) {
           elliptic_t *solver = cds->solver[is];
-          printf("  S%02d: iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  S%02d: iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               is,
               solver->Niter,
               solver->res00Norm,
