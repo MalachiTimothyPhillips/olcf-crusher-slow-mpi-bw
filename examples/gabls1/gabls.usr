@@ -295,6 +295,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'CASEDATA'
+      
       common /scnrs/ sc_nrs(20)
       real               sc_nrs
 

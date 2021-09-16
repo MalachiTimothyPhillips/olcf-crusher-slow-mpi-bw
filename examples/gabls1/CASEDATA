@@ -1,30 +1,9 @@
-      real nlat
-      real uref
-      real lref
-      real tref
-      real ts0
-      real scr
-      real ilstrength
-      real number_elements_x
-      real number_elements_y
-      real number_elements_z
-      real xlen
-      real ylen
-      real zlen
-      real betam
-      common /casevars/
-     $ nlat,
-     $ uref,
-     $ lref,
-     $ tref,
-     $ ts0,
-     $ scr,
-     $ ilstrength,
-     $ number_elements_x,
-     $ number_elements_y,
-     $ number_elements_z,
-     $ xlen,
-     $ ylen,
-     $ zlen,
-     $ betam
+      real nlat, uref, lref, tref, ts0,
+     $ scr, ilstrength,
+     $ number_elements_x, number_elements_y, number_elements_z,
+     $ xlen, ylen, zlen, betam
 
+      common /casevars/ nlat, uref, lref, tref, ts0,
+     $ scr, ilstrength,
+     $ number_elements_x, number_elements_y, number_elements_z,
+     $ xlen, ylen, zlen, betam

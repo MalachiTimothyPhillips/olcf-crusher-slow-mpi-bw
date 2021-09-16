@@ -1,17 +1,7 @@
-      real p_u0
-      real p_v0
-      real p_w0
+      real p_u0, p_v0, p_w0,
+     $ p_a0, p_d0.
+     $ p_omega, p_amp
 
-      real p_a0
-      real p_d0
-
-      real p_omega
-      real p_amp
-      common /casevars/
-     $ p_u0,
-     $ p_v0,
-     $ p_w0,
-     $ p_a0,
-     $ p_d0,
-     $ p_omega,
-     $ p_amp
+      common /casevars/ p_u0, p_v0, p_w0,
+     $ p_a0, p_d0.
+     $ p_omega, p_amp
