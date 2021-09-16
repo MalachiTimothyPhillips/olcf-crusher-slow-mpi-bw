@@ -544,7 +544,7 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
         std::string pipeToNull = (rank == 0) ?
           std::string("") :
           std::string("> /dev/null 2>&1");
-        if(rank == 0) printf("building nek for lelt=%d and lelg=%d ...", lelt, nelgt); fflush(stdout);
+        if(rank == 0) printf("building nek for lx1=%d, lelt=%d and lelg=%d ...", N+1, lelt, nelgt); fflush(stdout);
         double tStart = MPI_Wtime();
         sprintf(buf, "cd %s && cp %s/makefile.template makefile && \
 		     make -s -j8 S=%s CASENAME=%s CASEDIR=%s NEKRS_WORKING_DIR=%s NEKRS_NEKINTERFACE_DIR=%s \
