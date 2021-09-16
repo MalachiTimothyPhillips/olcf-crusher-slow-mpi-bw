@@ -95,6 +95,8 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'CASEDATA'
+      common /scnrs/ sc_nrs(10)
+      real               sc_nrs
 
       P_U0 = sc_nrs(1)
       P_V0 = sc_nrs(2)

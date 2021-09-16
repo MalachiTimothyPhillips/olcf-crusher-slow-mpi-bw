@@ -1,5 +1,7 @@
-      COMMON /SCNRS/ sc_nrs(10)
-      real                sc_nrs
-      real ZLENGTH
-      integer NSLABS
-      integer NELSLAB
+      real zlength
+      real nslabs
+      real nelslab
+      common /casevars/
+     $ zlength,
+     $ nslabs,
+     $ nelslab

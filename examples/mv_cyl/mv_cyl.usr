@@ -129,6 +129,8 @@ C=======================================================================
       include 'SIZE'
       include 'TOTAL'
       include 'CASEDATA'
+      common /scnrs/ sc_nrs(10)
+      real                sc_nrs
 
       XLEN = sc_nrs(1)
       YLEN = sc_nrs(2)

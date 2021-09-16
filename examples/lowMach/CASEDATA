@@ -1,4 +1,5 @@
-      COMMON /SCNRS/ sc_nrs(10)
-      real                sc_nrs
-      real P_DELTA
-      real P_GAMMA
+      real p_delta
+      real p_gamma
+      common /casevars/
+     $ p_delta,
+       p_gamma
