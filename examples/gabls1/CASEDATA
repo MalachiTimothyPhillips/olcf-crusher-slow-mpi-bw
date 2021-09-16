@@ -1,0 +1,16 @@
+      COMMON /SCNRS/ sc_nrs(20)
+      real               sc_nrs
+      real NLAT
+      real UREF
+      real LREF
+      real TREF
+      real TS0
+      real SCR
+      real ILSTRENGTH
+      integer NUMBER_ELEMENTS_X
+      integer NUMBER_ELEMENTS_Y
+      integer NUMBER_ELEMENTS_Z
+      real XLEN
+      real YLEN
+      real ZLEN
+      real BETAM

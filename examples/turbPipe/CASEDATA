@@ -1,0 +1,5 @@
+      COMMON /SCNRS/ sc_nrs(10)
+      real                sc_nrs
+      real ZLENGTH
+      integer NSLABS
+      integer NELSLAB

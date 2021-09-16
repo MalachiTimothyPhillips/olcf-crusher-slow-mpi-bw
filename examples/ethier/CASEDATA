@@ -1,0 +1,11 @@
+      COMMON /SCNRS/ sc_nrs(10)
+      real sc_nrs
+      real P_U0
+      real P_V0
+      real P_W0
+
+      real P_A0
+      real P_D0
+
+      real P_OMEGA
+      real P_AMP

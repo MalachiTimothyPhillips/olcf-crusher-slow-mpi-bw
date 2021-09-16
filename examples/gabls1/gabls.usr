@@ -14,12 +14,12 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CASEDATA'
 
       common /WFPAR/ gacc
      $              ,thts0, thts, ts_rate, ts_grad
      $              ,fcor,  bcor
 
-#include<casedata>
 
       yarge  = YLEN*(YLEN-y)
       factor = exp(-yarge)
@@ -44,6 +44,7 @@ c-----------------------------------------------------------------------
       subroutine userchk
       include 'SIZE'
       include 'TOTAL'
+      include 'CASEDATA'
 
       real x0(3)
       data x0 /0.0, 0.0, 0.0/ 
@@ -77,7 +78,6 @@ c-----------------------------------------------------------------------
 
       integer bIDs(1)
       save iobj_wall
-#include<casedata>
       n     = nx1*ny1*nz1*nelv
 
       if (istep.eq.0) then
@@ -247,13 +247,13 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
+      include 'CASEDATA'
 
       common /WFPAR/ gacc
      $              ,thts0, thts, ts_rate, ts_grad
      $              ,fcor,  bcor
 
       real kx, ky
-#include<casedata>
 
       ux = 1.0
       uy = 0.0
@@ -294,7 +294,22 @@ c-----------------------------------------------------------------------
       subroutine usrdat2   ! This routine to modify mesh coordinates
       include 'SIZE'
       include 'TOTAL'
-#include<casedata>
+      include 'CASEDATA'
+
+      NLAT              =     sc_nrs(1)
+      UREF              =     sc_nrs(2)
+      LREF              =     sc_nrs(3)
+      TREF              =     sc_nrs(4)
+      TS0               =     sc_nrs(5)
+      SCR               =     sc_nrs(6)
+      ILSTRENGTH        =     sc_nrs(7)
+      NUMBER_ELEMENTS_X = int(sc_nrs(8))
+      NUMBER_ELEMENTS_Y = int(sc_nrs(9))
+      NUMBER_ELEMENTS_Z = int(sc_nrs(10))
+      XLEN              =     sc_nrs(11)
+      YLEN              =     sc_nrs(12)
+      ZLEN              =     sc_nrs(13)
+      BETAM             =     sc_nrs(14)
 
       call rescale_x(xm1, 0.0, XLEN)
       call rescale_x(zm1, 0.0, ZLEN)
@@ -323,6 +338,7 @@ c-----------------------------------------------------------------------
       subroutine usrdat3
       include 'SIZE'
       include 'TOTAL'
+      include 'CASEDATA'
 
       integer icalld
       save    icalld
@@ -331,7 +347,6 @@ c-----------------------------------------------------------------------
       common /WFPAR/ gacc
      $              ,thts0, thts, ts_rate, ts_grad
      $              ,fcor,  bcor
-#include<casedata>
 
       if(icalld.eq.0) then
         g       = 9.81 

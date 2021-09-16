@@ -12,7 +12,7 @@ c-----------------------------------------------------------------------
       include 'SIZE'
       include 'TOTAL'
       include 'NEKUSE'
-#include <casedata.h>
+      include 'CASEDATA'
 
       xr = x/0.5
       yr = y/0.5
@@ -64,7 +64,10 @@ c-----------------------------------------------------------------------
 
       include 'SIZE'
       include 'TOTAL'
-#include <casedata.h>
+      include 'CASEDATA'
+      ZLENGTH = sc_nrs(1)
+      NSLABS = int(sc_nrs(2))
+      NELSLAB = int(sc_nrs(3))
 
       z0 = 0.0
       z1 = ZLENGTH

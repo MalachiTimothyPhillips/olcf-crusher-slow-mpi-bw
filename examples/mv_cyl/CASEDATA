@@ -1,0 +1,10 @@
+      COMMON /SCNRS/ sc_nrs(10)
+      real                sc_nrs
+      real XLEN
+      real YLEN
+      real ZLEN
+
+      real P_GAMMA
+      real P_DELTA
+      real P_OMEGA
+      real P_AMP
