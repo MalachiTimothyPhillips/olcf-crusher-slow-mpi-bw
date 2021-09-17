@@ -387,8 +387,7 @@ void parseSolverTolerance(const int rank, setupAide &options,
   const std::vector<std::string> validValues = {
     {"relative"},
     {"auto"},
-    {"maxabserr"},
-    {"maxrelerr"},
+    {"maxerr"},
     {"maxtol"},
     {"frequency"},
     {"multiplier"},
@@ -414,16 +413,15 @@ void parseSolverTolerance(const int rank, setupAide &options,
       options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE", "TRUE");
       constexpr int NStepsAdjust {50};
       const double multiplier {10.0};
-      const double maxAbsoluteDivErr {1e-4};
-      const double maxRelativeDivErr {2.0}; // e.g., Allow a factor of 2x increase in the error
-      const double maxTolerance {0.1};
-      options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE FREQUENCY", std::to_string(NStepsAdjust));
-      options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MULTIPLIER", to_string_f(multiplier));
-      options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MAX ABSOLUTE ERROR", to_string_f(maxAbsoluteDivErr));
-      options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MAX RELATIVE ERROR", to_string_f(maxRelativeDivErr));
-      options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MAX", to_string_f(maxTolerance));
+      const double maxRelativeError {0.1};
+      const double maxTolerance {0.01};
+      options.setArgs(parSectionName + " AUTO TOLERANCE FREQUENCY", std::to_string(NStepsAdjust));
+      options.setArgs(parSectionName + " AUTO TOLERANCE MULTIPLIER", to_string_f(multiplier));
+      options.setArgs(parSectionName + " AUTO TOLERANCE MAX RELATIVE ERROR", to_string_f(maxRelativeError));
+      options.setArgs(parSectionName + " AUTO TOLERANCE MAX", to_string_f(maxTolerance));
       const dfloat defaultInitialTolerance = 1e-6;
       options.setArgs(parSectionName + " SOLVER TOLERANCE", to_string_f(defaultInitialTolerance));
+      options.setArgs(parSectionName + " INITIAL SOLVER TOLERANCE", to_string_f(defaultInitialTolerance));
     }
 
     std::vector<std::string> entries = serializeString(residualTol, '+');
@@ -433,6 +431,9 @@ void parseSolverTolerance(const int rank, setupAide &options,
       if(tolerance > 0.0)
       {
         options.setArgs(parSectionName + " SOLVER TOLERANCE", to_string_f(tolerance));
+        if(specifiesAuto){
+          options.setArgs(parSectionName + " INITIAL SOLVER TOLERANCE", to_string_f(tolerance));
+        }
       } else {
         checkValidity(rank, validValues, entry);
       }
@@ -469,32 +470,16 @@ void parseSolverTolerance(const int rank, setupAide &options,
         options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MULTIPLIER",
                         to_string_f(value));
       }
-      if(entry.find("maxabserr") != std::string::npos){
+      if(entry.find("maxerr") != std::string::npos){
         if(!specifiesAuto){
           std::ostringstream error;
-          error << "Error: must specify auto with maxAbsErr!\n";
+          error << "Error: must specify auto with maxErr!\n";
           appendError(error.str());
         }
         std::vector<std::string> params = serializeString(entry, '=');
         if (params.size() != 2) {
           std::ostringstream error;
-          error << "Error: could not parse maxAbsErr " << entry << "!\n";
-          appendError(error.str());
-        }
-        const dfloat value = std::stod(params[1]);
-        options.setArgs(parSectionName + " AUTO SOLVER TOLERANCE MAX ABSOLUTE ERROR",
-                        to_string_f(value));
-      }
-      if(entry.find("maxrelerr") != std::string::npos){
-        if(!specifiesAuto){
-          std::ostringstream error;
-          error << "Error: must specify auto with maxRelErr!\n";
-          appendError(error.str());
-        }
-        std::vector<std::string> params = serializeString(entry, '=');
-        if (params.size() != 2) {
-          std::ostringstream error;
-          error << "Error: could not parse maxAbsErr " << entry << "!\n";
+          error << "Error: could not parse maxErr " << entry << "!\n";
           appendError(error.str());
         }
         const dfloat value = std::stod(params[1]);

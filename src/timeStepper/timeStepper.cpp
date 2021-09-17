@@ -309,13 +309,15 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
       udf.div(nrs, timeNew, nrs->o_div);
     }
 
-    fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, stage, tstep);
+    if(platform->options.compareArgs("PRESSURE AUTO SOLVER TOLERANCE", "TRUE"))
+      fluidSolveAdjustTol(nrs, timeNew, nrs->o_P, nrs->o_U, stage, tstep);
+    else
+      fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, stage, tstep);
+
     if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY"))
-      meshSolve(nrs, timeNew, nrs->meshV->o_U, stage);
+      meshSolve(nrs, timeNew, nrs->meshV->o_U);
 
     nrs->converged = (udf.converged) ? udf.converged(nrs, stage) : true; 
-    if(platform->options.compareArgs("PRESSURE AUTO SOLVER TOLERANCE", "TRUE"))
-      nrs->converged &= adjustSolverTolerances(nrs, tstep, stage);
 
     platform->device.finish();
     MPI_Barrier(platform->comm.mpiComm);
@@ -651,7 +653,7 @@ void fluidSolve(
   platform->timer.tic("pressureSolve", 1);
   nrs->setEllipticCoeffPressureKernel(
       mesh->Nlocal, nrs->fieldOffset, nrs->o_rho, nrs->o_ellipticCoeff);
-  occa::memory o_Pnew = tombo::pressureSolve(nrs, time, stage);
+  occa::memory o_Pnew = tombo::pressureSolve(nrs, time);
   o_P.copyFrom(o_Pnew, nrs->fieldOffset * sizeof(dfloat));
   platform->timer.toc("pressureSolve");
 
@@ -664,7 +666,7 @@ void fluidSolve(
       nrs->o_rho,
       nrs->o_ellipticCoeff);
 
-  occa::memory o_Unew = tombo::velocitySolve(nrs, time, stage);
+  occa::memory o_Unew = tombo::velocitySolve(nrs, time);
   o_U.copyFrom(o_Unew, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
   platform->timer.toc("velocitySolve");
@@ -672,10 +674,114 @@ void fluidSolve(
   if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE")){
     ConstantFlowRate::apply(nrs, tstep, time);
   }
+}
+
+void fluidSolveAdjustTol(
+    nrs_t *nrs, dfloat time, occa::memory o_P, occa::memory o_U, int stage, int tstep) {
+  mesh_t *mesh = nrs->meshV;
+  linAlg_t *linAlg = platform->linAlg;
+
+  int frequency;
+  platform->options.getArgs("PRESSURE AUTO TOLERANCE FREQUENCY", frequency);
+
+  double currentTolerance;
+  nrs->pSolver->options.getArgs("SOLVER TOLERANCE", currentTolerance);
+
+  double initialTolerance;
+  platform->options.getArgs("PRESSURE INITIAL SOLVER TOLERANCE", initialTolerance);
+
+  double maxTolerance;
+  platform->options.getArgs("PRESSURE AUTO TOLERANCE MAX", maxTolerance);
+
+  double multiplier;
+  platform->options.getArgs("PRESSURE AUTO TOLERANCE MULTIPLIER", multiplier);
+
+  double maxRelativeError;
+  platform->options.getArgs("PRESSURE AUTO TOLERANCE MAX RELATIVE ERROR", maxRelativeError);
+
+  if(stage ==1 && tstep % frequency == 0)
+  {
+    occa::memory& o_Uold = platform->o_mempool.slice12;
+    occa::memory& o_Pold = platform->o_mempool.slice15;
+
+    o_Uold.copyFrom(o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    o_Pold.copyFrom(o_P, nrs->fieldOffset * sizeof(dfloat));
+
+    nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(initialTolerance));
+  }
+
+  fluidSolve(nrs, time, o_P, o_U, stage, tstep);
+
+  if(stage ==1 && tstep % frequency == 0)
+  {
+    // restore state
+    occa::memory& o_Uold = platform->o_mempool.slice12;
+    occa::memory& o_Pold = platform->o_mempool.slice15;
+
+    occa::memory& o_U_true = platform->o_mempool.slice16;
+    occa::memory& o_P_true = platform->o_mempool.slice19;
+
+    // save off solution state from higher tolerance
+    o_U_true.copyFrom(o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    o_P_true.copyFrom(o_P, nrs->fieldOffset * sizeof(dfloat));
+
+    o_U.copyFrom(o_Uold, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    o_P.copyFrom(o_Pold, nrs->fieldOffset * sizeof(dfloat));
+
+    const dfloat looserTolerance = std::min(maxTolerance, multiplier * currentTolerance);
+    nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(looserTolerance));
+
+    solveInfo_t solveInfo(nrs);
+
+    fluidSolve(nrs, time, o_P, o_U, stage, tstep);
+
+    solveInfo.addSolveInfo(nrs);
+
+    // TODO: need to drop values that are below a threshold
+    platform->linAlg->axpbyzMany(
+      mesh->Nlocal,
+      nrs->NVfields,
+      nrs->fieldOffset,
+      1.0,
+      o_U_true,
+      -1.0,
+      o_U,
+      platform->o_mempool.slice0
+    );
+
+    const dfloat errorU = platform->linAlg->weightedNorm2Many(
+      mesh->Nlocal,
+      nrs->NVfields,
+      nrs->fieldOffset,
+      mesh->o_LMM,
+      platform->o_mempool.slice0,
+      platform->comm.mpiComm
+    ) / sqrt(mesh->volume);
+
+    const dfloat normU = platform->linAlg->weightedNorm2Many(
+      mesh->Nlocal,
+      nrs->NVfields,
+      nrs->fieldOffset,
+      mesh->o_LMM,
+      o_U_true,
+      platform->comm.mpiComm
+    ) / sqrt(mesh->volume);
+
+    const dfloat relativeErr = errorU / normU;
+    if(relativeErr > maxRelativeError){
+
+      // revert tolerance + solution state
+      nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(currentTolerance));
+      o_U.copyFrom(o_U_true, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+      o_P.copyFrom(o_P_true, nrs->fieldOffset * sizeof(dfloat));
+
+    }
+  }
+
 
 }
 
-void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage)
+void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U)
 {
   mesh_t* mesh = nrs->meshV;
   linAlg_t* linAlg = platform->linAlg;
@@ -690,7 +796,7 @@ void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage)
     nrs->o_meshRho,
     nrs->o_ellipticCoeff);
 
-  occa::memory o_Unew = [&](nrs_t* nrs, dfloat time, int stage){
+  occa::memory o_Unew = [&](nrs_t* nrs, dfloat time){
     mesh_t* mesh = nrs->meshV;
     oogs_t* gsh = nrs->gsh;
 
@@ -729,7 +835,7 @@ void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage)
     );
 
     return platform->o_mempool.slice0;
-  }(nrs, time, stage);
+  }(nrs, time);
   o_U.copyFrom(o_Unew, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
   platform->timer.toc("meshSolve");
 }
@@ -1628,75 +1734,6 @@ void computeDivUErr(nrs_t* nrs, dfloat& divUErrVolAvg, dfloat& divUErrL2)
       platform->o_mempool.slice0,
       platform->comm.mpiComm) / mesh->volume;
   divUErrVolAvg = std::abs(divUErrVolAvg);
-}
-
-bool adjustSolverTolerances(nrs_t* nrs, int tstep, int stage)
-{
-  constexpr int maxStagesAdjust {2};
-  if(stage > maxStagesAdjust) return true;
-
-  int frequency;
-  platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE FREQUENCY", frequency);
-  if(tstep % frequency == 0 && tstep > 0){
-
-    double currentTolerance;
-    nrs->pSolver->options.getArgs("SOLVER TOLERANCE", currentTolerance);
-
-    double maxTolerance;
-    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX", maxTolerance);
-
-    double multiplier;
-    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MULTIPLIER", multiplier);
-
-    double maxAbsoluteDivErr;
-    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX ABSOLUTE ERROR", maxAbsoluteDivErr);
-    double maxRelativeDivErr;
-    platform->options.getArgs("PRESSURE AUTO SOLVER TOLERANCE MAX RELATIVE ERROR", maxRelativeDivErr);
-
-    dfloat divUErrL2, divUErrVolAvg;
-    computeDivUErr(nrs, divUErrVolAvg, divUErrL2);
-
-    dfloat previousDivUErrL2 = nrs->divUErrL2;
-
-    nrs->divUErrL2 = divUErrL2;
-
-    if(previousDivUErrL2 > maxAbsoluteDivErr && stage > 1) {
-      // previous step failed -- bail here after retrying the step
-      // with a tighter tolerance
-      return true;
-    }
-
-    if(divUErrL2 > maxAbsoluteDivErr){
-      // fail step + tighten tolerances
-      const dfloat tigherTolerance = currentTolerance / multiplier;
-      nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(tigherTolerance));
-      return false;
-    }
-
-    if(stage == 1){
-      // all good, try to loosen tolerance
-      const dfloat looserTolerance = std::min(multiplier * currentTolerance, maxTolerance);
-      nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(looserTolerance));
-      return false;
-    } else {
-      // evaluate fidelity of loosened tolerance
-      const dfloat TOL = 1e-10;
-      const dfloat relativeError = (previousDivUErrL2 > TOL) ?
-        divUErrL2 / previousDivUErrL2 :
-        0.0;
-      if(relativeError <= maxRelativeDivErr){
-        // all good, accept looser tolerance
-        return true;
-      } else {
-        // revert tolerance change + retry the step
-        const dfloat tigherTolerance = currentTolerance / multiplier;
-        nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(tigherTolerance));
-        return false;
-      }
-    }
-  }
-
-  return true; // no change, don't fail the step on account of me!
 }
 
 } // namespace timeStepper

@@ -195,6 +195,7 @@ set(SRC
     src/io/writeFld.cpp
     src/io/utils.cpp
     src/core/utils/inipp.cpp
+    src/core/utils/solveInfo.cpp
     src/core/utils/mysort.cpp
     src/core/utils/parallelSort.cpp
     src/core/utils/tinyexpr.c

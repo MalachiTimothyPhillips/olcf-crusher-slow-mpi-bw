@@ -71,8 +71,7 @@ residualTol                 <float>                                    absolute 
                             +relative                                  use relative residual
                             +auto                                      (only for pressure)
                               +frequency=<int>                         steps until adjusting tolerance
-                              +maxAbsErr=<float>                       maximum L2 divergence error
-                              +maxRelErr=<float>                       maximum increase in L2 divergence error for a step
+                              +maxErr=<float>                          maximum relative L2 error in velocity
                               +maxTol=<float>                          maximum residual tolerance
                               +multiplier=<float>                      amount to increase/decrease tolerance during adjustment
 

@@ -18,6 +18,7 @@
 #include "timer.hpp"
 #include "platform.hpp"
 
+
 struct nrs_t
 {
   int dim, elementType;
@@ -220,5 +221,16 @@ void compileKernels();
 
 std::vector<int>
 determineMGLevels(std::string section);
+
+struct solveInfo_t{
+  int NiterU, NiterV, NiterW, NiterUVW, NiterP;
+  double res00NormU, res00NormV, res00NormW, res00NormUVW, res00NormP;
+  double res0NormU, res0NormV, res0NormW, res0NormUVW, res0NormP;
+  double resNormU, resNormV, resNormW, resNormUVW, resNormP;
+
+  solveInfo_t(const nrs_t* nrs);
+
+  void addSolveInfo(nrs_t* nrs) const;
+};
 
 #endif

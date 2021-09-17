@@ -128,6 +128,8 @@ void deviceMemPool_t::allocate(memPool_t& hostMemory, const dlong offset, const 
   slice9 = o_ptr.slice(9 * offset * sizeof(dfloat));
   slice12 = o_ptr.slice(12 * offset * sizeof(dfloat));
   slice15 = o_ptr.slice(15 * offset * sizeof(dfloat));
+  slice16 = o_ptr.slice(15 * offset * sizeof(dfloat));
+  slice17 = o_ptr.slice(15 * offset * sizeof(dfloat));
   slice18 = o_ptr.slice(18 * offset * sizeof(dfloat));
   slice19 = o_ptr.slice(19 * offset * sizeof(dfloat));
 }

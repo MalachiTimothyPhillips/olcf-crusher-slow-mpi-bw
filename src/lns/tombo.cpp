@@ -5,7 +5,7 @@
 
 namespace tombo
 {
-occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory pressureSolve(nrs_t* nrs, dfloat time)
 {
   mesh_t* mesh = nrs->meshV;
   
@@ -161,7 +161,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   return platform->o_mempool.slice1;
 }
 
-occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory velocitySolve(nrs_t* nrs, dfloat time)
 {
   mesh_t* mesh = nrs->meshV;
   
