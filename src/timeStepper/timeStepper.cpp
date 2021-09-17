@@ -1482,12 +1482,16 @@ void printInfo(
 
   const int enforceVerbose = tstep < 1001;
   const dfloat cfl = computeCFL(nrs);
+  dfloat divUErrVolAvg, divUErrL2;
+  if (platform->options.compareArgs("VERBOSE SOLVER INFO", "TRUE") || enforceVerbose){
+    computeDivUErr(nrs, divUErrVolAvg, divUErrL2);
+  }
   if (platform->comm.mpiRank == 0) {
     if (platform->options.compareArgs("VERBOSE SOLVER INFO", "TRUE") ||
         enforceVerbose) {
       if (nrs->flow) {
         elliptic_t *solver = nrs->pSolver;
-        printf("  P  : iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
+        printf("  P  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  resNorm %.2e\n",
             solver->Niter,
             solver->res00Norm,
             solver->res0Norm,
@@ -1495,30 +1499,34 @@ void printInfo(
 
         if (nrs->uvwSolver) {
           solver = nrs->uvwSolver;
-          printf("  UVW: iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  UVW: iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e  divErrNorms %.2e %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
-              solver->resNorm);
+              solver->resNorm,
+              divUErrVolAvg,
+              divUErrL2);
         } else {
           solver = nrs->uSolver;
-          printf("  U  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  U  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e  divErrNorms %.2e %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
-              solver->resNorm);
+              solver->resNorm,
+              divUErrVolAvg,
+              divUErrL2);
           solver = nrs->vSolver;
-          printf("  V  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  V  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
               solver->resNorm);
           solver = nrs->wSolver;
-          printf("  W  : iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  W  : iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               solver->Niter,
               solver->res00Norm,
               solver->res0Norm,
@@ -1529,15 +1537,15 @@ void printInfo(
       if(nrs->meshSolver)
       {
         elliptic_t* solver = nrs->meshSolver;
-        printf("  MSH: iter %03d  resNorm00 %e  resNorm0 %e  resNorm %e\n",
+        printf("  MSH: iter %03d  resNorm00 %.2e  resNorm0 %.2e  resNorm %.2e\n",
                solver->Niter, solver->res00Norm, solver->res0Norm, solver->resNorm);
       }
  
       for(int is = 0; is < nrs->Nscalar; is++) {
         if (cds->compute[is]) {
           elliptic_t *solver = cds->solver[is];
-          printf("  S%02d: iter %03d  resNorm00 %e  resNorm0 %e  "
-                 "resNorm %e\n",
+          printf("  S%02d: iter %03d  resNorm00 %.2e  resNorm0 %.2e  "
+                 "resNorm %.2e\n",
               is,
               solver->Niter,
               solver->res00Norm,
@@ -1575,6 +1583,37 @@ void printInfo(
 
   if (tstep % 10 == 0)
     fflush(stdout);
+}
+
+void computeDivUErr(nrs_t* nrs, dfloat& divUErrVolAvg, dfloat& divUErrL2)
+{
+  mesh_t* mesh = nrs->meshV;
+  nrs->divergenceVolumeKernel(mesh->Nelements,
+      mesh->o_vgeo,
+      mesh->o_D,
+      nrs->fieldOffset,
+      nrs->o_U,
+      platform->o_mempool.slice0);
+  oogs::startFinish(platform->o_mempool.slice0, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+  platform->linAlg->axmy(mesh->Nlocal, 1.0,
+    mesh->o_invLMM, platform->o_mempool.slice0);
+
+  platform->linAlg->axpby(
+    mesh->Nlocal,
+    1.0,
+    nrs->o_div,
+    -1.0,
+    platform->o_mempool.slice0
+  );
+  divUErrL2 = platform->linAlg->weightedNorm2(mesh->Nlocal,
+      mesh->o_LMM,
+      platform->o_mempool.slice0,
+      platform->comm.mpiComm) / sqrt(mesh->volume);
+  divUErrVolAvg = platform->linAlg->innerProd(mesh->Nlocal,
+      mesh->o_LMM,
+      platform->o_mempool.slice0,
+      platform->comm.mpiComm) / mesh->volume;
+  divUErrVolAvg = std::abs(divUErrVolAvg);
 }
 
 } // namespace timeStepper
