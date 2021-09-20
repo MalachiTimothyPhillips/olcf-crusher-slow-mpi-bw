@@ -28,6 +28,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("VELOCITY BLOCK SOLVER", "FALSE");
   options.setArgs("SCALAR INITIAL GUESS","PREVIOUS");
   options.setArgs("VELOCITY INITIAL GUESS","PREVIOUS");
+  options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
 
   if (ciMode == 2) {
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
@@ -69,9 +70,19 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("VARIABLE DT", "TRUE");
     options.setArgs("TARGET CFL", "0.5");
   }
+  if (ciMode == 9) {
+    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
+    options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
+    options.setArgs("SUBCYCLING STEPS", std::string("1"));
+    options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
+  }
+  if (ciMode == 10) {
+    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
+    options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
+    options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
+  }
 
   options.setArgs("TIME INTEGRATOR", "TOMBO3");
-  options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("PRESSURE SOLVER TOLERANCE", std::string("1e-10"));
   options.setArgs("SCALAR00 SOLVER TOLERANCE", std::string("1e-12"));
@@ -294,6 +305,24 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              pIterErr = abs(NiterP - 2);
              vxErr = abs((err[0] - 3.2E-10)/err[0]);
              prErr = abs((err[1] - 9E-10)/err[1]);
+             s01IterErr = abs(NiterS01 - 10);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
+    case 9 : velIterErr = abs(NiterU - 10);
+             s1Err = abs((err[2] - 6.1E-12)/err[2]);
+             s2Err = abs((err[3] - 6.8E-12)/err[3]);
+             pIterErr = abs(NiterP - 1);
+             vxErr = abs((err[0] - 2.78E-10)/err[0]);
+             prErr = abs((err[1] - 7.02E-010)/err[1]);
+             s01IterErr = abs(NiterS01 - 10);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
+    case 10: velIterErr = abs(NiterU - 10);
+             s1Err = abs((err[2] - 4.76E-12)/err[2]);
+             s2Err = abs((err[3] - 5.55E-12)/err[3]);
+             pIterErr = abs(NiterP - 1);
+             vxErr = abs((err[0] - 2.78E-10)/err[0]);
+             prErr = abs((err[1] - 7.11E-10)/err[1]);
              s01IterErr = abs(NiterS01 - 10);
              s02IterErr = abs(NiterS02 - 10);
              break;
