@@ -110,6 +110,14 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi ethier 2 8
 
+    - name: 'ethier non-dealiased subcycling'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi ethier 2 9
+
+    - name: 'ethier non-dealiased'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi ethier 2 10
+
 
   lowMach:
     needs: install
