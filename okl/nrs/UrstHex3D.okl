@@ -34,7 +34,6 @@
 #define r_y r_V
 #define r_z r_W
 
-    // TODO: reduce memory usage
     @shared dfloat s_D[p_Nq][p_Nq];
 
     @shared dfloat s_xre[p_Nq][p_Nq];
