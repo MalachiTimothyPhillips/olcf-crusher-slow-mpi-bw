@@ -30,7 +30,11 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("VELOCITY INITIAL GUESS","PREVIOUS");
   options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
 
+  if (ciMode == 1) {
+    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
+  }
   if (ciMode == 2) {
+    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
     options.setArgs("SUBCYCLING STEPS", std::string("1"));
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
@@ -71,7 +75,6 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("TARGET CFL", "0.5");
   }
   if (ciMode == 9) {
-    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
     options.setArgs("SUBCYCLING STEPS", std::string("1"));
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
@@ -234,18 +237,18 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   switch (ciMode) {
     case 1 : velIterErr = abs(NiterU - 10);
-             s1Err = abs((err[2] - 5.25E-12)/err[2]);
-             s2Err = abs((err[3] - 6.09E-12)/err[3]);
-             pIterErr = abs(NiterP - 2);
+             s1Err = abs((err[2] - 4.76E-12)/err[2]);
+             s2Err = abs((err[3] - 5.54E-12)/err[3]);
+             pIterErr = abs(NiterP - 4);
              vxErr = abs((err[0] - 2.78E-10)/err[0]);
              prErr = abs((err[1] - 7.02E-010)/err[1]);
              s01IterErr = abs(NiterS01 - 10);
              s02IterErr = abs(NiterS02 - 10);
              break;
     case 2 : velIterErr = abs(NiterU - 10);
-             s1Err = abs((err[2] - 6.49E-12)/err[2]);
-             s2Err = abs((err[3] - 7.28E-12)/err[3]);
-             pIterErr = abs(NiterP - 2);
+             s1Err = abs((err[2] - 6.11E-12)/err[2]);
+             s2Err = abs((err[3] - 6.84E-12)/err[3]);
+             pIterErr = abs(NiterP - 1);
              vxErr = abs((err[0] - 2.78E-10)/err[0]);
              prErr = abs((err[1] - 7.11E-10)/err[1]);
              s01IterErr = abs(NiterS01 - 10);
@@ -308,30 +311,12 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              s01IterErr = abs(NiterS01 - 10);
              s02IterErr = abs(NiterS02 - 10);
              break;
-    case 9 : velIterErr = abs(NiterU - 10);
-             s1Err = abs((err[2] - 6.1E-12)/err[2]);
-             s2Err = abs((err[3] - 6.8E-12)/err[3]);
-             pIterErr = abs(NiterP - 1);
-             vxErr = abs((err[0] - 2.78E-10)/err[0]);
-             prErr = abs((err[1] - 7.02E-010)/err[1]);
-             s01IterErr = abs(NiterS01 - 10);
-             s02IterErr = abs(NiterS02 - 10);
-             break;
-    case 10: velIterErr = abs(NiterU - 10);
-             s1Err = abs((err[2] - 4.76E-12)/err[2]);
-             s2Err = abs((err[3] - 5.55E-12)/err[3]);
-             pIterErr = abs(NiterP - 1);
-             vxErr = abs((err[0] - 2.78E-10)/err[0]);
-             prErr = abs((err[1] - 7.11E-10)/err[1]);
-             s01IterErr = abs(NiterS01 - 10);
-             s02IterErr = abs(NiterS02 - 10);
-             break;
 
      }
 
-  if (ciMode == 2){
+  if (ciMode == 4){
     dfloat memoryUsage = platform->device.memoryAllocated()/1e9;
-    const dfloat expectedMemoryUsage = 0.0430849;
+    const dfloat expectedMemoryUsage = 0.0498817;
     if(memoryUsage > 1.01 * expectedMemoryUsage && platform->comm.mpiCommSize == 2)
     {
       if(platform->comm.mpiRank == 0){
