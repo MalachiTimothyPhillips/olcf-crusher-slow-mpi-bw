@@ -331,18 +331,19 @@
           const dfloat zr = r_cubzre[k], zs = r_cubzse[k], zt = r_cubzte[k];
 
           const dfloat J = xr * (ys * zt - zs * yt) - yr * (xs * zt - zs * xt) + zr * (xs * yt - ys * xt);
+          const dfloat invJ = 1.0 / J;
 
-          const dfloat drdx =  (ys * zt - zs * yt) / J;
-          const dfloat drdy = -(xs * zt - zs * xt) / J;
-          const dfloat drdz =  (xs * yt - ys * xt) / J;
+          const dfloat drdx =  (ys * zt - zs * yt) * invJ;
+          const dfloat drdy = -(xs * zt - zs * xt) * invJ;
+          const dfloat drdz =  (xs * yt - ys * xt) * invJ;
 
-          const dfloat dsdx = -(yr * zt - zr * yt) / J;
-          const dfloat dsdy =  (xr * zt - zr * xt) / J;
-          const dfloat dsdz = -(xr * yt - yr * xt) / J;
+          const dfloat dsdx = -(yr * zt - zr * yt) * invJ;
+          const dfloat dsdy =  (xr * zt - zr * xt) * invJ;
+          const dfloat dsdz = -(xr * yt - yr * xt) * invJ;
 
-          const dfloat dtdx =  (yr * zs - zr * ys) / J;
-          const dfloat dtdy = -(xr * zs - zr * xs) / J;
-          const dfloat dtdz =  (xr * ys - yr * xs) / J;
+          const dfloat dtdx =  (yr * zs - zr * ys) * invJ;
+          const dfloat dtdy = -(xr * zs - zr * xs) * invJ;
+          const dfloat dtdz =  (xr * ys - yr * xs) * invJ;
 
           const dfloat JW = J * s_cubW[i] * s_cubW[j] * s_cubW[k];
 
