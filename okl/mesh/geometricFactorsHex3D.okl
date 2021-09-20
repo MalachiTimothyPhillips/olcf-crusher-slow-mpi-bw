@@ -50,9 +50,6 @@ SOFTWARE.
     @shared dfloat s_xre[p_Nq][p_Nq];
     @shared dfloat s_xse[p_Nq][p_Nq];
     @shared dfloat s_xte[p_Nq][p_Nq];
-//    #define s_xre s_x;
-//    #define s_xse s_y;
-//    #define s_xte s_z;
 
     @shared dfloat s_yre[p_Nq][p_Nq];
     @shared dfloat s_yse[p_Nq][p_Nq];
