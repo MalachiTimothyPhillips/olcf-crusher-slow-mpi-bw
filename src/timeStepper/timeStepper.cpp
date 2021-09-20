@@ -462,6 +462,7 @@ void makeq(
               platform->o_mempool.slice0);
         else
           cds->advectionStrongVolumeKernel(cds->meshV->Nelements,
+              mesh->o_vgeo,
               mesh->o_D,
               cds->vFieldOffset,
               isOffset,
@@ -593,6 +594,7 @@ void makef(
             platform->o_mempool.slice0);
       else
         nrs->advectionStrongVolumeKernel(mesh->Nelements,
+            mesh->o_vgeo,
             mesh->o_D,
             nrs->fieldOffset,
             nrs->o_U,
