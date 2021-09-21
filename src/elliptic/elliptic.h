@@ -65,6 +65,7 @@ struct GmresData{
 
 struct elliptic_t
 {
+  static constexpr int NScratchFields {4};
   int dim;
   int elementType; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
   int var_coeff;   // flag for variable coefficient
@@ -100,12 +101,10 @@ struct elliptic_t
   dfloat allNeumannScale;
 
   // HOST shadow copies
-  dfloat* p, * z, * v, * Ap;
   dfloat* invDegree;
 
   int* EToB;
 
-  dfloat* wrk;
   occa::memory o_wrk;
 
   //C0-FEM mask data
@@ -129,7 +128,6 @@ struct elliptic_t
   occa::memory o_z; // preconditioner solution
   occa::memory o_res;
   occa::memory o_Ap; // A*search direction
-  occa::memory o_rtmp;
   occa::memory o_invDegree;
   occa::memory o_EToB;
 

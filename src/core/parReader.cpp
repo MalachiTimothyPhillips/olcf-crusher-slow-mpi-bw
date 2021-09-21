@@ -144,6 +144,7 @@ static std::vector<std::string> amgxKeys = {
 static std::vector<std::string> occaKeys = {
   {"backend"},
   {"deviceNumber"},
+  {"platformNumber"}
 };
 
 static std::vector<std::string> pressureKeys = {};
@@ -1206,6 +1207,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
 
   // options.setArgs("THREAD MODEL", "SERIAL");
   options.setArgs("DEVICE NUMBER", "LOCAL-RANK");
+  options.setArgs("PLATFORM NUMBER", "0");
   options.setArgs("VERBOSE", "FALSE");
 
   options.setArgs("ADVECTION", "TRUE");
@@ -1363,10 +1365,6 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
   } else {
     append_error("cannot find mandatory parameter GENERAL::polynomialOrder");
   }
-
-  int cubN = round((3./2) * (N + 1) - 1) - 1;
-  par->extract("general", "cubaturepolynomialorder", cubN);
-  options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
 
   // udf file
   {
@@ -1560,12 +1558,18 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     }
   }
 
-  bool dealiasing;
+  bool dealiasing = true;
   if (par->extract("general", "dealiasing", dealiasing))
     if (dealiasing)
       options.setArgs("ADVECTION TYPE", "CUBATURE+CONVECTIVE");
     else
       options.setArgs("ADVECTION TYPE", "CONVECTIVE");
+
+  int cubN = round((3./2) * (N+1) - 1) - 1;
+  if(!dealiasing) cubN = 0;
+  par->extract("general", "cubaturepolynomialorder", cubN);
+  options.setArgs("CUBATURE POLYNOMIAL DEGREE", std::to_string(cubN));
+
 
   {
     parseRegularization(rank, options, par, "general");

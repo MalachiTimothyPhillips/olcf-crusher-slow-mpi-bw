@@ -89,22 +89,25 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       platform->kernels.getKernel(sectionIdentifier + "fusedResidualAndNorm");
   }
 
-  elliptic->p    = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
-  elliptic->z    = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
-  elliptic->Ap   = (dfloat*) calloc(elliptic->Ntotal * elliptic->Nfields,   sizeof(dfloat));
+  const size_t offsetBytes = elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat);
+  if(elliptic->o_wrk.size() < elliptic_t::NScratchFields * offsetBytes) {
+    if(platform->comm.mpiRank == 0) printf("ERROR: mempool assigned for elliptic too small!");
+    ABORT(EXIT_FAILURE);
+  }
 
-  elliptic->o_p    = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat),
-                                         elliptic->p);
-  elliptic->o_z    = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat),
-                                         elliptic->z);
-  elliptic->o_Ap   = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat),
-                                         elliptic->Ap);
-  elliptic->o_rtmp = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat),
-                                         elliptic->p);
+#if 0  
+  elliptic->o_p    = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+  elliptic->o_z    = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+  elliptic->o_Ap   = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+  elliptic->o_x0   = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+#else
+  elliptic->o_p    = elliptic->o_wrk + 0*offsetBytes;
+  elliptic->o_z    = elliptic->o_wrk + 1*offsetBytes; 
+  elliptic->o_Ap   = elliptic->o_wrk + 2*offsetBytes; 
+  elliptic->o_x0   = elliptic->o_wrk + 3*offsetBytes; 
+#endif
 
-  elliptic->o_x0 = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields ,  sizeof(dfloat));
-
-  dlong Nblocks = (Nlocal + BLOCKSIZE - 1) / BLOCKSIZE;
+  const dlong Nblocks = (Nlocal + BLOCKSIZE - 1) / BLOCKSIZE;
   elliptic->tmpNormr = (dfloat*) calloc(Nblocks,sizeof(dfloat));
   elliptic->o_tmpNormr = platform->device.malloc(Nblocks * sizeof(dfloat),
                                              elliptic->tmpNormr);
