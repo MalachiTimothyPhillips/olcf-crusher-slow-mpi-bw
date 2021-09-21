@@ -30,11 +30,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("VELOCITY INITIAL GUESS","PREVIOUS");
   options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
 
-  if (ciMode == 1) {
-    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
-  }
   if (ciMode == 2) {
-    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
     options.setArgs("SUBCYCLING STEPS", std::string("1"));
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
