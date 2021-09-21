@@ -53,6 +53,7 @@ struct solverDescription_t{
 class automaticPreconditioner_t{
   enum class Strategy{
     STEPWISE,
+    EXHAUSTIVE,
   };
   static constexpr int NSmoothers {3};
   public:
@@ -68,6 +69,7 @@ class automaticPreconditioner_t{
   void selectSolver();
   void reinitializePreconditioner();
   solverDescription_t stepwiseSelection();
+  solverDescription_t exhaustiveSelection();
   solverDescription_t determineFastestSolver();
   elliptic_t& elliptic;
   unsigned long solveCount;
@@ -77,6 +79,7 @@ class automaticPreconditioner_t{
   unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
+  unsigned int converged;
   ChebyshevSmootherType fastestSmoother;
 
   solverDescription_t currentSolver;

@@ -718,12 +718,12 @@ void parsePreconditioner(const int rank, setupAide &options,
 
     // default params
     constexpr int trialFrequency {50};
-    constexpr int autoStart {1000};
+    constexpr int autoStart {100};
     constexpr int maxChebyOrder {3};
     constexpr int minChebyOrder {1};
-    constexpr int maxTrials {10};
+    constexpr int maxTrials {1000};
 
-    const std::string sampling = "STEPWISE";
+    const std::string sampling = "EXHAUSTIVE";
 
     options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
     options.setArgs(parSection + " AUTO PRECONDITIONER TRIAL FREQUENCY", std::to_string(trialFrequency));

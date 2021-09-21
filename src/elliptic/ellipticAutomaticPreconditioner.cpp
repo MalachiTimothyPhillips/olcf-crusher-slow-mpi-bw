@@ -11,6 +11,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   trialCount(0),
   gen(rd())
 {
+  converged = 0;
   elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
@@ -34,12 +35,14 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   }
   if(sampling == "STEPWISE")
     strategy = Strategy::STEPWISE;
+  else
+    strategy = Strategy::EXHAUSTIVE;
 }
 
 void
 automaticPreconditioner_t::apply()
 {
-  if(trialCount >= maxTrials) return;
+  if(trialCount >= maxTrials || converged > 1) return;
   if(solveCount % trialFrequency == 0 && solveCount >= autoStart){
     trialCount++;
     evaluateCurrentSolver();
@@ -117,10 +120,38 @@ automaticPreconditioner_t::stepwiseSelection()
   return {fastestSmoother, newOrder};
 }
 
+solverDescription_t
+automaticPreconditioner_t::exhaustiveSelection()
+{
+  std::vector<solverDescription_t> remainingSolvers;
+  std::set_difference(allSolvers.begin(), allSolvers.end(),
+    visitedSolvers.begin(), visitedSolvers.end(),
+    std::inserter(remainingSolvers, remainingSolvers.begin()));
+  
+  // select fastest solver
+  solverDescription_t candidateSolver;
+  if(remainingSolvers.empty() || trialCount >= maxTrials)
+  {
+    dfloat fastestTime = std::numeric_limits<dfloat>::max();
+    for(auto&& solver : visitedSolvers){
+      const dfloat solverTime = solverToTime[solver];
+      if(solverTime < fastestTime){
+        fastestTime = solverTime;
+        candidateSolver = solver;
+      }
+    }
+    converged++;
+  } else {
+    candidateSolver = remainingSolvers.back();
+  }
+  
+  return candidateSolver;
+}
+
 void
 automaticPreconditioner_t::selectSolver()
 {
-  if(trialCount >= maxTrials)
+  if(trialCount >= maxTrials || converged > 0)
   {
     currentSolver = determineFastestSolver();
     if(platform->comm.mpiRank == 0){
@@ -131,6 +162,9 @@ automaticPreconditioner_t::selectSolver()
   } else {
     if(strategy == Strategy::STEPWISE){
       currentSolver = stepwiseSelection();
+    }
+    else if (strategy == Strategy::EXHAUSTIVE){
+      currentSolver = exhaustiveSelection();
     }
 
     if(platform->comm.mpiRank == 0){
@@ -160,6 +194,8 @@ automaticPreconditioner_t::determineFastestSolver()
       minSolver = solver;
     }
   }
+
+  converged++;
 
   return minSolver;
 }
