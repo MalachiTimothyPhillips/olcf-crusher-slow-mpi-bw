@@ -62,10 +62,12 @@
           r_Aq[k] = 0.f; // zero the accumulator
         }
       }
+    @barrier("local");
 
     // Layer by layer
 //    #pragma unroll p_Nq
     for(int k = 0; k < p_Nq; k++) {
+      @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
           // prefetch geometric factors
@@ -139,6 +141,7 @@
     }
 
     // write out
+    @barrier("local");
 
     for(int j = 0; j < p_Nq; ++j; @inner(1))
       for(int i = 0; i < p_Nq; ++i; @inner(0))
