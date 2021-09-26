@@ -157,6 +157,9 @@ automaticPreconditioner_t::selectSolver()
     if(platform->comm.mpiRank == 0){
       std::cout << "Determined fastest solver is : " << currentSolver.to_string() << "\n";
       std::cout << "Will now continue using this solver for the remainder of the simulation!\n";
+
+      std::cout << "Summary of times:\n";
+      std::cout << this->to_string() << std::endl;
       fflush(stdout);
     }
   } else {
