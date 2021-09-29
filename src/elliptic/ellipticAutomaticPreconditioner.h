@@ -3,7 +3,6 @@
 #include <set>
 #include <map>
 #include <tuple>
-#include <random>
 #include <string>
 #include <iostream>
 #include <ellipticMultiGrid.h>
@@ -51,10 +50,6 @@ struct solverDescription_t{
 };
 
 class automaticPreconditioner_t{
-  enum class Strategy{
-    STEPWISE,
-    EXHAUSTIVE,
-  };
   static constexpr int NSmoothers {3};
   public:
   automaticPreconditioner_t(elliptic_t& m_elliptic);
@@ -62,36 +57,28 @@ class automaticPreconditioner_t{
   std::string
   to_string() const;
 
-  void apply();
+  bool apply(int tstep);
 
   private:
   void evaluateCurrentSolver();
-  void selectSolver();
+  bool selectSolver();
   void reinitializePreconditioner();
-  solverDescription_t stepwiseSelection();
-  solverDescription_t exhaustiveSelection();
   solverDescription_t determineFastestSolver();
   elliptic_t& elliptic;
-  unsigned long solveCount;
+  bool activeTuner;
   unsigned long trialFrequency;
-  unsigned long trialCount;
-  unsigned long maxTrials;
   unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
-  unsigned int converged;
   ChebyshevSmootherType fastestSmoother;
 
   solverDescription_t currentSolver;
   std::set<solverDescription_t> allSolvers;
   std::set<solverDescription_t> visitedSolvers;
+  std::vector<solverDescription_t> remainingSolvers;
   std::set<ChebyshevSmootherType> visitedSmoothers;
-  std::set<unsigned int> visitedChebyOrders;
   std::map<solverDescription_t, double> solverToTime;
-
-  Strategy strategy;
-
-  std::random_device rd;
-  std::mt19937 gen;
+  std::map<solverDescription_t, double> solverStartTime;
+  std::map<solverDescription_t, unsigned int> solverToIterations;
 };
 #endif

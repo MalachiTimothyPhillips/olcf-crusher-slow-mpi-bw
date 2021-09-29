@@ -7,18 +7,12 @@
 
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 : elliptic(m_elliptic),
-  solveCount(0),
-  trialCount(0),
-  gen(rd())
+  activeTuner(true)
 {
-  converged = 0;
   elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
-  elliptic.options.getArgs("AUTO PRECONDITIONER MAX TRIALS", maxTrials);
-  const std::string sampling = 
-    elliptic.options.getArgs("AUTO PRECONDITIONER SAMPLING");
   
   std::set<ChebyshevSmootherType> allSmoothers = {
     ChebyshevSmootherType::JACOBI,
@@ -33,22 +27,23 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
       allSolvers.insert({smoother, chebyOrder});
     }
   }
-  if(sampling == "STEPWISE")
-    strategy = Strategy::STEPWISE;
-  else
-    strategy = Strategy::EXHAUSTIVE;
 }
 
-void
-automaticPreconditioner_t::apply()
+bool
+automaticPreconditioner_t::apply(int tstep)
 {
-  if(trialCount >= maxTrials || converged > 1) return;
-  if(solveCount % trialFrequency == 0 && solveCount >= autoStart){
-    trialCount++;
-    evaluateCurrentSolver();
-    selectSolver();
+  bool evaluatePreconditioner = true;
+  evaluatePreconditioner &= activeTuner;
+  evaluatePreconditioner &= tstep >= autoStart;
+  if(evaluatePreconditioner){
+    evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
   }
-  solveCount++;
+
+  if(evaluatePreconditioner){
+    evaluateCurrentSolver();
+    evaluatePreconditioner = selectSolver();
+  }
+  return evaluatePreconditioner;
 }
 
 void
@@ -56,119 +51,34 @@ automaticPreconditioner_t::evaluateCurrentSolver()
 {
   const dfloat currentSolverTime = 
     platform->timer.query(elliptic.name + std::string("Solve"), "DEVICE:MAX");
-  const dfloat lastRecordedTime = solverToTime[currentSolver];
+  const dfloat lastRecordedTime = solverStartTime[currentSolver];
   const dfloat elapsed = currentSolverTime - lastRecordedTime;
   solverToTime[currentSolver] = elapsed;
+  solverToIterations[currentSolver] = elliptic.Niter;
 }
 
-solverDescription_t
-automaticPreconditioner_t::stepwiseSelection()
-{
-  constexpr unsigned int evaluationChebyOrder {2};
-  if(visitedSmoothers.size() < NSmoothers){
-    std::set<ChebyshevSmootherType> allSmoothers = {
-      ChebyshevSmootherType::JACOBI,
-      ChebyshevSmootherType::ASM,
-      ChebyshevSmootherType::RAS,
-    };
-    std::vector<ChebyshevSmootherType> unvisitedSmoothers;
-    std::set_difference(allSmoothers.begin(), allSmoothers.end(),
-      visitedSmoothers.begin(), visitedSmoothers.end(),
-      std::inserter(unvisitedSmoothers, unvisitedSmoothers.begin()));
-    auto smoother = unvisitedSmoothers.front();
-    visitedSmoothers.insert(smoother);
-    return {smoother, evaluationChebyOrder};
-  }
-  if(visitedChebyOrders.empty()){
-    // choose fastest smoother for the evaluationChebyOrder
-    dfloat fastestTime = std::numeric_limits<dfloat>::max();
-    for(auto&& smoother : visitedSmoothers){
-      const dfloat smootherTime = solverToTime[{smoother, evaluationChebyOrder}];
-      if(smootherTime < fastestTime){
-        fastestTime = smootherTime;
-        fastestSmoother = smoother;
-      }
-    }
-
-    visitedChebyOrders.insert(evaluationChebyOrder);
-  }
-  const unsigned int newOrder = 
-    [&](){
-      std::set<unsigned int> allOrders;
-      for(unsigned int order = minChebyOrder; order <= maxChebyOrder; ++order){
-        allOrders.insert(order);
-      }
-      std::vector<unsigned int> unvisitedOrders;
-      std::set_difference(allOrders.begin(), allOrders.end(),
-        visitedChebyOrders.begin(), visitedChebyOrders.end(),
-        std::inserter(unvisitedOrders, unvisitedOrders.begin()));
-      if(unvisitedOrders.empty()){
-        dfloat fastestTime = std::numeric_limits<dfloat>::max();
-        unsigned int fastestOrder = 0;
-        for(auto && order : visitedChebyOrders){
-          const dfloat smootherTime = solverToTime[{fastestSmoother, order}];
-          if(smootherTime < fastestTime){
-            fastestTime = smootherTime;
-            fastestOrder = order;
-          }
-        }
-        return fastestOrder;
-      }
-      return unvisitedOrders.front();
-    }();
-  visitedChebyOrders.insert(newOrder);
-  return {fastestSmoother, newOrder};
-}
-
-solverDescription_t
-automaticPreconditioner_t::exhaustiveSelection()
+bool
+automaticPreconditioner_t::selectSolver()
 {
   std::vector<solverDescription_t> remainingSolvers;
   std::set_difference(allSolvers.begin(), allSolvers.end(),
     visitedSolvers.begin(), visitedSolvers.end(),
     std::inserter(remainingSolvers, remainingSolvers.begin()));
-  
-  // select fastest solver
-  solverDescription_t candidateSolver;
-  if(remainingSolvers.empty() || trialCount >= maxTrials)
-  {
-    dfloat fastestTime = std::numeric_limits<dfloat>::max();
-    for(auto&& solver : visitedSolvers){
-      const dfloat solverTime = solverToTime[solver];
-      if(solverTime < fastestTime){
-        fastestTime = solverTime;
-        candidateSolver = solver;
-      }
-    }
-    converged++;
-  } else {
-    candidateSolver = remainingSolvers.back();
-  }
-  
-  return candidateSolver;
-}
-
-void
-automaticPreconditioner_t::selectSolver()
-{
-  if(trialCount >= maxTrials || converged > 0)
+  if(remainingSolvers.empty())
   {
     currentSolver = determineFastestSolver();
     if(platform->comm.mpiRank == 0){
       std::cout << "Determined fastest solver is : " << currentSolver.to_string() << "\n";
-      std::cout << "Will now continue using this solver for the remainder of the simulation!\n";
 
       std::cout << "Summary of times:\n";
       std::cout << this->to_string() << std::endl;
       fflush(stdout);
     }
+    visitedSolvers.clear();
+    return false;
   } else {
-    if(strategy == Strategy::STEPWISE){
-      currentSolver = stepwiseSelection();
-    }
-    else if (strategy == Strategy::EXHAUSTIVE){
-      currentSolver = exhaustiveSelection();
-    }
+
+    currentSolver = remainingSolvers.back();
 
     if(platform->comm.mpiRank == 0){
       std::cout << "Evaluating : " << currentSolver.to_string() << std::endl;
@@ -178,10 +88,11 @@ automaticPreconditioner_t::selectSolver()
     visitedSolvers.insert(currentSolver);
     const dfloat currentSolverTime = 
       platform->timer.query(elliptic.name + std::string("Solve"), "DEVICE:MAX");
-    solverToTime[currentSolver] = currentSolverTime;
+    solverStartTime[currentSolver] = currentSolverTime;
 
     reinitializePreconditioner();
   }
+  return true;
 }
 
 solverDescription_t
@@ -197,8 +108,6 @@ automaticPreconditioner_t::determineFastestSolver()
       minSolver = solver;
     }
   }
-
-  converged++;
 
   return minSolver;
 }
@@ -249,9 +158,12 @@ automaticPreconditioner_t::to_string() const
   std::cout.setf(std::ios::scientific);
   int outPrecisionSave = std::cout.precision();
   std::cout.precision(5);
+  std::cout << "===============================================================\n";
+  std::cout << "| Preconditioner       |  Niter  |          Time              |\n";
   for(auto && solver : visitedSolvers){
     ss << "Solver : " << solver.to_string() << " took " << solverToTime.at(solver) << " s\n";
   }
+  std::cout << "===============================================================\n";
   std::cout.unsetf(std::ios::scientific);
   std::cout.precision(outPrecisionSave);
 

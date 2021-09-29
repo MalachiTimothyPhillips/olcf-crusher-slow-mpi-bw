@@ -43,10 +43,10 @@ public:
                      const dlong _maxNumVecsProjection = 8,
                      const dlong _numTimeSteps = 5);
   void pre(occa::memory& o_r);
-  void post(occa::memory& o_x);
+  void post(occa::memory& o_x, bool preconditionerEvaluation);
 private:
   void computePreProjection(occa::memory& o_r);
-  void computePostProjection(occa::memory& o_x);
+  void computePostProjection(occa::memory& o_x, bool preconditionerEvaluation);
   void updateProjectionSpace();
   void matvec(occa::memory& o_Ax, const dlong Ax_offset, occa::memory& o_x, const dlong x_offset);
   const dlong maxNumVecsProjection;

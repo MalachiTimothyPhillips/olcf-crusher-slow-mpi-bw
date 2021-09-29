@@ -118,8 +118,12 @@ void ResidualProjection::computePreProjection(occa::memory& o_r)
   }
 }
 
-void ResidualProjection::computePostProjection(occa::memory & o_x)
+void ResidualProjection::computePostProjection(occa::memory & o_x, bool preconditionerEvaluation)
 {
+
+  // avoid updating the projection state
+  // when doing a preconditioner evaluation
+  if(preconditionerEvaluation) return;
   
   const dfloat one = 1.0;
   const dfloat zero = 0.0;
@@ -204,9 +208,9 @@ void ResidualProjection::pre(occa::memory& o_r)
   computePreProjection(o_r);
 }
 
-void ResidualProjection::post(occa::memory& o_x)
+void ResidualProjection::post(occa::memory& o_x, bool preconditionerEvaluation)
 {
   if(timestep < numTimeSteps)
     return;
-  computePostProjection(o_x);
+  computePostProjection(o_x, preconditionerEvaluation);
 }

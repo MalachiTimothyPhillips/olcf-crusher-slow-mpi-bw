@@ -301,7 +301,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
     const dfloat timeNew = time + nrs->dt[0];
 
     if (nrs->Nscalar)
-      scalarSolve(nrs, timeNew, cds->o_S, stage);
+      scalarSolve(nrs, timeNew, cds->o_S, stage, tstep);
 
     evaluateProperties(nrs, timeNew);
 
@@ -313,7 +313,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
 
     fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, stage, tstep);
     if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY"))
-      meshSolve(nrs, timeNew, nrs->meshV->o_U, stage);
+      meshSolve(nrs, timeNew, nrs->meshV->o_U, stage, tstep);
 
     nrs->converged = (udf.converged) ? udf.converged(nrs, stage) : true; 
 
@@ -507,7 +507,7 @@ void makeq(
   }
 }
 
-void scalarSolve(nrs_t *nrs, dfloat time, occa::memory o_S, int stage) {
+void scalarSolve(nrs_t *nrs, dfloat time, occa::memory o_S, int stage, int tstep) {
   cds_t *cds = nrs->cds;
 
   platform->timer.tic("scalarSolve", 1);
@@ -535,7 +535,7 @@ void scalarSolve(nrs_t *nrs, dfloat time, occa::memory o_S, int stage) {
           cds->fieldOffsetScan[is],
           cds->fieldOffset[is]);
 
-    occa::memory o_Snew = cdsSolve(is, cds, time, stage);
+    occa::memory o_Snew = cdsSolve(is, cds, time, stage, tstep);
     o_Snew.copyTo(o_S,
         cds->fieldOffset[is] * sizeof(dfloat),
         cds->fieldOffsetScan[is] * sizeof(dfloat));
@@ -645,7 +645,7 @@ void makef(
   }
 }
 
-void fluidSolve(
+bool fluidSolve(
     nrs_t *nrs, dfloat time, occa::memory o_P, occa::memory o_U, int stage, int tstep) {
   mesh_t *mesh = nrs->meshV;
   linAlg_t *linAlg = platform->linAlg;
@@ -653,8 +653,15 @@ void fluidSolve(
   platform->timer.tic("pressureSolve", 1);
   nrs->setEllipticCoeffPressureKernel(
       mesh->Nlocal, nrs->fieldOffset, nrs->o_rho, nrs->o_ellipticCoeff);
-  occa::memory o_Pnew = tombo::pressureSolve(nrs, time, stage);
+  
+  bool evaluatesPreconditioner = true;
+
+  occa::memory o_Pnew;
+  while(evaluatesPreconditioner){
+    o_Pnew = tombo::pressureSolve(nrs, time, stage, tstep, evaluatesPreconditioner);
+  }
   o_P.copyFrom(o_Pnew, nrs->fieldOffset * sizeof(dfloat));
+
   platform->timer.toc("pressureSolve");
 
   platform->timer.tic("velocitySolve", 1);
@@ -666,7 +673,7 @@ void fluidSolve(
       nrs->o_rho,
       nrs->o_ellipticCoeff);
 
-  occa::memory o_Unew = tombo::velocitySolve(nrs, time, stage);
+  occa::memory o_Unew = tombo::velocitySolve(nrs, time, stage, tstep);
   o_U.copyFrom(o_Unew, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
   platform->timer.toc("velocitySolve");
@@ -675,9 +682,11 @@ void fluidSolve(
     ConstantFlowRate::apply(nrs, tstep, time);
   }
 
+  return evaluatesPreconditioner;
+
 }
 
-void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage)
+void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage, int tstep)
 {
   mesh_t* mesh = nrs->meshV;
   linAlg_t* linAlg = platform->linAlg;
@@ -716,7 +725,7 @@ void meshSolve(nrs_t* nrs, dfloat time, occa::memory o_U, int stage)
 
     platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0, platform->o_mempool.slice3);
     platform->o_mempool.slice0.copyFrom(mesh->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-    ellipticSolve(nrs->meshSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
+    ellipticSolve(nrs->meshSolver, platform->o_mempool.slice3, platform->o_mempool.slice0, tstep);
 
     // enforce C0
     oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);

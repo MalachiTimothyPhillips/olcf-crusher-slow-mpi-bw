@@ -30,8 +30,9 @@
 #include "linAlg.hpp"
 #include "ellipticAutomaticPreconditioner.h"
 
-void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
+bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, int tstep)
 {
+  bool autoTunePreconditioner = false;
   mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
 
@@ -42,7 +43,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
   const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
   if(useAutoPreconditioner){
-    elliptic->autoPreconditioner->apply();
+    autoTunePreconditioner = elliptic->autoPreconditioner->apply(tstep);
   }
 
   if(verbose) {
@@ -154,7 +155,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
      options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) { 
     platform->timer.tic(elliptic->name + " proj post",1);
-    elliptic->residualProjection->post(o_x);
+    elliptic->residualProjection->post(o_x, autoTunePreconditioner);
     platform->timer.toc(elliptic->name + " proj post");
   } else {
     elliptic->res00Norm = elliptic->res0Norm;
@@ -172,4 +173,6 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
   if(elliptic->allNeumann)
     ellipticZeroMean(elliptic, o_x);
+
+  return autoTunePreconditioner;
 }

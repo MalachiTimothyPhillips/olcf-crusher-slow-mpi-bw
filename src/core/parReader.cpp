@@ -717,21 +717,16 @@ void parsePreconditioner(const int rank, setupAide &options,
     }
 
     // default params
-    constexpr int trialFrequency {50};
-    constexpr int autoStart {100};
+    constexpr int trialFrequency {1000};
+    constexpr int autoStart {1000};
     constexpr int maxChebyOrder {3};
     constexpr int minChebyOrder {1};
-    constexpr int maxTrials {1000};
-
-    const std::string sampling = "EXHAUSTIVE";
 
     options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
     options.setArgs(parSection + " AUTO PRECONDITIONER TRIAL FREQUENCY", std::to_string(trialFrequency));
     options.setArgs(parSection + " AUTO PRECONDITIONER START", std::to_string(autoStart));
     options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(maxChebyOrder));
     options.setArgs(parSection + " AUTO PRECONDITIONER MIN CHEBY ORDER", std::to_string(minChebyOrder));
-    options.setArgs(parSection + " AUTO PRECONDITIONER MAX TRIALS", std::to_string(maxTrials));
-    options.setArgs(parSection + " AUTO PRECONDITIONER SAMPLING", sampling);
 
     // set up initial preconditioner
     p_preconditioner = "pmg+coarse";

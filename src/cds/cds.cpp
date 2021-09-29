@@ -2,7 +2,7 @@
 #include "nrs.hpp"
 #include "linAlg.hpp"
 
-occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage)
+occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage, int tstep)
 {
   
   mesh_t* mesh;
@@ -58,7 +58,7 @@ occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage)
                             *(cds->o_usrwrk),
                             platform->o_mempool.slice1);
 
-  ellipticSolve(solver, platform->o_mempool.slice1, platform->o_mempool.slice0);
+  ellipticSolve(solver, platform->o_mempool.slice1, platform->o_mempool.slice0, tstep);
 
   return platform->o_mempool.slice0;
 }

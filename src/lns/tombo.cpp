@@ -5,8 +5,9 @@
 
 namespace tombo
 {
-occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage, int tstep, bool& evaluatesPreconditioner)
 {
+
   mesh_t* mesh = nrs->meshV;
   
   //enforce Dirichlet BCs
@@ -156,12 +157,12 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice3);
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
-  ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
+  evaluatesPreconditioner = ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1, tstep);
 
   return platform->o_mempool.slice1;
 }
 
-occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
+occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage, int tstep)
 {
   mesh_t* mesh = nrs->meshV;
   
@@ -224,11 +225,11 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
   platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
   if(nrs->uvwSolver) {
-    ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
+    ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0, tstep);
   } else {
-    ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
-    ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
-    ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2);
+    ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0, tstep);
+    ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1, tstep);
+    ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2, tstep);
   }
 
   return platform->o_mempool.slice0;
