@@ -947,7 +947,6 @@ void registerEllipticKernels(const std::string &section) {
   kernelInfo["flags"].asObject();
   kernelInfo["include_paths"].asArray();
   kernelInfo += ellipticKernelInfo(N);
-  const int Nfields = (section.find("velocity") != std::string::npos) ? 3 : 1;
   constexpr int Nverts{8};
 
   const bool blockSolver = [&section]() {
@@ -959,6 +958,7 @@ void registerEllipticKernels(const std::string &section) {
       return true;
     return false;
   }();
+  const int Nfields = (blockSolver) ? 3 : 1;
   const bool stressForm = [&section]() {
     if (section.find("velocity") == std::string::npos)
       return false;
