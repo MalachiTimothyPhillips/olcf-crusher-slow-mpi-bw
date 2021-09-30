@@ -717,16 +717,18 @@ void parsePreconditioner(const int rank, setupAide &options,
     }
 
     // default params
-    constexpr int trialFrequency {1000};
-    constexpr int autoStart {1000};
+    constexpr int trialFrequency {5000};
+    constexpr int autoStart {100};
     constexpr int maxChebyOrder {3};
     constexpr int minChebyOrder {1};
+    constexpr int Nsamples {3};
 
     options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
     options.setArgs(parSection + " AUTO PRECONDITIONER TRIAL FREQUENCY", std::to_string(trialFrequency));
     options.setArgs(parSection + " AUTO PRECONDITIONER START", std::to_string(autoStart));
     options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(maxChebyOrder));
     options.setArgs(parSection + " AUTO PRECONDITIONER MIN CHEBY ORDER", std::to_string(minChebyOrder));
+    options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES", std::to_string(Nsamples));
 
     // set up initial preconditioner
     p_preconditioner = "pmg+coarse";
@@ -787,6 +789,17 @@ void parsePreconditioner(const int rank, setupAide &options,
         }
         const int value = std::stoi(params[1]);
         options.setArgs(parSection + " AUTO PRECONDITIONER MAX TRIALS",
+                        std::to_string(value));
+      }
+      if(s.find("nsamples") != std::string::npos){
+        std::vector<std::string> params = serializeString(s, '=');
+        if (params.size() != 2) {
+          std::ostringstream error;
+          error << "Error: could not parse nSamples " << s<< "!\n";
+          append_error(error.str());
+        }
+        const int value = std::stoi(params[1]);
+        options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES",
                         std::to_string(value));
       }
     }

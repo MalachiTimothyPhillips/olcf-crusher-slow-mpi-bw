@@ -174,5 +174,9 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
   if(elliptic->allNeumann)
     ellipticZeroMean(elliptic, o_x);
 
+  if(useAutoPreconditioner){
+    elliptic->autoPreconditioner->measure(autoTunePreconditioner);
+  }
+
   return autoTunePreconditioner;
 }

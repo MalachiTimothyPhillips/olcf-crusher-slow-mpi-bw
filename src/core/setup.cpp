@@ -901,6 +901,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       options.getArgs("PRESSURE AUTO PRECONDITIONER MAX CHEBY ORDER"));
     nrs->pOptions.setArgs("AUTO PRECONDITIONER MIN CHEBY ORDER",
       options.getArgs("PRESSURE AUTO PRECONDITIONER MIN CHEBY ORDER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER NUM SAMPLES",
+      options.getArgs("PRESSURE AUTO PRECONDITIONER NUM SAMPLES"));
 
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";

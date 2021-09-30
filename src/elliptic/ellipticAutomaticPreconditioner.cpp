@@ -4,15 +4,19 @@
 #include <limits>
 #include <vector>
 #include <algorithm>
+#include <iomanip>
 
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 : elliptic(m_elliptic),
-  activeTuner(true)
+  activeTuner(true),
+  sampleCounter(0)
 {
+  platform->timer.tic("autoPreconditioner", 1);
   elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
+  elliptic.options.getArgs("AUTO PRECONDITIONER NUM SAMPLES", NSamples);
   
   std::set<ChebyshevSmootherType> allSmoothers = {
     ChebyshevSmootherType::JACOBI,
@@ -25,8 +29,10 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
     {
       allSolvers.insert({smoother, chebyOrder});
+      solverToTime[{smoother, chebyOrder}] = std::vector<double>(NSamples, -1.0);
     }
   }
+  platform->timer.toc("autoPreconditioner");
 }
 
 bool
@@ -40,21 +46,29 @@ automaticPreconditioner_t::apply(int tstep)
   }
 
   if(evaluatePreconditioner){
-    evaluateCurrentSolver();
     evaluatePreconditioner = selectSolver();
+    if(evaluatePreconditioner){
+      const dfloat currentSolverTime = 
+        platform->timer.query("autoPreconditioner", "DEVICE:MAX");
+      solverStartTime[currentSolver] = currentSolverTime;
+      platform->timer.tic("autoPreconditioner", 1);
+    }
   }
   return evaluatePreconditioner;
 }
 
 void
-automaticPreconditioner_t::evaluateCurrentSolver()
+automaticPreconditioner_t::measure(bool evaluatePreconditioner)
 {
-  const dfloat currentSolverTime = 
-    platform->timer.query(elliptic.name + std::string("Solve"), "DEVICE:MAX");
-  const dfloat lastRecordedTime = solverStartTime[currentSolver];
-  const dfloat elapsed = currentSolverTime - lastRecordedTime;
-  solverToTime[currentSolver] = elapsed;
-  solverToIterations[currentSolver] = elliptic.Niter;
+  if(evaluatePreconditioner){
+    platform->timer.toc("autoPreconditioner");
+    const dfloat currentSolverTime = 
+      platform->timer.query("autoPreconditioner", "DEVICE:MAX");
+    const dfloat lastRecordedTime = solverStartTime[currentSolver];
+    const dfloat elapsed = currentSolverTime - lastRecordedTime;
+    solverToTime[currentSolver][sampleCounter] = elapsed;
+    solverToIterations[currentSolver] = elliptic.Niter;
+  }
 }
 
 bool
@@ -67,29 +81,23 @@ automaticPreconditioner_t::selectSolver()
   if(remainingSolvers.empty())
   {
     currentSolver = determineFastestSolver();
-    if(platform->comm.mpiRank == 0){
-      std::cout << "Determined fastest solver is : " << currentSolver.to_string() << "\n";
-
-      std::cout << "Summary of times:\n";
+    if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
       std::cout << this->to_string() << std::endl;
+      std::cout << "Fastest solver : " << currentSolver.to_string() << "\n";
       fflush(stdout);
     }
     visitedSolvers.clear();
-    return false;
+    if(sampleCounter == (NSamples-1)){
+      sampleCounter = 0;
+      return false;
+    } else {
+      sampleCounter++;
+      return true;
+    }
   } else {
 
     currentSolver = remainingSolvers.back();
-
-    if(platform->comm.mpiRank == 0){
-      std::cout << "Evaluating : " << currentSolver.to_string() << std::endl;
-    }
-    fflush(stdout);
-
     visitedSolvers.insert(currentSolver);
-    const dfloat currentSolverTime = 
-      platform->timer.query(elliptic.name + std::string("Solve"), "DEVICE:MAX");
-    solverStartTime[currentSolver] = currentSolverTime;
-
     reinitializePreconditioner();
   }
   return true;
@@ -102,7 +110,11 @@ automaticPreconditioner_t::determineFastestSolver()
   solverDescription_t minSolver;
 
   for(auto&& solver : visitedSolvers){
-    dfloat solverTime = solverToTime[solver];
+    const auto& times = solverToTime[solver];
+    dfloat solverTime = std::numeric_limits<dfloat>::max();
+    for(int i = 0 ; i < NSamples; ++i){
+      solverTime = solverTime < times.at(i) ? solverTime : times.at(i);
+    }
     if(solverTime < minSolveTime){
       minSolveTime = solverTime;
       minSolver = solver;
@@ -155,17 +167,25 @@ std::string
 automaticPreconditioner_t::to_string() const
 {
   std::ostringstream ss;
-  std::cout.setf(std::ios::scientific);
-  int outPrecisionSave = std::cout.precision();
-  std::cout.precision(5);
-  std::cout << "===============================================================\n";
-  std::cout << "| Preconditioner       |  Niter  |          Time              |\n";
+  ss << "=========================================================\n";
+  ss << "| " << std::internal << std::setw(25) << "Preconditioner" << " ";
+  ss << "| " << std::internal << std::setw(5) << "Niter" << " ";
+  ss << "| " << std::internal << std::setw(17) << "Time (min/max)" << " |\n";
+  ss << "=========================================================\n";
   for(auto && solver : visitedSolvers){
-    ss << "Solver : " << solver.to_string() << " took " << solverToTime.at(solver) << " s\n";
+    ss << "| " << std::internal << std::setw(25) << solver.to_string() << " ";
+    ss << "| " << std::internal << std::setw(5) << solverToIterations.at(solver) << " ";
+    dfloat minTime = std::numeric_limits<dfloat>::max();
+    dfloat maxTime = -1.0 * std::numeric_limits<dfloat>::max();
+    auto& times = solverToTime.at(solver);
+    for(int i = 0; i < NSamples; ++i){
+      minTime = minTime < times.at(i) ? minTime : times.at(i);
+      maxTime = maxTime > times.at(i) ? maxTime : times.at(i);
+    }
+    ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << minTime << "/";
+    ss << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << maxTime << " |\n";
   }
-  std::cout << "===============================================================\n";
-  std::cout.unsetf(std::ios::scientific);
-  std::cout.precision(outPrecisionSave);
+  ss << "=========================================================\n";
 
   return ss.str();
 }

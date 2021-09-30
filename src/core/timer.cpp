@@ -241,6 +241,7 @@ void timer_t::printRunStat(int step)
   MPI_Comm_rank(comm_, &rank);
 
   double dEtime[20];
+  double tAutoPreconditioner = query("autoPreconditioner", "DEVICE:MAX");
   dEtime[0] = query("makef", "DEVICE:MAX");
   dEtime[1] = query("velocitySolve", "DEVICE:MAX");
   dEtime[17] = query("velocity proj pre", "DEVICE:MAX");
@@ -333,6 +334,9 @@ void timer_t::printRunStat(int step)
     std::cout << "    gsMPI               " << hEtime[1] << "s " << printPercentage(hEtime[1],dEtime[9]) << "\n";
     if(dEtime[8] > 0)
     std::cout << "    dotp                " << dEtime[8] << "s " << printPercentage(dEtime[8],dEtime[9]) << "\n";
+
+    if(tAutoPreconditioner > 0)
+    std::cout << "  tuner                 " << tAutoPreconditioner << "s " << printPercentage(tAutoPreconditioner,dEtime[9]) << "\n";
 
     std::cout << std::endl;
 

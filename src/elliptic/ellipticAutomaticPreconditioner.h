@@ -5,6 +5,7 @@
 #include <tuple>
 #include <string>
 #include <iostream>
+#include <array>
 #include <ellipticMultiGrid.h>
 class elliptic_t;
 
@@ -58,6 +59,7 @@ class automaticPreconditioner_t{
   to_string() const;
 
   bool apply(int tstep);
+  void measure(bool evaluatePreconditioner);
 
   private:
   void evaluateCurrentSolver();
@@ -70,6 +72,8 @@ class automaticPreconditioner_t{
   unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
+  unsigned int sampleCounter;
+  int NSamples;
   ChebyshevSmootherType fastestSmoother;
 
   solverDescription_t currentSolver;
@@ -77,7 +81,7 @@ class automaticPreconditioner_t{
   std::set<solverDescription_t> visitedSolvers;
   std::vector<solverDescription_t> remainingSolvers;
   std::set<ChebyshevSmootherType> visitedSmoothers;
-  std::map<solverDescription_t, double> solverToTime;
+  std::map<solverDescription_t, std::vector<double>> solverToTime;
   std::map<solverDescription_t, double> solverStartTime;
   std::map<solverDescription_t, unsigned int> solverToIterations;
 };
