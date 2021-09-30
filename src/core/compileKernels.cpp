@@ -1292,8 +1292,8 @@ void registerLinAlgKernels() {
 void compileUDFKernels()
 {
   int buildNodeLocal = 0;
-  if (getenv("NEKRS_BUILD_NODE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  if (getenv("NEKRS_CACHE_LOCAL"))
+    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
 
   std::string install_dir;
   install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -1346,8 +1346,8 @@ void compileUDFKernels()
 void compileDummyKernel()
 {
   int buildNodeLocal = 0;
-  if (getenv("NEKRS_BUILD_NODE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  if (getenv("NEKRS_CACHE_LOCAL"))
+    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
   auto rank = buildNodeLocal ? platform->comm.localRank : platform->comm.mpiRank;
   const std::string dummyKernelName = "myDummyKernelName";
   const std::string dummyKernelStr = std::string(
@@ -1407,8 +1407,8 @@ void compileKernels() {
 
     {
       int buildNodeLocal = 0;
-      if (getenv("NEKRS_BUILD_NODE_LOCAL"))
-        buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+      if (getenv("NEKRS_CACHE_LOCAL"))
+        buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
       const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
       auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
       oogs::compile(
