@@ -6,8 +6,10 @@
 #include "omp.h"
 #include <iostream>
 
-comm_t::comm_t(MPI_Comm _comm)
+comm_t::comm_t(MPI_Comm _commg, MPI_Comm _comm)
 {
+
+  mpiCommParent = _commg;
   mpiComm = _comm;
   MPI_Comm_rank(_comm, &mpiRank);
   MPI_Comm_size(_comm, &mpiCommSize);
@@ -52,12 +54,12 @@ deviceVector_t::at(const int i)
 
 
 platform_t* platform_t::singleton = nullptr;
-platform_t::platform_t(setupAide& _options, MPI_Comm _comm)
+platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
 : options(_options),
-  warpSize(32), // CUDA specific warp size
-  device(options, _comm),
+  warpSize(32),
+  device(options, _commg, _comm),
   timer(_comm, device, 0),
-  comm(_comm),
+  comm(_commg, _comm),
   kernels(*this)
 {
   kernelInfo["defines/" "p_NVec"] = 3;
@@ -89,7 +91,7 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _comm)
   }
 
   if(device.mode() == "HIP" && !getenv("OCCA_HIP_COMPILER_FLAGS")) {
-    warpSize = 64;
+    warpSize = 64; // can be arch specific
     kernelInfo["compiler_flags"] += " -O3 ";
     kernelInfo["compiler_flags"] += " -ffp-contract=fast ";
     kernelInfo["compiler_flags"] += " -funsafe-math-optimizations ";
@@ -215,8 +217,8 @@ kernelRequestManager_t::compile()
   constexpr int maxCompilingRanks {100};
 
   int buildNodeLocal = 0;
-  if(getenv("NEKRS_BUILD_NODE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_BUILD_NODE_LOCAL"));
+  if(getenv("NEKRS_CACHE_LOCAL"))
+    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
 
   const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
   const int ranksCompiling =
@@ -280,5 +282,3 @@ kernelRequestManager_t::compile()
   MPI_Barrier(platform->comm.mpiComm);
   loadKernels();
 }
-
-
