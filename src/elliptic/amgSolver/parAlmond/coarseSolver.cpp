@@ -139,8 +139,10 @@ void coarseSolver::setup(
                    settings);
  
     N = (int) Nrows;
-    xLocal   = (dfloat*) calloc(N,sizeof(dfloat));
-    rhsLocal = (dfloat*) calloc(N,sizeof(dfloat));
+    h_xLocal   = platform->device.mallocHost(N*sizeof(dfloat));
+    h_rhsLocal = platform->device.mallocHost(N*sizeof(dfloat));
+    xLocal   = (dfloat*) h_xLocal.ptr();
+    rhsLocal = (dfloat*) h_rhsLocal.ptr();
   }
   else if (options.compareArgs("AMG SOLVER", "AMGX")){
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
