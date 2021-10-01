@@ -182,5 +182,17 @@ struct platform_t{
   private:
   static platform_t * singleton;
 };
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated);
+
+/**
+ * Attempt to use the next Nbytes of the memory pool
+ * starting at byteOffset.
+ * If there's not enough memory remaining in the pool,
+ * do a separate allocation.
+ **/
+occa::memory useMemPoolOrAllocate(hlong Nbytes,
+  void* src,
+  hlong& bytesRemaining,
+  hlong& byteOffset,
+  hlong& bytesAllocated,
+  bool& allocated);
 #endif

@@ -701,54 +701,48 @@ void fem_assembly_device() {
   long long bytesRemaining = platform->o_mempool.bytesAllocated;
   long long byteOffset = 0;
   long long bytesAllocated = 0;
-  occa::memory o_mask = scratchOrAllocateMemory(
-    n_xyze,
-    sizeof(double),
+  occa::memory o_mask = useMemPoolOrAllocate(
+    n_xyze * sizeof(double),
     pmask,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_maskAlloc
   );
-  occa::memory o_glo_num = scratchOrAllocateMemory(
-    n_xyze,
-    sizeof(long long),
+  occa::memory o_glo_num = useMemPoolOrAllocate(
+    n_xyze * sizeof(long long),
     glo_num,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_glo_numAlloc
   );
-  occa::memory o_rows = scratchOrAllocateMemory(
-    nrows,
-    sizeof(long long),
+  occa::memory o_rows = useMemPoolOrAllocate(
+    nrows * sizeof(long long),
     rows,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_rowsAlloc
   );
-  occa::memory o_rowOffsets = scratchOrAllocateMemory(
-    nrows+1,
-    sizeof(long long),
+  occa::memory o_rowOffsets = useMemPoolOrAllocate(
+    (nrows+1) * sizeof(long long),
     rowOffsets,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_rowOffsetsAlloc
   );
-  occa::memory o_cols = scratchOrAllocateMemory(
-    nnz,
-    sizeof(long long),
+  occa::memory o_cols = useMemPoolOrAllocate(
+    nnz * sizeof(long long),
     cols,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_colsAlloc
   );
-  occa::memory o_vals = scratchOrAllocateMemory(
-    nnz,
-    sizeof(double),
+  occa::memory o_vals = useMemPoolOrAllocate(
+    nnz * sizeof(double),
     vals,
     bytesRemaining,
     byteOffset,

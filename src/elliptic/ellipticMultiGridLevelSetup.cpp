@@ -322,36 +322,32 @@ dfloat MGLevel::maxEigSmoothAx()
   long long byteOffset = 0;
   long long bytesAllocated = 0;
   
-  occa::memory o_Vx = scratchOrAllocateMemory(
-    M,
-    sizeof(dfloat),
+  occa::memory o_Vx = useMemPoolOrAllocate(
+    M * sizeof(dfloat),
     Vx,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_VxAllocated
   );
-  occa::memory o_AVx = scratchOrAllocateMemory(
-    M,
-    sizeof(dfloat),
+  occa::memory o_AVx = useMemPoolOrAllocate(
+    M * sizeof(dfloat),
     Vx,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_AVxAllocated
   );
-  occa::memory o_AVxPfloat = scratchOrAllocateMemory(
-    M,
-    sizeof(pfloat),
+  occa::memory o_AVxPfloat = useMemPoolOrAllocate(
+    M * sizeof(pfloat),
     nullptr,
     bytesRemaining,
     byteOffset,
     bytesAllocated,
     allocations.o_AVxPfloatAllocated
   );
-  occa::memory o_VxPfloat = scratchOrAllocateMemory(
-    M,
-    sizeof(pfloat),
+  occa::memory o_VxPfloat = useMemPoolOrAllocate(
+    M * sizeof(pfloat),
     nullptr,
     bytesRemaining,
     byteOffset,
@@ -361,9 +357,8 @@ dfloat MGLevel::maxEigSmoothAx()
 
   std::array<occa::memory, MAX_ARNOLDI+1> o_V;
   for(int i = 0; i <= k; i++){
-    o_V[i] = scratchOrAllocateMemory(
-      M,
-      sizeof(dfloat),
+    o_V[i] = useMemPoolOrAllocate(
+      M * sizeof(dfloat),
       Vx,
       bytesRemaining,
       byteOffset,

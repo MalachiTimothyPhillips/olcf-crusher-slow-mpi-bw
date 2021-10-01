@@ -282,20 +282,25 @@ kernelRequestManager_t::compile()
   MPI_Barrier(platform->comm.mpiComm);
   loadKernels();
 }
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated)
+occa::memory useMemPoolOrAllocate(hlong Nbytes,
+  void* src,
+  hlong& bytesRemaining,
+  hlong& byteOffset,
+  hlong& bytesAllocated,
+  bool& allocated)
 {
   occa::memory o_mem;
-  if(nWords * sizeT < bytesRemaining){
+  if(Nbytes < bytesRemaining){
     o_mem = platform->o_mempool.o_ptr.slice(byteOffset);
     if(src)
-      o_mem.copyFrom(src, nWords * sizeT);
-    bytesRemaining -= nWords * sizeT;
-    byteOffset += nWords * sizeT;
+      o_mem.copyFrom(src, Nbytes);
+    bytesRemaining -= Nbytes;
+    byteOffset += Nbytes;
     allocated = false;
   } else {
-    o_mem = platform->device.malloc(nWords * sizeT, src);
+    o_mem = platform->device.malloc(Nbytes, src);
     allocated = true;
-    bytesAllocated += nWords * sizeT;
+    bytesAllocated += Nbytes;
   }
   return o_mem;
 }
