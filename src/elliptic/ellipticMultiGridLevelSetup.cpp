@@ -287,8 +287,6 @@ static void eig(const int Nrows, double* A, double* WR, double* WI)
   delete [] WORK;
 }
 
-#define use_mempool
-
 dfloat MGLevel::maxEigSmoothAx()
 {
   MPI_Barrier(platform->comm.mpiComm);
@@ -310,19 +308,6 @@ dfloat MGLevel::maxEigSmoothAx()
 
   // allocate memory for basis
   dfloat* Vx = (dfloat*) calloc(M, sizeof(dfloat));
-
-#ifndef use_mempool
-  //  occa::memory *o_V = (occa::memory *) calloc(k+1, sizeof(occa::memory));
-  occa::memory* o_V = new occa::memory[k + 1];
-
-  occa::memory o_Vx  = platform->device.malloc(M * sizeof(dfloat),Vx);
-  occa::memory o_AVx = platform->device.malloc(M * sizeof(dfloat),Vx);
-  occa::memory o_AVxPfloat = platform->device.malloc(M ,  sizeof(pfloat));
-  occa::memory o_VxPfloat = platform->device.malloc(M ,  sizeof(pfloat));
-
-  for(int i = 0; i <= k; i++)
-    o_V[i] = platform->device.malloc(M * sizeof(dfloat),Vx);
-#else
 
   struct Allocations{
     bool o_VxAllocated;
@@ -386,7 +371,6 @@ dfloat MGLevel::maxEigSmoothAx()
       allocations.o_VAllocated[i]
     );
   }
-#endif
 
   // generate a random vector for initial basis vector
   for (dlong i = 0; i < N; i++) Vx[i] = (dfloat) drand48();
@@ -398,7 +382,7 @@ dfloat MGLevel::maxEigSmoothAx()
     for (dlong i = 0; i < elliptic->Nmasked; i++) Vx[elliptic->maskIds[i]] = 0.;
   }
 
-  o_Vx.copyFrom(Vx); //copy to device
+  o_Vx.copyFrom(Vx, M*sizeof(dfloat)); //copy to device
   dfloat norm_vo = platform->linAlg->weightedInnerProdMany(
     Nlocal,
     elliptic->Nfields,
@@ -421,8 +405,6 @@ dfloat MGLevel::maxEigSmoothAx()
   );
 
   for(int j = 0; j < k; j++) {
-    // v[j+1] = invD*(A*v[j])
-    //this->Ax(o_V[j],o_AVx);
     ellipticOperator(elliptic,o_V[j],o_AVx,dfloatString);
     elliptic->copyDfloatToPfloatKernel(M, o_AVxPfloat, o_AVx);
     this->smoother(o_AVxPfloat, o_VxPfloat, true);
@@ -452,7 +434,7 @@ dfloat MGLevel::maxEigSmoothAx()
         o_V[j+1]
       );
 
-      H[i + j * k] = (double) hij;
+      H[i + j * k] = hij;
     }
 
     if(j + 1 < k) {
@@ -475,7 +457,7 @@ dfloat MGLevel::maxEigSmoothAx()
         o_V[j+1]
       );
 
-      H[j + 1 + j * k] = (double) norm_vj;
+      H[j + 1 + j * k] = norm_vj;
     }
   }
 
@@ -499,15 +481,6 @@ dfloat MGLevel::maxEigSmoothAx()
   free(WI);
 
   free(Vx);
-#ifndef use_mempool
-  o_Vx.free();
-  o_AVx.free();
-  o_AVxPfloat.free();
-  o_VxPfloat.free();
-  for(int i = 0; i <= k; i++) o_V[i].free();
-  //free((void*)o_V);
-  delete[] o_V;
-#else
   if(allocations.o_VxAllocated) o_Vx.free();
   if(allocations.o_AVxAllocated) o_AVx.free();
   if(allocations.o_AVxPfloatAllocated) o_AVxPfloat.free();
@@ -517,7 +490,6 @@ dfloat MGLevel::maxEigSmoothAx()
       o_V[i].free();
     }
   }
-#endif
 
   MPI_Barrier(platform->comm.mpiComm);
   if(platform->comm.mpiRank == 0)  printf("%g done (%gs)\n", rho, MPI_Wtime() - tStart); fflush(stdout);
