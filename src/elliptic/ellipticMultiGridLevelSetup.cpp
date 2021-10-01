@@ -27,6 +27,7 @@
 #include "elliptic.h"
 #include "platform.hpp"
 #include "linAlg.hpp"
+#include <array>
 
 size_t MGLevel::smootherResidualBytes;
 pfloat* MGLevel::smootherResidual;
@@ -286,6 +287,8 @@ static void eig(const int Nrows, double* A, double* WR, double* WI)
   delete [] WORK;
 }
 
+#define use_mempool
+
 dfloat MGLevel::maxEigSmoothAx()
 {
   MPI_Barrier(platform->comm.mpiComm);
@@ -299,19 +302,16 @@ dfloat MGLevel::maxEigSmoothAx()
   hlong Ntotal = 0;
   MPI_Allreduce(&Nlocal, &Ntotal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
 
-  int k;
-  if(Ntotal > 10) 
-    k = 10;
-  else
-    k = (int) Ntotal;
-
-  // do an arnoldi
+  constexpr int MAX_ARNOLDI {10};
+  const int k = std::min((int) Ntotal, MAX_ARNOLDI);
 
   // allocate memory for Hessenberg matrix
   double* H = (double*) calloc(k * k,sizeof(double));
 
   // allocate memory for basis
   dfloat* Vx = (dfloat*) calloc(M, sizeof(dfloat));
+
+#ifndef use_mempool
   //  occa::memory *o_V = (occa::memory *) calloc(k+1, sizeof(occa::memory));
   occa::memory* o_V = new occa::memory[k + 1];
 
@@ -322,6 +322,71 @@ dfloat MGLevel::maxEigSmoothAx()
 
   for(int i = 0; i <= k; i++)
     o_V[i] = platform->device.malloc(M * sizeof(dfloat),Vx);
+#else
+
+  struct Allocations{
+    bool o_VxAllocated;
+    bool o_AVxAllocated;
+    bool o_AVxPfloatAllocated;
+    bool o_VxPfloatAllocated;
+    std::array<bool, MAX_ARNOLDI+1> o_VAllocated;
+  };
+
+  Allocations allocations;
+  long long bytesRemaining = platform->o_mempool.bytesAllocated;
+  long long byteOffset = 0;
+  long long bytesAllocated = 0;
+  
+  occa::memory o_Vx = scratchOrAllocateMemory(
+    M,
+    sizeof(dfloat),
+    Vx,
+    bytesRemaining,
+    byteOffset,
+    bytesAllocated,
+    allocations.o_VxAllocated
+  );
+  occa::memory o_AVx = scratchOrAllocateMemory(
+    M,
+    sizeof(dfloat),
+    Vx,
+    bytesRemaining,
+    byteOffset,
+    bytesAllocated,
+    allocations.o_AVxAllocated
+  );
+  occa::memory o_AVxPfloat = scratchOrAllocateMemory(
+    M,
+    sizeof(pfloat),
+    nullptr,
+    bytesRemaining,
+    byteOffset,
+    bytesAllocated,
+    allocations.o_AVxPfloatAllocated
+  );
+  occa::memory o_VxPfloat = scratchOrAllocateMemory(
+    M,
+    sizeof(pfloat),
+    nullptr,
+    bytesRemaining,
+    byteOffset,
+    bytesAllocated,
+    allocations.o_VxPfloatAllocated
+  );
+
+  std::array<occa::memory, MAX_ARNOLDI+1> o_V;
+  for(int i = 0; i <= k; i++){
+    o_V[i] = scratchOrAllocateMemory(
+      M,
+      sizeof(dfloat),
+      Vx,
+      bytesRemaining,
+      byteOffset,
+      bytesAllocated,
+      allocations.o_VAllocated[i]
+    );
+  }
+#endif
 
   // generate a random vector for initial basis vector
   for (dlong i = 0; i < N; i++) Vx[i] = (dfloat) drand48();
@@ -434,6 +499,7 @@ dfloat MGLevel::maxEigSmoothAx()
   free(WI);
 
   free(Vx);
+#ifndef use_mempool
   o_Vx.free();
   o_AVx.free();
   o_AVxPfloat.free();
@@ -441,6 +507,17 @@ dfloat MGLevel::maxEigSmoothAx()
   for(int i = 0; i <= k; i++) o_V[i].free();
   //free((void*)o_V);
   delete[] o_V;
+#else
+  if(allocations.o_VxAllocated) o_Vx.free();
+  if(allocations.o_AVxAllocated) o_AVx.free();
+  if(allocations.o_AVxPfloatAllocated) o_AVxPfloat.free();
+  if(allocations.o_VxPfloatAllocated) o_VxPfloat.free();
+  for(int i = 0; i <= k; i++){
+    if(allocations.o_VAllocated[i]){
+      o_V[i].free();
+    }
+  }
+#endif
 
   MPI_Barrier(platform->comm.mpiComm);
   if(platform->comm.mpiRank == 0)  printf("%g done (%gs)\n", rho, MPI_Wtime() - tStart); fflush(stdout);

@@ -287,7 +287,8 @@ occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long
   occa::memory o_mem;
   if(nWords * sizeT < bytesRemaining){
     o_mem = platform->o_mempool.o_ptr.slice(byteOffset);
-    o_mem.copyFrom(src, nWords * sizeT);
+    if(src)
+      o_mem.copyFrom(src, nWords * sizeT);
     bytesRemaining -= nWords * sizeT;
     byteOffset += nWords * sizeT;
     allocated = false;
