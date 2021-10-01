@@ -182,4 +182,5 @@ struct platform_t{
   private:
   static platform_t * singleton;
 };
+occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated);
 #endif

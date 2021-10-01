@@ -162,7 +162,6 @@ void inverse(double invA[3][3], double A[3][3]) {
   }
 }
 
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
@@ -919,23 +918,6 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
   (t_map)[7][1] = 3;
   (t_map)[7][2] = 6;
   (t_map)[7][3] = 5;
-}
-
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, long long& bytesRemaining, long long& byteOffset, long long& bytesAllocated, bool& allocated)
-{
-  occa::memory o_mem;
-  if(nWords * sizeT < bytesRemaining){
-    o_mem = platform->o_mempool.o_ptr.slice(byteOffset);
-    o_mem.copyFrom(src, nWords * sizeT);
-    bytesRemaining -= nWords * sizeT;
-    byteOffset += nWords * sizeT;
-    allocated = false;
-  } else {
-    o_mem = platform->device.malloc(nWords * sizeT, src);
-    allocated = true;
-    bytesAllocated += nWords * sizeT;
-  }
-  return o_mem;
 }
 
 }
