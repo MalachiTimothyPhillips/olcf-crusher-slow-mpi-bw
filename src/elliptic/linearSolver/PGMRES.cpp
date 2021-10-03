@@ -43,8 +43,8 @@ GmresData::GmresData(elliptic_t* elliptic)
       return 0;
     }()
   ),
-  o_V(elliptic->Ntotal, elliptic->Nfields, nRestartVectors, sizeof(dfloat)),
-  o_Z(elliptic->Ntotal, elliptic->Nfields, flexible ? nRestartVectors : 1, sizeof(dfloat)),
+  o_V(elliptic->Ntotal * elliptic->Nfields, nRestartVectors, sizeof(dfloat)),
+  o_Z(elliptic->Ntotal * elliptic->Nfields, flexible ? nRestartVectors : 1, sizeof(dfloat)),
   o_y(platform->device.malloc(nRestartVectors, sizeof(dfloat))),
   H((dfloat *) calloc((nRestartVectors+1)*(nRestartVectors+1), sizeof(dfloat))),
   sn((dfloat *) calloc(nRestartVectors, sizeof(dfloat))),

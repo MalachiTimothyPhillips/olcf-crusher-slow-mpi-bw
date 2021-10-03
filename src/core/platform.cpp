@@ -20,23 +20,22 @@ comm_t::comm_t(MPI_Comm _commg, MPI_Comm _comm)
 
 }
 
-deviceVector_t::deviceVector_t(const size_t _offset, const size_t _nFieldsPerVector, const size_t _nVectors, const size_t _wordSize, const std::string _vectorName)
+deviceVector_t::deviceVector_t(const size_t _offset, const size_t _nVectors, const size_t _wordSize, const std::string _vectorName)
 : 
   nVectors(_nVectors),
   wordSize(_wordSize),
   vectorName(_vectorName),
-  offset(_offset),
-  nFieldsPerVector(_nFieldsPerVector)
+  offset(_offset)
 {
-  if(nFieldsPerVector <= 0 || offset <= 0 || nVectors <= 0 || wordSize <= 0) {
+  if(offset <= 0 || nVectors <= 0 || wordSize <= 0) {
     if(platform->comm.mpiRank == 0)
       printf("ERROR: deviceVector_t invalid input!\n");
     ABORT(EXIT_FAILURE);
   }
 
-  o_vector = platform->device.malloc(nVectors * nFieldsPerVector * offset * wordSize);
+  o_vector = platform->device.malloc(nVectors * offset * wordSize);
   for(int s = 0; s < nVectors; ++s){
-    slices.push_back(o_vector + s * offset * nFieldsPerVector * wordSize);
+    slices.push_back(o_vector + s * offset * wordSize);
   }
 }
 
