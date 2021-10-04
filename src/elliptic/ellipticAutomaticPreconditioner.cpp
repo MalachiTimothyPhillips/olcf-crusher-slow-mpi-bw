@@ -98,6 +98,7 @@ automaticPreconditioner_t::selectSolver()
       std::cout << "Fastest solver : " << currentSolver.to_string() << "\n";
       fflush(stdout);
     }
+    reinitializePreconditioner();
     visitedSolvers.clear();
     if(sampleCounter == (NSamples-1)){
       sampleCounter = 0;
