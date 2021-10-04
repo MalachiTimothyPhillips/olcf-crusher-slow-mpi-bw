@@ -24,12 +24,17 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     ChebyshevSmootherType::RAS,
   };
 
+  std::vector<int> vLevels = determineMGLevels("pressure");
+  std::set<unsigned> levels;
+  for(auto&& level : vLevels)
+    levels.insert(level);
+
   for(auto && smoother : allSmoothers)
   {
     for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
     {
-      allSolvers.insert({smoother, chebyOrder});
-      solverToTime[{smoother, chebyOrder}] = std::vector<double>(NSamples, -1.0);
+      allSolvers.insert({smoother, chebyOrder, levels});
+      solverToTime[{smoother, chebyOrder, levels}] = std::vector<double>(NSamples, -1.0);
     }
   }
   platform->timer.toc("autoPreconditioner");
