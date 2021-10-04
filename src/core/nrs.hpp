@@ -216,6 +216,6 @@ void evaluateProperties(nrs_t* nrs, const double timeNew);
 void compileKernels();
 
 std::vector<int>
-determineMGLevels(std::string section);
+determineMGLevels(std::string section, int version = 0);
 
 #endif

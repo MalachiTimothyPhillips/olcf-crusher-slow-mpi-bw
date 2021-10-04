@@ -37,6 +37,7 @@
 #include "amgSolver/parAlmond/parAlmond.hpp"
 #include "ellipticPrecon.h"
 #include "platform.hpp"
+#include <map>
 
 #include "timer.hpp"
 
@@ -45,6 +46,7 @@
 class ResidualProjection;
 class elliptic_t;
 class automaticPreconditioner_t;
+class MGLevel;
 
 struct GmresData{
   GmresData(elliptic_t*);
@@ -178,6 +180,7 @@ struct elliptic_t
   dlong loffset;
   int nLevels;
   int* levels;
+  std::map<unsigned, MGLevel*> orderToLevelMap;
 
   ResidualProjection* residualProjection;
   automaticPreconditioner_t* autoPreconditioner;

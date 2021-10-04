@@ -237,8 +237,6 @@ void MGLevel::Report()
 
 void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
 {
-  if(o_R.size() > 0) o_R.free();
-  
   int NqFine   = Nf + 1;
   int NqCoarse = Nc + 1;
   dfloat* P    = (dfloat*) calloc(NqFine * NqCoarse,sizeof(dfloat));

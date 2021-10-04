@@ -25,17 +25,23 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     ChebyshevSmootherType::RAS,
   };
 
-  std::vector<int> vLevels = determineMGLevels("pressure");
-  std::set<unsigned> levels;
-  for(auto&& level : vLevels)
-    levels.insert(level);
+  std::vector<std::set<unsigned>> schedules;
+  for(int pass = 0; pass < 2; ++pass){
+    std::set<unsigned> levels;
+    auto vLevels = determineMGLevels("pressure", pass);
+    for(auto&& level : vLevels)
+      levels.insert(level);
+    schedules.push_back(levels);
+  }
 
-  for(auto && smoother : allSmoothers)
-  {
-    for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
+  for(auto && schedule : schedules){
+    for(auto && smoother : allSmoothers)
     {
-      allSolvers.insert({smoother, chebyOrder, levels});
-      solverToTime[{smoother, chebyOrder, levels}] = std::vector<double>(NSamples, -1.0);
+      for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
+      {
+        allSolvers.insert({smoother, chebyOrder, schedule});
+        solverToTime[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
+      }
     }
   }
   platform->timer.toc("autoPreconditioner");
@@ -142,6 +148,12 @@ automaticPreconditioner_t::reinitializePreconditioner()
   for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
   {
     auto level = dynamic_cast<MGLevel*>(levels[levelIndex]);
+    level->active = true;
+    auto levelOrder = elliptic.levels[levelIndex];
+    if(currentSolver.schedule.count(levelOrder) == 0){
+      level->active = false;
+    }
+    
     level->ChebyshevIterations = currentSolver.chebyOrder;
     if(currentSolver.smoother == ChebyshevSmootherType::ASM || currentSolver.smoother == ChebyshevSmootherType::RAS){
       level->chebyshevSmoother = currentSolver.smoother;
@@ -173,13 +185,13 @@ std::string
 automaticPreconditioner_t::to_string() const
 {
   std::ostringstream ss;
-  ss << "=========================================================\n";
-  ss << "| " << std::internal << std::setw(25) << "Preconditioner" << " ";
+  ss << "===================================================================\n";
+  ss << "| " << std::internal << std::setw(36) << "Preconditioner" << " ";
   ss << "| " << std::internal << std::setw(5) << "Niter" << " ";
   ss << "| " << std::internal << std::setw(17) << "Time (min/max)" << " |\n";
-  ss << "=========================================================\n";
+  ss << "===================================================================\n";
   for(auto && solver : visitedSolvers){
-    ss << "| " << std::internal << std::setw(25) << solver.to_string() << " ";
+    ss << "| " << std::internal << std::setw(36) << solver.to_string() << " ";
     ss << "| " << std::internal << std::setw(5) << solverToIterations.at(solver) << " ";
     dfloat minTime = std::numeric_limits<dfloat>::max();
     dfloat maxTime = -1.0 * std::numeric_limits<dfloat>::max();
@@ -191,7 +203,7 @@ automaticPreconditioner_t::to_string() const
     ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << minTime << "/";
     ss << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << maxTime << " |\n";
   }
-  ss << "=========================================================\n";
+  ss << "===================================================================\n";
 
   return ss.str();
 }

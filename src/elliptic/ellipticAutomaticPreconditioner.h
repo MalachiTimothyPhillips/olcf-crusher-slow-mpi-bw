@@ -24,20 +24,23 @@ struct solverDescription_t{
       ss << "Jacobi";
     ss << "+Degree=" << chebyOrder;
     ss << ",(";
-    for (auto&& i = levels.rbegin(); 
-        i != levels.rend(); ++i ) { 
-      ss << *i << ",";
+    for (auto&& i = schedule.rbegin(); 
+        i != schedule.rend(); ++i ) { 
+      ss << *i;
+      auto nextIt = i;
+      std::advance(nextIt,1);
+      if(nextIt != schedule.rend()) ss << ",";
     } 
     ss << ")";
     return ss.str();
   }
 
-  solverDescription_t(ChebyshevSmootherType mSmoother, unsigned mChebyOrder, std::set<unsigned> mLevels)
-  : smoother(mSmoother), chebyOrder(mChebyOrder), levels(mLevels){}
+  solverDescription_t(ChebyshevSmootherType mSmoother, unsigned mChebyOrder, std::set<unsigned> mSchedule)
+  : smoother(mSmoother), chebyOrder(mChebyOrder), schedule(mSchedule){}
 
   ChebyshevSmootherType smoother;
   unsigned chebyOrder;
-  std::set<unsigned> levels;
+  std::set<unsigned> schedule;
 
   solverDescription_t(const solverDescription_t& rhs) = default;
 
@@ -45,11 +48,11 @@ struct solverDescription_t{
 
   inline bool operator==(const solverDescription_t& other) const
   {
-    return std::tie(smoother, chebyOrder, levels) == std::tie(other.smoother, other.chebyOrder, levels);
+    return std::tie(smoother, chebyOrder, schedule) == std::tie(other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator<(const solverDescription_t& other) const
   {
-    return std::tie(smoother, chebyOrder, levels) < std::tie(other.smoother, other.chebyOrder, levels);
+    return std::tie(smoother, chebyOrder, schedule) < std::tie(other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator> (const solverDescription_t& other) const { return *this < other; }
   inline bool operator<=(const solverDescription_t& other) const { return !(*this > other); }
