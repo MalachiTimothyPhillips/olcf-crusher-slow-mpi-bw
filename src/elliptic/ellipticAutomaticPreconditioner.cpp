@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#include <nrs.hpp>
 
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 : elliptic(m_elliptic),
