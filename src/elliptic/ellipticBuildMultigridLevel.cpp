@@ -248,8 +248,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       if(elliptic->elementType != HEXAHEDRA) {
         kernelName = "ellipticPartialAx" + suffix;
       }else {
-        //if(elliptic->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
-        if(true)
+        if(elliptic->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
           kernelName = "ellipticPartialAxTrilinear" + suffix;
         else
           kernelName = "ellipticPartialAx" + suffix;
@@ -261,6 +260,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
           elliptic->partialAxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
         }
         if(!strstr(pfloatString,dfloatString)) {
+          kernelName = "ellipticPartialAxTrilinear" + suffix;
           const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
           elliptic->partialAxPfloatKernel =
             platform->kernels.getKernel( kernelName + kernelSuffix);

@@ -44,10 +44,8 @@ void ellipticAx(elliptic_t* elliptic,
   int mapType = (elliptic->elementType == HEXAHEDRA &&
                        options.compareArgs("ELEMENT MAP", "TRILINEAR")) ? 1:0;
   // Hack to try out Trilinear in preco
-  int N;
-  platform->options.getArgs("POLYNOMIAL DEGREE", N);
   std::string precisionStr(precision);
-  if(!elliptic->var_coeff) mapType = 1;
+  if(precisionStr.find(pfloatString) != std::string::npos) mapType = 1;
 
   const int integrationType = (elliptic->elementType == HEXAHEDRA &&
                                options.compareArgs("ELLIPTIC INTEGRATION", "CUBATURE")) ? 1:0;
@@ -177,7 +175,7 @@ void ellipticAx(elliptic_t* elliptic,
                               o_ggeo,
                               o_D,
                               o_DT,
-                              elliptic->lambda[0],
+                              (pfloat) elliptic->lambda[0],
                               o_q,
                               o_Aq);
             }
@@ -226,7 +224,7 @@ void ellipticAx(elliptic_t* elliptic,
                               o_gllzw,
                               o_D,
                               o_DT,
-                              elliptic->lambda[0],
+                              (pfloat) elliptic->lambda[0],
                               o_q,
                               o_Aq);
           }

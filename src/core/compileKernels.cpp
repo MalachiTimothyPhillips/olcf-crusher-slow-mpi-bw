@@ -647,8 +647,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
       AxKernelInfo["defines/dfloat"] = dfloatString;
     }
 
-    //if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
-    if (true)
+    if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
       kernelName = "ellipticPartialAxTrilinear" + suffix;
     else
       kernelName = "ellipticPartialAx" + suffix;
@@ -663,6 +662,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
             kernelSuffix);
       }
       if (!strstr(pfloatString, dfloatString)) {
+        kernelName = "ellipticPartialAxTrilinear" + suffix;
         AxKernelInfo["defines/dfloat"] = pfloatString;
         const std::string kernelSuffix = gen_suffix(pfloatString);
         platform->kernels.add_kernel(kernelName + kernelSuffix,
@@ -740,8 +740,7 @@ void registerLevelKernels(const std::string &section, int Nf, int N) {
     if (elementType != HEXAHEDRA) {
       kernelName = "ellipticPartialAx" + suffix;
     } else {
-      //if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
-      if (true)
+      if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
         kernelName = "ellipticPartialAxTrilinear" + suffix;
       else
         kernelName = "ellipticPartialAx" + suffix;
@@ -757,6 +756,7 @@ void registerLevelKernels(const std::string &section, int Nf, int N) {
             kernelSuffix);
       }
       if (!strstr(pfloatString, dfloatString)) {
+        kernelName = "ellipticPartialAxTrilinear" + suffix;
         AxKernelInfo["defines/dfloat"] = pfloatString;
         const std::string kernelSuffix = gen_suffix(pfloatString);
         platform->kernels.add_kernel(kernelName + kernelSuffix,
