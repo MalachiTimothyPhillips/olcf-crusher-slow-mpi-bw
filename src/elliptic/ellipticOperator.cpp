@@ -41,8 +41,14 @@ void ellipticAx(elliptic_t* elliptic,
 
   const int continuous = options.compareArgs("DISCRETIZATION", "CONTINUOUS");
   const int serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
-  const int mapType = (elliptic->elementType == HEXAHEDRA &&
+  int mapType = (elliptic->elementType == HEXAHEDRA &&
                        options.compareArgs("ELEMENT MAP", "TRILINEAR")) ? 1:0;
+  // Hack to try out Trilinear in preco
+  int N;
+  platform->options.getArgs("POLYNOMIAL DEGREE", N);
+  std::string precisionStr(precision);
+  if(!elliptic->var_coeff) mapType = 1;
+
   const int integrationType = (elliptic->elementType == HEXAHEDRA &&
                                options.compareArgs("ELLIPTIC INTEGRATION", "CUBATURE")) ? 1:0;
 
@@ -53,7 +59,6 @@ void ellipticAx(elliptic_t* elliptic,
       valid &= !elliptic->var_coeff;
       valid &= !elliptic->blockSolver;
       if(!serial) {
-        valid &= mapType == 0;
         valid &= integrationType == 0;
       }
     }
@@ -181,27 +186,46 @@ void ellipticAx(elliptic_t* elliptic,
           if(elliptic->var_coeff) {
             if(elliptic->blockSolver)
               printf("Trilinear version for block solver is not avalibale yet\n");
-            else
+            else{
+              occa::memory &o_ggeo = (!strstr(precision,dfloatString)) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
+              occa::memory &o_D =
+                (!strstr(precision,dfloatString)) ? mesh->o_DPfloat : mesh->o_D;
+              occa::memory &o_DT =
+                (!strstr(precision,dfloatString)) ? mesh->o_DTPfloat : mesh->o_DT;
+              occa::memory &o_EXYZ =
+                (!strstr(precision,dfloatString)) ? elliptic->o_EXYZPfloat : elliptic->o_EXYZ;
+              occa::memory &o_gllzw =
+                (!strstr(precision,dfloatString)) ? elliptic->o_gllzwPfloat : elliptic->o_gllzw;
               partialAxKernel(NelementsList,
                               elliptic->Ntotal,
                               o_elementsList,
-                              elliptic->o_EXYZ,
-                              elliptic->o_gllzw,
-                              mesh->o_D,
-                              mesh->o_DT,
+                              o_EXYZ,
+                              o_gllzw,
+                              o_D,
+                              o_DT,
                               elliptic->o_lambda,
                               o_q,
                               o_Aq);
+            }
           }else{
             if(elliptic->blockSolver)
               printf("Trilinear version for block solver is not avalibale yet\n");
             else
+              occa::memory &o_ggeo = (!strstr(precision,dfloatString)) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
+              occa::memory &o_D =
+                (!strstr(precision,dfloatString)) ? mesh->o_DPfloat : mesh->o_D;
+              occa::memory &o_DT =
+                (!strstr(precision,dfloatString)) ? mesh->o_DTPfloat : mesh->o_DT;
+              occa::memory &o_EXYZ =
+                (!strstr(precision,dfloatString)) ? elliptic->o_EXYZPfloat : elliptic->o_EXYZ;
+              occa::memory &o_gllzw =
+                (!strstr(precision,dfloatString)) ? elliptic->o_gllzwPfloat : elliptic->o_gllzw;
               partialAxKernel(NelementsList,
                               o_elementsList,
-                              elliptic->o_EXYZ,
-                              elliptic->o_gllzw,
-                              mesh->o_D,
-                              mesh->o_DT,
+                              o_EXYZ,
+                              o_gllzw,
+                              o_D,
+                              o_DT,
                               elliptic->lambda[0],
                               o_q,
                               o_Aq);

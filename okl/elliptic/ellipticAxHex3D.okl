@@ -567,7 +567,7 @@
   }
 }
 
-#define ellipticPartialAxTrilinearHex3D_v1 ellipticPartialAxTrilinearHex3D
+#define ellipticPartialAxTrilinearHex3D_v0 ellipticPartialAxTrilinearHex3D
 #define p_eighth ((dfloat)0.125)
 
 @kernel void ellipticPartialAxTrilinearHex3D_v0(const dlong Nelements,

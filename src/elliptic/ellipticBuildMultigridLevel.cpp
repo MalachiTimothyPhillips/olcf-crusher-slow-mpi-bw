@@ -248,7 +248,8 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
       if(elliptic->elementType != HEXAHEDRA) {
         kernelName = "ellipticPartialAx" + suffix;
       }else {
-        if(elliptic->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+        //if(elliptic->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+        if(true)
           kernelName = "ellipticPartialAxTrilinear" + suffix;
         else
           kernelName = "ellipticPartialAx" + suffix;
@@ -285,24 +286,40 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
   }
 
+  constexpr int ndim {3};
   if(elliptic->elementType == HEXAHEDRA) {
     // pack gllz, gllw, and elementwise EXYZ
     dfloat* gllzw = (dfloat*) calloc(2 * mesh->Nq, sizeof(dfloat));
+    dfloat* EXYZ = (dfloat*) calloc(mesh->Nelements * ndim * mesh->Nverts, sizeof(dfloat));
 
     int sk = 0;
     for(int n = 0; n < mesh->Nq; ++n)
       gllzw[sk++] = mesh->gllz[n];
     for(int n = 0; n < mesh->Nq; ++n)
       gllzw[sk++] = mesh->gllw[n];
+    
+    sk = 0;
+    for(hlong e=0;e<mesh->Nelements;++e){
+      for(int v=0;v<mesh->Nverts;++v)
+        EXYZ[sk++] = mesh->EX[e*mesh->Nverts+v];
+      for(int v=0;v<mesh->Nverts;++v)
+        EXYZ[sk++] = mesh->EY[e*mesh->Nverts+v];
+      for(int v=0;v<mesh->Nverts;++v)
+        EXYZ[sk++] = mesh->EZ[e*mesh->Nverts+v];
+    }
 
     elliptic->o_gllzw = platform->device.malloc(2 * mesh->Nq * sizeof(dfloat), gllzw);
+    elliptic->o_EXYZ = platform->device.malloc(mesh->Nelements * ndim * mesh->Nverts * sizeof(dfloat), EXYZ);
     free(gllzw);
+    free(EXYZ);
   }
 
   if(!strstr(pfloatString,dfloatString)) {
     mesh->o_ggeoPfloat = platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo ,  sizeof(pfloat));
     mesh->o_DPfloat = platform->device.malloc(mesh->Nq * mesh->Nq ,  sizeof(pfloat));
     mesh->o_DTPfloat = platform->device.malloc(mesh->Nq * mesh->Nq ,  sizeof(pfloat));
+    elliptic->o_gllzwPfloat = platform->device.malloc(2 * mesh->Nq * sizeof(pfloat));
+    elliptic->o_EXYZPfloat = platform->device.malloc(mesh->Nelements * ndim * mesh->Nverts * sizeof(pfloat));
     elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np * mesh->Nggeo,
                                        elliptic->mesh->o_ggeoPfloat,
                                        mesh->o_ggeo);
@@ -315,6 +332,12 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
     elliptic->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq,
                                        elliptic->mesh->o_DTPfloat,
                                        mesh->o_DT);
+    elliptic->copyDfloatToPfloatKernel(2 * mesh->Nq,
+                                       elliptic->o_gllzwPfloat,
+                                       elliptic->o_gllzw);
+    elliptic->copyDfloatToPfloatKernel(mesh->Nelements * ndim * mesh->Nverts,
+                                       elliptic->o_EXYZPfloat,
+                                       elliptic->o_gllzwPfloat);
   }
 
 

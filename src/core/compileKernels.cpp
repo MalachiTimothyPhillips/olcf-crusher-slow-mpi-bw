@@ -647,7 +647,8 @@ void registerFineLevelKernels(const std::string &section, int N) {
       AxKernelInfo["defines/dfloat"] = dfloatString;
     }
 
-    if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+    //if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+    if (true)
       kernelName = "ellipticPartialAxTrilinear" + suffix;
     else
       kernelName = "ellipticPartialAx" + suffix;
@@ -739,7 +740,8 @@ void registerLevelKernels(const std::string &section, int Nf, int N) {
     if (elementType != HEXAHEDRA) {
       kernelName = "ellipticPartialAx" + suffix;
     } else {
-      if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+      //if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+      if (true)
         kernelName = "ellipticPartialAxTrilinear" + suffix;
       else
         kernelName = "ellipticPartialAx" + suffix;
