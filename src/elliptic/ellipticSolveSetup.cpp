@@ -33,9 +33,6 @@
 void ellipticSolveSetup(elliptic_t* elliptic)
 {
 
-  if(elliptic->options.compareArgs("AUTO PRECONDITIONER", "TRUE")){
-    elliptic->autoPreconditioner = new automaticPreconditioner_t(*elliptic);
-  }
   
   mesh_t* mesh      = elliptic->mesh;
   
@@ -374,6 +371,10 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       type = ResidualProjection::ProjectionType::CLASSIC;
 
     elliptic->residualProjection = new ResidualProjection(*elliptic, type, nVecsProject, nStepsStart);
+  }
+
+  if(elliptic->options.compareArgs("AUTO PRECONDITIONER", "TRUE")){
+    elliptic->autoPreconditioner = new automaticPreconditioner_t(*elliptic);
   }
 
   MPI_Barrier(platform->comm.mpiComm);

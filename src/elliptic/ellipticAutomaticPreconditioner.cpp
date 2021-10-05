@@ -1,4 +1,5 @@
 #include "elliptic.h"
+#include "ellipticMultiGrid.h"
 #include "ellipticAutomaticPreconditioner.h"
 #include <random>
 #include <limits>
@@ -44,6 +45,15 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
       }
     }
   }
+
+  auto** levels = elliptic.precon->parAlmond->levels;
+  for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
+  {
+    auto level = dynamic_cast<MGLevel*>(levels[levelIndex]);
+    const auto degree = level->degree;
+    multigridLevels[degree] = level;
+  }
+
   platform->timer.toc("autoPreconditioner");
 }
 
@@ -149,11 +159,7 @@ automaticPreconditioner_t::reinitializePreconditioner()
   for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
   {
     auto level = dynamic_cast<MGLevel*>(levels[levelIndex]);
-    level->active = true;
     auto levelOrder = elliptic.levels[levelIndex];
-    if(currentSolver.schedule.count(levelOrder) == 0){
-      level->active = false;
-    }
     
     level->ChebyshevIterations = currentSolver.chebyOrder;
     if(currentSolver.smoother == ChebyshevSmootherType::ASM || currentSolver.smoother == ChebyshevSmootherType::RAS){

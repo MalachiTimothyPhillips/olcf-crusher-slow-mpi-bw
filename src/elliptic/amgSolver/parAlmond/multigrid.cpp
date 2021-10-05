@@ -253,12 +253,8 @@ void solver_t::device_vcycle(int k){
   occa::memory o_xC   = levelC->o_x;
 
   //apply smoother to x and then compute res = rhs-Ax
-  if(level->active){
-    level->smooth(o_rhs, o_x, true);
-    level->residual(o_rhs, o_x, o_res);
-  } else {
-    o_res.copyFrom(o_rhs, m*sizeof(dfloat));
-  }
+  level->smooth(o_rhs, o_x, true);
+  level->residual(o_rhs, o_x, o_res);
 
   // rhsC = P^T res
   levelC->coarsen(o_res, o_rhsC);
@@ -267,7 +263,7 @@ void solver_t::device_vcycle(int k){
 
   // x = x + P xC
   levelC->prolongate(o_xC, o_x);
-  if(level->active) level->smooth(o_rhs, o_x, false);
+  level->smooth(o_rhs, o_x, false);
 }
 
 namespace {

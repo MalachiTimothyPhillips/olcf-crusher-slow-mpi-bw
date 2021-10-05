@@ -27,6 +27,8 @@
 #ifndef ELLIPTIC_MGLEVEL_HPP
 #define ELLIPTIC_MGLEVEL_HPP
 
+#include <map>
+
 enum class SmootherType
 {
   CHEBYSHEV,
@@ -157,7 +159,8 @@ public:
   dfloat maxEigSmoothAx();
 
 
-  void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
+  void buildCoarsenerQuadHex(int Nf, int Nc);
+  std::map<int, mesh_t*> orderToMeshLevel;
 private:
   void smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);

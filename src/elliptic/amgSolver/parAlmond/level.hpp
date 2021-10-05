@@ -39,8 +39,6 @@ public:
   dfloat *res=NULL;
   occa::memory o_x, o_rhs, o_res;
 
-  bool active = true;
-
   //extra storage for kcycle
   dfloat *ck=NULL;
   dfloat *vk=NULL;

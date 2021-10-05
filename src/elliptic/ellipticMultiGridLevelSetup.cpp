@@ -83,6 +83,13 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
                  ktype_,
                  comm_)
 {
+
+  int N;
+  platform->options.getArgs("POLYNOMIAL DEGREE", N);
+  for (int n = 1; n < N + 1; n++) {
+    mesh_t* meshLevel = meshLevels[n];
+    orderToMeshLevel[n] = meshLevel;
+  }
   
   isCoarse = _isCoarse;
   elliptic = ellipticCoarse;
@@ -106,7 +113,7 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
     this->setupSmoother(ellipticBase);
 
   /* build coarsening and prologation operators to connect levels */
-  this->buildCoarsenerQuadHex(meshLevels, Nf, Nc);
+  this->buildCoarsenerQuadHex(Nf, Nc);
 
   o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
   o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
@@ -235,8 +242,10 @@ void MGLevel::Report()
   }
 }
 
-void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
+void MGLevel::buildCoarsenerQuadHex(int Nf, int Nc)
 {
+  if(o_R.size()) o_R.free();
+
   int NqFine   = Nf + 1;
   int NqCoarse = Nc + 1;
   dfloat* P    = (dfloat*) calloc(NqFine * NqCoarse,sizeof(dfloat));
@@ -257,7 +266,7 @@ void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
       for (int j = 0; j < NqCoarse; j++) {
         P[i * NqCoarse + j] = 0.;
         for (int k = 0; k < Nq; k++)
-          P[i * NqCoarse + j] += meshLevels[n]->interpRaise[i * Nq + k] * Ptmp[k * NqCoarse + j];
+          P[i * NqCoarse + j] += orderToMeshLevel[n]->interpRaise[i * Nq + k] * Ptmp[k * NqCoarse + j];
       }
   }
 

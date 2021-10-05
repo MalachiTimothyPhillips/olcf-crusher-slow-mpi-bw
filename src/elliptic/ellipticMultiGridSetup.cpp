@@ -270,9 +270,8 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     }
   }
 
-  for (int n = 1; n < mesh->N + 1; n++)
-    delete meshLevels[n];
-  //  for (int n=1;n<mesh->N+1;n++) delete[] meshLevels[n];
+  //for (int n = 1; n < mesh->N + 1; n++)
+  //  delete meshLevels[n];
   free(meshLevels);
 
   //report top levels

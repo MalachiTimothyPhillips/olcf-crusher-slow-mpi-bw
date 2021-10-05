@@ -9,6 +9,8 @@
 #include <ellipticMultiGrid.h>
 class elliptic_t;
 
+class MGLevel;
+
 struct solverDescription_t{
 
   solverDescription_t(){}
@@ -85,6 +87,8 @@ class automaticPreconditioner_t{
   unsigned int sampleCounter;
   int NSamples;
   ChebyshevSmootherType fastestSmoother;
+
+  std::map<int, MGLevel*> multigridLevels;
 
   solverDescription_t currentSolver;
   std::set<solverDescription_t> allSolvers;
