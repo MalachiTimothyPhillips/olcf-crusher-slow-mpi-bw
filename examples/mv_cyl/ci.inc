@@ -95,7 +95,7 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     expectedErr[5] = 0.2443839E-05;
   }
 
-  const dfloat floor = 1e-8; // values below this threshold are ignored
+  const dfloat absTol = 1e-8; // values below this threshold are ignored
   const int expectedVIter = 11;
 
   double vxErr, prErr;
@@ -108,7 +108,7 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   if(rank == 0) printf("relative error to target: ");
   for(int i = 0 ; i < Nfields; ++i){
-    if(abs(err[i]) > floor){
+    if(abs(err[i]) > absTol){
       const dfloat relErr = abs(err[i]-expectedErr[i])/expectedErr[i];
       if(rank == 0) printf("err[%d]=%g ", i, relErr);
       if(relErr > EPS && abs(expectedErr[i]) < abs(err[i])) passed = false;
