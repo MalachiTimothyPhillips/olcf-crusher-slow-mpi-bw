@@ -209,8 +209,10 @@ automaticPreconditioner_t::reinitializePreconditioner()
     const std::string kernelSuffix = std::string("_") + std::to_string(Nf)
       + std::string("_") + std::to_string(Nc);
     auto* level = this->multigridLevels[Nc];
+    auto* fineLevel = this->multigridLevels[Nf];
     level->NpF = (Nf+1) * (Nf+1) * (Nf+1);
     level->buildCoarsenerQuadHex(Nf, Nc);
+    level->o_invDegree = fineLevel->elliptic->o_invDegree;
     std::string kernelName = "ellipticPreconCoarsen" + suffix;
     level->elliptic->precon->coarsenKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
     kernelName = "ellipticPreconProlongate" + suffix;
