@@ -19,6 +19,9 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER NUM SAMPLES", NSamples);
+
+  minChebyOrder = 1;
+  maxChebyOrder = 3;
   
   std::set<ChebyshevSmootherType> allSmoothers = {
     ChebyshevSmootherType::JACOBI,
@@ -155,11 +158,11 @@ automaticPreconditioner_t::reinitializePreconditioner()
 
   dfloat maxMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
-  auto** levels = elliptic.precon->parAlmond->levels;
-  for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
+
+  // reset eigenvalue multipliers for all levels
+  for(auto&& orderAndLevelPair : multigridLevels)
   {
-    auto level = dynamic_cast<MGLevel*>(levels[levelIndex]);
-    auto levelOrder = elliptic.levels[levelIndex];
+    auto level = orderAndLevelPair.second;
     
     level->ChebyshevIterations = currentSolver.chebyOrder;
     if(currentSolver.smoother == ChebyshevSmootherType::ASM || currentSolver.smoother == ChebyshevSmootherType::RAS){
@@ -185,6 +188,35 @@ automaticPreconditioner_t::reinitializePreconditioner()
       level->lambda0 = minMultiplier * rho;
     }
   }
+
+  elliptic.precon->parAlmond->baseLevel = currentSolver.schedule.size()-1;
+  unsigned ctr = 0;
+  std::vector<int> orders;
+  for(auto&& it = currentSolver.schedule.rbegin();
+    it != currentSolver.schedule.rend(); ++it){
+      elliptic.precon->parAlmond->levels[ctr] = this->multigridLevels[*it];
+      orders.push_back(*it);
+      ctr++;
+  }
+
+  const std::string suffix = "Hex3D";
+  // also need the correct kernels, too
+  // reconstruct coarsening/prolongation operators
+  for(int levelIndex = 1; levelIndex < orders.size(); ++levelIndex)
+  {
+    const auto Nf = orders[levelIndex-1];
+    const auto Nc = orders[levelIndex];
+    const std::string kernelSuffix = std::string("_") + std::to_string(Nf)
+      + std::string("_") + std::to_string(Nc);
+    auto* level = this->multigridLevels[Nc];
+    level->NpF = (Nf+1) * (Nf+1) * (Nf+1);
+    level->buildCoarsenerQuadHex(Nf, Nc);
+    std::string kernelName = "ellipticPreconCoarsen" + suffix;
+    level->elliptic->precon->coarsenKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+    kernelName = "ellipticPreconProlongate" + suffix;
+    level->elliptic->precon->prolongateKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+  }
+
 
 }
 
