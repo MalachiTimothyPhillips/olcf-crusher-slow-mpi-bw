@@ -38,6 +38,8 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     schedules.push_back(levels);
   }
 
+  defaultSolver = {ChebyshevSmootherType::ASM, 2, schedules[0]};
+
   for(auto && schedule : schedules){
     for(auto && smoother : allSmoothers)
     {
@@ -63,12 +65,20 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 bool
 automaticPreconditioner_t::apply(int tstep)
 {
-  bool evaluatePreconditioner = true;
-  evaluatePreconditioner &= activeTuner;
-  evaluatePreconditioner &= tstep >= autoStart;
-  if(evaluatePreconditioner){
-    evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
-  }
+  //bool evaluatePreconditioner = true;
+  //evaluatePreconditioner &= activeTuner;
+  //evaluatePreconditioner &= tstep >= autoStart;
+  //if(evaluatePreconditioner){
+  //  evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
+  //}
+
+  // kludge
+  //const std::vector<int> evaluationSteps = {250,500,1000};
+  const std::vector<int> evaluationSteps = {10,20,50};
+  bool evaluationPreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
+    [=](int evaluationStep){
+      return evaluationStep == tstep;
+    });
 
   if(evaluatePreconditioner){
     evaluatePreconditioner = selectSolver();
@@ -92,7 +102,8 @@ automaticPreconditioner_t::measure(bool evaluatePreconditioner)
     const dfloat lastRecordedTime = solverStartTime[currentSolver];
     const dfloat elapsed = currentSolverTime - lastRecordedTime;
     solverToTime[currentSolver][sampleCounter] = elapsed;
-    solverToIterations[currentSolver] = elliptic.Niter;
+    solverToIterations[currentSolver][sampleCounter] = elliptic.Niter;
+    solverTimePerIter[currentSolver][sampleCounter] = elapsed / elliptic.Niter;
   }
 }
 
@@ -105,20 +116,25 @@ automaticPreconditioner_t::selectSolver()
     std::inserter(remainingSolvers, remainingSolvers.begin()));
   if(remainingSolvers.empty())
   {
-    currentSolver = determineFastestSolver();
-    if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
-      std::cout << this->to_string() << std::endl;
-      std::cout << "Fastest solver : " << currentSolver.to_string() << "\n";
-      fflush(stdout);
+    if(sampleCounter == (Nsamples-1)){
+      currentSolver = determineFastestSolver();
+      if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
+        std::cout << this->to_string() << std::endl;
+        std::cout << "Fastest solver : " << currentSolver.to_string() << "\n";
+        fflush(stdout);
+      }
+    } else {
+      currentSolver = defaultSolver;
     }
     reinitializePreconditioner();
     visitedSolvers.clear();
+
     if(sampleCounter == (NSamples-1)){
       sampleCounter = 0;
       return false;
     } else {
       sampleCounter++;
-      return true;
+      return false; // <-
     }
   } else {
 
@@ -135,12 +151,19 @@ automaticPreconditioner_t::determineFastestSolver()
   dfloat minSolveTime = std::numeric_limits<dfloat>::max();
   solverDescription_t minSolver;
 
+  // minimize (T/iter) * sum(iters)
   for(auto&& solver : visitedSolvers){
-    const auto& times = solverToTime[solver];
-    dfloat solverTime = std::numeric_limits<dfloat>::max();
+    const auto& times = solverTimePerIter[solver];
+    const auto& iters = solverToIterations[solver];
+    dfloat minTimePerIter = std::numeric_limits<dfloat>::max();
+    dfloat sumIters = 0.0;
     for(int i = 0 ; i < NSamples; ++i){
-      solverTime = solverTime < times.at(i) ? solverTime : times.at(i);
+      minTimePerIter = minTimePerIter < times.at(i) ? minTimePerIter : times.at(i);
+      sumIters += iters[i];
     }
+
+    // avg time per solve, based on min time per iter of method
+    const dfloat solverTime = sumIters * minTimePerIter / static_cast<double>(Nsamples);
     if(solverTime < minSolveTime){
       minSolveTime = solverTime;
       minSolver = solver;

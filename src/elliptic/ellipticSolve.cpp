@@ -97,23 +97,25 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
      options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
-    platform->timer.tic(elliptic->name + " proj pre",1);
-    elliptic->res00Norm = 
-      platform->linAlg->weightedNorm2Many(
-        mesh->Nlocal,
-        elliptic->Nfields,
-        elliptic->Ntotal,
-        elliptic->o_invDegree,
-        o_r,
-        platform->comm.mpiComm
-      )
-      * sqrt(elliptic->resNormFactor); 
-    if(std::isnan(elliptic->res00Norm)) {
-      if(platform->comm.mpiRank == 0) printf("Unreasonable res00Norm!\n");
-      ABORT(EXIT_FAILURE);
+    if(!autoTunePreconditioner){
+      platform->timer.tic(elliptic->name + " proj pre",1);
+      elliptic->res00Norm = 
+        platform->linAlg->weightedNorm2Many(
+          mesh->Nlocal,
+          elliptic->Nfields,
+          elliptic->Ntotal,
+          elliptic->o_invDegree,
+          o_r,
+          platform->comm.mpiComm
+        )
+        * sqrt(elliptic->resNormFactor); 
+      if(std::isnan(elliptic->res00Norm)) {
+        if(platform->comm.mpiRank == 0) printf("Unreasonable res00Norm!\n");
+        ABORT(EXIT_FAILURE);
+      }
+      elliptic->residualProjection->pre(o_r);
+      platform->timer.toc(elliptic->name + " proj pre");
     }
-    elliptic->residualProjection->pre(o_r);
-    platform->timer.toc(elliptic->name + " proj pre");
   }
 
   elliptic->res0Norm = 

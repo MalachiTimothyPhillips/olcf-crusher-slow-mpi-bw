@@ -90,13 +90,15 @@ class automaticPreconditioner_t{
 
   std::map<int, MGLevel*> multigridLevels;
 
+  solverDescription_t defaultSolver;
   solverDescription_t currentSolver;
   std::set<solverDescription_t> allSolvers;
   std::set<solverDescription_t> visitedSolvers;
   std::vector<solverDescription_t> remainingSolvers;
   std::set<ChebyshevSmootherType> visitedSmoothers;
   std::map<solverDescription_t, std::vector<double>> solverToTime;
+  std::map<solverDescription_t, std::vector<double>> solverTimePerIter;
   std::map<solverDescription_t, double> solverStartTime;
-  std::map<solverDescription_t, unsigned int> solverToIterations;
+  std::map<solverDescription_t, std::vector<unsigned int>> solverToIterations;
 };
 #endif
