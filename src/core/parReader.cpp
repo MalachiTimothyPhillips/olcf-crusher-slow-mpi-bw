@@ -718,7 +718,7 @@ void parsePreconditioner(const int rank, setupAide &options,
     }
 
     // default params
-    constexpr int trialFrequency {5000};
+    constexpr int trialFrequency {500};
     constexpr int autoStart {100};
     constexpr int maxChebyOrder {3};
     constexpr int minChebyOrder {1};
