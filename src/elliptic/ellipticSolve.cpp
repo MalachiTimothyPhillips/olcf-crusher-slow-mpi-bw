@@ -97,7 +97,8 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
      options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
-    if(!autoTunePreconditioner){
+    //if(!autoTunePreconditioner){
+    if(true){
       platform->timer.tic(elliptic->name + " proj pre",1);
       elliptic->res00Norm = 
         platform->linAlg->weightedNorm2Many(

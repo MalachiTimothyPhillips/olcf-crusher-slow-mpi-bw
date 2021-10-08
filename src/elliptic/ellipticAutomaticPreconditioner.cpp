@@ -47,6 +47,8 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
       {
         allSolvers.insert({smoother, chebyOrder, schedule});
         solverToTime[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
+        solverTimePerIter[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
+        solverToIterations[{smoother, chebyOrder, schedule}] = std::vector<unsigned int>(NSamples, 0);
       }
     }
   }
@@ -73,9 +75,9 @@ automaticPreconditioner_t::apply(int tstep)
   //}
 
   // kludge
-  //const std::vector<int> evaluationSteps = {250,500,1000};
-  const std::vector<int> evaluationSteps = {10,20,50};
-  bool evaluationPreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
+  const std::vector<int> evaluationSteps = {250,500,1000};
+  //const std::vector<int> evaluationSteps = {10,20,50};
+  bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
     [=](int evaluationStep){
       return evaluationStep == tstep;
     });
@@ -116,7 +118,7 @@ automaticPreconditioner_t::selectSolver()
     std::inserter(remainingSolvers, remainingSolvers.begin()));
   if(remainingSolvers.empty())
   {
-    if(sampleCounter == (Nsamples-1)){
+    if(sampleCounter == (NSamples-1)){
       currentSolver = determineFastestSolver();
       if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
         std::cout << this->to_string() << std::endl;
@@ -163,7 +165,8 @@ automaticPreconditioner_t::determineFastestSolver()
     }
 
     // avg time per solve, based on min time per iter of method
-    const dfloat solverTime = sumIters * minTimePerIter / static_cast<double>(Nsamples);
+    const dfloat solverTime = sumIters * minTimePerIter / static_cast<double>(NSamples);
+    solverToEval[solver] = solverTime;
     if(solverTime < minSolveTime){
       minSolveTime = solverTime;
       minSolver = solver;
@@ -252,11 +255,14 @@ automaticPreconditioner_t::to_string() const
   ss << "===================================================================\n";
   ss << "| " << std::internal << std::setw(36) << "Preconditioner" << " ";
   ss << "| " << std::internal << std::setw(5) << "Niter" << " ";
-  ss << "| " << std::internal << std::setw(17) << "Time (min/max)" << " |\n";
+  ss << "| " << std::internal << std::setw(17) << "Time" << " |\n";
   ss << "===================================================================\n";
   for(auto && solver : visitedSolvers){
     ss << "| " << std::internal << std::setw(36) << solver.to_string() << " ";
-    ss << "| " << std::internal << std::setw(5) << solverToIterations.at(solver) << " ";
+    //ss << "| " << std::internal << std::setw(5) << solverToIterations.at(solver) << " ";
+    ss << "| (" << solverToIterations.at(solver)[0] << ", ";
+    ss          << solverToIterations.at(solver)[1] << ", ";
+    ss          << solverToIterations.at(solver)[2] << ") ";
     dfloat minTime = std::numeric_limits<dfloat>::max();
     dfloat maxTime = -1.0 * std::numeric_limits<dfloat>::max();
     auto& times = solverToTime.at(solver);
@@ -264,8 +270,8 @@ automaticPreconditioner_t::to_string() const
       minTime = minTime < times.at(i) ? minTime : times.at(i);
       maxTime = maxTime > times.at(i) ? maxTime : times.at(i);
     }
-    ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << minTime << "/";
-    ss << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << maxTime << " |\n";
+    //ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << minTime << "/";
+    ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << solverToEval.at(solver) << " |\n";
   }
   ss << "===================================================================\n";
 

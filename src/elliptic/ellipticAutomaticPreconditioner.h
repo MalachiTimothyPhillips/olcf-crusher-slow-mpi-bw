@@ -99,6 +99,7 @@ class automaticPreconditioner_t{
   std::map<solverDescription_t, std::vector<double>> solverToTime;
   std::map<solverDescription_t, std::vector<double>> solverTimePerIter;
   std::map<solverDescription_t, double> solverStartTime;
+  std::map<solverDescription_t, double> solverToEval;
   std::map<solverDescription_t, std::vector<unsigned int>> solverToIterations;
 };
 #endif
