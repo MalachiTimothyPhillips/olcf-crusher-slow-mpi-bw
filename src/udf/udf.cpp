@@ -125,11 +125,6 @@ void oudfInit(setupAide &options)
     if(!found)
       out << "void scalarDirichletConditions(bcData *bc){}\n";
 
-    out <<
-      "@kernel void __dummy__(int N) {"
-      "  for (int i = 0; i < N; ++i; @tile(64, @outer, @inner)) {}"
-      "}";
-
     out.close();
   }
 

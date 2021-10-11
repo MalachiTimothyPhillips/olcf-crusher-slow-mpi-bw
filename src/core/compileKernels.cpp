@@ -63,6 +63,8 @@ void compileKernels() {
     registerCdsKernels(kernelInfoBC);
   }
 
+  // Scalar section is omitted
+  // as pressure section kernels are the same.
   const std::vector<std::string> sections = {
       "pressure",
       "velocity",
