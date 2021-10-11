@@ -296,14 +296,14 @@ c     Find unique a's
 c
       nn=1
 c
-      call icopy(aa,a,m)
+      call int_copy(aa,a,m)
       a(1,1) = nn
       a(2,1)=ind(1)
 c
       do i=2,n
          a_ne_b = iftuple_ianeb(aa,a(1,i),key,nk)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call int_copy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn
@@ -341,19 +341,19 @@ C
          if (l.gt.1) then
             l=l-1
 c           aa  = a  (l)
-            call icopy(aa,a(1,l),lda)
+            call int_copy(aa,a(1,l),lda)
             ii  = ind(l)
          else
 c           aa =   a(ir)
-            call icopy(aa,a(1,ir),lda)
+            call int_copy(aa,a(1,ir),lda)
             ii = ind(ir)
 c           a(ir) =   a( 1)
-            call icopy(a(1,ir),a(1,1),lda)
+            call int_copy(a(1,ir),a(1,1),lda)
             ind(ir) = ind( 1)
             ir=ir-1
             if (ir.eq.1) then
 c              a(1) = aa
-               call icopy(a(1,1),aa,lda)
+               call int_copy(a(1,1),aa,lda)
                ind(1) = ii
                return
             endif
@@ -367,7 +367,7 @@ c              a(1) = aa
             endif
             if (iftuple_ialtb(aa,a(1,j),key,nkey)) then
 c              a(i) = a(j)
-               call icopy(a(1,i),a(1,j),lda)
+               call int_copy(a(1,i),a(1,j),lda)
                ind(i) = ind(j)
                i=j
                j=j+j
@@ -377,7 +377,7 @@ c              a(i) = a(j)
          goto 200
          endif
 c        a(i) = aa
-         call icopy(a(1,i),aa,lda)
+         call int_copy(a(1,i),aa,lda)
          ind(i) = ii
       goto 100
       end
@@ -1189,7 +1189,7 @@ c                w(i) = sorted & compressed list of input values
 
       integer r(1),input(1),ind(1),w(1),rlast
 
-      call icopy(r,input,n)
+      call int_copy(r,input,n)
       call isort(r,ind,n)
 c
       maxr  = 1
@@ -1383,7 +1383,7 @@ c
 c
 c     Find unique a's
 c
-      call icopy(aa,a,m)
+      call int_copy(aa,a,m)
       nn=1
       mm=0
 c
@@ -1397,7 +1397,7 @@ c
             ms = aa(3)                 ! structure type
             if (aa(2).eq.0) ms = aa(2) ! structure type
             mm = mm+key2(ms)           ! n dofs
-            call icopy(aa,a(1,i),m)
+            call int_copy(aa,a(1,i),m)
             nn = nn+1
          endif
          a(1,i) = nn
@@ -1855,14 +1855,14 @@ c
       call ituple_sort(a,m,n,key,nk,ind,aa)
 
 c     Find unique a's
-      call icopy(aa,a,m)
+      call int_copy(aa,a,m)
       nn     = 1
       ind(1) = nn
 c
       do i=2,n
          a_ne_b = iftuple_ianeb(aa,a(1,i),key,nk)
          if (a_ne_b) then
-            call icopy(aa,a(1,i),m)
+            call int_copy(aa,a(1,i),m)
             nn = nn+1
          endif
          ind(i) = nn ! set ind() to rank

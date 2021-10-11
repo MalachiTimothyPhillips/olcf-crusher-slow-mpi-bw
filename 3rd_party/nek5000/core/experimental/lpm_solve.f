@@ -563,7 +563,7 @@ c     ndum = lpm_npart_gp
 
       neltbc = lpm_neltb
       ndum = LPM_LRMAX*neltbc
-      call icopy(lpm_er_mapc,lpm_er_map,ndum)
+      call int_copy(lpm_er_mapc,lpm_er_map,ndum)
       do ie=1,neltbc
          lpm_er_mapc(5,ie) = lpm_er_mapc(2,ie)
          lpm_er_mapc(6,ie) = lpm_er_mapc(2,ie)
@@ -736,7 +736,7 @@ c-----------------------------------------------------------------------
                call copy(lpm_ydotc (1,ic),lpm_ydotc(1,i) ,LPM_LRS)
                call copy(lpm_rprop (1,ic),lpm_rprop(1,i) ,LPM_LRP)
                call copy(lpm_rprop2(1,ic),lpm_rprop2(1,i),LPM_LRP2)
-               call icopy(lpm_iprop(1,ic),lpm_iprop(1,i) ,LPM_LIP)
+               call int_copy(lpm_iprop(1,ic),lpm_iprop(1,i) ,LPM_LIP)
             endif
          endif
       enddo

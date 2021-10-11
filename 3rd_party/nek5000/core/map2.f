@@ -209,7 +209,7 @@ c fluid elements
             call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
             if (ifread_con) then
               eid8(j) = wk4(ii+1)
-              call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+              call int_copy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
             endif
 
             do iv=1,nlv
@@ -263,7 +263,7 @@ c solid elements
                call i8copy(vtx8((j-1)*nlv+1),wk(ii+2),nlv)
                if (ifread_con) then
                  eid8(j) = wk4(ii+1)
-                 call icopy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
+                 call int_copy48(vtx8((j-1)*nlv+1),wk4(ii+2),nlv)
                endif
 
                do iv=1,nlv
@@ -781,8 +781,8 @@ c-----------------------------------------------------------------------
                m = eg1 - eg0
                do eg=eg1,eg0+1,-1 ! reshuffle array
                   jj = (m-1)*(mdw-1) + 1
-                  call icopy(itmp20,wk(jj,1),mdw-1)
-                  call icopy(wk(1,m),itmp20 ,mdw-1)
+                  call int_copy(itmp20,wk(jj,1),mdw-1)
+                  call int_copy(wk(1,m),itmp20 ,mdw-1)
                   m = m - 1
                enddo
             else
@@ -860,7 +860,7 @@ c     NOW: crystal route vertex by processor id
          iflag=1
       else
          do e=1,nelt
-            call icopy48(vertex(1,e),wk(2,e),nlv)
+            call int_copy48(vertex(1,e),wk(2,e),nlv)
          enddo
       endif
 

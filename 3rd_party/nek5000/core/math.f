@@ -1,5 +1,5 @@
 c-----------------------------------------------------------------------
-      subroutine icopy48(a,b,n)
+      subroutine int_copy48(a,b,n)
       integer*8 a(1)
       integer*4 b(1)
       do 100 i = 1, n
@@ -7,7 +7,7 @@ c-----------------------------------------------------------------------
       return
       end
 c-----------------------------------------------------------------------
-      subroutine icopy84(a,b,n)
+      subroutine int_copy84(a,b,n)
       integer*4 a(1)
       integer*8 b(1)
       do 100 i = 1, n
@@ -285,7 +285,7 @@ C
       return
       end
 C
-      subroutine icopy(a,b,n)
+      subroutine int_copy(a,b,n)
       INTEGER A(1), B(1)
 C
       DO 100 I = 1, N

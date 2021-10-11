@@ -3383,7 +3383,7 @@ c     enddo
          cpfld(nfld,k)=cpfld(nfield,k)
          call copy (cpgrp(-5,nfld,k),cpgrp(-5,nfield,k),16)
       enddo
-      call icopy(matype(-5,nfld),matype(-5,nfield),16)
+      call int_copy(matype(-5,nfld),matype(-5,nfield),16)
 
       param(7) = param(1)  ! rhoCP   = rho
       param(8) = param(2)  ! conduct = dyn. visc

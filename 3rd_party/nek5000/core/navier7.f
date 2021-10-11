@@ -379,7 +379,7 @@ c
 c
 c     Fill permuted array
 c
-      call icopy(nzero,ib,n)
+      call int_copy(nzero,ib,n)
       do i=1,n
          n1 = ia(i)
          n2 = ia(i+1)-1
@@ -520,7 +520,7 @@ c=======================================================================
       integer a(1),b(1)
       integer icperm(1)
 c
-      call icopy(b,a,n)
+      call int_copy(b,a,n)
       do i=1,n
          a(i) = b(icperm(i))
       enddo
