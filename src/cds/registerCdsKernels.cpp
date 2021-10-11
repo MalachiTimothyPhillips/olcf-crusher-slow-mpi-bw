@@ -2,8 +2,8 @@
 #include <compileKernels.hpp>
 
 void registerCdsKernels(occa::properties kernelInfoBC) {
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
   kernelInfo["defines"].asObject();
   kernelInfo["includes"].asArray();
@@ -42,7 +42,7 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
   std::string fileName, kernelName;
   const std::string suffix = "Hex3D";
-  const std::string oklpath = install_dir + "/okl/";
+  const std::string oklpath = installDir + "/okl/";
   const std::string section = "cds-";
   occa::properties meshProps = kernelInfo;
   meshProps += meshKernelProperties(N);
@@ -54,22 +54,22 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
       fileName = oklpath + "cds/advection" + suffix + ".okl";
 
       kernelName = "strongAdvectionVolume" + suffix;
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
 
       kernelName = "strongAdvectionCubatureVolume" + suffix;
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
     }
 
     fileName = oklpath + "cds/advectMeshVelocityHex3D.okl";
     kernelName = "advectMeshVelocityHex3D";
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, meshProps);
 
     fileName = oklpath + "core/mask.okl";
     kernelName = "maskCopy";
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, meshProps);
 
     {
@@ -86,31 +86,31 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
       fileName = oklpath + "cds/sumMakef.okl";
       kernelName = "sumMakef";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
     }
 
     fileName = oklpath + "cds/helmholtzBC" + suffix + ".okl";
     kernelName = "helmholtzBC" + suffix;
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, kernelInfoBC);
     kernelName = "dirichletBC";
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, kernelInfoBC);
 
     fileName = oklpath + "core/setEllipticCoeff.okl";
     kernelName = "setEllipticCoeff";
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, kernelInfo);
 
     fileName = oklpath + "cds/regularization/filterRT" + suffix + ".okl";
     kernelName = "filterRT" + suffix;
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, meshProps);
 
     fileName = oklpath + "core/nStagesSum.okl";
     kernelName = "nStagesSum3";
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         section + kernelName, fileName, kernelName, platform->kernelInfo);
 
     {
@@ -130,25 +130,25 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
         fileName = oklpath + "cds/subCycle" + suffix + ".c";
       }
       kernelName = "subCycleStrongCubatureVolume" + suffix;
-      platform->kernels.add_kernel(section + kernelName,
+      platform->kernels.add(section + kernelName,
           fileName,
           kernelName,
           subCycleStrongCubatureProps);
       fileName = oklpath + "cds/subCycle" + suffix + ".okl";
       kernelName = "subCycleStrongVolume" + suffix;
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
 
       fileName = oklpath + "cds/subCycleRKUpdate.okl";
       kernelName = "subCycleERKUpdate";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
       kernelName = "subCycleRK";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
 
       kernelName = "subCycleInitU0";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           section + kernelName, fileName, kernelName, prop);
     }
   }

@@ -7,8 +7,8 @@ occa::properties compileUDFKernels()
   if (getenv("NEKRS_CACHE_LOCAL"))
     buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
 
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   occa::properties kernelInfo = platform->kernelInfo + meshKernelProperties(N);
@@ -39,7 +39,7 @@ occa::properties compileUDFKernels()
         // side-effect: kernelInfoBC will include any relevant user-defined kernel props
         udf.loadKernels(kernelInfoBC);
       }
-      const std::string bcDataFile = install_dir + "/include/core/bcData.h";
+      const std::string bcDataFile = installDir + "/include/core/bcData.h";
       kernelInfoBC["includes"] += bcDataFile.c_str();
       std::string boundaryHeaderFileName;
       platform->options.getArgs("DATA FILE", boundaryHeaderFileName);

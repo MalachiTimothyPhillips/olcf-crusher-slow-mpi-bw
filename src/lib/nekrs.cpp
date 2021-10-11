@@ -73,10 +73,10 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   setOccaVars();
 
   if (rank == 0) {
-    std::string install_dir;
-    install_dir.assign(getenv("NEKRS_HOME"));
+    std::string installDir;
+    installDir.assign(getenv("NEKRS_HOME"));
     std::cout << std::endl;
-    std::cout << "using NEKRS_HOME: " << install_dir << std::endl;
+    std::cout << "using NEKRS_HOME: " << installDir << std::endl;
 
     std:: string cache_dir;
     cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
@@ -435,11 +435,11 @@ static void setOccaVars()
   if (!getenv("OCCA_CACHE_DIR"))
     occa::env::OCCA_CACHE_DIR = cache_dir + "/occa/";
 
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_HOME"));
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_HOME"));
 
   if (!getenv("OCCA_DIR"))
-    occa::env::OCCA_DIR = install_dir + "/";
+    occa::env::OCCA_DIR = installDir + "/";
 
   occa::env::OCCA_INSTALL_DIR = occa::env::OCCA_DIR;
 }

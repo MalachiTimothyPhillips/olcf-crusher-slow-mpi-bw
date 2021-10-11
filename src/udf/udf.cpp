@@ -151,9 +151,9 @@ void udfBuild(const char* udfFile, setupAide& options)
     if(buildRank == 0){
       double tStart = MPI_Wtime();
 
-      std::string install_dir;
-      install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-      std::string udf_dir = install_dir + "/udf";
+      std::string installDir;
+      installDir.assign(getenv("NEKRS_INSTALL_DIR"));
+      std::string udf_dir = installDir + "/udf";
 
       std::string cache_dir;
       cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
@@ -244,9 +244,9 @@ void udfLoad(void)
 
 occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
 {
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-  const std::string bcDataFile = install_dir + "/include/core/bcData.h";
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
+  const std::string bcDataFile = installDir + "/include/core/bcData.h";
   kernelInfo["includes"] += bcDataFile.c_str();
 
   // provide some common kernel args

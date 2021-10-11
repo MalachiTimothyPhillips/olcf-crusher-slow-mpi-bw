@@ -4,9 +4,9 @@
 namespace{
 
 void registerGMRESKernels(const std::string &section, int Nfields) {
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
-  const std::string oklpath = install_dir + "/okl/elliptic/";
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
+  const std::string oklpath = installDir + "/okl/elliptic/";
   std::string fileName;
   const bool serial = (platform->device.mode() == "Serial" ||
                        platform->device.mode() == "OpenMP");
@@ -19,17 +19,17 @@ void registerGMRESKernels(const std::string &section, int Nfields) {
 
   std::string kernelName = "gramSchmidtOrthogonalization";
   fileName = oklpath + "ellipticGramSchmidtOrthogonalization" + fileNameExtension;
-  platform->kernels.add_kernel(
+  platform->kernels.add(
       sectionIdentifier + kernelName, fileName, kernelName, gmresKernelInfo);
 
   kernelName = "updatePGMRESSolution";
   fileName = oklpath + "ellipticUpdatePGMRES" + fileNameExtension;
-  platform->kernels.add_kernel(
+  platform->kernels.add(
       sectionIdentifier + kernelName, fileName, kernelName, gmresKernelInfo);
 
   kernelName = "fusedResidualAndNorm";
   fileName = oklpath + "ellipticFusedResidualAndNorm" + fileNameExtension;
-  platform->kernels.add_kernel(
+  platform->kernels.add(
       sectionIdentifier + kernelName, fileName, kernelName, gmresKernelInfo);
 }
 
@@ -40,8 +40,8 @@ void registerEllipticKernels(std::string section) {
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   const std::string optionsPrefix = createOptionsPrefix(section);
 
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_INSTALL_DIR"));
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
   occa::properties kernelInfo = platform->kernelInfo;
   kernelInfo["defines"].asObject();
   kernelInfo["includes"].asArray();
@@ -82,7 +82,7 @@ void registerEllipticKernels(std::string section) {
 
   // solution projection kernels
   {
-    const std::string oklpath = install_dir + "/okl/elliptic/";
+    const std::string oklpath = installDir + "/okl/elliptic/";
     std::string fileName, kernelName;
 
     {
@@ -91,20 +91,20 @@ void registerEllipticKernels(std::string section) {
 
       fileName = oklpath + "ellipticResidualProjection.okl";
       kernelName = "multiScaledAddwOffset";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           sectionIdentifier + kernelName, fileName, kernelName, properties);
       kernelName = "accumulate";
-      platform->kernels.add_kernel(
+      platform->kernels.add(
           sectionIdentifier + kernelName, fileName, kernelName, properties);
     }
   }
 
   {
-    const std::string oklpath = install_dir + "/okl/core/";
+    const std::string oklpath = installDir + "/okl/core/";
     std::string fileName;
 
     fileName = oklpath + "mask.okl";
-    platform->kernels.add_kernel("mask", fileName, "mask", kernelInfo);
+    platform->kernels.add("mask", fileName, "mask", kernelInfo);
   }
 
   kernelInfo["defines/p_Nfields"] = Nfields;
@@ -121,7 +121,7 @@ void registerEllipticKernels(std::string section) {
 
   occa::properties AxKernelInfo = dfloatKernelInfo;
   {
-    const std::string oklpath = install_dir + "/okl/elliptic/";
+    const std::string oklpath = installDir + "/okl/elliptic/";
     std::string fileName;
     std::string kernelName;
 
@@ -129,7 +129,7 @@ void registerEllipticKernels(std::string section) {
     kernelName = "ellipticBlockBuildDiagonal" + suffix;
     dfloatKernelInfo["defines/dfloat"] = dfloatString;
     dfloatKernelInfo["defines/pfloat"] = pfloatString;
-    platform->kernels.add_kernel(
+    platform->kernels.add(
         sectionIdentifier + kernelName, fileName, kernelName, dfloatKernelInfo);
 
     // Ax
@@ -148,14 +148,14 @@ void registerEllipticKernels(std::string section) {
     {
       std::string _kernelName = kernelNamePrefix + kernelName;
       fileName = oklpath + _kernelName + fileNameExtension; 
-      platform->kernels.add_kernel(
+      platform->kernels.add(
         _kernelName, fileName, _kernelName, AxKernelInfo);
     }
 
     if (!serial) {
       std::string _kernelName = kernelNamePrefix + "Partial" + kernelName;
       fileName = oklpath + _kernelName + fileNameExtension; 
-      platform->kernels.add_kernel(
+      platform->kernels.add(
         _kernelName, fileName, _kernelName, AxKernelInfo);
     }
 
@@ -165,7 +165,7 @@ void registerEllipticKernels(std::string section) {
     } else {
       fileName = oklpath + "ellipticUpdatePCG.okl";
     }
-    platform->kernels.add_kernel(sectionIdentifier + "ellipticBlockUpdatePCG",
+    platform->kernels.add(sectionIdentifier + "ellipticBlockUpdatePCG",
         fileName,
         "ellipticBlockUpdatePCG",
         dfloatKernelInfo);
