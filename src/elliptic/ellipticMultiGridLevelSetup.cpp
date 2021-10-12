@@ -310,12 +310,12 @@ dfloat MGLevel::maxEigSmoothAx()
   // allocate memory for Hessenberg matrix
   double* H = (double*) calloc(k * k,sizeof(double));
 
-  // allocate memory for basis
-  dfloat* Vx = (dfloat*) calloc(M, sizeof(dfloat));
   occa::memory* o_V = new occa::memory[k + 1];
 
   size_t offset = 0;
   const size_t vectorSize = ((M * sizeof(dfloat))/ALIGN_SIZE + 1) * ALIGN_SIZE ;
+  // allocate memory for basis
+  dfloat* Vx = (dfloat*) calloc(vectorSize, sizeof(dfloat));
 
   for(int i = 0; i <= k; i++) {
     if(offset + vectorSize < platform->o_mempool.o_ptr.size()) {
