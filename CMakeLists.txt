@@ -297,9 +297,12 @@ set_target_properties(nekrs-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs
 target_link_libraries(nekrs-bin PRIVATE nekrs-lib)
 
 add_executable(axhelm-bin src/bench/axHelm/main.cpp)
-#target_include_directories(axhelm-bin PRIVATE src/core)
 set_target_properties(axhelm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-axhelm)
 target_link_libraries(axhelm-bin PRIVATE nekrs-lib)
+
+add_executable(subcycling-bin src/bench/subCycling/main.cpp)
+set_target_properties(subcycling-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-subcycling)
+target_link_libraries(subcycling-bin PRIVATE nekrs-lib)
 
 if(ENABLE_CUDA)
   set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
@@ -322,7 +325,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin subcycling-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
