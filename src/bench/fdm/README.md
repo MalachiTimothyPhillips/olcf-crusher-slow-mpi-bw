@@ -1,44 +1,38 @@
-This benchmark computes the Helmholtz matrix-vector product
+This benchmark applies the fast diagonalization method (FDM)
 ```
-AU = lambda0*[A]u + lambda1*[B]u
+Su = (S_x \cross S_y \cross S_z) \Lambda^{-1} (S_x^T \cross S_y^T \cross S_z^T)u
 ```
-or in BK mode
-```
-AU = [A]u
-```
-on deformed hexhedral spectral elements where A is the Laplace operator.
 
 # Usage
 
 ```
-Usage: ./nrs-axhelm --polynomial-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>
-                    [--block-dim <n>] [--bk-mode] [--fp32] [--iterations <n>]
+Usage: ./nekrs-fdm --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>
+                    [--fp32] [--iterations <n>]
 ```
+
+Note here that n refers to the polynomial order of the unextended domain.
+Hene, the true FDM problem dimensions are (n+3)^3.
 
 # Examples
 
-### Nvidia A100 
+### Nvidia V100
 ```
->mpirun -np 1 nekrs-axhelm --polynomial-order 7 --elements 4096 --bk-mode --backend CUDA
+>nekrs-fdm --p-order 7 --elements 4000 --backend CUDA --fp32 --iterations 100
 
-MPItasks=1 OMPthreads=2 NRepetitions=78036 Ndim=1 N=7 Nelements=4096 elapsed time=0.00010919 bkMode=1 wordSize=64 GDOF/s=12.8668 GB/s=1229.21 GFLOPS/s=2131.91
-```
+MPItasks=1 OMPthreads=12 NRepetitions=100 N=7 Nelements=4000 elapsed time=0.000159026 wordSize=32 GDOF/s=18.3366 GB/s=83.0051 GFLOPS/s=3043.52
 
-```
->mpirun -np 1 nekrs-axhelm --polynomial-order 7 --elements 4096 --bk-mode --fp32 --backend CUDA
+>nekrs-fdm --p-order 7 --elements 4000 --backend CUDA --iterations 100
 
-MPItasks=1 OMPthreads=2 NRepetitions=131933 Ndim=1 N=7 Nelements=4096 elapsed time=5.85106e-05 bkMode=1 wordSize=32 GDOF/s=24.0115 GB/s=1146.95 GFLOPS/s=3978.49
+MPItasks=1 OMPthreads=12 NRepetitions=100 N=7 Nelements=4000 elapsed time=0.000321472 wordSize=64 GDOF/s=9.07078 GB/s=41.0612 GFLOPS/s=1505.58
 ```
 
-### AMD EPYC 7742
+### Intel i7-7800X CPU @ 3.50GHz
 ```
->OCCA_CXXFLAGS='-O3 -march=native -mtune=native' mpirun -np 64 --bind-to core --map-by ppr:64:socket nekrs-axhelm --polynomial-order 7 --elements 4096 --bk-mode --backend CPU 
+>nekrs-fdm --p-order 7 --elements 4000 --backend CPU --fp32 --iterations 100
 
-MPItasks=64 OMPthreads=2 NRepetitions=22765 Ndim=1 N=7 Nelements=4096 elapsed time=0.000318914 bkMode=1 wordSize=64 GDOF/s=4.40536 GB/s=420.859 GFLOPS/s=729.928
-```
+MPItasks=1 OMPthreads=12 NRepetitions=100 N=7 Nelements=4000 elapsed time=0.0264158 wordSize=32 GDOF/s=0.110389 GB/s=0.499701 GFLOPS/s=18.3224
 
-```
->OCCA_CXXFLAGS='-O3 -march=native -mtune=native' mpirun -np 64 --bind-to core --map-by ppr:64:socket nekrs-axhelm --polynomial-order 7 --elements 4096 --bk-mode --fp32 --backend CPU 
+>nekrs-fdm --p-order 7 --elements 4000 --backend CPU --iterations 100
 
-MPItasks=64 OMPthreads=2 NRepetitions=54648 Ndim=1 N=7 Nelements=4096 elapsed time=0.000121921 bkMode=1 wordSize=32 GDOF/s=11.5232 GB/s=550.428 GFLOPS/s=1909.3
+MPItasks=1 OMPthreads=12 NRepetitions=100 N=7 Nelements=4000 elapsed time=0.0265916 wordSize=64 GDOF/s=0.109659 GB/s=0.496398 GFLOPS/s=18.2013
 ```
