@@ -103,6 +103,9 @@ extern "C" void FUNC(postFDM) (const dlong& Nelements,
 {
   pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e];
   pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e];
+#ifdef __NEKRS__OMP__
+  #pragma omp parallel for private(work1, work2)
+#endif
   for (dlong elem = 0; elem < Nelements; ++elem) {
     #pragma unroll
     for(int k = 0; k < p_Nq_e; ++k){
@@ -270,6 +273,9 @@ extern "C" void FUNC(fusedFDM) (
   pfloat tmp[p_Nq_e][p_Nq_e][p_Nq_e];
   pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e];
 
+#ifdef __NEKRS__OMP__
+  #pragma omp parallel for private(S_x_e, S_y_e, S_z_e, S_x_eT, S_y_eT, S_z_eT, tmp, work2)
+#endif
   for (dlong my_elem = 0; my_elem < Nelements; ++my_elem) {
     const dlong element = my_elem;
     const dlong elem = element;
