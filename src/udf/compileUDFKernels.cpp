@@ -3,9 +3,7 @@
 
 occa::properties compileUDFKernels()
 {
-  int buildNodeLocal = 0;
-  if (getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
 
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));

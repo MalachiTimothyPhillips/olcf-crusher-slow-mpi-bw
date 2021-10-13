@@ -10,9 +10,7 @@ namespace {
 
 void compileDummyKernel()
 {
-  int buildNodeLocal = 0;
-  if (getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
   auto rank = buildNodeLocal ? platform->comm.localRank : platform->comm.mpiRank;
   const std::string dummyKernelName = "myDummyKernelName";
   const std::string dummyKernelStr = std::string(
@@ -80,15 +78,13 @@ void compileKernels() {
     printf("loading kernels ... ");
   fflush(stdout);
 
-  {
-    int buildNodeLocal = 0;
-    if (getenv("NEKRS_CACHE_LOCAL"))
-      buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
-    const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
-    auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
-    oogs::compile(
-        platform->device, platform->device.mode(), communicator, buildOnly);
-  }
+    {
+      const bool buildNodeLocal = useNodeLocalCache();
+      const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
+      auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
+      oogs::compile(
+          platform->device, platform->device.mode(), communicator, buildOnly);
+    }
 
   platform->kernels.compile();
 
