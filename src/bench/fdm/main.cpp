@@ -200,7 +200,7 @@ int main(int argc, char** argv)
   const dlong Ne = (N+2);
   const dfloat GDOFPerSecond = (size * Nelements * (Ne * Ne * Ne) / elapsed) / 1.e9;
 
-  size_t bytesPerElem = (3 * Np_e + 3 * Nq_e * Nq_e);
+  size_t bytesPerElem = (3 * Np_e + 3 * Nq_e * Nq_e) * wordSize;
   const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
 
   double flopsPerElem = 12 * Nq_e * Np_e + Np_e;
