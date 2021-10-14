@@ -125,10 +125,11 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
       fileName = oklpath + "cds/subCycle" + suffix + ".okl";
       occa::properties subCycleStrongCubatureProps = prop;
-      if (platform->device.mode() == "Serial" ||
-          platform->device.mode() == "OpenMP") {
+      const bool serial = useSerial();
+
+      if(useSerial)
         fileName = oklpath + "cds/subCycle" + suffix + ".c";
-      }
+
       kernelName = "subCycleStrongCubatureVolume" + suffix;
       platform->kernels.add(section + kernelName,
           fileName,

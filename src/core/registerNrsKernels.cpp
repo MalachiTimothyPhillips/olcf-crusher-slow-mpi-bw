@@ -167,8 +167,7 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     prop["defines/p_cubNp"] = cubNp;
     fileName = oklpath + "nrs/Urst" + suffix + ".okl";
 
-    const bool serial = (platform->device.mode() == "Serial" ||
-      platform->device.mode() == "OpenMP");
+    const bool serial = useSerial();
     if(serial) fileName = oklpath + "nrs/Urst" + suffix + ".c";
     kernelName = "UrstCubature" + suffix;
     platform->kernels.add(
@@ -191,10 +190,10 @@ void registerNrsKernels(occa::properties kernelInfoBC)
 
       fileName = oklpath + "nrs/subCycle" + suffix + ".okl";
       occa::properties subCycleStrongCubatureProps = prop;
-      if (platform->device.mode() == "Serial" ||
-          platform->device.mode() == "OpenMP") {
+
+      if(serial)
         fileName = oklpath + "nrs/subCycle" + suffix + ".c";
-      }
+
       kernelName = "subCycleStrongCubatureVolume" + suffix;
       platform->kernels.add(section + kernelName,
           fileName,

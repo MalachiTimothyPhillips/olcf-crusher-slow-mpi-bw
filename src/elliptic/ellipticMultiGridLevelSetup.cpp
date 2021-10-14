@@ -353,7 +353,7 @@ dfloat MGLevel::maxEigSmoothAx()
     for (dlong i = 0; i < elliptic->Nmasked; i++) Vx[elliptic->maskIds[i]] = 0.;
   }
 
-  o_Vx.copyFrom(Vx);
+  o_Vx.copyFrom(Vx, M*sizeof(dfloat));
   dfloat norm_vo = platform->linAlg->weightedInnerProdMany(
     Nlocal,
     elliptic->Nfields,
@@ -379,7 +379,7 @@ dfloat MGLevel::maxEigSmoothAx()
     // v[j+1] = invD*(A*v[j])
     //this->Ax(o_V[j],o_AVx);
     ellipticOperator(elliptic,o_V[j],o_AVx,dfloatString);
-    elliptic->copyDfloatToPfloatKernel(M, o_AVxPfloat, o_AVx);
+    elliptic->copyDfloatToPfloatKernel(M, o_AVx, o_AVxPfloat);
     this->smoother(o_AVxPfloat, o_VxPfloat, true);
     elliptic->copyPfloatToDPfloatKernel(M, o_VxPfloat, o_V[j + 1]);
 

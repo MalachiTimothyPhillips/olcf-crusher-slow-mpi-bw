@@ -9,8 +9,7 @@ void registerLinAlgKernels()
   oklDir.assign(getenv("NEKRS_INSTALL_DIR"));
   oklDir += "/okl/linAlg/";
   std::string fileName;
-  const bool serial = (platform->device.mode() == "Serial" ||
-                       platform->device.mode() == "OpenMP");
+  const bool serial = useSerial();
 
   platform->kernels.add(
       "fill", oklDir + "linAlgFill.okl", "fill", kernelInfo);
