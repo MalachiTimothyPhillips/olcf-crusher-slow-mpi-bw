@@ -264,6 +264,8 @@ int main(int argc, char** argv)
   if(cubNq > Nq){
     otherBytes += Nq * cubNq; // interpolator
   }
+  otherBytes   *= wordSize;
+  bytesPerElem *= wordSize;
   const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
 
   double flopCount = 0.0; // per elem basis
