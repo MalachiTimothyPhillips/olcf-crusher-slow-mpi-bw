@@ -28,6 +28,7 @@ int Np;
 int cubNp;
 dlong fieldOffset;
 dlong cubatureOffset;
+bool dealias;
 
 double run(int Ntests)
 {
@@ -40,12 +41,10 @@ double run(int Ntests)
   const dfloat c2 = 0.3;
 
   for(int test = 0; test < Ntests; ++test) {
-    if(Np == cubNp) {
-      // non-dealiased
+    if(!dealias) {
       subcyclingKernel(Nelements, o_elementList, o_cubD, fieldOffset,
         0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
     } else {
-      // de-aliased case
       subcyclingKernel(Nelements, o_elementList, o_cubD, o_cubInterpT, fieldOffset,
         cubatureOffset, 0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
     }
@@ -100,6 +99,7 @@ int main(int argc, char** argv)
   int okl = 1;
   int Ntests = -1;
   int nEXT = 3;
+  dealias = true;
   static constexpr size_t wordSize = 8;
 
   while(1) {
@@ -108,6 +108,7 @@ int main(int argc, char** argv)
       {"p-order", required_argument, 0, 'p'},
       {"ext-order", required_argument, 0, 'x'},
       {"c-order", required_argument, 0, 'c'},
+      {"no-dealiasing", no_argument, 0, 'd'},
       {"elements", required_argument, 0, 'e'},
       {"backend", required_argument, 0, 'b'},
       {"arch", required_argument, 0, 'a'},
@@ -128,6 +129,9 @@ int main(int argc, char** argv)
       break;
     case 'c':
       cubN = atoi(optarg); 
+      break;
+    case 'd':
+      dealias = false;
       break;
     case 'x':
       nEXT = atoi(optarg); 
@@ -160,12 +164,13 @@ int main(int argc, char** argv)
   if(err || cmdCheck != 3) {
     if(rank == 0)
       printf("Usage: ./nekrs-subcycling  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
-             "                    [--ext-order <n>] [--c-order <n>] [--iterations <n>]\n"); 
+             "                    [--no-dealiasing] [--ext-order <n>] [--c-order <n>] [--iterations <n>]\n"); 
     exit(1); 
   }
 
   if(cubN < 0) {
-    cubN = round((3./2) * (N+1) - 1) - 1;
+    if(dealias) cubN = round((3./2) * (N+1) - 1) - 1;
+    else cubN = N;
   }
   if(cubN < N){
     if(rank == 0)
@@ -197,7 +202,7 @@ int main(int argc, char** argv)
   props["defines/p_MovingMesh"] = 0;
 
   std::string kernelName;
-  if(cubN != N){
+  if(dealias){
     kernelName = "subCycleStrongCubatureVolumeHex3D";
   } else {
     kernelName = "subCycleStrongVolumeHex3D";
@@ -208,7 +213,7 @@ int main(int argc, char** argv)
     installDir + "/okl/nrs/subCycleHex3D" + ext;
   
   // currently lacking a native implementation of the non-dealiased kernel
-  if(cubN == N) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
+  if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
   subcyclingKernel = platform->device.buildKernel(fileName, kernelName, props);
 
