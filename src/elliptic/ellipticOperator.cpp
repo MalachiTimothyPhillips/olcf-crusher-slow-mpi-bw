@@ -49,11 +49,11 @@ void ellipticAx(elliptic_t* elliptic,
   const int integrationType = (elliptic->elementType == HEXAHEDRA &&
                                options.compareArgs("ELLIPTIC INTEGRATION", "CUBATURE")) ? 1:0;
   const std::string precisionStr(precision);
-  const std::string pFloatStr(pfloatString);
+  const std::string dFloatStr(dfloatString);
 
   bool valid = true;
   valid &= continuous;
-  if(!strstr(precision, dfloatString)) {
+  if(precisionStr != dFloatStr) {
     valid &= !elliptic->var_coeff;
     valid &= !elliptic->blockSolver;
     if(!serial) {
@@ -77,12 +77,12 @@ void ellipticAx(elliptic_t* elliptic,
   }
 
   occa::memory & o_geom_factors = elliptic->stressForm ? mesh->o_vgeo : mesh->o_ggeo;
-  occa::memory & o_ggeo = (precisionStr == pFloatStr) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
-  occa::memory & o_D = (precisionStr == pFloatStr) ? mesh->o_DPfloat : mesh->o_D;
-  occa::memory & o_DT = (precisionStr == pFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
-  occa::kernel & AxKernel = (precisionStr == pFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
+  occa::memory & o_ggeo = (precisionStr != dFloatStr) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
+  occa::memory & o_D = (precisionStr != dFloatStr) ? mesh->o_DPfloat : mesh->o_D;
+  occa::memory & o_DT = (precisionStr != dFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
+  occa::kernel & AxKernel = (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
   occa::kernel &partialAxKernel =
-      (precisionStr == pFloatStr) ? elliptic->partialAxPfloatKernel : elliptic->partialAxKernel;
+      (precisionStr != dFloatStr) ? elliptic->partialAxPfloatKernel : elliptic->partialAxKernel;
 
   if(serial) {
     if(elliptic->var_coeff) {

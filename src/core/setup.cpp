@@ -629,6 +629,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   if(nrs->Nscalar) {
     cds_t* cds = nrs->cds;
+    bool var_coeff = false;
+
+    if(udf.properties)
+      var_coeff = true;
 
     for (int is = 0; is < cds->NSfields; is++) {
       std::stringstream ss;
@@ -665,6 +669,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       cds->solver[is]->BCType = (int*) calloc(nbrBIDs + 1,sizeof(int));
       memcpy(cds->solver[is]->BCType,sBCType,(nbrBIDs + 1) * sizeof(int));
       free(sBCType);
+
       cds->solver[is]->var_coeff = cds->var_coeff;
       for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 1;
       cds->solver[is]->lambda = cds->ellipticCoeff;
@@ -897,7 +902,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pSolver->BCType = (int*) calloc(nbrBIDs + 1,sizeof(int));
     memcpy(nrs->pSolver->BCType,pBCType,(nbrBIDs + 1) * sizeof(int));
 
-    nrs->pSolver->var_coeff = 1;
+    bool var_coeff = false;
+
+    if(udf.properties)
+      var_coeff = true;
+
+    nrs->pSolver->var_coeff = var_coeff;
 
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
