@@ -1,15 +1,15 @@
 @kernel void ellipticStressPartialAxHex3D(const dlong Nelements,
-                                          const dlong offset,
-                                          const dlong loffset,
-                                          @restrict const dlong* elementList,
-                                          @restrict const dfloat* vgeo,
-                                          @restrict const dfloat* D,
-                                          @restrict const dfloat*  S,
-                                          @restrict const dfloat* lambda,
-                                          @restrict const dfloat* q,
-                                          @restrict dfloat* Aq)
+                                   const dlong offset,
+                                   const dlong loffset,
+                                   @restrict const dlong* elementList,
+                                   @restrict const dfloat* vgeo,
+                                   @restrict const dfloat* D,
+                                   @restrict const dfloat*  S,
+                                   @restrict const dfloat* lambda,
+                                   @restrict const dfloat* q,
+                                   @restrict dfloat* Aq)
 {
-  for(dlong e = 0; e < Nelements; ++e; @outer(0)) {
+  for(dlong elem = 0; elem < Nelements; ++elem; @outer(0)) {
     @shared dfloat s_D[p_Nq][p_Nq];
 
     @shared dfloat s_U[p_Nq][p_Nq];
@@ -41,21 +41,24 @@
     @exclusive dfloat r_Au[p_Nq];
     @exclusive dfloat r_Av[p_Nq];
     @exclusive dfloat r_Aw[p_Nq];
-    @exclusive dlong element;
+
+    @exclusive dlong e;
 
     for(int k = 0; k < p_Nq; ++k) {
       @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-          element = elementList[e];
-          if(k == 0) s_D[j][i] = D[p_Nq * j + i];
-          const dlong id = element * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+          if(k == 0) {
+            e = elementList[elem];
+            s_D[j][i] = D[p_Nq * j + i];
+          }
+          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
           s_U[j][i] = q[id + 0 * offset];
           s_V[j][i] = q[id + 1 * offset];
           s_W[j][i] = q[id + 2 * offset];
           if(k == 0) {
             for(int l = 0; l < p_Nq; ++l) {
-              const dlong other_id = element * p_Np + l * p_Nq * p_Nq + j * p_Nq + i;
+              const dlong other_id = e * p_Np + l * p_Nq * p_Nq + j * p_Nq + i;
               s_Uloc[l] = q[other_id + 0 * offset];
               s_Vloc[l] = q[other_id + 1 * offset];
               s_Wloc[l] = q[other_id + 2 * offset];
@@ -65,7 +68,7 @@
       @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
-          const dlong gid = i + j * p_Nq + k * p_Nq * p_Nq + element * p_Np * p_Nvgeo;
+          const dlong gid = i + j * p_Nq + k * p_Nq * p_Nq + e * p_Np * p_Nvgeo;
           rx = vgeo[gid + p_RXID * p_Np];
           ry = vgeo[gid + p_RYID * p_Np];
           rz = vgeo[gid + p_RZID * p_Np];
@@ -101,6 +104,8 @@
             wt += Dkm * s_Wloc[m];
           }
 
+          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+
           const dfloat dudx = rx * ur + sx * us + tx * ut;
           const dfloat dudy = ry * ur + sy * us + ty * ut;
           const dfloat dudz = rz * ur + sz * us + tz * ut;
@@ -123,9 +128,8 @@
 
           s31 = JW * (dwdx + dudz);
           s32 = JW * (dwdy + dvdz);
-          s33 = JW * (dwdz + dwdz);
-          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
-
+          s33 = JW * (dwdz + dwdz)
+;
           r_Au[k] =  lambda[id + 1 * offset + 0 * loffset] * JW * s_U[j][i];
           r_Av[k] =  lambda[id + 1 * offset + 1 * loffset] * JW * s_V[j][i];
           r_Aw[k] =  lambda[id + 1 * offset + 2 * loffset] * JW * s_W[j][i];
@@ -165,6 +169,7 @@
         }
       }
     }
+
     for(int k = 0; k < p_Nq; ++k) {
       @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1)) {
@@ -179,7 +184,7 @@
 
             r_Aw[k] += Dkm * s_SWt[m];
           }
-          const dlong id = element * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+          const dlong id = e * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
           Aq[id + 0 * offset] = r_Au[k];
           Aq[id + 1 * offset] = r_Av[k];
           Aq[id + 2 * offset] = r_Aw[k];
