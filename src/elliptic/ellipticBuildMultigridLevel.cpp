@@ -45,8 +45,6 @@ std::string gen_suffix(const elliptic_t * elliptic, const char * floatString)
 elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf)
 {
   
-  const int serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
-
   elliptic_t* elliptic = new elliptic_t();
 
   memcpy(elliptic,baseElliptic,sizeof(elliptic_t));
@@ -254,16 +252,14 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
           kernelName = "ellipticPartialAx" + suffix;
       }
 
-      if(!serial) {
-        {
-          const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-          elliptic->partialAxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
-        }
-        if(!strstr(pfloatString,dfloatString)) {
-          const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-          elliptic->partialAxPfloatKernel =
-            platform->kernels.getKernel( kernelName + kernelSuffix);
-        }
+      {
+        const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
+        elliptic->partialAxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+      }
+      if(!strstr(pfloatString,dfloatString)) {
+        const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
+        elliptic->partialAxPfloatKernel =
+          platform->kernels.getKernel( kernelName + kernelSuffix);
       }
   }
 

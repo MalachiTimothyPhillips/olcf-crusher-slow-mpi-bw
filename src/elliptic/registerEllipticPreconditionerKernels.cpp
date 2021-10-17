@@ -210,7 +210,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
 
     fileName = oklpath + kernelName + fileNameExtension;
 
-    if (!serial) {
+    {
       {
         const std::string kernelSuffix = gen_suffix(dfloatString);
         platform->kernels.add(kernelName + kernelSuffix,
@@ -299,7 +299,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N) {
 
     fileName = oklpath + kernelName + fileNameExtension;
 
-    if (!serial) {
+    {
       {
         const std::string kernelSuffix = gen_suffix(dfloatString);
         platform->kernels.add(kernelName + kernelSuffix,
@@ -337,38 +337,23 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N) {
     coarsenProlongateKernelInfo["defines/p_NpCoarse"] = NpCoarse;
 
     const std::string orderSuffix = std::string("_") + std::to_string(Nf);
+    const std::string fileExtension = serial ? ".c" : ".okl";
 
-    if (serial) {
-      fileName = oklpath + "ellipticPreconCoarsen" + suffix + ".c";
-      kernelName = "ellipticPreconCoarsen" + suffix;
-      platform->kernels.add(kernelName + orderSuffix,
-          fileName,
-          kernelName,
-          coarsenProlongateKernelInfo,
-          orderSuffix);
-      fileName = oklpath + "ellipticPreconProlongate" + suffix + ".c";
-      kernelName = "ellipticPreconProlongate" + suffix;
-      platform->kernels.add(kernelName + orderSuffix,
-          fileName,
-          kernelName,
-          coarsenProlongateKernelInfo,
-          orderSuffix);
-    } else {
-      fileName = oklpath + "ellipticPreconCoarsen" + suffix + ".okl";
-      kernelName = "ellipticPreconCoarsen" + suffix;
-      platform->kernels.add(kernelName + orderSuffix,
-          fileName,
-          kernelName,
-          coarsenProlongateKernelInfo,
-          orderSuffix);
-      fileName = oklpath + "ellipticPreconProlongate" + suffix + ".okl";
-      kernelName = "ellipticPreconProlongate" + suffix;
-      platform->kernels.add(kernelName + orderSuffix,
-          fileName,
-          kernelName,
-          coarsenProlongateKernelInfo,
-          orderSuffix);
-    }
+    fileName = oklpath + "ellipticPreconCoarsen" + suffix + fileExtension;
+    kernelName = "ellipticPreconCoarsen" + suffix;
+    platform->kernels.add(kernelName + orderSuffix,
+        fileName,
+        kernelName,
+        coarsenProlongateKernelInfo,
+        orderSuffix);
+
+    fileName = oklpath + "ellipticPreconProlongate" + suffix + fileExtension;
+    kernelName = "ellipticPreconProlongate" + suffix;
+    platform->kernels.add(kernelName + orderSuffix,
+        fileName,
+        kernelName,
+        coarsenProlongateKernelInfo,
+        orderSuffix);
   }
   registerSchwarzKernels(section, N);
 }
