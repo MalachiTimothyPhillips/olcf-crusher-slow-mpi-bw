@@ -146,7 +146,7 @@ void registerEllipticKernels(std::string section) {
         prefix + _kernelName, fileName, _kernelName, AxKernelInfo);
     }
 
-    if (!serial) {
+    {
       const std::string _kernelName = kernelNamePrefix + "Partial" + kernelName;
       const std::string prefix = (section == "pressure") ? "pressure-" : "";
       fileName = oklpath + _kernelName + fileNameExtension; 
