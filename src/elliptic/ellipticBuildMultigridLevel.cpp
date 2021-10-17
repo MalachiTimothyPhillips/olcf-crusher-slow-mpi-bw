@@ -229,19 +229,6 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   ellipticBuildPreconditionerKernels(elliptic);
 
   {
-      kernelName = "ellipticAx" + suffix;
-      {
-        const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-        elliptic->AxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
-      }
-      if(!strstr(pfloatString,dfloatString)) {
-        kernelName = "ellipticAx" + suffix;
-        {
-          const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-          elliptic->AxPfloatKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
-        }
-      }
-
       // check for trilinear
       if(elliptic->elementType != HEXAHEDRA) {
         kernelName = "ellipticPartialAx" + suffix;
@@ -254,11 +241,11 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
       {
         const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-        elliptic->partialAxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+        elliptic->AxKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
       }
       if(!strstr(pfloatString,dfloatString)) {
         const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-        elliptic->partialAxPfloatKernel =
+        elliptic->AxPfloatKernel =
           platform->kernels.getKernel( kernelName + kernelSuffix);
       }
   }

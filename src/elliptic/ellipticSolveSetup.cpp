@@ -272,11 +272,8 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       if (elliptic->blockSolver && !elliptic->stressForm) 
         kernelName += "_N" + std::to_string(elliptic->Nfields);
 
-      elliptic->AxKernel = platform->kernels.getKernel(kernelNamePrefix + kernelName);
-
-      elliptic->partialAxKernel = 
+      elliptic->AxKernel = 
         platform->kernels.getKernel(kernelNamePrefix + "Partial" + kernelName);
-      elliptic->partialAxKernel2 = elliptic->partialAxKernel;
 
       elliptic->updatePCGKernel =
         platform->kernels.getKernel(sectionIdentifier + "ellipticBlockUpdatePCG");

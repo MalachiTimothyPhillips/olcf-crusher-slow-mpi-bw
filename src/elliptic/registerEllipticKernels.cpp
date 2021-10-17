@@ -138,21 +138,11 @@ void registerEllipticKernels(std::string section) {
     kernelName += suffix; 
     if (blockSolver && !stressForm) kernelName += "_N" + std::to_string(Nfields);
 
-    {
-      const std::string _kernelName = kernelNamePrefix + kernelName;
-      const std::string prefix = (section == "pressure") ? "pressure-" : "";
-      fileName = oklpath + _kernelName + fileNameExtension; 
-      platform->kernels.add(
-        prefix + _kernelName, fileName, _kernelName, AxKernelInfo);
-    }
-
-    {
-      const std::string _kernelName = kernelNamePrefix + "Partial" + kernelName;
-      const std::string prefix = (section == "pressure") ? "pressure-" : "";
-      fileName = oklpath + _kernelName + fileNameExtension; 
-      platform->kernels.add(
-        prefix + _kernelName, fileName, _kernelName, AxKernelInfo);
-    }
+    const std::string _kernelName = kernelNamePrefix + "Partial" + kernelName;
+    const std::string prefix = (section == "pressure") ? "pressure-" : "";
+    fileName = oklpath + _kernelName + fileNameExtension; 
+    platform->kernels.add(
+      prefix + _kernelName, fileName, _kernelName, AxKernelInfo);
   }
 
 

@@ -75,13 +75,12 @@ void ellipticAx(elliptic_t* elliptic,
   occa::memory & o_ggeo = (precisionStr != dFloatStr) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
   occa::memory & o_D = (precisionStr != dFloatStr) ? mesh->o_DPfloat : mesh->o_D;
   occa::memory & o_DT = (precisionStr != dFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
-  occa::kernel & AxKernel = (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
-  occa::kernel &partialAxKernel =
-      (precisionStr != dFloatStr) ? elliptic->partialAxPfloatKernel : elliptic->partialAxKernel;
+  occa::kernel &AxKernel =
+      (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
 
   if(elliptic->var_coeff) {
     if(elliptic->blockSolver) {
-      partialAxKernel(NelementsList,
+      AxKernel(NelementsList,
                       elliptic->Ntotal,
                       elliptic->loffset,
                       o_elementsList,
@@ -92,7 +91,7 @@ void ellipticAx(elliptic_t* elliptic,
                       o_q,
                       o_Aq);
     }else {
-      partialAxKernel(NelementsList,
+      AxKernel(NelementsList,
                       elliptic->Ntotal,
                       o_elementsList,
                       mesh->o_ggeo,
@@ -104,7 +103,7 @@ void ellipticAx(elliptic_t* elliptic,
     }
   }else{
     if(elliptic->blockSolver) {
-      partialAxKernel(NelementsList,
+      AxKernel(NelementsList,
                       elliptic->Ntotal,
                       elliptic->loffset,
                       o_elementsList,
@@ -115,7 +114,7 @@ void ellipticAx(elliptic_t* elliptic,
                       o_q,
                       o_Aq);
     }else {
-      partialAxKernel(NelementsList,
+      AxKernel(NelementsList,
                       o_elementsList,
                       o_ggeo,
                       o_D,
@@ -130,7 +129,8 @@ void ellipticAx(elliptic_t* elliptic,
 void ellipticOperator(elliptic_t* elliptic,
                       occa::memory &o_q,
                       occa::memory &o_Aq,
-                      const char* precision)
+                      const char* precision,
+                      bool masked)
 {
   mesh_t* mesh = elliptic->mesh;
   setupAide &options = elliptic->options;
@@ -144,6 +144,9 @@ void ellipticOperator(elliptic_t* elliptic,
   oogs::start(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
   ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_q, o_Aq, precision);
   oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
-  occa::kernel &maskKernel = (!strstr(precision, dfloatString)) ? mesh->maskPfloatKernel : mesh->maskKernel;
-  if (elliptic->Nmasked) maskKernel(elliptic->Nmasked, elliptic->o_maskIds, o_Aq);
+
+  if(masked){
+    occa::kernel &maskKernel = (!strstr(precision, dfloatString)) ? mesh->maskPfloatKernel : mesh->maskKernel;
+    if (elliptic->Nmasked) maskKernel(elliptic->Nmasked, elliptic->o_maskIds, o_Aq);
+  }
 }

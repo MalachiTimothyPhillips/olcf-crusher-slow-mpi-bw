@@ -135,13 +135,7 @@ struct elliptic_t
 
   occa::kernel AxKernel;
   occa::kernel AxPfloatKernel;
-  occa::kernel partialAxKernel;
-  occa::kernel partialAxKernel2;
-  occa::kernel partialAxPfloatKernel;
-  occa::kernel partialCubatureAxKernel;
 
-  occa::kernel rhsBCKernel;
-  occa::kernel addBCKernel;
   occa::kernel scaledAddPfloatKernel;
   occa::kernel dotMultiplyPfloatKernel;
   occa::kernel copyDfloatToPfloatKernel;
@@ -223,7 +217,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 void ellipticOperator(elliptic_t* elliptic,
                       occa::memory &o_q,
                       occa::memory &o_Aq,
-                      const char* precision);
+                      const char* precision,
+                      bool masked = true);
 
 void ellipticAx(elliptic_t* elliptic,
                 dlong NelementsList,
