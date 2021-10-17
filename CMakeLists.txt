@@ -208,10 +208,12 @@ set(SRC
     src/core/bcMap.cpp
     src/core/compileKernels.cpp
     src/core/setup.cpp
+    src/core/registerNrsKernels.cpp
     src/timeStepper/timeStepper.cpp
     src/lns/tombo.cpp
     src/lns/constantFlowRate.cpp
     src/cds/cds.cpp
+    src/cds/registerCdsKernels.cpp
     src/core/parReader.cpp
     src/core/configReader.cpp
     src/core/timer.cpp
@@ -223,11 +225,13 @@ set(SRC
     src/linAlg/matrixEig.cpp
     src/linAlg/matrixTranspose.cpp
     src/linAlg/matrixRightSolve.cpp
+    src/linAlg/registerLinAlgKernels.cpp
     src/plugins/avg.cpp
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
     src/udf/udf.cpp
+    src/udf/compileUDFKernels.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
@@ -297,9 +301,13 @@ set_target_properties(nekrs-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs
 target_link_libraries(nekrs-bin PRIVATE nekrs-lib)
 
 add_executable(axhelm-bin src/bench/axHelm/main.cpp)
+add_executable(fdm-bin src/bench/fdm/main.cpp)
 #target_include_directories(axhelm-bin PRIVATE src/core)
-set_target_properties(axhelm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-axhelm)
+set_target_properties(axhelm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-axhelm)
 target_link_libraries(axhelm-bin PRIVATE nekrs-lib)
+
+set_target_properties(fdm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-fdm)
+target_link_libraries(fdm-bin PRIVATE nekrs-lib)
 
 if(ENABLE_CUDA)
   set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
@@ -322,7 +330,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
