@@ -630,11 +630,11 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->cds->o_prop.copyFrom(nrs->cds->prop);
   }
 
-  evaluateProperties(nrs, startTime());
+  evaluateProperties(nrs, startTime);
   nrs->o_prop.copyTo(nrs->prop);
   if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
 
-  nek::ocopyToNek(startTime(), 0);
+  nek::ocopyToNek(startTime, 0);
 
   // setup elliptic solvers
 
@@ -926,6 +926,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
     nrs->pSolver->lambda = nrs->ellipticCoeff;
+
+    // lambda0 = 1/rho
+    // lambda1 = 0
+    platform->linAlg->fill(2*nrs->fieldOffset, 0.0, nrs->o_ellipticCoeff);
+    nrs->o_ellipticCoeff.copyFrom(nrs->o_rho, nrs->fieldOffset * sizeof(dfloat));
+    platform->linAlg->ady(mesh->Nlocal, 1.0, nrs->o_ellipticCoeff);
     nrs->pSolver->o_lambda = nrs->o_ellipticCoeff;
     nrs->pSolver->loffset = 0; // Poisson
 

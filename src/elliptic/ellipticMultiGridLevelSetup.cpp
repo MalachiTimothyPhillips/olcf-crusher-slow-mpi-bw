@@ -51,6 +51,11 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, dfloat lambda_, int Nc,
   degree = Nc;
   weighted = false;
 
+  elliptic->o_lambdaPfloat = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(pfloat));
+  elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np,
+    elliptic->o_lambda,
+    elliptic->o_lambdaPfloat);
+
   //use weighted inner products
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
     weighted = true;
@@ -102,11 +107,36 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
     o_invDegree = ellipticFine->ogs->o_invDegree;
   }
 
+  /* build coarsening and prologation operators to connect levels */
+  this->buildCoarsenerQuadHex(meshLevels, Nf, Nc);
+
+  elliptic->o_lambdaPfloat = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(pfloat));
+
+  const int Nfq = Nf+1;
+  const int Ncq = Nc+1;
+  dfloat* fToCInterp = (dfloat*) calloc(Nfq * Ncq, sizeof(dfloat));
+  InterpolationMatrix1D(Nf, Nfq, ellipticFine->mesh->r, Ncq, mesh->r, fToCInterp);
+  occa::memory o_interp = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
+
+  occa::memory o_lambdaCoarse = platform->o_mempool.slice0;
+  occa::memory o_lambdaFine = platform->o_mempool.slice1;
+  platform->linAlg->fill(mesh->Nelements * mesh->Np, 0.0, o_lambdaCoarse);
+  elliptic->copyPfloatToDPfloatKernel(ellipticFine->mesh->Nelements * ellipticFine->mesh->Np,
+    ellipticFine->o_lambdaPfloat,
+    o_lambdaFine);
+
+  elliptic->precon->coarsenKernel(mesh->Nelements, o_interp, o_lambdaFine, o_lambdaCoarse);
+
+  elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np,
+    o_lambdaCoarse,
+    elliptic->o_lambdaPfloat);
+  
+  free(fToCInterp);
+  o_interp.free();
+
   if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
     this->setupSmoother(ellipticBase);
 
-  /* build coarsening and prologation operators to connect levels */
-  this->buildCoarsenerQuadHex(meshLevels, Nf, Nc);
 
   o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
   o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));

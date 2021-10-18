@@ -164,7 +164,6 @@ void registerFineLevelKernels(const std::string &section, int N) {
   auto kernelInfo = platform->kernelInfo + meshKernelProperties(N);
   registerCommonMGPreconditionerKernels(N, kernelInfo);
 
-  const std::string suffix = "Hex3D";
   constexpr int Nfields{1};
 
   kernelInfo["defines/p_Nfields"] = Nfields;
@@ -180,32 +179,35 @@ void registerFineLevelKernels(const std::string &section, int N) {
   {
     occa::properties AxKernelInfo = kernelInfo;
     AxKernelInfo["defines/p_poisson"] = 1;
+    for(auto&& var_coeff : {true,false}){
+      const std::string suffix = var_coeff ? "VarHex3D" : "Hex3D";
 
-    if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
-      kernelName = "ellipticPartialAxTrilinear" + suffix;
-    else
-      kernelName = "ellipticPartialAx" + suffix;
+      if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+        kernelName = "ellipticPartialAxTrilinear" + suffix;
+      else
+        kernelName = "ellipticPartialAx" + suffix;
 
-    fileName = oklpath + kernelName + fileNameExtension;
+      fileName = oklpath + kernelName + fileNameExtension;
 
-    {
       {
-        const std::string kernelSuffix = gen_suffix(dfloatString);
-        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
-            fileName,
-            kernelName,
-            AxKernelInfo,
-            kernelSuffix);
-      }
-      if (!strstr(pfloatString, dfloatString)) {
-        AxKernelInfo["defines/dfloat"] = pfloatString;
-        const std::string kernelSuffix = gen_suffix(pfloatString);
-        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
-            fileName,
-            kernelName,
-            AxKernelInfo,
-            kernelSuffix);
-        AxKernelInfo["defines/dfloat"] = dfloatString;
+        {
+          const std::string kernelSuffix = gen_suffix(dfloatString);
+          platform->kernels.add("pressure-" + kernelName + kernelSuffix,
+              fileName,
+              kernelName,
+              AxKernelInfo,
+              kernelSuffix);
+        }
+        {
+          AxKernelInfo["defines/dfloat"] = pfloatString;
+          const std::string kernelSuffix = gen_suffix(pfloatString);
+          platform->kernels.add("pressure-" + kernelName + kernelSuffix,
+              fileName,
+              kernelName,
+              AxKernelInfo,
+              kernelSuffix);
+          AxKernelInfo["defines/dfloat"] = dfloatString;
+        }
       }
     }
   }

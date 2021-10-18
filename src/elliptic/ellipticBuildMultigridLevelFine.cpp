@@ -50,7 +50,7 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
   mesh_t* mesh = elliptic->mesh;
   ellipticBuildPreconditionerKernels(elliptic);
 
-  elliptic->var_coeff = 0;
+  elliptic->var_coeff = baseElliptic->var_coeff;
   elliptic->lambda = (dfloat*) calloc(elliptic->Nfields, sizeof(dfloat)); // enforce lambda = 0
 
 
@@ -73,9 +73,7 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
                                        elliptic->mesh->o_DTPfloat);
   }
 
-  std::string suffix;
-  if(elliptic->elementType == HEXAHEDRA)
-    suffix = "Hex3D";
+  std::string suffix = elliptic->var_coeff ? "VarHex3D" : "Hex3D";
 
   std::string kernelName;
 
@@ -89,7 +87,7 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
         const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
         elliptic->AxKernel = platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
       }
-      if(!strstr(pfloatString,dfloatString)) {
+      {
         const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
         elliptic->AxPfloatKernel =
           platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
