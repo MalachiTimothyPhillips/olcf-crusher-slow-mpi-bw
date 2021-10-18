@@ -108,7 +108,7 @@ int main(int argc, char** argv)
       {"p-order", required_argument, 0, 'p'},
       {"ext-order", required_argument, 0, 'x'},
       {"c-order", required_argument, 0, 'c'},
-      {"no-dealiasing", no_argument, 0, 'd'},
+      {"no-cubature", no_argument, 0, 'd'},
       {"elements", required_argument, 0, 'e'},
       {"backend", required_argument, 0, 'b'},
       {"arch", required_argument, 0, 'a'},
@@ -163,8 +163,8 @@ int main(int argc, char** argv)
 
   if(err || cmdCheck != 3) {
     if(rank == 0)
-      printf("Usage: ./nekrs-subcycling  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
-             "                    [--no-dealiasing] [--ext-order <n>] [--c-order <n>] [--iterations <n>]\n"); 
+      printf("Usage: ./nekrs-bench-advsub  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
+             "                    [--no-cubature] [--ext-order <n>] [--c-order <n>] [--iterations <n>]\n"); 
     exit(1); 
   }
 
