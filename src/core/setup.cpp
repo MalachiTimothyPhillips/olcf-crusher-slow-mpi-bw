@@ -622,6 +622,20 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   udf.setup(nrs);
   if(platform->comm.mpiRank == 0)  printf("done\n"); fflush(stdout);
 
+  nrs->o_U.copyFrom(nrs->U);
+  nrs->o_P.copyFrom(nrs->P);
+  nrs->o_prop.copyFrom(nrs->prop);
+  if(nrs->Nscalar) {
+    nrs->cds->o_S.copyFrom(nrs->cds->S);
+    nrs->cds->o_prop.copyFrom(nrs->cds->prop);
+  }
+
+  evaluateProperties(nrs, startTime());
+  nrs->o_prop.copyTo(nrs->prop);
+  if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
+
+  nek::ocopyToNek(startTime(), 0);
+
   // setup elliptic solvers
 
   const int nbrBIDs = bcMap::size(0);
@@ -913,15 +927,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
     nrs->pSolver->lambda = nrs->ellipticCoeff;
     nrs->pSolver->o_lambda = nrs->o_ellipticCoeff;
-    //nrs->pSolver->o_lambdaPfloat = platform->device.malloc(2*nrs->fieldOffset, sizeof(pfloat));
-#if 0
-    nrs->pSolver->o_lambda = platform->device.malloc(1, sizeof(dfloat));
-    nrs->pSolver->o_lambdaPfloat = platform->device.malloc(1, sizeof(pfloat));
-    const dfloat one = 1.0;
-    const pfloat pone = 1.0;
-    nrs->pSolver->o_lambda.copyFrom(&one, 1*sizeof(dfloat));
-    nrs->pSolver->o_lambdaPfloat.copyFrom(&pone, 1*sizeof(pfloat));
-#endif
     nrs->pSolver->loffset = 0; // Poisson
 
     {
