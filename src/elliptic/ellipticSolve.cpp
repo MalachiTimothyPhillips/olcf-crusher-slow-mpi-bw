@@ -31,8 +31,13 @@
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 {
-  mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
+  if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "JACOBI"))
+    ellipticUpdateJacobi(elliptic);
+  else if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "MULTIGRID"))
+    ellipticUpdateLambda(elliptic);
+
+  mesh_t* mesh = elliptic->mesh;
 
   int maxIter = 999;
   options.getArgs("MAXIMUM ITERATIONS", maxIter);
@@ -66,9 +71,6 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
       * sqrt(elliptic->resNormFactor); 
     if(platform->comm.mpiRank == 0) printf("%s x0 norm: %.15e\n", elliptic->name.c_str(), rhsNorm);
   }
-
-  if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "JACOBI"))
-    ellipticUpdateJacobi(elliptic);
 
   // compute initial residual r = rhs - Ax0
   ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_x, elliptic->o_Ap, dfloatString);

@@ -116,7 +116,7 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   const int Ncq = Nc+1;
   dfloat* fToCInterp = (dfloat*) calloc(Nfq * Ncq, sizeof(dfloat));
   InterpolationMatrix1D(Nf, Nfq, ellipticFine->mesh->r, Ncq, mesh->r, fToCInterp);
-  occa::memory o_interp = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
+  o_interp = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
 
   occa::memory o_lambdaCoarse = platform->o_mempool.slice0;
   occa::memory o_lambdaFine = platform->o_mempool.slice1;
@@ -132,7 +132,6 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
     elliptic->o_lambdaPfloat);
   
   free(fToCInterp);
-  o_interp.free();
 
   if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
     this->setupSmoother(ellipticBase);

@@ -241,6 +241,7 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
 
 void ellipticBuildJacobi(elliptic_t* elliptic, dfloat** invDiagA);
 void ellipticUpdateJacobi(elliptic_t* elliptic);
+void ellipticUpdateLambda(elliptic_t* elliptic);
 
 void ellipticBuildLocalPatches(elliptic_t* elliptic, dfloat lambda, dfloat rateTolerance,
                                dlong* Npataches, dlong** patchesIndex, dfloat** patchesInvA);
