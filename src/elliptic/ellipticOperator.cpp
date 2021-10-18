@@ -25,10 +25,7 @@
  */
 
 #include "elliptic.h"
-//#include "ogsInterface.h"
 #include <iostream>
-
-#include "omp.h"
 void ellipticAx(elliptic_t* elliptic,
                 dlong NelementsList,
                 occa::memory &o_elementsList,
@@ -71,59 +68,26 @@ void ellipticAx(elliptic_t* elliptic,
     ABORT(EXIT_FAILURE);
   }
 
-  occa::memory & o_geom_factors = elliptic->stressForm ? mesh->o_vgeo : mesh->o_ggeo;
-  occa::memory & o_ggeo = (precisionStr != dFloatStr) ? mesh->o_ggeoPfloat : mesh->o_ggeo;
+  occa::memory & o_geom_factors =
+    (precisionStr != dFloatStr) ? mesh->o_ggeoPfloat :
+      elliptic->stressForm ? mesh->o_vgeo : mesh->o_ggeo;
   occa::memory & o_D = (precisionStr != dFloatStr) ? mesh->o_DPfloat : mesh->o_D;
   occa::memory & o_DT = (precisionStr != dFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
+  occa::memory & o_lambda = (precisionStr != dFloatStr) ? elliptic->o_lambdaPfloat : elliptic->o_lambda;
   occa::kernel &AxKernel =
       (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
 
-  if(elliptic->var_coeff) {
-    if(elliptic->blockSolver) {
-      AxKernel(NelementsList,
-                      elliptic->Ntotal,
-                      elliptic->loffset,
-                      o_elementsList,
-                      o_geom_factors,
-                      mesh->o_D,
-                      mesh->o_DT,
-                      elliptic->o_lambda,
-                      o_q,
-                      o_Aq);
-    }else {
-      AxKernel(NelementsList,
-                      elliptic->Ntotal,
-                      o_elementsList,
-                      mesh->o_ggeo,
-                      mesh->o_D,
-                      mesh->o_DT,
-                      elliptic->o_lambda,
-                      o_q,
-                      o_Aq);
-    }
-  }else{
-    if(elliptic->blockSolver) {
-      AxKernel(NelementsList,
-                      elliptic->Ntotal,
-                      elliptic->loffset,
-                      o_elementsList,
-                      o_geom_factors,
-                      mesh->o_D,
-                      mesh->o_DT,
-                      elliptic->o_lambda,
-                      o_q,
-                      o_Aq);
-    }else {
-      AxKernel(NelementsList,
-                      o_elementsList,
-                      o_ggeo,
-                      o_D,
-                      o_DT,
-                      elliptic->lambda[0],
-                      o_q,
-                      o_Aq);
-    }
-  }
+  AxKernel(NelementsList,
+                  elliptic->Ntotal,
+                  elliptic->loffset,
+                  o_elementsList,
+                  o_geom_factors,
+                  o_D,
+                  o_DT,
+                  o_lambda,
+                  o_q,
+                  o_Aq);
+
 }
 
 void ellipticOperator(elliptic_t* elliptic,

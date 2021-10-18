@@ -26,11 +26,13 @@
 
 extern "C"
 void FUNC(ellipticPartialAxHex3D)(const dlong & Nelements,
+                     const dlong & offset,
+                     const dlong & loffset,
                      const dlong* __restrict__ elementList,
                      const dfloat* __restrict__ ggeo,
                      const dfloat* __restrict__ D,
                      const dfloat* __restrict__ S,
-                     const dfloat & lambda,
+                     const dfloat* __restrict__ lambda,
                      const dfloat* __restrict__ q,
                      dfloat* __restrict__ Aq )
 {
@@ -106,7 +108,7 @@ void FUNC(ellipticPartialAxHex3D)(const dlong & Nelements,
 
           dfloat r_Aq = 0;
 #ifndef p_poisson
-          r_Aq = ggeo[gbase + p_GWJID * p_Np] * lambda * s_q[k][j][i];
+          r_Aq = ggeo[gbase + p_GWJID * p_Np] * lambda[1*loffset] * s_q[k][j][i];
 #endif
           dfloat r_Aqr = 0, r_Aqs = 0, r_Aqt = 0;
 
@@ -118,7 +120,7 @@ void FUNC(ellipticPartialAxHex3D)(const dlong & Nelements,
             r_Aqt += s_S[k][m] * s_Gqt[m][j][i];
 
           const dlong id = element * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
-          Aq[id] = r_Aqr + r_Aqs + r_Aqt + r_Aq;
+          Aq[id] = lambda[0*loffset]*(r_Aqr + r_Aqs + r_Aqt) + r_Aq;
         }
   }
 }

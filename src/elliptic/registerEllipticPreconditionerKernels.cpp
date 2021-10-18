@@ -191,7 +191,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
     {
       {
         const std::string kernelSuffix = gen_suffix(dfloatString);
-        platform->kernels.add(kernelName + kernelSuffix,
+        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
             fileName,
             kernelName,
             AxKernelInfo,
@@ -200,7 +200,7 @@ void registerFineLevelKernels(const std::string &section, int N) {
       if (!strstr(pfloatString, dfloatString)) {
         AxKernelInfo["defines/dfloat"] = pfloatString;
         const std::string kernelSuffix = gen_suffix(pfloatString);
-        platform->kernels.add(kernelName + kernelSuffix,
+        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
             fileName,
             kernelName,
             AxKernelInfo,
@@ -256,7 +256,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N) {
     {
       {
         const std::string kernelSuffix = gen_suffix(dfloatString);
-        platform->kernels.add(kernelName + kernelSuffix,
+        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
             fileName,
             kernelName,
             AxKernelInfo,
@@ -265,7 +265,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N) {
       if (!strstr(pfloatString, dfloatString)) {
         AxKernelInfo["defines/dfloat"] = pfloatString;
         const std::string kernelSuffix = gen_suffix(pfloatString);
-        platform->kernels.add(kernelName + kernelSuffix,
+        platform->kernels.add("pressure-" + kernelName + kernelSuffix,
             fileName,
             kernelName,
             AxKernelInfo,

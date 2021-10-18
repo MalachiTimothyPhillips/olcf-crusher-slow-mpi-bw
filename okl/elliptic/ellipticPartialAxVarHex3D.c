@@ -1,6 +1,7 @@
 extern "C"
 void FUNC(ellipticPartialAxVarHex3D)(const dlong & Nelements,
                         const dlong & offset,
+                        const dlong & loffset,
                         const dlong* __restrict__ elementList,
                         const dfloat* __restrict__ ggeo,
                         const dfloat* __restrict__ D,

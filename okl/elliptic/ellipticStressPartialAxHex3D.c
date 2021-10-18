@@ -158,7 +158,6 @@ void FUNC(ellipticStressPartialAxHex3D)(const dlong &Nelements,
 
           const dlong gid = i + j * p_Nq + k * p_Nq * p_Nq + e * p_Np * p_Nvgeo;
           const dfloat JW = vgeo[gid + p_JWID * p_Np];
-          // store in register
           Aq[id + 0 * offset] =  r_Au + u_lam1 * JW * s_U[k][j][i];
           Aq[id + 1 * offset] =  r_Av + v_lam1 * JW * s_V[k][j][i];
           Aq[id + 2 * offset] =  r_Aw + w_lam1 * JW * s_W[k][j][i];

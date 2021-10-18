@@ -167,6 +167,7 @@ struct elliptic_t
 
   occa::kernel updateDiagonalKernel;
   occa::memory o_lambda;
+  occa::memory o_lambdaPfloat;
   dfloat* lambda;
   dlong loffset;
   int nLevels;

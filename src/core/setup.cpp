@@ -913,7 +913,16 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
     nrs->pSolver->lambda = nrs->ellipticCoeff;
     nrs->pSolver->o_lambda = nrs->o_ellipticCoeff;
-    nrs->pSolver->loffset = 0;
+    //nrs->pSolver->o_lambdaPfloat = platform->device.malloc(2*nrs->fieldOffset, sizeof(pfloat));
+#if 0
+    nrs->pSolver->o_lambda = platform->device.malloc(1, sizeof(dfloat));
+    nrs->pSolver->o_lambdaPfloat = platform->device.malloc(1, sizeof(pfloat));
+    const dfloat one = 1.0;
+    const pfloat pone = 1.0;
+    nrs->pSolver->o_lambda.copyFrom(&one, 1*sizeof(dfloat));
+    nrs->pSolver->o_lambdaPfloat.copyFrom(&pone, 1*sizeof(pfloat));
+#endif
+    nrs->pSolver->loffset = 0; // Poisson
 
     {
       const std::vector<int> levels = determineMGLevels("pressure");
