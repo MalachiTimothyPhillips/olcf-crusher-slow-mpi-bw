@@ -301,12 +301,12 @@ set_target_properties(nekrs-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs
 target_link_libraries(nekrs-bin PRIVATE nekrs-lib)
 
 add_executable(axhelm-bin src/bench/axHelm/main.cpp)
-set_target_properties(axhelm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-axhelm)
+set_target_properties(axhelm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-axhelm)
 target_link_libraries(axhelm-bin PRIVATE nekrs-lib)
 
-add_executable(subcycling-bin src/bench/subCycling/main.cpp)
-set_target_properties(subcycling-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-subcycling)
-target_link_libraries(subcycling-bin PRIVATE nekrs-lib)
+add_executable(advsub-bin src/bench/advsub/main.cpp)
+set_target_properties(advsub-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-advsub)
+target_link_libraries(advsub-bin PRIVATE nekrs-lib)
 
 add_executable(fdm-bin src/bench/fdm/main.cpp)
 set_target_properties(fdm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-fdm)
@@ -333,7 +333,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin subcycling-bin fdm-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
