@@ -181,28 +181,6 @@ void registerFineLevelKernels(const std::string &section, int N) {
     occa::properties AxKernelInfo = kernelInfo;
     AxKernelInfo["defines/p_poisson"] = 1;
 
-    kernelName = "ellipticAx" + suffix;
-    fileName = oklpath + kernelName + fileNameExtension;
-    {
-      const std::string kernelSuffix = gen_suffix(dfloatString);
-      platform->kernels.add(kernelName + kernelSuffix,
-          fileName,
-          kernelName,
-          AxKernelInfo,
-          kernelSuffix);
-    }
-
-    if (!strstr(pfloatString, dfloatString)) {
-      AxKernelInfo["defines/dfloat"] = pfloatString;
-      const std::string kernelSuffix = gen_suffix(pfloatString);
-      platform->kernels.add(kernelName + kernelSuffix,
-          fileName,
-          kernelName,
-          AxKernelInfo,
-          kernelSuffix);
-      AxKernelInfo["defines/dfloat"] = dfloatString;
-    }
-
     if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
       kernelName = "ellipticPartialAxTrilinear" + suffix;
     else
@@ -267,30 +245,6 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N) {
   {
     occa::properties AxKernelInfo = kernelInfo;
     AxKernelInfo["defines/p_poisson"] = 1;
-
-    kernelName = "ellipticAx" + suffix;
-    fileName = oklpath + kernelName + fileNameExtension;
-
-    {
-      const std::string kernelSuffix = gen_suffix(dfloatString);
-      platform->kernels.add(kernelName + kernelSuffix,
-          fileName,
-          kernelName,
-          AxKernelInfo,
-          kernelSuffix);
-    }
-    if (!strstr(pfloatString, dfloatString)) {
-      AxKernelInfo["defines/dfloat"] = pfloatString;
-      {
-        const std::string kernelSuffix = gen_suffix(pfloatString);
-        platform->kernels.add(kernelName + kernelSuffix,
-            fileName,
-            kernelName,
-            AxKernelInfo,
-            kernelSuffix);
-      }
-      AxKernelInfo["defines/dfloat"] = dfloatString;
-    }
 
     if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
       kernelName = "ellipticPartialAxTrilinear" + suffix;

@@ -904,7 +904,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     bool var_coeff = false;
 
-    if(udf.properties)
+    if(platform->options.compareArgs("LOWMACH", "TRUE"))
       var_coeff = true;
 
     nrs->pSolver->var_coeff = var_coeff;
