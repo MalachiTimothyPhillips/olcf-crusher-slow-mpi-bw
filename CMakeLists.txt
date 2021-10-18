@@ -208,10 +208,12 @@ set(SRC
     src/core/bcMap.cpp
     src/core/compileKernels.cpp
     src/core/setup.cpp
+    src/core/registerNrsKernels.cpp
     src/timeStepper/timeStepper.cpp
     src/lns/tombo.cpp
     src/lns/constantFlowRate.cpp
     src/cds/cds.cpp
+    src/cds/registerCdsKernels.cpp
     src/core/parReader.cpp
     src/core/configReader.cpp
     src/core/timer.cpp
@@ -223,11 +225,13 @@ set(SRC
     src/linAlg/matrixEig.cpp
     src/linAlg/matrixTranspose.cpp
     src/linAlg/matrixRightSolve.cpp
+    src/linAlg/registerLinAlgKernels.cpp
     src/plugins/avg.cpp
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
     src/udf/udf.cpp
+    src/udf/compileUDFKernels.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
@@ -304,6 +308,10 @@ add_executable(subcycling-bin src/bench/subCycling/main.cpp)
 set_target_properties(subcycling-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-subcycling)
 target_link_libraries(subcycling-bin PRIVATE nekrs-lib)
 
+add_executable(fdm-bin src/bench/fdm/main.cpp)
+set_target_properties(fdm-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-fdm)
+target_link_libraries(fdm-bin PRIVATE nekrs-lib)
+
 if(ENABLE_CUDA)
   set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
 elseif(ENABLE_HIP)
@@ -325,7 +333,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin subcycling-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin subcycling-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

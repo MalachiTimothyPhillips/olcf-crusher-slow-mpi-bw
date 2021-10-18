@@ -20,22 +20,22 @@ comm_t::comm_t(MPI_Comm _commg, MPI_Comm _comm)
 
 }
 
-deviceVector_t::deviceVector_t(const dlong _vectorSize, const dlong _nVectors, const dlong _wordSize, const std::string _vectorName)
-: vectorSize(_vectorSize),
+deviceVector_t::deviceVector_t(const size_t _offset, const size_t _nVectors, const size_t _wordSize, const std::string _vectorName)
+: 
   nVectors(_nVectors),
   wordSize(_wordSize),
-  vectorName(_vectorName)
+  vectorName(_vectorName),
+  offset(_offset)
 {
-  if(vectorSize <= 0 || nVectors <= 0 || wordSize <= 0) {
+  if(offset <= 0 || nVectors <= 0 || wordSize <= 0) {
     if(platform->comm.mpiRank == 0)
       printf("ERROR: deviceVector_t invalid input!\n");
     ABORT(EXIT_FAILURE);
   }
 
-  const size_t offset = vectorSize * (size_t)wordSize;
-  o_vector = platform->device.malloc(nVectors * offset);
+  o_vector = platform->device.malloc(nVectors * offset * wordSize);
   for(int s = 0; s < nVectors; ++s){
-    slices.push_back(o_vector + s * offset);
+    slices.push_back(o_vector + s * offset * wordSize);
   }
 }
 
@@ -145,17 +145,17 @@ platform_t::create_mempool(const dlong offset, const dlong fields)
 }
 
 void
-kernelRequestManager_t::add_kernel(const std::string& m_requestName,
+kernelRequestManager_t::add(const std::string& m_requestName,
                 const std::string& m_fileName,
                 const std::string& m_kernelName,
                 const occa::properties& m_props,
                 std::string m_suffix,
                 bool checkUnique)
 {
-  this->add_kernel(kernelRequest_t{m_requestName, m_fileName, m_kernelName, m_props, m_suffix}, checkUnique);
+  this->add(kernelRequest_t{m_requestName, m_fileName, m_kernelName, m_props, m_suffix}, checkUnique);
 }
 void
-kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
+kernelRequestManager_t::add(kernelRequest_t request, bool checkUnique)
 {
   auto iterAndBoolPair = kernels.insert(request);
   if(checkUnique)
@@ -165,7 +165,7 @@ kernelRequestManager_t::add_kernel(kernelRequest_t request, bool checkUnique)
     if(!unique){
       if(platformRef.comm.mpiRank == 0)
       {
-        std::cout << "Error in kernelRequestManager_t::add_kernel\n";
+        std::cout << "Error in kernelRequestManager_t::add\n";
         std::cout << "Request details:\n";
         std::cout << request.to_string();
       }
@@ -219,9 +219,7 @@ kernelRequestManager_t::compile()
 
   constexpr int maxCompilingRanks {100};
 
-  int buildNodeLocal = 0;
-  if(getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
 
   const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
   const int ranksCompiling =

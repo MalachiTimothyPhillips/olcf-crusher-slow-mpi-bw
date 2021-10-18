@@ -20,14 +20,14 @@ public:
   operator occa::memory&(){ return o_vector; }
 // allow implicit conversion between this and kernelArg (for passing to kernels)
   operator occa::kernelArg(){ return o_vector; }
-  deviceVector_t(const dlong _vectorSize, const dlong _nVectors, const dlong _wordSize, std::string _vectorName = "");
+  deviceVector_t(const size_t _offset, const size_t _nVectors, const size_t _wordSize, std::string _vectorName = "");
   occa::memory& at(const int);
+  const size_t offset;
 private:
   occa::memory o_vector;
   std::vector<occa::memory> slices;
-  const dlong vectorSize;
-  const dlong nVectors;
-  const dlong wordSize;
+  const size_t nVectors;
+  const size_t wordSize;
   const std::string vectorName;
 };
 
@@ -118,7 +118,7 @@ public:
   : kernelsProcessed(false),
     platformRef(m_platform)
   {}
-  void add_kernel(const std::string& m_requestName,
+  void add(const std::string& m_requestName,
                   const std::string& m_fileName,
                   const std::string& m_kernelName,
                   const occa::properties& m_props,
@@ -140,7 +140,7 @@ private:
   std::map<std::string, occa::kernel> requestToKernelMap;
   std::map<std::string, std::set<kernelRequest_t>> fileNameToRequestMap;
 
-  void add_kernel(kernelRequest_t request, bool assertUnique = true);
+  void add(kernelRequest_t request, bool assertUnique = true);
 
 };
 

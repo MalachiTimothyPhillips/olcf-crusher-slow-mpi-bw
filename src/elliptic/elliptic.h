@@ -47,13 +47,14 @@ class elliptic_t;
 
 struct GmresData{
   GmresData(elliptic_t*);
-  int restart;
+  int nRestartVectors;
   int flexible;
   deviceVector_t o_V;
   deviceVector_t o_Z;
   occa::memory o_y;
   occa::memory o_scratch;
   occa::memory h_scratch;
+  occa::memory h_y;
   dfloat* y;
   dfloat* H;
   dfloat* sn;
