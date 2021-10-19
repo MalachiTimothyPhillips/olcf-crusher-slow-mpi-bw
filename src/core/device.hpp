@@ -7,7 +7,7 @@
 
 class setupAide;
 
-class device_t : public occa::device{
+class device_t {
   public:
     device_t(setupAide& options, MPI_Comm commg, MPI_Comm comm);
     MPI_Comm comm;
@@ -19,19 +19,26 @@ class device_t : public occa::device{
     occa::memory mallocHost(const size_t Nbytes);
 
     int id() const { return _device_id; }
-    occa::kernel buildNativeKernel(const std::string &filename,
-                             const std::string &kernelName,
-                             const occa::properties &props) const;
-    occa::kernel buildKernel(const std::string &filename,
-                             const std::string &kernelName,
+    const occa::device& occaDevice() const { return _device; }
+    std::string mode() const { return _device.mode(); }
+    occa::device& occaDevice() { return _device; }
+    void finish() { _device.finish(); }
+    occa::kernel buildKernel(const std::string &fullPath,
                              const occa::properties &props,
                              std::string suffix = std::string(),
                              bool buildRank0 = false) const;
-  private:
+    occa::kernel buildNativeKernel(const std::string &filename,
+                             const std::string &kernelName,
+                             const occa::properties &props) const;
     occa::kernel doBuildKernel(const std::string &filename,
                              const std::string &kernelName,
                              const occa::properties &props,
                              std::string suffix = std::string()) const;
+    occa::kernel doBuildKernel(const std::string &fullPath,
+                             const occa::properties &props,
+                             std::string suffix = std::string()) const;
+  private:
+    occa::device _device;
     int _device_id;
 };
 #endif
