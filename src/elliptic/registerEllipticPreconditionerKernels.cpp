@@ -107,6 +107,16 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo) {
         kernelName,
         kernelInfo,
         orderSuffix);
+
+    occa::properties buildDiagInfo = kernelInfo;
+    buildDiagInfo["defines/p_poisson"] = 1;
+    kernelName = "ellipticBlockBuildDiagonalHex3D";
+    fileName = installDir + "/okl/elliptic/ellipticBuildDiagonalHex3D.okl";
+    platform->kernels.add(kernelName + orderSuffix,
+        fileName,
+        kernelName,
+        buildDiagInfo,
+        orderSuffix);
   }
 }
 

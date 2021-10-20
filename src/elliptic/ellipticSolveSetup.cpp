@@ -117,15 +117,6 @@ void ellipticSolveSetup(elliptic_t* elliptic)
 
   elliptic->NelementsGlobal = NelementsGlobal;
 
-  elliptic->allNeumannPenalty = 1.;
-  hlong localElements = (hlong) mesh->Nelements;
-  hlong totalElements = 0;
-  MPI_Allreduce(&localElements, &totalElements, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
-  elliptic->allNeumannScale = 1. / sqrt((dfloat)mesh->Np * totalElements);
-
-  elliptic->allNeumannPenalty = 0;
-  elliptic->allNeumannScale = 0;
-
   elliptic->EToB = (int*) calloc(mesh->Nelements * mesh->Nfaces * elliptic->Nfields,sizeof(int));
   int* allNeumann = (int*)calloc(elliptic->Nfields, sizeof(int));
   // check based on the coefficient
@@ -158,16 +149,17 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       }
 
   elliptic->allNeumann = 0;
-  elliptic->allBlockNeumann = (int*)calloc(elliptic->Nfields, sizeof(int));
+  int* allBlockNeumann = (int*)calloc(elliptic->Nfields, sizeof(int));
   for(int fld = 0; fld < elliptic->Nfields; fld++) {
     int lallNeumann, gallNeumann;
     lallNeumann = allNeumann[fld] ? 0:1;
     MPI_Allreduce(&lallNeumann, &gallNeumann, 1, MPI_INT, MPI_SUM, platform->comm.mpiComm);
-    elliptic->allBlockNeumann[fld] = (gallNeumann > 0) ? 0: 1;
+    allBlockNeumann[fld] = (gallNeumann > 0) ? 0: 1;
     // even if there is a single allNeumann activate Null space correction
-    if(elliptic->allBlockNeumann[fld])
+    if(allBlockNeumann[fld])
       elliptic->allNeumann = 1;
   }
+  free(allBlockNeumann);
 
   if(platform->comm.mpiRank == 0)
     printf("allNeumann = %d \n", elliptic->allNeumann);
@@ -258,6 +250,8 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       const std::string sectionIdentifier = std::to_string(elliptic->Nfields) + "-";
       kernelName = "ellipticBlockBuildDiagonal" + suffix;
       elliptic->updateDiagonalKernel = platform->kernels.getKernel(sectionIdentifier + kernelName);
+      elliptic->axmyzManyPfloatKernel = platform->kernels.getKernel("axmyzManyPfloat");
+      elliptic->adyManyPfloatKernel = platform->kernels.getKernel("adyManyPfloat");
 
       std::string kernelNamePrefix = "";
       if(elliptic->name == "pressure") kernelNamePrefix += "pressure-";
