@@ -24,26 +24,6 @@ SOFTWARE.
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @kernel void gather_floatAdd(const dlong Ngather,
 		   @restrict const  dlong *  gatherStarts,
 		   @restrict const  dlong *  gatherIds,

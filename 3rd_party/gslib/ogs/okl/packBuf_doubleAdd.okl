@@ -1,11 +1,3 @@
-
-
-
-
-
-
-
-
 @kernel void packBuf_doubleAdd(const dlong N,
                                     const int Nentries,
                                     const dlong stride,

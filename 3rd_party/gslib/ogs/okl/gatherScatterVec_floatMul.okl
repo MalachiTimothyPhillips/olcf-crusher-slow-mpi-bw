@@ -24,23 +24,6 @@ SOFTWARE.
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @kernel void gatherScatterVec_floatMul(const dlong Ngather,
                                     const int Nentries,
                                     @restrict const  dlong *  gatherStarts,

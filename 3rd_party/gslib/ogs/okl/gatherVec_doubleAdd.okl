@@ -24,26 +24,6 @@ SOFTWARE.
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @kernel void gatherVec_doubleAdd(const dlong Ngather,
                  const  int      Nentries,
        @restrict const  dlong *  gatherStarts,

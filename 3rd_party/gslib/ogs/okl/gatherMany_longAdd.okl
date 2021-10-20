@@ -24,26 +24,6 @@ SOFTWARE.
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @kernel void gatherMany_longAdd(const dlong Ngather,
                  const  int      Nentries,
                  const  dlong    stride,

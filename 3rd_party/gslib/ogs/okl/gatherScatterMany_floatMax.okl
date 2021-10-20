@@ -24,23 +24,6 @@ SOFTWARE.
 
 */
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @kernel void gatherScatterMany_floatMax(const dlong Ngather,
                                     const int Nentries,
                                     const dlong stride,
