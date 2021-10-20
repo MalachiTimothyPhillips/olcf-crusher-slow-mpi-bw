@@ -160,15 +160,6 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
   }
 
-  //set the normalization constant for the allNeumann Poisson problem on this coarse mesh
-  hlong localElements = (hlong) mesh->Nelements;
-  hlong totalElements = 0;
-  MPI_Allreduce(&localElements, &totalElements, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
-  elliptic->allNeumannScale = 1.0 / sqrt(mesh->Np * totalElements);
-
-  elliptic->allNeumannPenalty = 0;
-  elliptic->allNeumannScale = 0;
-
   //setup an unmasked gs handle
   int verbose = options.compareArgs("VERBOSE","TRUE") ? 1:0;
   meshParallelGatherScatterSetup(mesh, Ntotal, mesh->globalIds, platform->comm.mpiComm, verbose);

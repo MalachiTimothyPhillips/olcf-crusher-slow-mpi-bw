@@ -97,10 +97,7 @@ struct elliptic_t
   int* BCType;
   int NBCType;
 
-  int* allBlockNeumann;
   bool allNeumann;
-  dfloat allNeumannPenalty;
-  dfloat allNeumannScale;
 
   // HOST shadow copies
   dfloat* invDegree;
@@ -241,9 +238,8 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
                                           ogs_t** ogs,
                                           hlong* globalStarts);
 
-void ellipticBuildJacobi(elliptic_t* elliptic, dfloat** invDiagA);
-void ellipticUpdateJacobi(elliptic_t* elliptic);
 void ellipticUpdateLambda(elliptic_t* elliptic);
+void ellipticUpdateJacobi(elliptic_t* elliptic, occa::memory& o_invDiagA);
 
 void ellipticBuildLocalPatches(elliptic_t* elliptic, dfloat lambda, dfloat rateTolerance,
                                dlong* Npataches, dlong** patchesIndex, dfloat** patchesInvA);

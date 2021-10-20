@@ -24,7 +24,7 @@ void registerJacobiKernels(const std::string &section, int poissonEquation) {
     kernelName, fileName, pfloatProps);
 }
 
-void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo) {
+void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, int poissonEquation) {
   const std::string prefix = "Hex3D";
   std::string fileName, kernelName;
 
@@ -112,6 +112,15 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo) {
         fileName,
         kernelInfo,
         orderSuffix);
+
+    occa::properties buildDiagInfo = kernelInfo;
+    if(poissonEquation) buildDiagInfo["defines/p_poisson"] = 1;
+    kernelName = "ellipticBlockBuildDiagonalHex3D";
+    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
+    platform->kernels.add(kernelName + orderSuffix,
+        fileName,
+        buildDiagInfo,
+        orderSuffix);
   }
 }
 
@@ -169,7 +178,7 @@ void registerFineLevelKernels(const std::string &section, int N, int poissonEqua
   };
 
   auto kernelInfo = platform->kernelInfo + meshKernelProperties(N);
-  registerCommonMGPreconditionerKernels(N, kernelInfo);
+  registerCommonMGPreconditionerKernels(N, kernelInfo, poissonEquation);
 
   constexpr int Nfields{1};
 
@@ -239,7 +248,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string oklpath = installDir + "/okl/elliptic/";
-  registerCommonMGPreconditionerKernels(N, kernelInfo);
+  registerCommonMGPreconditionerKernels(N, kernelInfo, poissonEquation);
 
   const bool serial = platform->serial;
 
