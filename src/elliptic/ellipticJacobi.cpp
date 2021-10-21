@@ -197,7 +197,7 @@ void BuildLocalContinuousDiagHex3D(elliptic_t* elliptic,
                                    dfloat* Bt,
                                    dfloat* A)
 {
-  int var_coeff = elliptic->var_coeff;
+  int varCoeff = elliptic->varCoeffPreco;
 
   for (int nz = 0; nz < mesh->Nq; nz++)
     for (int ny = 0; ny < mesh->Nq; ny++)
@@ -210,9 +210,9 @@ void BuildLocalContinuousDiagHex3D(elliptic_t* elliptic,
           dlong base = eM * mesh->Np * mesh->Nggeo;
 
           dfloat lambda_0 =
-            var_coeff ? elliptic->lambda[eM * mesh->Np + id + 0 * elliptic->Ntotal] : 1.0;
+            varCoeff ? elliptic->lambda[eM * mesh->Np + id + 0 * elliptic->Ntotal] : 1.0;
           dfloat lambda_1 =
-            var_coeff ? elliptic->lambda[eM * mesh->Np + id + 1 *
+            varCoeff ? elliptic->lambda[eM * mesh->Np + id + 1 *
                                          elliptic->Ntotal] : elliptic->lambda[0];
 
           dfloat Grs = mesh->ggeo[base + id + G01ID * mesh->Np];
@@ -228,7 +228,7 @@ void BuildLocalContinuousDiagHex3D(elliptic_t* elliptic,
             int iid = k + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
             dfloat Grr = mesh->ggeo[base + iid + G00ID * mesh->Np];
             lambda_0   =
-              var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
+              varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
             A[idn] += Grr * lambda_0 * mesh->D[nx + k * mesh->Nq] * mesh->D[nx + k * mesh->Nq];
           }
 
@@ -236,7 +236,7 @@ void BuildLocalContinuousDiagHex3D(elliptic_t* elliptic,
             int iid = nx + k * mesh->Nq + nz * mesh->Nq * mesh->Nq;
             dfloat Gss = mesh->ggeo[base + iid + G11ID * mesh->Np];
             lambda_0   =
-              var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
+              varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
             A[idn] += Gss * lambda_0 * mesh->D[ny + k * mesh->Nq] * mesh->D[ny + k * mesh->Nq];
           }
 
@@ -244,7 +244,7 @@ void BuildLocalContinuousDiagHex3D(elliptic_t* elliptic,
             int iid = nx + ny * mesh->Nq + k * mesh->Nq * mesh->Nq;
             dfloat Gtt = mesh->ggeo[base + iid + G22ID * mesh->Np];
             lambda_0   =
-              var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
+              varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal] : 1.0;
             A[idn] += Gtt * lambda_0 * mesh->D[nz + k * mesh->Nq] * mesh->D[nz + k * mesh->Nq];
           }
 
@@ -270,7 +270,7 @@ void BuildLocalContinuousBlockDiagHex3D(elliptic_t* elliptic,
                                         dfloat* Bt,
                                         dfloat* A)
 {
-  int var_coeff = elliptic->var_coeff;
+  int varCoeff = elliptic->varCoeff;
   for(dlong eM = 0; eM < mesh->Nelements; ++eM) {
     for(int fld = 0; fld < elliptic->Nfields; fld++) {
       const dlong offset = fld * elliptic->Ntotal;
@@ -287,10 +287,10 @@ void BuildLocalContinuousBlockDiagHex3D(elliptic_t* elliptic,
               dlong base = eM * mesh->Np * mesh->Nggeo;
 
               dfloat lambda_0 =
-                var_coeff ? elliptic->lambda[id + 0 * elliptic->Ntotal + fld *
+                varCoeff ? elliptic->lambda[id + 0 * elliptic->Ntotal + fld *
                                              elliptic->loffset] : 1.0;
               dfloat lambda_1 =
-                var_coeff ? elliptic->lambda[id + 1 * elliptic->Ntotal + fld *
+                varCoeff ? elliptic->lambda[id + 1 * elliptic->Ntotal + fld *
                                              elliptic->loffset] : elliptic->lambda[fld *
                                                                                    elliptic->loffset
                 ];
@@ -311,7 +311,7 @@ void BuildLocalContinuousBlockDiagHex3D(elliptic_t* elliptic,
                 int iid  = k + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
                 dfloat Grr = mesh->ggeo[base + iid + G00ID * mesh->Np];
                 lambda_0   =
-                  var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
+                  varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
                                                elliptic->loffset] : 1.0;
                 A[idn] += Grr * lambda_0 * mesh->D[nx + k * mesh->Nq] * mesh->D[nx + k * mesh->Nq];
               }
@@ -320,7 +320,7 @@ void BuildLocalContinuousBlockDiagHex3D(elliptic_t* elliptic,
                 int iid = nx + k * mesh->Nq + nz * mesh->Nq * mesh->Nq;
                 dfloat Gss = mesh->ggeo[base + iid + G11ID * mesh->Np];
                 lambda_0   =
-                  var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
+                  varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
                                                elliptic->loffset] : 1.0;
                 A[idn] += Gss * lambda_0 * mesh->D[ny + k * mesh->Nq] * mesh->D[ny + k * mesh->Nq];
               }
@@ -329,7 +329,7 @@ void BuildLocalContinuousBlockDiagHex3D(elliptic_t* elliptic,
                 int iid = nx + ny * mesh->Nq + k * mesh->Nq * mesh->Nq;
                 dfloat Gtt = mesh->ggeo[base + iid + G22ID * mesh->Np];
                 lambda_0   =
-                  var_coeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
+                  varCoeff ? elliptic->lambda[eM * mesh->Np + iid + 0 * elliptic->Ntotal + fld *
                                                elliptic->loffset] : 1.0;
                 A[idn] += Gtt * lambda_0 * mesh->D[nz + k * mesh->Nq] * mesh->D[nz + k * mesh->Nq];
               }

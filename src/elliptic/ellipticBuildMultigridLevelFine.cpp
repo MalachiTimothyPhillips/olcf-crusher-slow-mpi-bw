@@ -50,7 +50,8 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
   mesh_t* mesh = elliptic->mesh;
   ellipticBuildPreconditionerKernels(elliptic);
 
-  elliptic->var_coeff = baseElliptic->var_coeff;
+  elliptic->varCoeff = baseElliptic->varCoeff;
+  elliptic->varCoeffPreco = baseElliptic->varCoeffPreco;
   elliptic->lambda = (dfloat*) calloc(elliptic->Nfields, sizeof(dfloat)); // enforce lambda = 0
 
 
@@ -73,7 +74,7 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
                                        elliptic->mesh->o_DTPfloat);
   }
 
-  std::string suffix = elliptic->var_coeff ? "VarHex3D" : "Hex3D";
+  std::string suffix = elliptic->varCoeffPreco ? "VarHex3D" : "Hex3D";
 
   std::string kernelName;
 

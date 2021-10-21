@@ -68,7 +68,8 @@ struct elliptic_t
   static constexpr int NScratchFields {4};
   int dim;
   int elementType; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
-  int var_coeff;   // flag for variable coefficient
+  int varCoeff;        // flag for variable coefficient (solver)
+  int varCoeffPreco;   // flag for variable coefficient (preconditioner)
   int blockSolver, Nfields, stressForm; // flag for vector solver and number of fields
 
   std::string name;

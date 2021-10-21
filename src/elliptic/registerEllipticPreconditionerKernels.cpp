@@ -179,8 +179,8 @@ void registerFineLevelKernels(const std::string &section, int N) {
   {
     occa::properties AxKernelInfo = kernelInfo;
     AxKernelInfo["defines/p_poisson"] = 1;
-    for(auto&& var_coeff : {true,false}){
-      const std::string suffix = var_coeff ? "VarHex3D" : "Hex3D";
+    for(auto&& varCoeff : {true,false}){
+      const std::string suffix = varCoeff ? "VarHex3D" : "Hex3D";
 
       if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
         kernelName = "ellipticPartialAxTrilinear" + suffix;

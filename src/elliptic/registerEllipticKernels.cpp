@@ -112,7 +112,6 @@ void registerEllipticKernels(std::string section) {
   floatKernelInfo["defines/pfloat"] = pfloatString;
   floatKernelInfo["defines/dfloat"] = pfloatString;
 
-  constexpr bool var_coeff = true;
   constexpr int elementType{HEXAHEDRA};
 
   const std::string suffix = "Hex3D";
@@ -127,13 +126,13 @@ void registerEllipticKernels(std::string section) {
     AxKernelInfo["defines/p_poisson"] = 1;
   }
 
-  for(auto&& var_coeff : {true, false}){
+  for(auto&& varCoeff : {true, false}){
     std::string kernelNamePrefix = "elliptic";
     if (blockSolver)
       kernelNamePrefix += (stressForm) ? "Stress" : "Block";
 
     kernelName = "Ax";
-    if (var_coeff) kernelName += "Var";
+    if (varCoeff) kernelName += "Var";
     if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR")) kernelName += "Trilinear";
     kernelName += suffix; 
     if (blockSolver && !stressForm) kernelName += "_N" + std::to_string(Nfields);

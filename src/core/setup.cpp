@@ -344,7 +344,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_BF = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->BF);
   nrs->o_FU = platform->device.malloc(nrs->NVfields * nrs->nEXT * nrs->fieldOffset * sizeof(dfloat), nrs->FU);
 
-  nrs->var_coeff = 1; // use always var coeff elliptic
+  nrs->varCoeff = 1; // use always var coeff elliptic
+  nrs->varCoeffPreco = 1; // use always var coeff elliptic
   nrs->ellipticCoeff = (dfloat*) calloc(2 * nrs->fieldOffset,sizeof(dfloat));
   nrs->o_ellipticCoeff = device.malloc(2 * nrs->fieldOffset * sizeof(dfloat),
                                              nrs->ellipticCoeff);
@@ -643,10 +644,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   if(nrs->Nscalar) {
     cds_t* cds = nrs->cds;
-    bool var_coeff = false;
-
-    if(udf.properties)
-      var_coeff = true;
 
     for (int is = 0; is < cds->NSfields; is++) {
       std::stringstream ss;
@@ -684,7 +681,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       memcpy(cds->solver[is]->BCType,sBCType,(nbrBIDs + 1) * sizeof(int));
       free(sBCType);
 
-      cds->solver[is]->var_coeff = cds->var_coeff;
+      cds->solver[is]->varCoeff = cds->varCoeff;
+      cds->solver[is]->varCoeffPreco = cds->varCoeff;
       for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 1;
       cds->solver[is]->lambda = cds->ellipticCoeff;
       cds->solver[is]->o_lambda = cds->o_ellipticCoeff;
@@ -784,7 +782,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->NBCType = NBCType;
       nrs->uvwSolver->BCType = (int*) calloc(nrs->NVfields * NBCType,sizeof(int));
       memcpy(nrs->uvwSolver->BCType,uvwBCType,nrs->NVfields * NBCType * sizeof(int));
-      nrs->uvwSolver->var_coeff = nrs->var_coeff;
+      nrs->uvwSolver->varCoeff = nrs->varCoeff;
+      nrs->uvwSolver->varCoeffPreco = nrs->varCoeffPreco;
       nrs->uvwSolver->lambda = nrs->ellipticCoeff;
       nrs->uvwSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->uvwSolver->loffset = 0; // use same ellipticCoeff for u,v and w
@@ -803,7 +802,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uSolver->NBCType = NBCType;
       nrs->uSolver->BCType = (int*) calloc(NBCType,sizeof(int));
       memcpy(nrs->uSolver->BCType,uBCType,NBCType * sizeof(int));
-      nrs->uSolver->var_coeff = nrs->var_coeff;
+      nrs->uSolver->varCoeff = nrs->varCoeff;
+      nrs->uSolver->varCoeffPreco = nrs->varCoeffPreco;
       nrs->uSolver->lambda = nrs->ellipticCoeff;
       nrs->uSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->uSolver->loffset = 0;
@@ -822,7 +822,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->NBCType = NBCType;
       nrs->vSolver->BCType = (int*) calloc(NBCType,sizeof(int));
       memcpy(nrs->vSolver->BCType,vBCType,NBCType * sizeof(int));
-      nrs->vSolver->var_coeff = nrs->var_coeff;
+      nrs->vSolver->varCoeff = nrs->varCoeff;
+      nrs->uSolver->varCoeffPreco = nrs->varCoeffPreco;
       nrs->vSolver->lambda = nrs->ellipticCoeff;
       nrs->vSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->vSolver->loffset = 0;
@@ -842,7 +843,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->NBCType = NBCType;
         nrs->wSolver->BCType = (int*) calloc(NBCType,sizeof(int));
         memcpy(nrs->wSolver->BCType,wBCType,NBCType * sizeof(int));
-        nrs->wSolver->var_coeff = nrs->var_coeff;
+        nrs->wSolver->varCoeff = nrs->varCoeff;
+        nrs->uSolver->varCoeffPreco = nrs->varCoeffPreco;
         nrs->wSolver->lambda = nrs->ellipticCoeff;
         nrs->wSolver->o_lambda = nrs->o_ellipticCoeff;
         nrs->wSolver->loffset = 0;
@@ -916,12 +918,13 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pSolver->BCType = (int*) calloc(nbrBIDs + 1,sizeof(int));
     memcpy(nrs->pSolver->BCType,pBCType,(nbrBIDs + 1) * sizeof(int));
 
-    bool var_coeff = false;
+    bool varCoeff = false;
 
     if(platform->options.compareArgs("LOWMACH", "TRUE"))
-      var_coeff = true;
+      varCoeff = true;
 
-    nrs->pSolver->var_coeff = var_coeff;
+    nrs->pSolver->varCoeff = varCoeff;
+    nrs->pSolver->varCoeffPreco = varCoeff;
 
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
@@ -976,7 +979,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->NBCType = NBCType;
       nrs->meshSolver->BCType = (int*) calloc(nrs->NVfields * NBCType,sizeof(int));
       memcpy(nrs->meshSolver->BCType,uvwMeshBCType,nrs->NVfields * NBCType * sizeof(int));
-      nrs->meshSolver->var_coeff = 1;
+      nrs->meshSolver->varCoeff = 1;
+      nrs->meshSolver->varCoeffPreco = 1;
       nrs->meshSolver->lambda = nrs->ellipticCoeff;
       nrs->meshSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
@@ -1135,7 +1139,8 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
   cds->o_diff = cds->o_prop.slice(0 * cds->fieldOffsetSum * sizeof(dfloat));
   cds->o_rho  = cds->o_prop.slice(1 * cds->fieldOffsetSum * sizeof(dfloat));
 
-  cds->var_coeff = 1; // use always var coeff elliptic
+  cds->varCoeff = 1; // use always var coeff elliptic
+  cds->varCoeffPreco = 1; // use always var coeff elliptic
   cds->ellipticCoeff   = nrs->ellipticCoeff;
   cds->o_ellipticCoeff = nrs->o_ellipticCoeff;
 

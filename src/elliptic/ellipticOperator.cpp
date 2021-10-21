@@ -50,15 +50,12 @@ void ellipticAx(elliptic_t* elliptic,
   bool valid = true;
   valid &= continuous;
   if(precisionStr != dFloatStr) {
-    //valid &= !elliptic->var_coeff;
     valid &= !elliptic->blockSolver;
     valid &= mapType == 0;
     valid &= integrationType == 0;
   }
   if(!valid) {
     printf("Encountered invalid configuration inside ellipticAx!\n");
-    //if(elliptic->var_coeff)
-    //  printf("Precision level (%s) does not support variable coefficient\n", precision);
     if(elliptic->blockSolver)
       printf("Precision level (%s) does not support block solver\n", precision);
     if(mapType != 0)
