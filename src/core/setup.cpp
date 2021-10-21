@@ -823,7 +823,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->BCType = (int*) calloc(NBCType,sizeof(int));
       memcpy(nrs->vSolver->BCType,vBCType,NBCType * sizeof(int));
       nrs->vSolver->varCoeff = nrs->varCoeff;
-      nrs->uSolver->varCoeffPreco = nrs->varCoeffPreco;
+      nrs->vSolver->varCoeffPreco = nrs->varCoeffPreco;
       nrs->vSolver->lambda = nrs->ellipticCoeff;
       nrs->vSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->vSolver->loffset = 0;
@@ -844,7 +844,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->BCType = (int*) calloc(NBCType,sizeof(int));
         memcpy(nrs->wSolver->BCType,wBCType,NBCType * sizeof(int));
         nrs->wSolver->varCoeff = nrs->varCoeff;
-        nrs->uSolver->varCoeffPreco = nrs->varCoeffPreco;
+        nrs->wSolver->varCoeffPreco = nrs->varCoeffPreco;
         nrs->wSolver->lambda = nrs->ellipticCoeff;
         nrs->wSolver->o_lambda = nrs->o_ellipticCoeff;
         nrs->wSolver->loffset = 0;
