@@ -260,7 +260,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       elliptic->updateDiagonalKernel = platform->kernels.getKernel(sectionIdentifier + kernelName);
 
       std::string kernelNamePrefix = "";
-      if(elliptic->name == "pressure") kernelNamePrefix += "pressure-";
+      if(elliptic->poisson) kernelNamePrefix += "poisson-";
       kernelNamePrefix += "elliptic";
       if (elliptic->blockSolver)
         kernelNamePrefix += (elliptic->stressForm) ? "Stress" : "Block";

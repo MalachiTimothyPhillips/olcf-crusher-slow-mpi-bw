@@ -71,6 +71,7 @@ struct elliptic_t
   int varCoeff;        // flag for variable coefficient (solver)
   int varCoeffPreco;   // flag for variable coefficient (preconditioner)
   int blockSolver, Nfields, stressForm; // flag for vector solver and number of fields
+  int poisson; 
 
   std::string name;
 

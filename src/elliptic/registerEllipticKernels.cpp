@@ -34,7 +34,7 @@ void registerGMRESKernels(const std::string &section, int Nfields) {
 
 }
 
-void registerEllipticKernels(std::string section) {
+void registerEllipticKernels(std::string section, int poissonEquation) {
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   const std::string optionsPrefix = createOptionsPrefix(section);
@@ -130,7 +130,7 @@ void registerEllipticKernels(std::string section) {
   platform->kernels.add(
       sectionIdentifier + kernelName, fileName, dfloatKernelInfo);
 
-  if(section == "pressure"){
+  if(poissonEquation){
     AxKernelInfo["defines/p_poisson"] = 1;
   }
 
@@ -146,18 +146,18 @@ void registerEllipticKernels(std::string section) {
     if (blockSolver && !stressForm) kernelName += "_N" + std::to_string(Nfields);
 
     const std::string _kernelName = kernelNamePrefix + "Partial" + kernelName;
-    const std::string prefix = (section == "pressure") ? "pressure-" : "";
+    const std::string prefix = (poissonEquation) ? "poisson-" : "";
     fileName = oklpath + _kernelName + fileNameExtension; 
     platform->kernels.add(
-      prefix + _kernelName, fileName, _kernelName, AxKernelInfo);
+      prefix + _kernelName, fileName, AxKernelInfo);
   }
 
-  fileName = oklpath + "ellipticBuildDiagonal" + suffix + ".okl";
   kernelName = "ellipticBlockBuildDiagonal" + suffix;
+  fileName = oklpath + kernelName + ".okl";
   dfloatKernelInfo["defines/dfloat"] = dfloatString;
   dfloatKernelInfo["defines/pfloat"] = pfloatString;
   platform->kernels.add(
-      sectionIdentifier + kernelName, fileName, kernelName, dfloatKernelInfo);
+      sectionIdentifier + kernelName, fileName, dfloatKernelInfo);
   dfloatKernelInfo["defines/pfloat"] = dfloatString;
 
   // PCG update

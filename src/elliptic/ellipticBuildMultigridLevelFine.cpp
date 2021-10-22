@@ -78,6 +78,8 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
 
   std::string kernelName;
 
+  const std::string poissonPrefix = elliptic->poisson ? "poisson-" : "";
+
   {
       if(elliptic->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
         kernelName = "ellipticPartialAxTrilinear" + suffix;
@@ -86,12 +88,12 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
 
       {
         const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-        elliptic->AxKernel = platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
+        elliptic->AxKernel = platform->kernels.getKernel(poissonPrefix + kernelName + kernelSuffix);
       }
       {
         const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
         elliptic->AxPfloatKernel =
-          platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
+          platform->kernels.getKernel(poissonPrefix + kernelName + kernelSuffix);
       }
   }
 

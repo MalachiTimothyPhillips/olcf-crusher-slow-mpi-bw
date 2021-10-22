@@ -681,6 +681,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
       cds->solver[is]->varCoeff = 1;
       cds->solver[is]->varCoeffPreco = 1;
+      cds->solver[is]->poisson = 0;
       for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 1;
       cds->solver[is]->lambda = cds->ellipticCoeff;
       cds->solver[is]->o_lambda = cds->o_ellipticCoeff;
@@ -785,6 +786,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->lambda = nrs->ellipticCoeff;
       nrs->uvwSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->uvwSolver->loffset = 0; // use same ellipticCoeff for u,v and w
+      nrs->uvwSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
@@ -805,6 +807,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uSolver->lambda = nrs->ellipticCoeff;
       nrs->uSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->uSolver->loffset = 0;
+      nrs->uSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->uSolver);
 
@@ -825,6 +828,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->lambda = nrs->ellipticCoeff;
       nrs->vSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->vSolver->loffset = 0;
+      nrs->vSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->vSolver);
 
@@ -846,6 +850,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->lambda = nrs->ellipticCoeff;
         nrs->wSolver->o_lambda = nrs->o_ellipticCoeff;
         nrs->wSolver->loffset = 0;
+        nrs->wSolver->poisson = 0;
 
         ellipticSolveSetup(nrs->wSolver);
       }
@@ -923,6 +928,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     nrs->pSolver->varCoeff = varCoeff;
     nrs->pSolver->varCoeffPreco = varCoeff;
+    nrs->pSolver->poisson = 1;
 
     // coeff used by ellipticSetup to detect allNeumann
     for (int i = 0; i < 2 * nrs->fieldOffset; i++) nrs->ellipticCoeff[i] = 0;
@@ -982,6 +988,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->lambda = nrs->ellipticCoeff;
       nrs->meshSolver->o_lambda = nrs->o_ellipticCoeff;
       nrs->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
+      nrs->meshSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->meshSolver);
     }

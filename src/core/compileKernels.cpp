@@ -5,6 +5,7 @@
 #include "ogsKernels.hpp"
 #include "udf.hpp"
 #include <vector>
+#include <tuple>
 
 namespace {
 
@@ -64,19 +65,24 @@ void compileKernels() {
       ss << std::setfill('0') << std::setw(2) << is;
       std::string sid = ss.str();
       const std::string section = "scalar" + sid;
-      registerEllipticKernels(section);
+      const int poisson = 0;
+      registerEllipticKernels(section, poisson);
     }
   }
 
   // Scalar section is omitted
   // as pressure section kernels are the same.
-  const std::vector<std::string> sections = {
-      "pressure",
-      "velocity",
+  const std::vector<std::pair<std::string,int>> sections = {
+      {"pressure", 1},
+      {"velocity", 0}
   };
-  for (auto &&section : sections) {
-    registerEllipticKernels(section);
-    registerEllipticPreconditionerKernels(section);
+
+  std::string section;
+  int poissonEquation;
+  for (auto&& entry : sections) {
+    std::tie(section, poissonEquation) = entry;
+    registerEllipticKernels(section, poissonEquation);
+    registerEllipticPreconditionerKernels(section, poissonEquation);
   }
 
   MPI_Barrier(platform->comm.mpiComm);

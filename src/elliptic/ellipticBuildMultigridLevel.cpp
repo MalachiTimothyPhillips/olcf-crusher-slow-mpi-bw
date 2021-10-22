@@ -228,6 +228,8 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
   ellipticBuildPreconditionerKernels(elliptic);
 
+  const std::string poissonPrefix = elliptic->poisson ? "poisson-" : "";
+
   {
       // check for trilinear
       if(elliptic->elementType != HEXAHEDRA) {
@@ -241,12 +243,12 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
 
       {
         const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-        elliptic->AxKernel = platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
+        elliptic->AxKernel = platform->kernels.getKernel(poissonPrefix + kernelName + kernelSuffix);
       }
       if(!strstr(pfloatString,dfloatString)) {
         const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
         elliptic->AxPfloatKernel =
-          platform->kernels.getKernel("pressure-" + kernelName + kernelSuffix);
+          platform->kernels.getKernel(poissonPrefix + kernelName + kernelSuffix);
       }
   }
 
