@@ -33,7 +33,7 @@ dfloat ellipticUpdatePCG(elliptic_t* elliptic,
 {
   mesh_t* mesh = elliptic->mesh;
 
-  const bool serial = useSerial();
+  const bool serial = platform->serial;
 
   // x <= x + alpha*p
   // r <= r - alpha*A*p

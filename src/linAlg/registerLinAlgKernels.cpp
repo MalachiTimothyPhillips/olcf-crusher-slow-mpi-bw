@@ -10,7 +10,7 @@ void registerLinAlgKernels()
   oklDir.assign(getenv("NEKRS_INSTALL_DIR"));
   oklDir += "/okl/linAlg/";
   std::string fileName;
-  const bool serial = useSerial();
+  const bool serial = platform->serial;
 
   const std::string extension = serial ? ".c" : ".okl";
   const std::vector<std::pair<std::string, bool>> allKernels{

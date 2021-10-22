@@ -2,7 +2,7 @@
 #include <compileKernels.hpp>
 
 void registerCdsKernels(occa::properties kernelInfoBC) {
-  const bool serial = useSerial();
+  const bool serial = platform->serial;
   const std::string extension = serial ? ".c" : ".okl";
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));

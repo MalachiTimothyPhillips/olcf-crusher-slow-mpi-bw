@@ -36,6 +36,7 @@ class device_t {
     occa::kernel buildKernel(const std::string &fullPath,
                              const occa::properties &props,
                              bool buildRank0) const;
+    bool deviceAtomic;
 
   private:
     friend occa::kernel udfBuildKernel(occa::properties, const char*);

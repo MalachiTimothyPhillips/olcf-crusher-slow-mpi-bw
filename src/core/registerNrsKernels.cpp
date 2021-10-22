@@ -4,7 +4,7 @@
 
 void registerNrsKernels(occa::properties kernelInfoBC)
 {
-  const bool serial = useSerial();
+  const bool serial = platform->serial;
   const std::string extension = serial ? ".c" : ".okl";
   const device_t &device = platform->device;
   std::string installDir;
