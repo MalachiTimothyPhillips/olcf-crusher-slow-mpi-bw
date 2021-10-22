@@ -858,7 +858,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     } else {
       nrs->uSolver->name = "x-velocity";
       nrs->vSolver->name = "y-velocity";
-      nrs->wSolver->name = "v-velocity";
+      nrs->wSolver->name = "z-velocity";
     }
   } // flow
 
@@ -1011,7 +1011,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if (sweep == 1) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
     }
-    nrs->o_U.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    platform->o_mempool.slice3.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
     platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0.0, platform->o_mempool.slice0);
     for (int sweep = 0; sweep < 2; sweep++) {
@@ -1019,7 +1019,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                    nrs->fieldOffset,
                                    mesh->o_vmapM,
                                    nrs->o_EToBMesh,
-                                   nrs->o_U,
+                                   platform->o_mempool.slice3,
                                    platform->o_mempool.slice0);
       //take care of Neumann-Dirichlet shared edges across elements
       if(sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
