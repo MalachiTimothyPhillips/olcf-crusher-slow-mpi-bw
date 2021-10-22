@@ -24,8 +24,7 @@
 
  */
 
-extern "C"
-void FUNC(ellipticPartialAxHex3D)(const dlong & Nelements,
+extern "C" void FUNC(ellipticPartialAxHex3D)(const dlong & Nelements,
                      const dlong & offset,
                      const dlong & loffset,
                      const dlong* __restrict__ elementList,
