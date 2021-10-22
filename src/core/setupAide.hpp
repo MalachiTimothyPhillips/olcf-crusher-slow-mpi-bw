@@ -38,23 +38,21 @@ SOFTWARE.
 #include <sys/stat.h>
 
 #include "nrssys.hpp"
+#include <map>
 
 class setupAide {
 private:
-  std::vector<std::string> data;
-  std::vector<std::string> keyword;
+  std::map<std::string, std::string> keyWordToDataMap;
 
 public:
   setupAide();
-  setupAide(std::string);
 
   setupAide(const setupAide&);
   setupAide& operator=(const setupAide&);
 
-  std::string readFile(std::string);
-  void read(std::string);
+  std::string getArgs(std::string) const;
 
-  std::string getArgs(std::string);
+  void removeArgs(std::string key);
 
   void setArgs(std::string key, std::string value);
 
@@ -66,11 +64,7 @@ public:
 
   int getArgs(std::string, std::vector<std::string>&, std::string);
 
-
   int compareArgs(std::string key, std::string token);
-
-  std::vector<std::string> &getData(){ return data; }
-  std::vector<std::string> &getKeyword() { return keyword; }
 
   friend std::ostream & operator << (std::ostream &out, const setupAide &aide);  
 };

@@ -868,9 +868,9 @@ void parseInitialGuess(const int rank, setupAide &options,
         options.setArgs(parSectionName + " RESIDUAL PROJECTION VECTORS",
                         std::to_string(defaultNumVectors));
         options.setArgs(parSectionName + " RESIDUAL PROJECTION START", "5");
+      } else {
+        options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
       }
-
-      return;
     }
 
     int nVectors;
