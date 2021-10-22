@@ -23,21 +23,29 @@ class device_t {
     std::string mode() const { return _device.mode(); }
     occa::device& occaDevice() { return _device; }
     void finish() { _device.finish(); }
+
+    occa::kernel buildKernel(const std::string &fullPath,
+                             const occa::properties &props) const;
     occa::kernel buildKernel(const std::string &fullPath,
                              const occa::properties &props,
-                             std::string suffix = std::string(),
-                             bool buildRank0 = false) const;
-    occa::kernel buildNativeKernel(const std::string &filename,
+                             const std::string& suffix) const;
+    occa::kernel buildKernel(const std::string &fullPath,
+                             const occa::properties &props,
+                             const std::string& suffix,
+                             bool buildRank0) const;
+    occa::kernel buildKernel(const std::string &fullPath,
+                             const occa::properties &props,
+                             bool buildRank0) const;
+
+  private:
+    friend occa::kernel udfBuildKernel(occa::properties, const char*);
+    occa::kernel buildKernel(const std::string &fileName,
+                             const std::string &kernelName,
+                             const occa::properties &props,
+                             std::string suffix = "") const;
+    occa::kernel buildNativeKernel(const std::string &fileName,
                              const std::string &kernelName,
                              const occa::properties &props) const;
-    occa::kernel doBuildKernel(const std::string &filename,
-                             const std::string &kernelName,
-                             const occa::properties &props,
-                             std::string suffix = std::string()) const;
-    occa::kernel doBuildKernel(const std::string &fullPath,
-                             const occa::properties &props,
-                             std::string suffix = std::string()) const;
-  private:
     occa::device _device;
     int _device_id;
 };

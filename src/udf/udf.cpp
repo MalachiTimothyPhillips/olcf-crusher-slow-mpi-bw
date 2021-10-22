@@ -256,5 +256,5 @@ occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
   std::string oudf;
   platform->options.getArgs("DATA FILE", oudf);
 
-  return platform->device.doBuildKernel(oudf.c_str(), function, kernelInfo);
+  return platform->device.buildKernel(oudf.c_str(), function, kernelInfo);
 }

@@ -18,9 +18,17 @@ device_t::buildNativeKernel(const std::string &fileName,
 }
 
 occa::kernel
-device_t::doBuildKernel(const std::string &fullPath,
-                         const occa::properties &props,
-                         std::string suffix) const
+device_t::buildKernel(const std::string &fullPath,
+                      const occa::properties &props) const
+{
+  const std::string noSuffix = std::string("");
+  return this->buildKernel(fullPath, props, noSuffix);
+}
+
+occa::kernel
+device_t::buildKernel(const std::string &fullPath,
+                      const occa::properties &props,
+                      const std::string & suffix) const
 {
   const std::string fileName = fullPath;
   std::string kernelName;
@@ -44,11 +52,11 @@ device_t::doBuildKernel(const std::string &fullPath,
     }
   }
 
-  return this->doBuildKernel(fileName, kernelName, props, suffix);
+  return this->buildKernel(fileName, kernelName, props, suffix);
 }
 
 occa::kernel
-device_t::doBuildKernel(const std::string &fileName,
+device_t::buildKernel(const std::string &fileName,
                              const std::string &kernelName,
                              const occa::properties &props,
                              std::string suffix) const
@@ -75,7 +83,7 @@ device_t::doBuildKernel(const std::string &fileName,
 occa::kernel
 device_t::buildKernel(const std::string &fullPath,
                          const occa::properties &props,
-                         std::string suffix,
+                         const std::string & suffix,
                          bool buildRank0) const
 {
 
@@ -87,7 +95,7 @@ device_t::buildKernel(const std::string &fullPath,
     occa::kernel constructedKernel;
     for(int pass = 0; pass < 2; ++pass){
       if((pass == 0 && rank == 0) || (pass == 1 && rank != 0)){
-        constructedKernel = doBuildKernel(fullPath, props, suffix);
+        constructedKernel = this->buildKernel(fullPath, props, suffix);
       }
       MPI_Barrier(localCommunicator);
     }
@@ -95,8 +103,17 @@ device_t::buildKernel(const std::string &fullPath,
 
   }
 
-  return doBuildKernel(fullPath, props, suffix);
+  return this->buildKernel(fullPath, props, suffix);
 
+}
+
+occa::kernel
+device_t::buildKernel(const std::string &fullPath,
+                         const occa::properties &props,
+                         bool buildRank0) const
+{
+  std::string noSuffix = std::string("");
+  return this->buildKernel(fullPath, props, noSuffix, buildRank0);
 }
 
 occa::memory
