@@ -24,29 +24,8 @@
 
  */
 
-//#include "headers2d.hpp"
-
 #include <tuple>
 #include "setupAide.hpp"
-
-setupAide::setupAide(){}
-
-setupAide::setupAide(const setupAide& sa)
-{
-  *this = sa;
-}
-
-setupAide& setupAide::operator = (const setupAide& sa){
-
-  std::string key, value;
-  for(auto&& keyValuePair : sa.keyWordToDataMap)
-  {
-    std::tie(key, value) = keyValuePair;
-    this->keyWordToDataMap[key] = value;
-  }
-
-  return *this;
-}
 
 std::string setupAide::getArgs(std::string key) const
 {
@@ -69,7 +48,7 @@ void setupAide::setArgs(std::string key, std::string value)
   keyWordToDataMap[key] = value;
 }
 
-int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::string delimeter)
+int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::string delimeter) const
 {
   std::string args, current;
   std::vector < std::string > argv;
@@ -94,7 +73,6 @@ int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::str
   argc = argv.size();
 
   if(!argc)
-    //printf("Warning: Failed to find [%s].\n", key.c_str());
     return 0;
 
   m.resize(argc);
@@ -105,7 +83,7 @@ int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::str
   return 1;
 }
 
-int setupAide::compareArgs(std::string key, std::string token)
+int setupAide::compareArgs(std::string key, std::string token) const
 {
   std::string foundToken;
   if(getArgs(key,foundToken)) {

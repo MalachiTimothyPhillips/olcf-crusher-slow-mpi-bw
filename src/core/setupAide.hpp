@@ -45,10 +45,11 @@ private:
   std::map<std::string, std::string> keyWordToDataMap;
 
 public:
-  setupAide();
+  setupAide(){};
+  ~setupAide() = default;
 
-  setupAide(const setupAide&);
-  setupAide& operator=(const setupAide&);
+  setupAide(const setupAide&) = default;
+  setupAide& operator=(const setupAide&) = default;
 
   std::string getArgs(std::string) const;
 
@@ -57,14 +58,14 @@ public:
   void setArgs(std::string key, std::string value);
 
   template <class T>
-  int getArgs(std::string, T&);
+  int getArgs(std::string, T&) const;
 
   template <class T>
-  int getArgs(std::string, std::vector<T>&);
+  int getArgs(std::string, std::vector<T>&) const;
 
-  int getArgs(std::string, std::vector<std::string>&, std::string);
+  int getArgs(std::string, std::vector<std::string>&, std::string) const;
 
-  int compareArgs(std::string key, std::string token);
+  int compareArgs(std::string key, std::string token) const;
 
   friend std::ostream & operator << (std::ostream &out, const setupAide &aide);  
 };
