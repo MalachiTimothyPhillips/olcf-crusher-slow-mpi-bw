@@ -826,6 +826,9 @@ void parseInitialGuess(const int rank, setupAide &options,
       options.setArgs(parSectionName + " RESIDUAL PROJECTION START", "5");
     } else if (checkForFalse(initialGuess)) {
       options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
+      // remove any default entries associated with projection initial guess
+      options.remove(parSectionName + " RESIDUAL PROJECTION START");
+      options.remove(parSectionName + " RESIDUAL PROJECTION VECTORS");
     } else {
       std::ostringstream error;
       error << "Could not parse initialGuess string" << initialGuess << "!\n";
@@ -870,6 +873,10 @@ void parseInitialGuess(const int rank, setupAide &options,
         options.setArgs(parSectionName + " RESIDUAL PROJECTION START", "5");
       } else {
         options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
+        
+        // remove any default entries associated with projection initial guess
+        options.remove(parSectionName + " RESIDUAL PROJECTION START");
+        options.remove(parSectionName + " RESIDUAL PROJECTION VECTORS");
       }
     }
 
