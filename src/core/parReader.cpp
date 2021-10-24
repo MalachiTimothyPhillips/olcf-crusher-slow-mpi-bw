@@ -820,6 +820,9 @@ void parseInitialGuess(const int rank, setupAide &options,
                       "PROJECTION");
     } else if (initialGuess.find("previous") != std::string::npos) {
       options.setArgs(parSectionName + " INITIAL GUESS", "PREVIOUS");
+      // removeArgs any default entries associated with projection initial guess
+      options.removeArgs(parSectionName + " RESIDUAL PROJECTION START");
+      options.removeArgs(parSectionName + " RESIDUAL PROJECTION VECTORS");
     } else if (checkForTrue(initialGuess)) {
       const int defaultNumVectors = parScope == "pressure" ? 10 : 5;
       options.setArgs(parSectionName + " INITIAL GUESS", "PROJECTION-ACONJ");
