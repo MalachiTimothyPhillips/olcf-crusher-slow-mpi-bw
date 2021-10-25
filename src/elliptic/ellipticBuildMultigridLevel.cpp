@@ -49,7 +49,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   elliptic_t* elliptic = new elliptic_t();
   memcpy(elliptic,baseElliptic,sizeof(elliptic_t));
 
-#if 1
+#if 0
   mesh_t* mesh = new mesh_t();
   memcpy(mesh,baseElliptic->mesh,sizeof(mesh_t));
   elliptic->mesh = mesh;
@@ -101,11 +101,11 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
                                        elliptic->mesh->o_DTPfloat);
   }
 #else
-  mesh_t* mesh = meshCreateMG(baseElliptic->mesh, Nc);
+  mesh_t* mesh = createMeshMG(baseElliptic->mesh, Nc);
   elliptic->mesh = mesh;
 #endif
 
-  int verbose = options.compareArgs("VERBOSE","TRUE") ? 1:0;
+  int verbose = elliptic->options.compareArgs("VERBOSE","TRUE") ? 1:0;
   meshParallelGatherScatterSetup(mesh, mesh->Nlocal, mesh->globalIds, platform->comm.mpiComm, verbose);
 
   { // setup an unmasked gs handle
