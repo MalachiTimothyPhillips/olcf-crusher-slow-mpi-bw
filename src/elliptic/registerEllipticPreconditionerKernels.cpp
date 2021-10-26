@@ -197,7 +197,7 @@ void registerFineLevelKernels(const std::string &section, int N, int poissonEqua
     occa::properties AxKernelInfo = kernelInfo;
     if(poissonEquation) AxKernelInfo["defines/p_poisson"] = 1;
     for(auto&& coeffField : {true,false}){
-      const std::string suffix = coeffField ? "VarHex3D" : "Hex3D";
+      const std::string suffix = coeffField ? "CoeffHex3D" : "Hex3D";
 
       if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
         kernelName = "ellipticPartialAxTrilinear" + suffix;
@@ -263,7 +263,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
     if(poissonEquation) AxKernelInfo["defines/p_poisson"] = 1;
     const std::string poissonPrefix = poissonEquation ? "poisson-" : "";
     for(auto&& coeffField : {true,false}){
-      const std::string AxSuffix = coeffField ? "VarHex3D" : "Hex3D";
+      const std::string AxSuffix = coeffField ? "CoeffHex3D" : "Hex3D";
 
       if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
         kernelName = "ellipticPartialAxTrilinear" + AxSuffix;

@@ -75,7 +75,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   const std::string poissonPrefix = elliptic->poisson ? "poisson-" : "";
 
   {
-      const std::string AxSuffix = elliptic->coeffFieldPreco ? "VarHex3D" : "Hex3D";
+      const std::string AxSuffix = elliptic->coeffFieldPreco ? "CoeffHex3D" : "Hex3D";
       // check for trilinear
       if(elliptic->elementType != HEXAHEDRA) {
         kernelName = "ellipticPartialAx" + AxSuffix;

@@ -205,7 +205,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
         kernelNamePrefix += (elliptic->stressForm) ? "Stress" : "Block";
  
       kernelName = "Ax";
-      if (elliptic->coeffField) kernelName += "Var";
+      if (elliptic->coeffField) kernelName += "Coeff";
       if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR")) kernelName += "Trilinear";
       kernelName += suffix; 
       if (elliptic->blockSolver && !elliptic->stressForm) 
