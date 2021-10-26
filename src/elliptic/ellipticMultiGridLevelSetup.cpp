@@ -50,8 +50,8 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, int Nc,
   degree = Nc;
   weighted = false;
 
-  elliptic->o_lambdaPfloat = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(pfloat));
-  elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np,
+  elliptic->o_lambdaPfloat = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
+  elliptic->copyDfloatToPfloatKernel(2 * mesh->Nelements * mesh->Np,
     elliptic->o_lambda,
     elliptic->o_lambdaPfloat);
 
@@ -107,8 +107,8 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   /* build coarsening and prologation operators to connect levels */
   this->buildCoarsenerQuadHex(meshLevels, Nf, Nc);
 
-  elliptic->o_lambdaPfloat = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(pfloat));
-  elliptic->o_lambda = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(dfloat));
+  elliptic->o_lambdaPfloat = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
+  elliptic->o_lambda = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(dfloat));
 
   const int Nfq = Nf+1;
   const int Ncq = Nc+1;
@@ -116,9 +116,9 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   InterpolationMatrix1D(Nf, Nfq, ellipticFine->mesh->r, Ncq, mesh->r, fToCInterp);
   o_interp = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
 
-  elliptic->precon->coarsenKernel(mesh->Nelements, o_interp, ellipticFine->o_lambda, elliptic->o_lambda);
+  elliptic->precon->coarsenKernel(2 * mesh->Nelements, o_interp, ellipticFine->o_lambda, elliptic->o_lambda);
 
-  elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np,
+  elliptic->copyDfloatToPfloatKernel(2 * mesh->Nelements * mesh->Np,
     elliptic->o_lambda,
     elliptic->o_lambdaPfloat);
   
