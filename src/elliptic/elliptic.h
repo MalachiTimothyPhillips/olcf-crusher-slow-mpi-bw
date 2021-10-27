@@ -121,6 +121,7 @@ struct elliptic_t
   occa::memory o_res;
   occa::memory o_Ap; // A*search direction
   occa::memory o_invDegree;
+  occa::memory o_interp; // interpolate (r,s,t)F -> (r,s,t)C for variable properties
 
   occa::memory o_EXYZ; // element vertices for reconstructing geofacs (trilinear hexes only)
 
