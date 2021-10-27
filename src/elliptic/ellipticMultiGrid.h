@@ -31,6 +31,7 @@ enum class SmootherType
 {
   CHEBYSHEV,
   SCHWARZ,
+  JACOBI,
 };
 enum class SecondarySmootherType
 {  
@@ -44,13 +45,13 @@ public:
 
   elliptic_t* elliptic;
   mesh_t* mesh;
-  dfloat lambda;
 
   int degree;
 
   //coarsener
   dfloat* R;
   occa::memory o_R;
+  occa::memory o_interp; // interpolate (r,s,t)F -> (r,s,t)C for variable properties
   int NpF;
   occa::memory o_invDegree;
 
@@ -91,7 +92,6 @@ public:
 
   //local patch data
   occa::memory o_invAP, o_patchesIndex, o_invDegreeAP;
-  //ogs_t* extendedOgs = nullptr;
   void* extendedOgs;
   void* ogs;
   void build(
@@ -100,20 +100,24 @@ public:
 
   setupAide options;
 
+  bool isCoarse;
+
   //build a single level
-  MGLevel(elliptic_t* ellipticBase, dfloat lambda_, int Nc,
-          setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_
+  MGLevel(elliptic_t* ellipticBase, int Nc,
+          setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_,
+          bool _isCoarse = false
           );
   //build a level and connect it to the previous one
   MGLevel(elliptic_t* ellipticBase, //finest level
           mesh_t** meshLevels,
           elliptic_t* ellipticFine,          //previous level
           elliptic_t* ellipticCoarse,          //current level
-          dfloat lambda_,
           int Nf, int Nc,
           setupAide options_,
           parAlmond::KrylovType ktype_,
-          MPI_Comm comm_);
+          MPI_Comm comm_,
+          bool _isCoarse = false
+          );
 
   void Ax(dfloat* /*x*/, dfloat* /*Ax*/) {}
   void Ax(occa::memory o_x, occa::memory o_Ax);
@@ -135,6 +139,7 @@ public:
 
   void smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothSchwarz (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
+  void smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
 
   void smootherJacobi    (occa::memory &o_r, occa::memory &o_Sr);
 

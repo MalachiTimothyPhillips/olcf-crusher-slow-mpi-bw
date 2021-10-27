@@ -44,7 +44,6 @@ static int parallelCompareRowColumn(const void* a, const void* b)
 
 void ellipticBuildContinuousGalerkinHex3D (elliptic_t* elliptic,
                                            elliptic_t* ellipticFine,
-                                           dfloat lambda,
                                            nonZero_t** A,
                                            dlong* nnz,
                                            ogs_t** ogs,
@@ -52,7 +51,6 @@ void ellipticBuildContinuousGalerkinHex3D (elliptic_t* elliptic,
 
 void ellipticBuildContinuousGalerkin(elliptic_t* elliptic,
                                      elliptic_t* ellipticFine,
-                                     dfloat lambda,
                                      nonZero_t** A,
                                      dlong* nnz,
                                      ogs_t** ogs,
@@ -73,7 +71,7 @@ void ellipticBuildContinuousGalerkin(elliptic_t* elliptic,
     break;
   case HEXAHEDRA:
     ellipticBuildContinuousGalerkinHex3D(elliptic,ellipticFine,
-                                         lambda,A,nnz,ogs,globalStarts);
+                                         A,nnz,ogs,globalStarts);
     break;
   default:
     break;
@@ -123,7 +121,6 @@ void ellipticGenerateCoarseBasisHex3D(dfloat* b,int j_,elliptic_t* elliptic)
 
 void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
                                           elliptic_t* ellipticFine,
-                                          dfloat lambda,
                                           nonZero_t** A,
                                           dlong* nnz,
                                           ogs_t** ogs,
@@ -217,9 +214,7 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
                  meshf->Np * sizeof(dfloat));
 
         o_q.copyFrom(q);
-        ellipticFine->AxKernel(mesh->Nelements,meshf->o_ggeo,
-                               meshf->o_D,meshf->o_DT,
-                               lambda,o_q,o_Aq);
+        ellipticOperator(ellipticFine, o_q, o_Aq, dfloatString, false);
         o_Aq.copyTo(Aq);
 
         for(dlong e = 0; e < mesh->Nelements; e++)
