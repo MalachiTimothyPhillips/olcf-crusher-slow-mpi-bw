@@ -361,7 +361,13 @@ dfloat MGLevel::maxEigSmoothAx()
 
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
     ogsGatherScatter(Vx, ogsDfloat, ogsAdd, mesh->ogs);
-    for (dlong i = 0; i < elliptic->Nmasked; i++) Vx[elliptic->maskIds[i]] = 0.;
+
+    if(elliptic->Nmasked > 0){
+      dlong* maskIds = (dlong*) calloc(elliptic->Nmasked, sizeof(dlong));
+      elliptic->o_maskIds.copyTo(maskIds, elliptic->Nmasked * sizeof(dlong));
+      for (dlong i = 0; i < elliptic->Nmasked; i++) Vx[maskIds[i]] = 0.;
+      free(maskIds);
+    }
   }
 
   o_Vx.copyFrom(Vx, M*sizeof(dfloat));

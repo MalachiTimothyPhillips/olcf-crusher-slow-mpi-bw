@@ -109,16 +109,9 @@ struct elliptic_t
   //C0-FEM mask data
   int* mapB;      // boundary flag of face nodes
   dlong Nmasked;
-  dlong* fNmasked;
-
-  dlong* maskIds;
-  hlong* maskedGlobalIds;
 
   occa::memory o_maskIds;
   occa::memory o_mapB;
-
-  occa::stream defaultStream;
-  occa::stream dataStream;
 
   occa::memory o_x;
   occa::memory o_x0;
