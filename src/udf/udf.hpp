@@ -43,19 +43,12 @@ struct UDF
 
 extern UDF udf;
 
-<<<<<<< HEAD
-int udfBuild(const char* casename, const char* udfFile, int buildOnly);
-void udfLoad(const char* casename);
-void* udfLoadFunction(const char* casename, const char* fname, int errchk);
-occa::kernel udfBuildKernel(nrs_t* nrs, const char* function);
-=======
 void oudfFindDirichlet(std::string &field);
 void oudfFindNeumann(std::string &field);
 void oudfInit(setupAide &options);
 void udfBuild(const char* udfFile, setupAide& options);
-void udfLoad(void);
-void* udfLoadFunction(const char* fname, int errchk);
+void udfLoad(const char* casename);
+void* udfLoadFunction(const char* casename, const char* fname, int errchk);
 occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function);
->>>>>>> next
 
 #endif

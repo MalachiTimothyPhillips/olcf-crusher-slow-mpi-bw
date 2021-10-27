@@ -327,10 +327,6 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &globalComm, neknek_t* 
 
   MPI_Comm comm = globalComm;
 
-  int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-
   if (rank == 0 && cmdOpt->redirectOutput) {
     std::string logfile = cmdOpt->setupFile + ".log." + std::to_string(size);
     printf("redirecting stdout to %s\n",logfile.c_str());

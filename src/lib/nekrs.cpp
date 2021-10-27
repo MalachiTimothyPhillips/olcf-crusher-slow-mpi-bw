@@ -134,11 +134,11 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   // jit compile udf
   std::string udfFile;
   options.getArgs("UDF FILE", udfFile);
-  string casename;
+  std::string casename;
   options.getArgs("CASENAME", casename);
   if (!udfFile.empty()) {
     udfBuild(udfFile.c_str(), options);
-    udfLoad();
+    udfLoad(casename.c_str());
   }
 
   options.setArgs("CI-MODE", std::to_string(ciMode));
