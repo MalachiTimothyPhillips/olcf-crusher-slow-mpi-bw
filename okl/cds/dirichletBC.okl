@@ -51,6 +51,7 @@
         const dlong sk = e * p_Nfp * p_Nfaces + n;
         const dlong idM = vmapM[sk];
         const dlong bcType = EToB[f + p_Nfaces * e];
+        const dlong neknekOffset = neknekPointMap[offset];
 
         if(bcType == 1) {
           bc.id = EToBM[f + p_Nfaces * e];
