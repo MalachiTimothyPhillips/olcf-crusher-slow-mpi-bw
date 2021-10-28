@@ -24,39 +24,6 @@
 
  */
 
-#define surfaceTerms(sk,face,i, j)                                      \
-  {                                                                     \
-    const dfloat WsJ = sgeo[sk * p_Nsgeo + p_WSJID];                    \
-    struct bcData bc;                                                   \
-    bc.idM = vmapM[sk];   bc.time = time;                               \
-    bc.nx = sgeo[sk * p_Nsgeo + p_NXID];                                \
-    bc.ny = sgeo[sk * p_Nsgeo + p_NYID];                                \
-    bc.nz = sgeo[sk * p_Nsgeo + p_NZID];                                \
-    bc.x   = x[bc.idM];                                                 \
-    bc.y   = y[bc.idM];                                                 \
-    bc.z   = z[bc.idM];                                                 \
-    bc.fieldOffset = offset;                                            \
-    bc.id  = EToBM[face + p_Nfaces * e];                                \
-    bc.u  = U[bc.idM + 0 * offset];                                     \
-    bc.v  = U[bc.idM + 1 * offset];                                     \
-    bc.w  = U[bc.idM + 2 * offset];                                     \
-    bc.wrk = W;                                                         \
-    dfloat TRx = 0.f;                                                   \
-    dfloat TRy = 0.f;                                                   \
-    dfloat TRz = 0.f;                                                   \
-    const dlong bcType = EToB[face + p_Nfaces * e];                     \
-    if(bcType == 3) {                                                   \
-        bc.p = 0.f;                                                     \
-        pressureDirichletConditions(&bc);                               \
-        TRx = -bc.p*bc.nx;                                              \
-        TRy = -bc.p*bc.ny;                                              \
-        TRz = -bc.p*bc.nz;                                              \
-    }                                                                   \
-    s_ndU[j][i] = WsJ*TRx;                                              \
-    s_ndV[j][i] = WsJ*TRy;                                              \
-    s_ndW[j][i] = WsJ*TRz;                                              \
-  }
-
 //RHS contributions for continuous solver
 
 @kernel void velocityDirichletBCHex3D(const dlong Nelements,
