@@ -50,8 +50,8 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 {
   MPI_Comm_dup(commg_in, &commg);
   MPI_Comm_dup(comm_in, &comm);
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  MPI_Comm_rank(commg, &rank);
+  MPI_Comm_size(commg, &size);
 
   if (rank == 0) {
     printHeader();

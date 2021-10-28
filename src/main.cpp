@@ -303,13 +303,14 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &globalComm, neknek_t* 
   MPI_Comm_rank(globalComm, &rank);
   MPI_Comm_size(globalComm, &size);
   MPI_Comm newComm = globalComm;
+  MPI_Comm comm = globalComm;
 
   neknek->nsessions = cmdOpt->neknekSessions;
-  neknek->globalComm = comm;
+  neknek->globalComm = globalComm;
   if (neknek->nsessions != 1) {
     neknek->connected = cmdOpt->neknekConnected;
     int grank, sessionID = -1, nextRoot = 0;
-    MPI_Comm_rank(comm, &grank);
+    MPI_Comm_rank(globalComm, &grank);
     for(int i = 0; i < neknek->nsessions; ++ i) {
       nextRoot += cmdOpt->neknekProcs[i];
       if (grank < nextRoot) {
@@ -324,8 +325,6 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &globalComm, neknek_t* 
   } else {
     neknek->connected = false;
   }
-
-  MPI_Comm comm = globalComm;
 
   if (rank == 0 && cmdOpt->redirectOutput) {
     std::string logfile = cmdOpt->setupFile + ".log." + std::to_string(size);
