@@ -5,7 +5,7 @@ numSteps = 1000
 dt = 1e-04
 timeStepper = tombo2
 writeInterval = 100
-maxNumSessions = 2
+#maxNumSessions = 2
 
 [PRESSURE]
 residualTol = 1e-08

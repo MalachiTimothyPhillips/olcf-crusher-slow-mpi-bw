@@ -236,7 +236,8 @@ void set_usr_handles(const char* session_in,int verbose)
   char lib_session[BUFSIZ], * error;
 
   const char* cache_dir = getenv("NEKRS_CACHE_DIR");
-  sprintf(lib_session, "%s/nek5000/%s/lib%s.so", cache_dir, session_in, session_in);
+  //sprintf(lib_session, "%s/nek5000/%s/lib%s.so", cache_dir, session_in, session_in);
+  sprintf(lib_session, "%s/nek5000/lib%s.so", cache_dir, session_in);
 
   void* handle = dlopen(lib_session,RTLD_NOW | RTLD_LOCAL);
   if(!handle) {
