@@ -181,6 +181,8 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   nrsSetup(comm, options, nrs);
 
+  neknekSetup(nrs);
+
   platform->timer.toc("setup");
   const double setupTime = platform->timer.query("setup", "DEVICE:MAX");
   if(rank == 0) {
