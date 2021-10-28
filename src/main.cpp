@@ -321,6 +321,7 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &globalComm, neknek_t* 
     MPI_Comm_split(globalComm, sessionID, 0, &comm);
     cmdOpt->setupFile = cmdOpt->neknekSetupFiles[sessionID];
     neknek->sessionID = sessionID;
+    neknek->localComm = comm;
     return comm;
   } else {
     neknek->connected = false;

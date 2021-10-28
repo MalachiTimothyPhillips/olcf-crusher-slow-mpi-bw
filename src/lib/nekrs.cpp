@@ -66,6 +66,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   if (rank == 0) std::cout << "reading par file ...\n"; 
   auto par = new inipp::Ini();	  
+  //std::cout << "Setup file : " << _setupFile << std::endl;
   std::string setupFile = _setupFile + ".par";
   options = parRead((void*) par, setupFile, comm);
 
@@ -73,6 +74,9 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
     char buf[FILENAME_MAX];
     char * ret = getcwd(buf, sizeof(buf));
     std::string dir = std::string(buf) + "/.cache";
+    if(neknek->nsessions > 1) {
+      dir += "/" + _setupFile;
+    }
     if(getenv("NEKRS_CACHE_DIR")) dir.assign(getenv("NEKRS_CACHE_DIR"));
     setenv("NEKRS_CACHE_DIR", dir.c_str(), 1);
   }
@@ -120,6 +124,10 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   const bool buildNodeLocal = useNodeLocalCache();
   if(buildNodeLocal)
     MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
+  
+  if(neknek->nsessions > 1){
+    MPI_Comm_rank(neknek->localComm, &buildRank);
+  }
 
   if(buildRank == 0) {
     std::string cache_dir;

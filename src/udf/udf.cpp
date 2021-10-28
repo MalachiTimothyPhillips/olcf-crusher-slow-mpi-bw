@@ -209,7 +209,7 @@ void* udfLoadFunction(const char* casename, const char* fname, int errchk)
   char udfLib[BUFSIZ];
 
   const char* cache_dir = getenv("NEKRS_CACHE_DIR");
-  sprintf(udfLib, "%s/udf/libUDF-%s.so", cache_dir, casename);
+  sprintf(udfLib, "%s/udf/libUDF.so", cache_dir);
 
   void* h, * fptr;
   h = dlopen(udfLib, RTLD_LAZY | RTLD_GLOBAL);
