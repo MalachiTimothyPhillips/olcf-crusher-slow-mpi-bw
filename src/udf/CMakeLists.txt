@@ -40,8 +40,8 @@ set(INCLUDE_DIRS
   ${NEKRS_INSTALL_DIR}/occa/include
 )
 
-add_library(UDF SHARED udf-${CASENAME}.cpp)
-set_target_properties(UDF PROPERTIES LIBRARY_OUTPUT_NAME UDF-${CASENAME})
+add_library(UDF SHARED udf.cpp)
+set_target_properties(UDF PROPERTIES LIBRARY_OUTPUT_NAME UDF)
 target_include_directories(UDF PRIVATE $ENV{NEKRS_UDF_INCLUDES} ${INCLUDE_DIRS} ${UDF_DIR})
 
 if(APPLE)

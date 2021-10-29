@@ -21,7 +21,7 @@ static nrs_t* nrs;
 static setupAide options;
 static dfloat lastOutputTime = 0;
 
-static void setOccaVars(string dir);
+static void setOccaVars(string dir, string casename);
 static void setOUDF(setupAide &options);
 static void dryRun(setupAide &options, int npTarget);
 
@@ -72,7 +72,7 @@ void setup(MPI_Comm comm_in, int buildOnly, int commSizeTarget,
 
   configRead(comm);
   oogs::gpu_mpi(std::stoi(getenv("NEKRS_GPU_MPI")));
-  setOccaVars(cacheDir);
+  setOccaVars(cacheDir, _setupFile);
 
   if (rank == 0) {
     printHeader();
@@ -400,7 +400,7 @@ static void setOUDF(setupAide &options)
   options.setArgs("DATA FILE", dataFile);
 }
 
-static void setOccaVars(string dir)
+static void setOccaVars(string dir, string casename)
 {
   char buf[FILENAME_MAX];
   char * ret = getcwd(buf, sizeof(buf));
@@ -409,9 +409,9 @@ static void setOccaVars(string dir)
   cwd.assign(buf);
 
   if (dir.empty())
-    sprintf(buf,"%s/.cache", cwd.c_str());
+    sprintf(buf,"%s/.cache/%s", cwd.c_str(), casename.c_str());
   else
-    sprintf(buf,"%s/%s", cwd.c_str(), dir.c_str());
+    sprintf(buf,"%s/%s/%s", cwd.c_str(), dir.c_str(), casename.c_str());
 
   setenv("NEKRS_CACHE_DIR", buf, 1);
   string cache_dir;

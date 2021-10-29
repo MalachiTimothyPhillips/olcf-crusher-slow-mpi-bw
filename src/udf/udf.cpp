@@ -35,9 +35,9 @@ int udfBuild(const char* casename, const char* udfFile, int buildOnly)
   }
 
   char udfFileCache[BUFSIZ];
-  sprintf(udfFileCache,"%s/udf/udf-%s.cpp",cache_dir, casename);
+  sprintf(udfFileCache,"%s/udf/udf.cpp",cache_dir);
   char udfLib[BUFSIZ];
-  sprintf(udfLib, "%s/udf/libUDF-%s.so", cache_dir, casename);
+  sprintf(udfLib, "%s/udf/libUDF.so", cache_dir);
 
   char cmd[BUFSIZ];
   printf("building udf ... \n"); fflush(stdout);
@@ -45,17 +45,14 @@ int udfBuild(const char* casename, const char* udfFile, int buildOnly)
     char udfFileResolved[BUFSIZ];
     realpath(udfFile, udfFileResolved);
     sprintf(cmd,
-            "mkdir -p %s/udf && cd %s/udf && cp -f %s udf-%s.cpp && cp %s/CMakeLists.txt . && \
-             rm -rf libUDF-%s.so && cmake -Wno-dev -DCMAKE_CXX_COMPILER=\"$NEKRS_CXX\" \
-	     -DCMAKE_CXX_FLAGS=\"$NEKRS_CXXFLAGS\" -DUDF_DIR=\"%s\" -DCASENAME=\"%s\" .",
+            "mkdir -p %s/udf && cd %s/udf && cp -f %s udf.cpp && cp %s/CMakeLists.txt . && \
+             rm -rf libUDF.so && cmake -Wno-dev -DCMAKE_CXX_COMPILER=\"$NEKRS_CXX\" \
+	     -DCMAKE_CXX_FLAGS=\"$NEKRS_CXXFLAGS\" -DUDF_DIR=\"%s\" .",
              cache_dir,
              cache_dir,
              udfFileResolved,
-             casename,
              udf_dir,
-             casename,
-             udf_dir,
-             casename);
+             udf_dir);
     if(system(cmd)) return EXIT_FAILURE; 
   }
   sprintf(cmd, "cd %s/udf && make", cache_dir);
@@ -71,7 +68,7 @@ void* udfLoadFunction(const char* casename, const char* fname, int errchk)
   char udfLib[BUFSIZ];
 
   const char* cache_dir = getenv("NEKRS_CACHE_DIR");
-  sprintf(udfLib, "%s/udf/libUDF-%s.so", cache_dir, casename);
+  sprintf(udfLib, "%s/udf/libUDF.so", cache_dir);
 
   void* h, * fptr;
   h = dlopen(udfLib, RTLD_LAZY | RTLD_GLOBAL);
