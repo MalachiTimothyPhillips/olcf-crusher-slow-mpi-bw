@@ -140,11 +140,11 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
   const std::string oklpath = installDir + "/okl/";
   kernelName = "copyDfloatToPfloat";
   fileName = installDir + "/okl/core/" + kernelName + extension;
-  this->copyDfloatToPfloatKernel = this->device.buildKernel(fileName, this->kernelInfo);
+  this->copyDfloatToPfloatKernel = this->device.buildKernel(fileName, this->kernelInfo, true);
 
   kernelName = "copyPfloatToDfloat";
   fileName = installDir + "/okl/core/" + kernelName + extension;
-  this->copyPfloatToDfloatKernel = this->device.buildKernel(fileName, this->kernelInfo);
+  this->copyPfloatToDfloatKernel = this->device.buildKernel(fileName, this->kernelInfo, true);
 }
 void memPool_t::allocate(const dlong offset, const dlong fields)
 {
