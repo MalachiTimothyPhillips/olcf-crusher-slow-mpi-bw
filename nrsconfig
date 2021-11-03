@@ -27,6 +27,8 @@ set -e -a
 
 if uname -a | grep 'ppc64'; then
   NEKRS_CXXFLAGS=$(echo "$NEKRS_CXXFLAGS" | sed -e "s/march/mcpu/g")
+  NEKRS_CFLAGS=$(echo "$NEKRS_CFLAGS" | sed -e "s/march/mcpu/g")
+  NEKRS_FFLAGS=$(echo "$NEKRS_FFLAGS" | sed -e "s/march/mcpu/g")
   OCCA_CXXFLAGS=$(echo "$OCCA_CXXFLAGS" | sed -e "s/march/mcpu/g")
 fi
 
