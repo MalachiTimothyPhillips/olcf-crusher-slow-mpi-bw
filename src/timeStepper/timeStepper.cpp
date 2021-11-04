@@ -1579,16 +1579,7 @@ void printInfo(
     printf("  eTimeStep= %.2es eTime= %.5es\n", tElapsedStep, tElapsed);
   }
 
-  bool noSolverPresent = true;
-  noSolverPresent &= platform->options.compareArgs("VELOCITY SOLVER", "NONE");
-  for(int is = 0; is < nrs->Nscalar; ++is){
-    std::stringstream ss;
-    ss << std::setfill('0') << std::setw(2) << is;
-    std::string sid = ss.str();
-    noSolverPresent &= platform->options.compareArgs("SCALAR" + sid + " SOLVER", "NONE");
-  }
-
-  bool largeCFLCheck = (cfl > 30) && !noSolverPresent;
+  bool largeCFLCheck = (cfl > 30) && numberActiveFields(nrs);
 
   if (largeCFLCheck || std::isnan(cfl) || std::isinf(cfl)) {
     if (platform->comm.mpiRank == 0)
