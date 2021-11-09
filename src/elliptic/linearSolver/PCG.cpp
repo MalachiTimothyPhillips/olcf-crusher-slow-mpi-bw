@@ -27,10 +27,12 @@
 #include "elliptic.h"
 #include "timer.hpp"
 #include "linAlg.hpp"
+#include <limits>
 
 int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         const dfloat tol, const int MAXIT, dfloat &rdotr)
 {
+  const dfloat zeroTol = std::numeric_limits<dfloat>::epsilon();
   
   mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
@@ -109,7 +111,11 @@ int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       o_p,
       o_Ap,
       platform->comm.mpiComm);
-    alpha = rdotz1 / pAp;
+    
+    if(abs(pAp) > zeroTol)
+      alpha = rdotz1 / pAp;
+    else
+      alpha = 0.0;
 
     //printf("norm pAp: %.15e\n", pAp);
 
