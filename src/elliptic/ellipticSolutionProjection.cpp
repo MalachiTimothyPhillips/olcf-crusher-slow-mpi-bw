@@ -201,6 +201,8 @@ void SolutionProjection::pre(occa::memory& o_r)
     return;
 
   if(numVecsProjection <= 0) return;
+
+  prevNumVecsProjection = numVecsProjection;
   computePreProjection(o_r);
 }
 
