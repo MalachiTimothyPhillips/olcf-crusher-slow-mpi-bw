@@ -31,14 +31,14 @@
 #include <functional>
 #include "elliptic.h"
 
-class ResidualProjection final
+class SolutionProjection final
 {
 public:
   enum class ProjectionType {
     CLASSIC,
     ACONJ,
   };
-  ResidualProjection(elliptic_t& _elliptic,
+  SolutionProjection(elliptic_t& _elliptic,
                      const ProjectionType _type,
                      const dlong _maxNumVecsProjection = 8,
                      const dlong _numTimeSteps = 5);
