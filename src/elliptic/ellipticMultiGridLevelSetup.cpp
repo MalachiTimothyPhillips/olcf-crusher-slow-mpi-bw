@@ -223,7 +223,7 @@ void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
   // transpose
   for (int i = 0; i < Ncq; i++){
     for (int j = 0; j < Nfq; j++){
-      R[i * NqFine + j] = cToFInterp[j * NqCoarse + i];
+      R[i * Nfq + j] = cToFInterp[j * Ncq + i];
     }
   }
 
