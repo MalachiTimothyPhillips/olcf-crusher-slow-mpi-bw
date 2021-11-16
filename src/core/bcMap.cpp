@@ -278,6 +278,11 @@ int type(int bid, std::string field)
     ABORT(1);
   }
 
+  if(bcID == 7 && platform->options.compareArgs("STRESSFORMULATION", "FALSE")) {
+    std::cout << __func__ << "(): un-aligned SYM boundary condition requires stress formulation!\n" << std::endl;
+    ABORT(1);
+  }
+
   return bcType;
 }
 
