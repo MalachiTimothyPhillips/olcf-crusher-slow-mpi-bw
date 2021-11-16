@@ -119,6 +119,7 @@ void   ifoutfld(int i);
 void   setic(void);
 void   userchk(void);
 int    bcmap(int bid, int ifld);
+void   stsmask(double* uMask, double* vMask, double* wMask);
 
 void copyToNek(dfloat time, int tstep);
 void ocopyToNek(void);

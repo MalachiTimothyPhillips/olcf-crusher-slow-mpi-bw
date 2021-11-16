@@ -52,6 +52,8 @@ static void (* nek_storesol_ptr)(void);
 static void (* nek_restoresol_ptr)(void);
 static void (* nek_updggeom_ptr)(void);
 
+static void (* nek_stsmask_ptr)(double*, double*, double*);
+
 void noop_func(void) {}
 
 void check_error(const char* error)
@@ -317,6 +319,9 @@ void set_usr_handles(const char* session_in,int verbose)
   nek_restoresol_ptr = (void (*)(void))dlsym(handle, fname("nekf_restoresol"));
   check_error(dlerror());
   nek_updggeom_ptr = (void (*)(void))dlsym(handle, fname("nekf_updggeom"));
+  check_error(dlerror());
+
+  nek_stsmask_ptr = (void (*)(double*, double*, double*))dlsym(handle, fname("stsmask"));
   check_error(dlerror());
 
 #define postfix(x) x ## _ptr
@@ -982,5 +987,10 @@ void coeffAB(double *coeff, double *dt, int order)
 void recomputeGeometry()
 {
   (*nek_updggeom_ptr)();
+}
+
+void stsmask(double* uMask, double* vMask, double* wMask)
+{
+  (*nek_stsmask_ptr)(uMask, vMask, wMask);
 }
 }
