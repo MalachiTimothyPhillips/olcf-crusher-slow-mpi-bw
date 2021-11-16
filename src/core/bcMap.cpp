@@ -25,7 +25,8 @@ static std::map<std::string, int> vBcTextToID = {
   {"zerogradient", 3},
   {"zeroxvalue/zerogradient", 4},
   {"zeroyvalue/zerogradient", 5},
-  {"zerozvalue/zerogradient", 6}
+  {"zerozvalue/zerogradient", 6},
+  {"zeronvalue/zerogradient", 7}
 };
 
 static std::map<int, std::string> vBcIDToText = {
@@ -35,7 +36,8 @@ static std::map<int, std::string> vBcIDToText = {
   {3, "zeroGradient"           },
   {4, "zeroXValue/zeroGradient"},
   {5, "zeroYValue/zeroGradient"},
-  {6, "zeroZValue/zeroGradient"}
+  {6, "zeroZValue/zeroGradient"},
+  {7, "zeroNValue/zeroGradient"}
 };
 
 static std::map<std::string, int> sBcTextToID = {
@@ -75,6 +77,7 @@ static void m_setup(std::string field, std::vector<std::string> slist)
     if (key.compare("symx") == 0) key = "zeroxvalue/zerogradient";
     if (key.compare("symy") == 0) key = "zeroyvalue/zerogradient";
     if (key.compare("symz") == 0) key = "zerozvalue/zerogradient";
+    if (key.compare("sym") == 0) key = "zeronvalue/zerogradient";
 
     if (vBcTextToID.find(key) == vBcTextToID.end()) {
       std::cout << "Invalid bcType " << "\'" << key << "\'" << "!\n";
@@ -110,6 +113,7 @@ static void v_setup(std::string field, std::vector<std::string> slist)
     if (key.compare("symx") == 0) key = "zeroxvalue/zerogradient";
     if (key.compare("symy") == 0) key = "zeroyvalue/zerogradient";
     if (key.compare("symz") == 0) key = "zerozvalue/zerogradient";
+    if (key.compare("sym") == 0) key = "zeronvalue/zerogradient";
 
     if (vBcTextToID.find(key) == vBcTextToID.end()) {
       std::cout << "Invalid bcType " << "\'" << key << "\'" << "!\n";
@@ -201,6 +205,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = DIRICHLET;
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 7) bcType = NEUMANN;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("y-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
@@ -210,6 +215,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = NEUMANN;
     if (bcID == 5) bcType = DIRICHLET;
     if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 7) bcType = NEUMANN;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("z-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
@@ -219,6 +225,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = NEUMANN;
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
+    if (bcID == 7) bcType = NEUMANN;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("x-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
@@ -228,6 +235,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = DIRICHLET;
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 7) bcType = NEUMANN;
   } else if (field.compare("y-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -236,6 +244,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = NEUMANN;
     if (bcID == 5) bcType = DIRICHLET;
     if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 7) bcType = NEUMANN;
   } else if (field.compare("z-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -244,6 +253,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = NEUMANN;
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
+    if (bcID == 7) bcType = NEUMANN;
   } else if (field.compare("pressure") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = NEUMANN;
@@ -252,6 +262,7 @@ int type(int bid, std::string field)
     if (bcID == 4) bcType = NEUMANN;
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 7) bcType = NEUMANN;
     if (bcID == 3) oudfFindDirichlet(field);
   } else if (field.compare(0, 6, "scalar") == 0) {
     const int bcID = bToBc[{field, bid - 1}];
