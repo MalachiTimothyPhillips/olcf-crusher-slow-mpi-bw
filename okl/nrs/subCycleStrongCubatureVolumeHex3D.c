@@ -40,12 +40,12 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
   dfloat s_U[p_cubNq][p_cubNq];
   dfloat s_V[p_cubNq][p_cubNq];
   dfloat s_W[p_cubNq][p_cubNq];
-  dfloat s_Ud[p_cubNq][p_cubNq];
-  dfloat s_Vd[p_cubNq][p_cubNq];
-  dfloat s_Wd[p_cubNq][p_cubNq];
-  dfloat s_Ud1[p_Nq][p_cubNq];
-  dfloat s_Vd1[p_Nq][p_cubNq];
-  dfloat s_Wd1[p_Nq][p_cubNq];
+  dfloat s_Ud[p_cubNq][p_cubNq][p_cubNq];
+  dfloat s_Vd[p_cubNq][p_cubNq][p_cubNq];
+  dfloat s_Wd[p_cubNq][p_cubNq][p_cubNq];
+  dfloat s_Ud1[p_cubNq][p_Nq][p_cubNq];
+  dfloat s_Vd1[p_cubNq][p_Nq][p_cubNq];
+  dfloat s_Wd1[p_cubNq][p_Nq][p_cubNq];
   dfloat r_U2[p_cubNq][p_cubNq][p_cubNq], r_V2[p_cubNq][p_cubNq][p_cubNq], r_W2[p_cubNq][p_cubNq][p_cubNq];
   dfloat r_Ud[p_cubNq][p_cubNq][p_cubNq], r_Vd[p_cubNq][p_cubNq][p_cubNq], r_Wd[p_cubNq][p_cubNq][p_cubNq];
   #pragma unroll
@@ -84,11 +84,15 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
         #pragma unroll
         for (int a = 0; a < p_Nq; ++a) {
             const int id = element * p_Np + c * p_Nq * p_Nq + b * p_Nq + a;
-            s_Ud[b][a] = Ud[id + 0 * offset];
-            s_Vd[b][a] = Ud[id + 1 * offset];
-            s_Wd[b][a] = Ud[id + 2 * offset];
+            s_Ud[c][b][a] = Ud[id + 0 * offset];
+            s_Vd[c][b][a] = Ud[id + 1 * offset];
+            s_Wd[c][b][a] = Ud[id + 2 * offset];
         }
       }
+    }
+
+    #pragma unroll
+    for (int c = 0; c < p_Nq; ++c) {
 
       // interpolate in 'r'
       #pragma unroll
@@ -99,15 +103,19 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
             #pragma unroll
             for (int a = 0; a < p_Nq; ++a) {
               dfloat Iia = s_cubInterpT[a][i];
-              Ud1 += Iia * s_Ud[b][a];
-              Vd1 += Iia * s_Vd[b][a];
-              Wd1 += Iia * s_Wd[b][a];
+              Ud1 += Iia * s_Ud[c][b][a];
+              Vd1 += Iia * s_Vd[c][b][a];
+              Wd1 += Iia * s_Wd[c][b][a];
             }
-            s_Ud1[b][i] = Ud1;
-            s_Vd1[b][i] = Vd1;
-            s_Wd1[b][i] = Wd1;
+            s_Ud1[c][b][i] = Ud1;
+            s_Vd1[c][b][i] = Vd1;
+            s_Wd1[c][b][i] = Wd1;
         }
       }
+    }
+
+    #pragma unroll
+    for (int c = 0; c < p_Nq; ++c) {
 
       // interpolate in 's'
       #pragma unroll
@@ -120,9 +128,9 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
           #pragma unroll
           for (int b = 0; b < p_Nq; ++b) {
             dfloat Ijb = s_cubInterpT[b][j];
-            Ud2 += Ijb * s_Ud1[b][i];
-            Vd2 += Ijb * s_Vd1[b][i];
-            Wd2 += Ijb * s_Wd1[b][i];
+            Ud2 += Ijb * s_Ud1[c][b][i];
+            Vd2 += Ijb * s_Vd1[c][b][i];
+            Wd2 += Ijb * s_Wd1[c][b][i];
           }
 
           // interpolate in c progressively
@@ -275,9 +283,9 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
               rhsV += Ijb * s_V[j][i];
               rhsW += Ijb * s_W[j][i];
             }
-            s_Ud[b][i] = rhsU;
-            s_Vd[b][i] = rhsV;
-            s_Wd[b][i] = rhsW;
+            s_Ud[c][b][i] = rhsU;
+            s_Vd[c][b][i] = rhsV;
+            s_Wd[c][b][i] = rhsW;
         }
       }
       #pragma unroll
@@ -288,9 +296,9 @@ extern "C" void FUNC(subCycleStrongCubatureVolumeHex3D)(const int & Nelements,
             #pragma unroll
             for (int i = 0; i < p_cubNq; ++i) {
               dfloat Iia = s_cubInterpT[a][i];
-              rhsU += Iia * s_Ud[b][i];
-              rhsV += Iia * s_Vd[b][i];
-              rhsW += Iia * s_Wd[b][i];
+              rhsU += Iia * s_Ud[c][b][i];
+              rhsV += Iia * s_Vd[c][b][i];
+              rhsW += Iia * s_Wd[c][b][i];
             }
             const int id = element * p_Np + c * p_Nq * p_Nq + b * p_Nq + a;
             dfloat invLMM = p_MovingMesh ? 0.0 : invLumpedMassMatrix[id];
