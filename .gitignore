@@ -7,3 +7,6 @@ CMakeFiles
 # From AMGX
 plugin_config.cu
 *.swp
+
+# for clangd server
+.cache/
