@@ -8,6 +8,7 @@
 #include "filter.hpp"
 #include "avm.hpp"
 #include <cctype>
+#include <applyMask.hpp>
 
 namespace{
 cds_t* cdsSetup(nrs_t* nrs, setupAide options);
@@ -118,6 +119,7 @@ determineMGLevels(std::string section)
 
   return {};
 }
+
 
 void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 {
@@ -687,6 +689,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       cds->solver[is]->loffset = 0;
  
       cds->solver[is]->options = cds->options[is];
+      cds->solver[is]->applyMask = applyMask;
       ellipticSolveSetup(cds->solver[is]);
     }
   }
@@ -788,6 +791,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->loffset = 0; // use same ellipticCoeff for u,v and w
       nrs->uvwSolver->poisson = 0;
 
+      nrs->uvwSolver->applyMask = applyMask;
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
       nrs->uSolver = new elliptic_t();
@@ -808,6 +812,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uSolver->loffset = 0;
       nrs->uSolver->poisson = 0;
 
+      nrs->uSolver->applyMask = applyMask;
       ellipticSolveSetup(nrs->uSolver);
 
       nrs->vSolver = new elliptic_t();
@@ -828,6 +833,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->loffset = 0;
       nrs->vSolver->poisson = 0;
 
+      nrs->vSolver->applyMask = applyMask;
       ellipticSolveSetup(nrs->vSolver);
 
       if (nrs->dim == 3) {
@@ -849,6 +855,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->loffset = 0;
         nrs->wSolver->poisson = 0;
 
+        nrs->wSolver->applyMask = applyMask;
         ellipticSolveSetup(nrs->wSolver);
       }
     }
@@ -944,6 +951,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     }
 
     nrs->pSolver->options = nrs->pOptions;
+    nrs->pSolver->applyMask = applyMask;
     ellipticSolveSetup(nrs->pSolver);
 
   } // flow
@@ -986,6 +994,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
       nrs->meshSolver->poisson = 0;
 
+      nrs->meshSolver->applyMask = applyMask;
       ellipticSolveSetup(nrs->meshSolver);
     }
   }
@@ -1312,4 +1321,5 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
 
   return cds;
 }
+
 }

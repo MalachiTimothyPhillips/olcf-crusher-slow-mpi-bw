@@ -39,6 +39,7 @@
 #include "platform.hpp"
 
 #include "timer.hpp"
+#include <functional>
 
 #define ELLIPTIC_ENABLE_TIMER
 
@@ -166,6 +167,8 @@ struct elliptic_t
 
   SolutionProjection* solutionProjection;
   GmresData* gmresData;
+
+  std::function<void(elliptic_t* solver, occa::memory& o_x, std::string precision)> applyMask;
 };
 
 #include "ellipticMultiGrid.h"

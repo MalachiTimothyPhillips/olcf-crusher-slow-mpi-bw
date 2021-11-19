@@ -107,7 +107,6 @@ void ellipticOperator(elliptic_t* elliptic,
   oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
 
   if(masked){
-    occa::kernel &maskKernel = (!strstr(precision, dfloatString)) ? mesh->maskPfloatKernel : mesh->maskKernel;
-    if (elliptic->Nmasked) maskKernel(elliptic->Nmasked, elliptic->o_maskIds, o_Aq);
+    elliptic->applyMask(elliptic, o_Aq, std::string(precision));
   }
 }
