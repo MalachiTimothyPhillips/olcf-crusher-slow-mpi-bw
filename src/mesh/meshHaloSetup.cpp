@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -90,7 +90,8 @@ void meshHaloSetup(mesh_t *mesh)
       ++mesh->NhaloMessages;
 
   // create a list of element/faces with halo neighbor
-  facePair_t *haloElements = (facePair_t *)calloc(mesh->totalHaloPairs, sizeof(facePair_t));
+  facePair_t *haloElements =
+      (facePair_t *)calloc(mesh->totalHaloPairs, sizeof(facePair_t));
 
   dlong cnt = 0;
   for (dlong e = 0; e < mesh->Nelements; ++e)
@@ -107,7 +108,10 @@ void meshHaloSetup(mesh_t *mesh)
     }
 
   // sort the face pairs in order the destination requires
-  qsort(haloElements, mesh->totalHaloPairs, sizeof(facePair_t), compareHaloFaces);
+  qsort(haloElements,
+        mesh->totalHaloPairs,
+        sizeof(facePair_t),
+        compareHaloFaces);
 
   // record the outgoing order for elements
   mesh->haloElementList = (dlong *)calloc(mesh->totalHaloPairs, sizeof(dlong));
@@ -117,8 +121,10 @@ void meshHaloSetup(mesh_t *mesh)
   }
 
   // record the outgoing node ids for trace nodes
-  mesh->haloGetNodeIds = (dlong *)calloc(mesh->totalHaloPairs * mesh->Nfp, sizeof(dlong));
-  mesh->haloPutNodeIds = (dlong *)calloc(mesh->totalHaloPairs * mesh->Nfp, sizeof(dlong));
+  mesh->haloGetNodeIds =
+      (dlong *)calloc(mesh->totalHaloPairs * mesh->Nfp, sizeof(dlong));
+  mesh->haloPutNodeIds =
+      (dlong *)calloc(mesh->totalHaloPairs * mesh->Nfp, sizeof(dlong));
 
   cnt = 0;
   for (dlong i = 0; i < mesh->totalHaloPairs; ++i) {
@@ -126,7 +132,8 @@ void meshHaloSetup(mesh_t *mesh)
     int fM = haloElements[i].face;
     int fP = haloElements[i].faceN;
     for (int n = 0; n < mesh->Nfp; ++n) {
-      mesh->haloGetNodeIds[cnt] = eM * mesh->Np + mesh->faceNodes[fM * mesh->Nfp + n];
+      mesh->haloGetNodeIds[cnt] =
+          eM * mesh->Np + mesh->faceNodes[fM * mesh->Nfp + n];
       ++cnt;
     }
   }
@@ -142,7 +149,8 @@ void meshHaloSetup(mesh_t *mesh)
           mesh->EToE[ef] = cnt;
           int fP = mesh->EToF[ef];
           for (int n = 0; n < mesh->Nfp; ++n) {
-            mesh->haloPutNodeIds[ncnt] = cnt * mesh->Np + mesh->faceNodes[fP * mesh->Nfp + n];
+            mesh->haloPutNodeIds[ncnt] =
+                cnt * mesh->Np + mesh->faceNodes[fP * mesh->Nfp + n];
             ++ncnt;
           }
           ++cnt; // next halo element
@@ -162,10 +170,22 @@ void meshHaloPhysicalNodes(mesh_t *mesh)
   dfloat *sendBuffer = (dfloat *)calloc(totalHaloNodes, sizeof(dfloat));
 
   // send halo data and recv into extended part of arrays
-  meshHaloExchange(mesh, mesh->Np * sizeof(dfloat), mesh->x, sendBuffer, mesh->x + localNodes);
-  meshHaloExchange(mesh, mesh->Np * sizeof(dfloat), mesh->y, sendBuffer, mesh->y + localNodes);
+  meshHaloExchange(mesh,
+                   mesh->Np * sizeof(dfloat),
+                   mesh->x,
+                   sendBuffer,
+                   mesh->x + localNodes);
+  meshHaloExchange(mesh,
+                   mesh->Np * sizeof(dfloat),
+                   mesh->y,
+                   sendBuffer,
+                   mesh->y + localNodes);
   if (mesh->dim == 3)
-    meshHaloExchange(mesh, mesh->Np * sizeof(dfloat), mesh->z, sendBuffer, mesh->z + localNodes);
+    meshHaloExchange(mesh,
+                     mesh->Np * sizeof(dfloat),
+                     mesh->z,
+                     sendBuffer,
+                     mesh->z + localNodes);
 
   free(sendBuffer);
 }

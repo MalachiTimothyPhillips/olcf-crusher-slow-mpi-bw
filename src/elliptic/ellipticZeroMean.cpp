@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -35,11 +35,13 @@ void ellipticZeroMean(elliptic_t *elliptic, occa::memory &o_q)
 
   if (elliptic->blockSolver) {
     if (platform->comm.mpiRank == 0)
-      printf("ERROR: NULL space handling for Block solver current not supported!\n");
+      printf("ERROR: NULL space handling for Block solver current not "
+             "supported!\n");
     ABORT(EXIT_FAILURE);
   }
   else {
-    dfloat qmeanGlobal = platform->linAlg->sum(mesh->Nlocal, o_q, platform->comm.mpiComm);
+    dfloat qmeanGlobal =
+        platform->linAlg->sum(mesh->Nlocal, o_q, platform->comm.mpiComm);
     qmeanGlobal /= (dfloat)Ntotal;
     platform->linAlg->add(mesh->Nlocal, -qmeanGlobal, o_q);
     // printf("qmeanGlobal %.15e %d\n", qmeanGlobal, Ntotal);

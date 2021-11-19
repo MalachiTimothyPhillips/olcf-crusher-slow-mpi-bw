@@ -97,7 +97,8 @@ void registerNrsKernels(occa::properties kernelInfoBC)
 
     {
       occa::properties prop = kernelInfo;
-      const int movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
+      const int movingMesh =
+          platform->options.compareArgs("MOVING MESH", "TRUE");
       prop["defines/p_nEXT"] = nEXT;
       prop["defines/p_nBDF"] = nBDF;
       prop["defines/p_MovingMesh"] = movingMesh;
@@ -167,7 +168,8 @@ void registerNrsKernels(occa::properties kernelInfoBC)
 
     {
       occa::properties prop = meshProps;
-      const int movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
+      const int movingMesh =
+          platform->options.compareArgs("MOVING MESH", "TRUE");
       prop["defines/p_MovingMesh"] = movingMesh;
       prop["defines/p_nEXT"] = nEXT;
       prop["defines/p_nBDF"] = nBDF;
@@ -178,7 +180,9 @@ void registerNrsKernels(occa::properties kernelInfoBC)
 
       kernelName = "subCycleStrongCubatureVolume" + suffix;
       fileName = oklpath + "nrs/" + kernelName + extension;
-      platform->kernels.add(section + kernelName, fileName, subCycleStrongCubatureProps);
+      platform->kernels.add(section + kernelName,
+                            fileName,
+                            subCycleStrongCubatureProps);
 
       kernelName = "subCycleStrongVolume" + suffix;
       fileName = oklpath + "nrs/" + kernelName + ".okl";

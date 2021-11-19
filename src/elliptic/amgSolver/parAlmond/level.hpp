@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -65,7 +66,8 @@ public:
   virtual void smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero) = 0;
 
   virtual void residual(dfloat *rhs, dfloat *x, dfloat *res) = 0;
-  virtual void residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res) = 0;
+  virtual void
+  residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res) = 0;
 
   virtual void coarsen(dfloat *x, dfloat *Cx) = 0;
   virtual void coarsen(occa::memory o_x, occa::memory o_Cx) = 0;
@@ -75,9 +77,15 @@ public:
 
   virtual void Report() = 0;
 
-  void kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm_rhs, dfloat *norm_rhstilde);
+  void kcycleOp1(dfloat *alpha1,
+                 dfloat *rho1,
+                 dfloat *norm_rhs,
+                 dfloat *norm_rhstilde);
   void kcycleOp2(const dfloat alpha1, const dfloat rho1);
-  void device_kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm_rhs, dfloat *norm_rhstilde);
+  void device_kcycleOp1(dfloat *alpha1,
+                        dfloat *rho1,
+                        dfloat *norm_rhs,
+                        dfloat *norm_rhstilde);
   void device_kcycleOp2(const dfloat alpha1, const dfloat rho1);
 };
 

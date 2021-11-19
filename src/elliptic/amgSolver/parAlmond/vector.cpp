@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,7 +64,11 @@ void vectorAddScalar(const dlong m, const dfloat alpha, dfloat *a)
 }
 
 // y = beta*y + alpha*x
-void vectorAdd(const dlong n, const dfloat alpha, const dfloat *x, const dfloat beta, dfloat *y)
+void vectorAdd(const dlong n,
+               const dfloat alpha,
+               const dfloat *x,
+               const dfloat beta,
+               dfloat *y)
 {
   if (beta) {
     // #pragma omp parallel for
@@ -129,7 +134,8 @@ dfloat vectorNorm(const dlong n, const dfloat *a, MPI_Comm comm)
   return sqrt(gresult);
 }
 
-dfloat vectorInnerProd(const dlong n, const dfloat *a, const dfloat *b, MPI_Comm comm)
+dfloat
+vectorInnerProd(const dlong n, const dfloat *a, const dfloat *b, MPI_Comm comm)
 {
   dfloat result = 0., gresult = 0.;
   // #pragma omp parallel for reduction(+:result)
@@ -169,7 +175,8 @@ void kcycleCombinedOp1(const dlong n,
 {
   dfloat result[3] = {0., 0., 0.};
   if (weighted) {
-    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:bDotb)
+    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+    // reduction(+:bDotb)
     for (dlong i = 0; i < n; i++) {
       result[0] += w[i] * a[i] * b[i];
       result[1] += w[i] * a[i] * c[i];
@@ -177,7 +184,8 @@ void kcycleCombinedOp1(const dlong n,
     }
   }
   else {
-    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:bDotb)
+    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+    // reduction(+:bDotb)
     for (dlong i = 0; i < n; i++) {
       result[0] += a[i] * b[i];
       result[1] += a[i] * c[i];
@@ -200,7 +208,8 @@ void kcycleCombinedOp2(const dlong n,
 {
   dfloat result[3] = {0., 0., 0.};
   if (weighted) {
-    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:aDotd)
+    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+    // reduction(+:aDotd)
     for (dlong i = 0; i < n; i++) {
       result[0] += w[i] * a[i] * b[i];
       result[1] += w[i] * a[i] * c[i];
@@ -208,7 +217,8 @@ void kcycleCombinedOp2(const dlong n,
     }
   }
   else {
-    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:aDotd)
+    // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+    // reduction(+:aDotd)
     for (dlong i = 0; i < n; i++) {
       result[0] += a[i] * b[i];
       result[1] += a[i] * c[i];
@@ -292,7 +302,11 @@ void vectorAddScalar(const dlong N, const dfloat alpha, occa::memory o_a)
     vectorAddScalarKernel(N, alpha, o_a);
 }
 
-void vectorAdd(const dlong N, const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void vectorAdd(const dlong N,
+               const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y)
 {
   if (N)
     vectorAddKernel1(N, alpha, beta, o_x, o_y);
@@ -328,7 +342,10 @@ void vectorDotStar(const dlong N,
 
 // dfloat vectorNorm(const dlong n, occa::memory o_a, MPI_Comm comm)
 
-dfloat vectorInnerProd(const dlong N, occa::memory o_x, occa::memory o_y, MPI_Comm comm)
+dfloat vectorInnerProd(const dlong N,
+                       occa::memory o_x,
+                       occa::memory o_y,
+                       MPI_Comm comm)
 {
 
   dlong numBlocks = (N < NBLOCKS) ? N : NBLOCKS;
@@ -362,14 +379,23 @@ void kcycleCombinedOp1(const dlong N,
   dlong numBlocks = (N < NBLOCKS) ? N : NBLOCKS;
 
   if (weighted) {
-    kcycleWeightedCombinedOp1Kernel(numBlocks, N, o_a, o_b, o_c, o_w, o_reductionScratch);
+    kcycleWeightedCombinedOp1Kernel(numBlocks,
+                                    N,
+                                    o_a,
+                                    o_b,
+                                    o_c,
+                                    o_w,
+                                    o_reductionScratch);
   }
   else {
     kcycleCombinedOp1Kernel(numBlocks, N, o_a, o_b, o_c, o_reductionScratch);
   }
-  o_reductionScratch.copyTo(reductionScratch, 3 * numBlocks * sizeof(dfloat), 0);
+  o_reductionScratch.copyTo(reductionScratch,
+                            3 * numBlocks * sizeof(dfloat),
+                            0);
 
-  // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:bDotb)
+  // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+  // reduction(+:bDotb)
   for (dlong i = 0; i < numBlocks; i++) {
     result[0] += ((dfloat *)reductionScratch)[3 * i + 0];
     result[1] += ((dfloat *)reductionScratch)[3 * i + 1];
@@ -394,15 +420,31 @@ void kcycleCombinedOp2(const dlong N,
   dlong numBlocks = (N < NBLOCKS) ? N : NBLOCKS;
 
   if (weighted) {
-    kcycleWeightedCombinedOp2Kernel(numBlocks, N, o_a, o_b, o_c, o_d, o_w, o_reductionScratch);
+    kcycleWeightedCombinedOp2Kernel(numBlocks,
+                                    N,
+                                    o_a,
+                                    o_b,
+                                    o_c,
+                                    o_d,
+                                    o_w,
+                                    o_reductionScratch);
   }
   else {
-    kcycleCombinedOp2Kernel(numBlocks, N, o_a, o_b, o_c, o_d, o_reductionScratch);
+    kcycleCombinedOp2Kernel(numBlocks,
+                            N,
+                            o_a,
+                            o_b,
+                            o_c,
+                            o_d,
+                            o_reductionScratch);
   }
-  o_reductionScratch.copyTo(reductionScratch, 3 * numBlocks * sizeof(dfloat), 0);
+  o_reductionScratch.copyTo(reductionScratch,
+                            3 * numBlocks * sizeof(dfloat),
+                            0);
 
   dfloat aDotb = 0., aDotc = 0., aDotd = 0.;
-  // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc) reduction(+:aDotd)
+  // #pragma omp parallel for reduction(+:aDotb) reduction(+:aDotc)
+  // reduction(+:aDotd)
   for (dlong i = 0; i < numBlocks; i++) {
     result[0] += ((dfloat *)reductionScratch)[3 * i + 0];
     result[1] += ((dfloat *)reductionScratch)[3 * i + 1];
@@ -427,10 +469,23 @@ dfloat vectorAddInnerProd(const dlong N,
   dlong numBlocks = (N < NBLOCKS) ? N : NBLOCKS;
 
   if (weighted) {
-    vectorAddWeightedInnerProdKernel(numBlocks, N, alpha, beta, o_x, o_y, o_w, o_reductionScratch);
+    vectorAddWeightedInnerProdKernel(numBlocks,
+                                     N,
+                                     alpha,
+                                     beta,
+                                     o_x,
+                                     o_y,
+                                     o_w,
+                                     o_reductionScratch);
   }
   else {
-    vectorAddInnerProdKernel(numBlocks, N, alpha, beta, o_x, o_y, o_reductionScratch);
+    vectorAddInnerProdKernel(numBlocks,
+                             N,
+                             alpha,
+                             beta,
+                             o_x,
+                             o_y,
+                             o_reductionScratch);
   }
   o_reductionScratch.copyTo(reductionScratch, numBlocks * sizeof(dfloat), 0);
 

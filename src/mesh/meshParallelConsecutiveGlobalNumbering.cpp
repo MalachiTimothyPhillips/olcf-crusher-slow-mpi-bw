@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -87,7 +87,8 @@ int parallelCompareOwners2(const void *a, const void *b)
   return 0;
 }
 
-// squeeze gaps out of a globalNumbering of local nodes (arranged in NpNum blocks
+// squeeze gaps out of a globalNumbering of local nodes (arranged in NpNum
+// blocks
 void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
                                             dlong Nnum,
                                             hlong *globalNumbering,
@@ -117,7 +118,13 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
   dlong Nlocal = cnt; // number of unmasked nodes
 
   // find how many nodes to expect (should use sparse version)
-  MPI_Alltoall(sendCounts, 1, MPI_INT, recvCounts, 1, MPI_INT, platform->comm.mpiComm);
+  MPI_Alltoall(sendCounts,
+               1,
+               MPI_INT,
+               recvCounts,
+               1,
+               MPI_INT,
+               platform->comm.mpiComm);
 
   // find send and recv offsets for gather
   dlong recvNtotal = 0;
@@ -136,7 +143,8 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
 
   // Make the MPI_PARALLELFACE_T data type
   MPI_Datatype MPI_PARALLELFACE_T;
-  MPI_Datatype dtype[6] = {MPI_DLONG, MPI_HLONG, MPI_DLONG, MPI_HLONG, MPI_INT, MPI_INT};
+  MPI_Datatype dtype[6] =
+      {MPI_DLONG, MPI_HLONG, MPI_DLONG, MPI_HLONG, MPI_INT, MPI_INT};
   int blength[6] = {1, 1, 1, 1, 1, 1};
   MPI_Aint addr[6], displ[6];
   MPI_Get_address(&(sendNodes[0]), addr + 0);
@@ -170,9 +178,11 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
   qsort(sendNodes, Nlocal, sizeof(parallelNode2_t), parallelCompareOwners2);
 
   parallelNode2_t *recvNodes = NULL;
-  recvNodes = (parallelNode2_t *)calloc(recvNtotal + 1, sizeof(parallelNode2_t));
+  recvNodes =
+      (parallelNode2_t *)calloc(recvNtotal + 1, sizeof(parallelNode2_t));
 
-  // load up node data to send (NEED TO SCALE sendCounts, sendOffsets etc by sizeof(parallelNode2_t)
+  // load up node data to send (NEED TO SCALE sendCounts, sendOffsets etc by
+  // sizeof(parallelNode2_t)
   MPI_Alltoallv(sendNodes,
                 sendCounts,
                 sendOffsets,
@@ -187,7 +197,10 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
     recvNodes[n].recvId = n;
 
   // sort by global index
-  qsort(recvNodes, recvNtotal, sizeof(parallelNode2_t), parallelCompareGlobalIndices);
+  qsort(recvNodes,
+        recvNtotal,
+        sizeof(parallelNode2_t),
+        parallelCompareGlobalIndices);
 
   // renumber unique nodes starting from 0 (need to be careful about zeros)
   cnt = 0;
@@ -202,9 +215,16 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
     ++cnt; // increment to actual number of unique nodes on this rank
 
   // collect unique node counts from all processes
-  MPI_Allgather(&cnt, 1, MPI_DLONG, allCounts, 1, MPI_DLONG, platform->comm.mpiComm);
+  MPI_Allgather(&cnt,
+                1,
+                MPI_DLONG,
+                allCounts,
+                1,
+                MPI_DLONG,
+                platform->comm.mpiComm);
 
-  // cumulative sum of unique node counts => starting node index for each process
+  // cumulative sum of unique node counts => starting node index for each
+  // process
   for (int r = 0; r < size; ++r)
     globalStarts[r + 1] = globalStarts[r] + allCounts[r];
 
@@ -213,7 +233,10 @@ void meshParallelConsecutiveGlobalNumbering(mesh_t *mesh,
     recvNodes[n].newGlobalId += globalStarts[rank];
 
   // sort by rank, local index
-  qsort(recvNodes, recvNtotal, sizeof(parallelNode2_t), parallelCompareSourceIndices);
+  qsort(recvNodes,
+        recvNtotal,
+        sizeof(parallelNode2_t),
+        parallelCompareSourceIndices);
 
   // reverse all to all to reclaim nodes
   MPI_Alltoallv(recvNodes,

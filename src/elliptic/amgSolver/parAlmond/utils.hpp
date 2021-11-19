@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,7 +86,13 @@ bool customLess(int smax, dfloat rmax, hlong imax, int s, dfloat r, hlong i);
 
 extern "C" {
 void dgetrf_(int *M, int *N, double *A, int *lda, int *IPIV, int *INFO);
-void dgetri_(int *N, double *A, int *lda, int *IPIV, double *WORK, int *lwork, int *INFO);
+void dgetri_(int *N,
+             double *A,
+             int *lda,
+             int *IPIV,
+             double *WORK,
+             int *lwork,
+             int *INFO);
 void dgeev_(char *JOBVL,
             char *JOBVR,
             int *N,

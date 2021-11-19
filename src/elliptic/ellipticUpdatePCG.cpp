@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -64,7 +64,12 @@ dfloat ellipticUpdatePCG(elliptic_t *elliptic,
     for (int n = 0; n < Nblock; ++n)
       rdotr1 += elliptic->tmpNormr[n];
   }
-  MPI_Allreduce(MPI_IN_PLACE, &rdotr1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                &rdotr1,
+                1,
+                MPI_DFLOAT,
+                MPI_SUM,
+                platform->comm.mpiComm);
 #ifdef ELLIPTIC_ENABLE_TIMER
   // platform->timer.toc("dotp");
 #endif

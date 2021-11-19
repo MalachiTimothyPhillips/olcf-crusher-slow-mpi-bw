@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -33,7 +33,8 @@ std::string gen_suffix(const elliptic_t *elliptic, const char *floatString)
 {
   const std::string precision = std::string(floatString);
   if (precision.find(pfloatString) != std::string::npos) {
-    return std::string("_") + std::to_string(elliptic->mesh->N) + std::string("pfloat");
+    return std::string("_") + std::to_string(elliptic->mesh->N) +
+           std::string("pfloat");
   }
   else {
     return std::string("_") + std::to_string(elliptic->mesh->N);
@@ -42,7 +43,8 @@ std::string gen_suffix(const elliptic_t *elliptic, const char *floatString)
 
 } // namespace
 
-elliptic_t *ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf)
+elliptic_t *
+ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf)
 {
 
   elliptic_t *elliptic = new elliptic_t();
@@ -52,7 +54,11 @@ elliptic_t *ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf
   elliptic->mesh = mesh;
 
   int verbose = elliptic->options.compareArgs("VERBOSE", "TRUE") ? 1 : 0;
-  meshParallelGatherScatterSetup(mesh, mesh->Nlocal, mesh->globalIds, platform->comm.mpiComm, verbose);
+  meshParallelGatherScatterSetup(mesh,
+                                 mesh->Nlocal,
+                                 mesh->globalIds,
+                                 platform->comm.mpiComm,
+                                 verbose);
 
   { // setup an unmasked gs handle
     ogs_t *ogs = NULL;
@@ -82,7 +88,8 @@ elliptic_t *ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf
   const std::string poissonPrefix = elliptic->poisson ? "poisson-" : "";
 
   {
-    const std::string AxSuffix = elliptic->coeffFieldPreco ? "CoeffHex3D" : "Hex3D";
+    const std::string AxSuffix =
+        elliptic->coeffFieldPreco ? "CoeffHex3D" : "Hex3D";
     // check for trilinear
     if (elliptic->elementType != HEXAHEDRA) {
       kernelName = "ellipticPartialAx" + AxSuffix;
@@ -96,11 +103,13 @@ elliptic_t *ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf
 
     {
       const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-      elliptic->AxKernel = platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
+      elliptic->AxKernel =
+          platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
     }
     {
       const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-      elliptic->AxPfloatKernel = platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
+      elliptic->AxPfloatKernel =
+          platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
     }
   }
 
@@ -110,19 +119,29 @@ elliptic_t *ellipticBuildMultigridLevel(elliptic_t *baseElliptic, int Nc, int Nf
     const std::string kernelSuffix = std::string("_") + std::to_string(Nf);
 
     kernelName = "ellipticPreconCoarsen" + suffix;
-    elliptic->precon->coarsenKernel = platform->kernels.get(kernelName + kernelSuffix);
+    elliptic->precon->coarsenKernel =
+        platform->kernels.get(kernelName + kernelSuffix);
     kernelName = "ellipticPreconProlongate" + suffix;
-    elliptic->precon->prolongateKernel = platform->kernels.get(kernelName + kernelSuffix);
+    elliptic->precon->prolongateKernel =
+        platform->kernels.get(kernelName + kernelSuffix);
   }
 
-  elliptic->o_lambdaPfloat = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
-  elliptic->o_lambda = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(dfloat));
+  elliptic->o_lambdaPfloat =
+      platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
+  elliptic->o_lambda =
+      platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(dfloat));
 
   const int Nfq = Nf + 1;
   const int Ncq = Nc + 1;
   dfloat *fToCInterp = (dfloat *)calloc(Nfq * Ncq, sizeof(dfloat));
-  InterpolationMatrix1D(Nf, Nfq, baseElliptic->mesh->r, Ncq, mesh->r, fToCInterp);
-  elliptic->o_interp = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
+  InterpolationMatrix1D(Nf,
+                        Nfq,
+                        baseElliptic->mesh->r,
+                        Ncq,
+                        mesh->r,
+                        fToCInterp);
+  elliptic->o_interp =
+      platform->device.malloc(Nfq * Ncq * sizeof(dfloat), fToCInterp);
 
   elliptic->precon->coarsenKernel(2 * mesh->Nelements,
                                   elliptic->o_interp,

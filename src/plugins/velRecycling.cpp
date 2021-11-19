@@ -48,7 +48,8 @@ void velRecycling::buildKernel(occa::properties kernelInfo)
   {
     kernelName = "setBCVectorValue";
     fileName = path + kernelName + extension;
-    setBCVectorValueKernel = platform->device.buildKernel(fileName, kernelInfo, true);
+    setBCVectorValueKernel =
+        platform->device.buildKernel(fileName, kernelInfo, true);
 
     kernelName = "getBCFlux";
     fileName = path + kernelName + extension;
@@ -56,7 +57,8 @@ void velRecycling::buildKernel(occa::properties kernelInfo)
 
     kernelName = "sumReduction";
     fileName = path + kernelName + extension;
-    sumReductionKernel = platform->device.buildKernel(fileName, kernelInfo, true);
+    sumReductionKernel =
+        platform->device.buildKernel(fileName, kernelInfo, true);
   }
 }
 
@@ -68,9 +70,20 @@ void velRecycling::copy()
 
   // copy recycling plane in interior to inlet
   o_wrk.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  setBCVectorValueKernel(mesh->Nelements, zero, bID, nrs->fieldOffset, o_wrk, mesh->o_vmapM, mesh->o_EToB);
+  setBCVectorValueKernel(mesh->Nelements,
+                         zero,
+                         bID,
+                         nrs->fieldOffset,
+                         o_wrk,
+                         mesh->o_vmapM,
+                         mesh->o_EToB);
 
-  ogsGatherScatterMany(o_wrk, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, ogs);
+  ogsGatherScatterMany(o_wrk,
+                       nrs->NVfields,
+                       nrs->fieldOffset,
+                       ogsDfloat,
+                       ogsAdd,
+                       ogs);
 
   /*
      for(int k=0;k<nrs->dim;++k)
@@ -99,7 +112,12 @@ void velRecycling::copy()
     sbuf[0] += tmp1[n];
     sbuf[1] += tmp2[n];
   }
-  MPI_Allreduce(MPI_IN_PLACE, sbuf, 2, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                sbuf,
+                2,
+                MPI_DFLOAT,
+                MPI_SUM,
+                platform->comm.mpiComm);
 
   const dfloat scale = -wbar * sbuf[0] / sbuf[1];
   // printf("rescaling inflow: %f\n", scale);
@@ -137,7 +155,11 @@ void velRecycling::setup(nrs_t *nrs_,
     }
   }
 
-  ogs = ogsSetup(Ntotal, ids, platform->comm.mpiComm, 1, platform->device.occaDevice());
+  ogs = ogsSetup(Ntotal,
+                 ids,
+                 platform->comm.mpiComm,
+                 1,
+                 platform->device.occaDevice());
   free(ids);
 
   const int NfpTotal = mesh->Nelements * mesh->Nfaces * mesh->Nfp;

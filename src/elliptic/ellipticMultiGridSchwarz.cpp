@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -77,7 +77,8 @@ void harmonic_mean_element_length(ElementLengths *lengths, elliptic_t *elliptic)
         const double dist_x = mesh->x[i2jk] - mesh->x[i1jk];
         const double dist_y = mesh->y[i2jk] - mesh->y[i1jk];
         const double dist_z = mesh->z[i2jk] - mesh->z[i1jk];
-        const double denom = dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
+        const double denom =
+            dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
         lr2 += weight / denom;
         wsum += weight;
       }
@@ -95,7 +96,8 @@ void harmonic_mean_element_length(ElementLengths *lengths, elliptic_t *elliptic)
         const double dist_x = mesh->x[ij2k] - mesh->x[ij1k];
         const double dist_y = mesh->y[ij2k] - mesh->y[ij1k];
         const double dist_z = mesh->z[ij2k] - mesh->z[ij1k];
-        const double denom = dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
+        const double denom =
+            dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
         ls2 += weight / denom;
         wsum += weight;
       }
@@ -113,7 +115,8 @@ void harmonic_mean_element_length(ElementLengths *lengths, elliptic_t *elliptic)
         const double dist_x = mesh->x[ijk2] - mesh->x[ijk1];
         const double dist_y = mesh->y[ijk2] - mesh->y[ijk1];
         const double dist_z = mesh->z[ijk2] - mesh->z[ijk1];
-        const double denom = dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
+        const double denom =
+            dist_x * dist_x + dist_y * dist_y + dist_z * dist_z;
         lt2 += weight / denom;
         wsum += weight;
       }
@@ -151,8 +154,10 @@ void compute_element_lengths(ElementLengths *lengths, elliptic_t *elliptic)
     failed |= std::abs(lengths->length_middle_y[e]) < tol;
     failed |= std::abs(lengths->length_middle_z[e]) < tol;
     if (failed) {
-      std::cout << "Encountered length of zero in middle for element e = " << e << "!\n";
-      std::cout << "x,y,z = " << lengths->length_middle_x[e] << ", " << lengths->length_middle_y[e] << ", "
+      std::cout << "Encountered length of zero in middle for element e = " << e
+                << "!\n";
+      std::cout << "x,y,z = " << lengths->length_middle_x[e] << ", "
+                << lengths->length_middle_y[e] << ", "
                 << lengths->length_middle_z[e] << "\n";
       ABORT(EXIT_FAILURE);
       ;
@@ -162,8 +167,10 @@ void compute_element_lengths(ElementLengths *lengths, elliptic_t *elliptic)
     negative |= lengths->length_middle_y[e] < -tol;
     negative |= lengths->length_middle_z[e] < -tol;
     if (negative) {
-      std::cout << "Encountered negative length in middle for element e = " << e << "!\n";
-      std::cout << "x,y,z = " << lengths->length_middle_x[e] << ", " << lengths->length_middle_y[e] << ", "
+      std::cout << "Encountered negative length in middle for element e = " << e
+                << "!\n";
+      std::cout << "x,y,z = " << lengths->length_middle_x[e] << ", "
+                << lengths->length_middle_y[e] << ", "
                 << lengths->length_middle_z[e] << "\n";
       ABORT(EXIT_FAILURE);
       ;
@@ -179,24 +186,34 @@ void compute_element_lengths(ElementLengths *lengths, elliptic_t *elliptic)
     for (int j = 1; j < N; ++j)
       for (int k = 1; k < N; ++k) {
         l[k * Nq + j * Nq * Nq + elem_offset] = lengths->length_middle_x[e];
-        l[Nq - 1 + k * Nq + j * Nq * Nq + elem_offset] = lengths->length_middle_x[e];
+        l[Nq - 1 + k * Nq + j * Nq * Nq + elem_offset] =
+            lengths->length_middle_x[e];
         l[k + 0 * Nq + j * Nq * Nq + elem_offset] = lengths->length_middle_y[e];
-        l[k + (Nq - 1) * Nq + j * Nq * Nq + elem_offset] = lengths->length_middle_y[e];
+        l[k + (Nq - 1) * Nq + j * Nq * Nq + elem_offset] =
+            lengths->length_middle_y[e];
         l[k + j * Nq + elem_offset] = lengths->length_middle_z[e];
-        l[k + j * Nq + (Nq - 1) * Nq * Nq + elem_offset] = lengths->length_middle_z[e];
+        l[k + j * Nq + (Nq - 1) * Nq * Nq + elem_offset] =
+            lengths->length_middle_z[e];
       }
   }
 
   ogsGatherScatter(l, dfloatString, ogsAdd, mesh->ogs);
   for (dlong e = 0; e < Nelements; ++e) {
     const dlong elem_offset = e * Nq * Nq * Nq;
-    lengths->length_left_x[e] = l[1 * Nq + 1 * Nq * Nq + elem_offset] - lengths->length_middle_x[e];
-    lengths->length_right_x[e] = l[Nq - 1 + 1 * Nq + 1 * Nq * Nq + elem_offset] - lengths->length_middle_x[e];
-    lengths->length_left_y[e] = l[1 + 1 * Nq * Nq + elem_offset] - lengths->length_middle_y[e];
+    lengths->length_left_x[e] =
+        l[1 * Nq + 1 * Nq * Nq + elem_offset] - lengths->length_middle_x[e];
+    lengths->length_right_x[e] =
+        l[Nq - 1 + 1 * Nq + 1 * Nq * Nq + elem_offset] -
+        lengths->length_middle_x[e];
+    lengths->length_left_y[e] =
+        l[1 + 1 * Nq * Nq + elem_offset] - lengths->length_middle_y[e];
     lengths->length_right_y[e] =
-        l[1 + (Nq - 1) * Nq + 1 * Nq * Nq + elem_offset] - lengths->length_middle_y[e];
-    lengths->length_left_z[e] = l[1 + Nq + elem_offset] - lengths->length_middle_z[e];
-    lengths->length_right_z[e] = l[1 + Nq + (Nq - 1) * Nq * Nq + elem_offset] - lengths->length_middle_z[e];
+        l[1 + (Nq - 1) * Nq + 1 * Nq * Nq + elem_offset] -
+        lengths->length_middle_y[e];
+    lengths->length_left_z[e] =
+        l[1 + Nq + elem_offset] - lengths->length_middle_z[e];
+    lengths->length_right_z[e] = l[1 + Nq + (Nq - 1) * Nq * Nq + elem_offset] -
+                                 lengths->length_middle_z[e];
   }
   for (dlong e = 0; e < Nelements; ++e) {
     double length = lengths->length_left_x[e];
@@ -417,9 +434,31 @@ void solve_generalized_ev(dfloat *a, dfloat *b, dfloat *lam, int n)
     b_copy[i] = b[i];
   }
 #ifdef DFLOAT_DOUBLE
-  dsygv_(&itype, &JOBZ, &UPLO, &n, a, &n, b, &n, lam, work_arr, &worksize, &info);
+  dsygv_(&itype,
+         &JOBZ,
+         &UPLO,
+         &n,
+         a,
+         &n,
+         b,
+         &n,
+         lam,
+         work_arr,
+         &worksize,
+         &info);
 #else
-  ssygv_(&itype, &JOBZ, &UPLO, &n, a, &n, b, &n, lam, work_arr, &worksize, &info);
+  ssygv_(&itype,
+         &JOBZ,
+         &UPLO,
+         &n,
+         a,
+         &n,
+         b,
+         &n,
+         lam,
+         work_arr,
+         &worksize,
+         &info);
 #endif
   if (info != 0) {
     std::ostringstream err_logger;
@@ -429,13 +468,16 @@ void solve_generalized_ev(dfloat *a, dfloat *b, dfloat *lam, int n)
     }
     else {
       if (info <= n) {
-        err_logger << "DSYEV failed to converge, as i off-diagonal elements of an intermediate tridiagonal "
+        err_logger << "DSYEV failed to converge, as i off-diagonal elements of "
+                      "an intermediate tridiagonal "
                       "form did not converge to zero\n";
       }
       else {
         info -= n;
-        err_logger << "The leading minor of order " << info << " of B is not positive definite.\n"
-                   << "The factorization of B could not be completed and no eigenvalues/eigenvectors were "
+        err_logger << "The leading minor of order " << info
+                   << " of B is not positive definite.\n"
+                   << "The factorization of B could not be completed and no "
+                      "eigenvalues/eigenvectors were "
                       "computed.\n";
       }
     }
@@ -500,7 +542,9 @@ void compute_1d_matrices(dfloat *S,
   free(b);
 }
 
-void gen_operators(FDMOperators *op, ElementLengths *lengths, elliptic_t *elliptic)
+void gen_operators(FDMOperators *op,
+                   ElementLengths *lengths,
+                   elliptic_t *elliptic)
 {
   const int Nq_e = elliptic->mesh->Nq + 2;
   const int Np_e = Nq_e * Nq_e * Nq_e;
@@ -520,7 +564,14 @@ void gen_operators(FDMOperators *op, ElementLengths *lengths, elliptic_t *ellipt
   dfloat *Sz = (dfloat *)calloc(Nq_e * Nq_e, sizeof(dfloat));
   for (dlong e = 0; e < Nelements; ++e) {
     int lbr = -1, rbr = -1, lbs = -1, rbs = -1, lbt = -1, rbt = -1;
-    compute_element_boundary_conditions(&lbr, &rbr, &lbs, &rbs, &lbt, &rbt, e, elliptic);
+    compute_element_boundary_conditions(&lbr,
+                                        &rbr,
+                                        &lbs,
+                                        &rbs,
+                                        &lbt,
+                                        &rbt,
+                                        e,
+                                        elliptic);
     compute_1d_matrices(Sx,
                         lr,
                         lbr,
@@ -601,20 +652,33 @@ mesh_t *create_extended_mesh(elliptic_t *elliptic, hlong *maskedGlobalIds)
   mesh->EX = (dfloat *)calloc(mesh->Nverts * mesh->Nelements, sizeof(dfloat));
   mesh->EY = (dfloat *)calloc(mesh->Nverts * mesh->Nelements, sizeof(dfloat));
   mesh->EZ = (dfloat *)calloc(mesh->Nverts * mesh->Nelements, sizeof(dfloat));
-  memcpy(mesh->EX, meshRoot->EX, mesh->Nverts * mesh->Nelements * sizeof(dfloat));
-  memcpy(mesh->EY, meshRoot->EY, mesh->Nverts * mesh->Nelements * sizeof(dfloat));
-  memcpy(mesh->EZ, meshRoot->EZ, mesh->Nverts * mesh->Nelements * sizeof(dfloat));
+  memcpy(mesh->EX,
+         meshRoot->EX,
+         mesh->Nverts * mesh->Nelements * sizeof(dfloat));
+  memcpy(mesh->EY,
+         meshRoot->EY,
+         mesh->Nverts * mesh->Nelements * sizeof(dfloat));
+  memcpy(mesh->EZ,
+         meshRoot->EZ,
+         mesh->Nverts * mesh->Nelements * sizeof(dfloat));
 
-  mesh->faceVertices = (int *)calloc(mesh->NfaceVertices * mesh->Nfaces, sizeof(int));
-  memcpy(mesh->faceVertices, meshRoot->faceVertices, mesh->NfaceVertices * mesh->Nfaces * sizeof(int));
+  mesh->faceVertices =
+      (int *)calloc(mesh->NfaceVertices * mesh->Nfaces, sizeof(int));
+  memcpy(mesh->faceVertices,
+         meshRoot->faceVertices,
+         mesh->NfaceVertices * mesh->Nfaces * sizeof(int));
 
   mesh->EToV = (hlong *)calloc(mesh->Nverts * mesh->Nelements, sizeof(hlong));
-  memcpy(mesh->EToV, meshRoot->EToV, mesh->Nverts * mesh->Nelements * sizeof(hlong));
+  memcpy(mesh->EToV,
+         meshRoot->EToV,
+         mesh->Nverts * mesh->Nelements * sizeof(hlong));
 
   meshParallelConnect(mesh);
 
   mesh->EToB = (int *)calloc(mesh->Nfaces * mesh->Nelements, sizeof(int));
-  memcpy(mesh->EToB, meshRoot->EToB, mesh->Nfaces * mesh->Nelements * sizeof(int));
+  memcpy(mesh->EToB,
+         meshRoot->EToB,
+         mesh->Nfaces * mesh->Nelements * sizeof(int));
 
   meshLoadReferenceNodesHex3D(mesh, mesh->N, 1);
   meshHaloSetup(mesh);
@@ -631,7 +695,8 @@ mesh_t *create_extended_mesh(elliptic_t *elliptic, hlong *maskedGlobalIds)
 
   const int bigNum = 1E9;
   dlong Ntotal = mesh->Np * mesh->Nelements;
-  // make a node-wise bc flag using the gsop (prioritize Dirichlet boundaries over Neumann)
+  // make a node-wise bc flag using the gsop (prioritize Dirichlet boundaries
+  // over Neumann)
   int *mapB = (int *)calloc(mesh->Nelements * mesh->Np, sizeof(int));
   for (dlong e = 0; e < mesh->Nelements; e++) {
     for (int n = 0; n < mesh->Np; n++)
@@ -694,7 +759,8 @@ void to_reg(pfloat *arr1, pfloat *arr2, mesh_t *mesh)
   const int nx = mesh->Nq;
   const int nx_e = mesh->Nq + 2;
 #define arr1(r, s, t, e) (arr1[((r) + nx * ((s) + nx * ((t) + nx * (e))))])
-#define arr2(r, s, t, e) (arr2[((r + 1) + nx_e * ((s + 1) + nx_e * ((t + 1) + nx_e * (e))))])
+#define arr2(r, s, t, e)                                                       \
+  (arr2[((r + 1) + nx_e * ((s + 1) + nx_e * ((t + 1) + nx_e * (e))))])
   for (dlong ie = 0; ie < Nelements; ++ie)
     for (int k = 0; k < nx; ++k)
       for (int j = 0; j < nx; ++j)
@@ -723,17 +789,20 @@ void extrude(pfloat *arr1,
     for (int k = i0; k < i1; ++k)
       for (int j = i0; j < i1; ++j) {
         arr1(l1, j, k, ie) = f1 * arr1(l1, j, k, ie) + f2 * arr2(l2, j, k, ie);
-        arr1(nx - l1 - 1, j, k, ie) = f1 * arr1(nx - l1 - 1, j, k, ie) + f2 * arr2(nx - l2 - 1, j, k, ie);
+        arr1(nx - l1 - 1, j, k, ie) =
+            f1 * arr1(nx - l1 - 1, j, k, ie) + f2 * arr2(nx - l2 - 1, j, k, ie);
       }
     for (int k = i0; k < i1; ++k)
       for (int i = i0; i < i1; ++i) {
         arr1(i, l1, k, ie) = f1 * arr1(i, l1, k, ie) + f2 * arr2(i, l2, k, ie);
-        arr1(i, nx - l1 - 1, k, ie) = f1 * arr1(i, nx - l1 - 1, k, ie) + f2 * arr2(i, nx - l2 - 1, k, ie);
+        arr1(i, nx - l1 - 1, k, ie) =
+            f1 * arr1(i, nx - l1 - 1, k, ie) + f2 * arr2(i, nx - l2 - 1, k, ie);
       }
     for (int j = i0; j < i1; ++j)
       for (int i = i0; i < i1; ++i) {
         arr1(i, j, l1, ie) = f1 * arr1(i, j, l1, ie) + f2 * arr2(i, j, l2, ie);
-        arr1(i, j, nx - l1 - 1, ie) = f1 * arr1(i, j, nx - l1 - 1, ie) + f2 * arr2(i, j, nx - l2 - 1, ie);
+        arr1(i, j, nx - l1 - 1, ie) =
+            f1 * arr1(i, j, nx - l1 - 1, ie) + f2 * arr2(i, j, nx - l2 - 1, ie);
       }
   }
 #undef arr1
@@ -790,12 +859,14 @@ void MGLevel::build(elliptic_t *pSolver)
   const int Np = elliptic->mesh->Np;
 
   overlap = false;
-  const bool serial = (platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP");
+  const bool serial = (platform->device.mode() == "Serial" ||
+                       platform->device.mode() == "OpenMP");
   if (Nq >= 5 && !serial)
     overlap = true;
 
   hlong *maskedGlobalIds;
-  maskedGlobalIds = (hlong *)calloc(Nelements * (Nq + 2) * (Nq + 2) * (Nq + 2), sizeof(hlong));
+  maskedGlobalIds = (hlong *)calloc(Nelements * (Nq + 2) * (Nq + 2) * (Nq + 2),
+                                    sizeof(hlong));
   mesh_t *extendedMesh = create_extended_mesh(elliptic, maskedGlobalIds);
 
   const int Nq_e = extendedMesh->Nq;
@@ -803,7 +874,8 @@ void MGLevel::build(elliptic_t *pSolver)
   const dlong Nlocal_e = Nelements * Np_e;
 
   oogs_mode oogsMode = OOGS_AUTO;
-  // if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP") oogsMode = OOGS_DEFAULT;
+  // if(platform->device.mode() == "Serial" || platform->device.mode() ==
+  // "OpenMP") oogsMode = OOGS_DEFAULT;
 
   extendedOgs = (void *)oogs::setup(Nelements * Np_e,
                                     maskedGlobalIds,
@@ -874,7 +946,8 @@ void MGLevel::build(elliptic_t *pSolver)
   free(casted_Sz);
   free(casted_D);
 
-  const std::string suffix = std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
+  const std::string suffix =
+      std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
 
   {
     preFDMKernel = platform->kernels.get("preFDM" + suffix);
@@ -886,17 +959,30 @@ void MGLevel::build(elliptic_t *pSolver)
 void MGLevel::smoothSchwarz(occa::memory &o_u, occa::memory &o_Su, bool xIsZero)
 {
   const char *ogsDataTypeString =
-      (strstr(ogsPfloat, "float") && options.compareArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "TRUE"))
+      (strstr(ogsPfloat, "float") &&
+       options.compareArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "TRUE"))
           ? ogsFloatCommHalf
           : ogsPfloat;
   const dlong Nelements = elliptic->mesh->Nelements;
   preFDMKernel(Nelements, o_u, o_work1);
 
-  oogs::startFinish(o_work1, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t *)extendedOgs);
+  oogs::startFinish(o_work1,
+                    1,
+                    0,
+                    ogsDataTypeString,
+                    ogsAdd,
+                    (oogs_t *)extendedOgs);
 
   if (options.compareArgs("MULTIGRID SMOOTHER", "RAS")) {
     if (!overlap) {
-      fusedFDMKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, elliptic->o_invDegree, o_work1);
+      fusedFDMKernel(Nelements,
+                     o_Su,
+                     o_Sx,
+                     o_Sy,
+                     o_Sz,
+                     o_invL,
+                     elliptic->o_invDegree,
+                     o_work1);
     }
     else if (overlap && mesh->NglobalGatherElements) {
       fusedFDMKernel(mesh->NglobalGatherElements,
@@ -940,7 +1026,12 @@ void MGLevel::smoothSchwarz(occa::memory &o_u, occa::memory &o_Su, bool xIsZero)
                      o_work1);
     }
 
-    oogs::start(o_work2, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t *)extendedOgs);
+    oogs::start(o_work2,
+                1,
+                0,
+                ogsDataTypeString,
+                ogsAdd,
+                (oogs_t *)extendedOgs);
 
     if (overlap && mesh->NlocalGatherElements)
       fusedFDMKernel(mesh->NlocalGatherElements,
@@ -952,7 +1043,12 @@ void MGLevel::smoothSchwarz(occa::memory &o_u, occa::memory &o_Su, bool xIsZero)
                      o_invL,
                      o_work1);
 
-    oogs::finish(o_work2, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t *)extendedOgs);
+    oogs::finish(o_work2,
+                 1,
+                 0,
+                 ogsDataTypeString,
+                 ogsAdd,
+                 (oogs_t *)extendedOgs);
 
     postFDMKernel(Nelements, o_work1, o_work2, o_Su, o_wts);
 

@@ -4,7 +4,11 @@
 #include <string>
 
 void meshVOccaSetup3D(mesh_t *mesh, occa::properties &kernelInfo);
-mesh_t *createMeshV(MPI_Comm comm, int N, int cubN, mesh_t *meshT, occa::properties &kernelInfo);
+mesh_t *createMeshV(MPI_Comm comm,
+                    int N,
+                    int cubN,
+                    mesh_t *meshT,
+                    occa::properties &kernelInfo);
 
 occa::properties meshKernelProperties(int N)
 {
@@ -123,7 +127,11 @@ occa::properties meshKernelProperties(int N)
 }
 void loadKernels(mesh_t *mesh);
 
-mesh_t *createMesh(MPI_Comm comm, int N, int cubN, bool cht, occa::properties &kernelInfo)
+mesh_t *createMesh(MPI_Comm comm,
+                   int N,
+                   int cubN,
+                   bool cht,
+                   occa::properties &kernelInfo)
 {
   mesh_t *mesh = new mesh_t();
   platform->options.getArgs("MESH INTEGRATION ORDER", mesh->nAB);
@@ -145,7 +153,8 @@ mesh_t *createMesh(MPI_Comm comm, int N, int cubN, bool cht, occa::properties &k
     ABORT(EXIT_FAILURE);
   }
 
-  mesh->Nfields = 1; // TW: note this is a temporary patch (halo exchange depends on nfields)
+  mesh->Nfields = 1; // TW: note this is a temporary patch (halo exchange
+                     // depends on nfields)
 
   // connect elements using parallel sort
   meshParallelConnect(mesh);
@@ -190,20 +199,28 @@ mesh_t *createMesh(MPI_Comm comm, int N, int cubN, bool cht, occa::properties &k
                                  platform->comm.mpiComm,
                                  0);
   oogs_mode oogsMode = OOGS_AUTO;
-  // if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP") oogsMode = OOGS_DEFAULT;
-  mesh->oogs = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsDfloat, NULL, oogsMode);
+  // if(platform->device.mode() == "Serial" || platform->device.mode() ==
+  // "OpenMP") oogsMode = OOGS_DEFAULT;
+  mesh->oogs = oogs::setup(mesh->ogs,
+                           1,
+                           mesh->Nelements * mesh->Np,
+                           ogsDfloat,
+                           NULL,
+                           oogsMode);
 
   // build mass + inverse mass matrix
   for (dlong e = 0; e < mesh->Nelements; ++e)
     for (int n = 0; n < mesh->Np; ++n)
-      mesh->LMM[e * mesh->Np + n] = mesh->vgeo[e * mesh->Np * mesh->Nvgeo + JWID * mesh->Np + n];
+      mesh->LMM[e * mesh->Np + n] =
+          mesh->vgeo[e * mesh->Np * mesh->Nvgeo + JWID * mesh->Np + n];
   mesh->o_LMM.copyFrom(mesh->LMM, mesh->Nelements * mesh->Np * sizeof(dfloat));
   mesh->computeInvLMM();
 
   if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
     const int maxTemporalOrder = 3;
     mesh->coeffAB = (dfloat *)calloc(maxTemporalOrder, sizeof(dfloat));
-    mesh->o_coeffAB = platform->device.malloc(maxTemporalOrder * sizeof(dfloat), mesh->coeffAB);
+    mesh->o_coeffAB = platform->device.malloc(maxTemporalOrder * sizeof(dfloat),
+                                              mesh->coeffAB);
   }
 
   mesh->fluid = mesh;
@@ -226,7 +243,8 @@ mesh_t* duplicateMesh(MPI_Comm comm,
   // shallow copy
   memcpy(mesh, meshT, sizeof(*meshT));
 
-  mesh->Nfields = 1; // TW: note this is a temporary patch (halo exchange depends on nfields)
+  mesh->Nfields = 1; // TW: note this is a temporary patch (halo exchange
+depends on nfields)
 
   // load reference (r,s,t) element nodes
   meshLoadReferenceNodesHex3D(mesh, N, cubN);
@@ -246,17 +264,18 @@ mesh_t* duplicateMesh(MPI_Comm comm,
   bcMap::check(mesh);
   meshOccaSetup3D(mesh, platform->options, kernelInfo);
 
-  meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np, mesh->globalIds, platform->comm.mpiComm,
-0); oogs_mode oogsMode = OOGS_AUTO;
-  //if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP") oogsMode = OOGS_DEFAULT;
-  mesh->oogs = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsDfloat, NULL, oogsMode);
+  meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np,
+mesh->globalIds, platform->comm.mpiComm, 0); oogs_mode oogsMode = OOGS_AUTO;
+  //if(platform->device.mode() == "Serial" || platform->device.mode() ==
+"OpenMP") oogsMode = OOGS_DEFAULT; mesh->oogs = oogs::setup(mesh->ogs, 1,
+mesh->Nelements * mesh->Np, ogsDfloat, NULL, oogsMode);
 
   // build mass + inverse mass matrix
   for(dlong e = 0; e < mesh->Nelements; ++e)
     for(int n = 0; n < mesh->Np; ++n)
-      mesh->LMM[e * mesh->Np + n] = mesh->vgeo[e * mesh->Np * mesh->Nvgeo + JWID * mesh->Np + n];
-  mesh->o_LMM.copyFrom(mesh->LMM, mesh->Nelements * mesh->Np * sizeof(dfloat));
-  mesh->computeInvLMM();
+      mesh->LMM[e * mesh->Np + n] = mesh->vgeo[e * mesh->Np * mesh->Nvgeo + JWID
+* mesh->Np + n]; mesh->o_LMM.copyFrom(mesh->LMM, mesh->Nelements * mesh->Np *
+sizeof(dfloat)); mesh->computeInvLMM();
 
   return mesh;
 }
@@ -278,35 +297,52 @@ mesh_t *createMeshMG(mesh_t *_mesh, int Nc)
 
   meshGlobalIds(mesh);
 
-  mesh->o_x = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->x);
-  mesh->o_y = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->y);
-  mesh->o_z = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->z);
+  mesh->o_x =
+      platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat),
+                              mesh->x);
+  mesh->o_y =
+      platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat),
+                              mesh->y);
+  mesh->o_z =
+      platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat),
+                              mesh->z);
 
   free(mesh->x);
   free(mesh->y);
   free(mesh->z);
 
-  mesh->o_D = platform->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), mesh->D);
+  mesh->o_D =
+      platform->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), mesh->D);
 
   dfloat *DT = (dfloat *)calloc(mesh->Nq * mesh->Nq, sizeof(dfloat));
   for (int j = 0; j < mesh->Nq; j++)
     for (int i = 0; i < mesh->Nq; i++)
       DT[j * mesh->Nq + i] = mesh->D[i * mesh->Nq + j];
-  mesh->o_DT = platform->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), DT);
+  mesh->o_DT =
+      platform->device.malloc(mesh->Nq * mesh->Nq * sizeof(dfloat), DT);
   free(DT);
 
-  mesh->o_ggeo =
-      platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo * sizeof(dfloat), mesh->ggeo);
+  mesh->o_ggeo = platform->device.malloc(mesh->Nelements * mesh->Np *
+                                             mesh->Nggeo * sizeof(dfloat),
+                                         mesh->ggeo);
 
   if (!strstr(pfloatString, dfloatString)) {
-    mesh->o_ggeoPfloat = platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo, sizeof(pfloat));
-    mesh->o_DPfloat = platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
-    mesh->o_DTPfloat = platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
+    mesh->o_ggeoPfloat =
+        platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo,
+                                sizeof(pfloat));
+    mesh->o_DPfloat =
+        platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
+    mesh->o_DTPfloat =
+        platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
     platform->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np * mesh->Nggeo,
                                        mesh->o_ggeo,
                                        mesh->o_ggeoPfloat);
-    platform->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq, mesh->o_D, mesh->o_DPfloat);
-    platform->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq, mesh->o_DT, mesh->o_DTPfloat);
+    platform->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq,
+                                       mesh->o_D,
+                                       mesh->o_DPfloat);
+    platform->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq,
+                                       mesh->o_DT,
+                                       mesh->o_DTPfloat);
 
     // TODO: once full preconditioner is in FP32, uncomment below
     // mesh->o_D.free();
@@ -316,7 +352,11 @@ mesh_t *createMeshMG(mesh_t *_mesh, int Nc)
   return mesh;
 }
 
-mesh_t *createMeshV(MPI_Comm comm, int N, int cubN, mesh_t *meshT, occa::properties &kernelInfo)
+mesh_t *createMeshV(MPI_Comm comm,
+                    int N,
+                    int cubN,
+                    mesh_t *meshT,
+                    occa::properties &kernelInfo)
 {
   mesh_t *mesh = new mesh_t();
 
@@ -368,8 +408,14 @@ mesh_t *createMeshV(MPI_Comm comm, int N, int cubN, mesh_t *meshT, occa::propert
                                  platform->comm.mpiComm,
                                  0);
   oogs_mode oogsMode = OOGS_AUTO;
-  // if(platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP") oogsMode = OOGS_DEFAULT;
-  mesh->oogs = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsDfloat, NULL, oogsMode);
+  // if(platform->device.mode() == "Serial" || platform->device.mode() ==
+  // "OpenMP") oogsMode = OOGS_DEFAULT;
+  mesh->oogs = oogs::setup(mesh->ogs,
+                           1,
+                           mesh->Nelements * mesh->Np,
+                           ogsDfloat,
+                           NULL,
+                           oogsMode);
 
   mesh->computeInvLMM();
 
@@ -381,26 +427,35 @@ void meshVOccaSetup3D(mesh_t *mesh, occa::properties &kernelInfo)
   if (mesh->totalHaloPairs > 0) {
     // copy halo element list to DEVICE
     mesh->o_haloElementList =
-        platform->device.malloc(mesh->totalHaloPairs * sizeof(dlong), mesh->haloElementList);
+        platform->device.malloc(mesh->totalHaloPairs * sizeof(dlong),
+                                mesh->haloElementList);
 
     // temporary DEVICE buffer for halo (maximum size Nfields*Np for dfloat)
     mesh->o_haloBuffer =
-        platform->device.malloc(mesh->totalHaloPairs * mesh->Np * mesh->Nfields, sizeof(dfloat));
+        platform->device.malloc(mesh->totalHaloPairs * mesh->Np * mesh->Nfields,
+                                sizeof(dfloat));
 
     // node ids
-    mesh->o_haloGetNodeIds =
-        platform->device.malloc(mesh->Nfp * mesh->totalHaloPairs * sizeof(dlong), mesh->haloGetNodeIds);
+    mesh->o_haloGetNodeIds = platform->device.malloc(
+        mesh->Nfp * mesh->totalHaloPairs * sizeof(dlong),
+        mesh->haloGetNodeIds);
 
-    mesh->o_haloPutNodeIds =
-        platform->device.malloc(mesh->Nfp * mesh->totalHaloPairs * sizeof(dlong), mesh->haloPutNodeIds);
+    mesh->o_haloPutNodeIds = platform->device.malloc(
+        mesh->Nfp * mesh->totalHaloPairs * sizeof(dlong),
+        mesh->haloPutNodeIds);
   }
 
-  mesh->o_EToB = platform->device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int), mesh->EToB);
-  mesh->o_vmapM =
-      platform->device.malloc(mesh->Nelements * mesh->Nfp * mesh->Nfaces * sizeof(dlong), mesh->vmapM);
-  mesh->o_vmapP =
-      platform->device.malloc(mesh->Nelements * mesh->Nfp * mesh->Nfaces * sizeof(dlong), mesh->vmapP);
-  mesh->o_invLMM = platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(dfloat));
+  mesh->o_EToB =
+      platform->device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),
+                              mesh->EToB);
+  mesh->o_vmapM = platform->device.malloc(mesh->Nelements * mesh->Nfp *
+                                              mesh->Nfaces * sizeof(dlong),
+                                          mesh->vmapM);
+  mesh->o_vmapP = platform->device.malloc(mesh->Nelements * mesh->Nfp *
+                                              mesh->Nfaces * sizeof(dlong),
+                                          mesh->vmapP);
+  mesh->o_invLMM =
+      platform->device.malloc(mesh->Nelements * mesh->Np, sizeof(dfloat));
 }
 
 void loadKernels(mesh_t *mesh)
@@ -408,11 +463,14 @@ void loadKernels(mesh_t *mesh)
   const std::string meshPrefix = "mesh-";
   if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
     {
-      mesh->velocityDirichletKernel = platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
-      mesh->geometricFactorsKernel = platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
+      mesh->velocityDirichletKernel =
+          platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
+      mesh->geometricFactorsKernel =
+          platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
       mesh->surfaceGeometricFactorsKernel =
           platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
-      mesh->nStagesSumVectorKernel = platform->kernels.get(meshPrefix + "nStagesSumVector");
+      mesh->nStagesSumVectorKernel =
+          platform->kernels.get(meshPrefix + "nStagesSumVector");
     }
   }
 }

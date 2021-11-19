@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -61,7 +61,9 @@ void ellipticBuildContinuousGalerkin(elliptic_t *elliptic,
                                      hlong *globalStarts)
 {
   if (elliptic->mesh->Nq != 2) {
-    fprintf(stderr, "Coarse level order must equal 1 to use the Galerkin coarse system.");
+    fprintf(
+        stderr,
+        "Coarse level order must equal 1 to use the Galerkin coarse system.");
     exit(1);
   }
 
@@ -74,7 +76,12 @@ void ellipticBuildContinuousGalerkin(elliptic_t *elliptic,
     exit(1);
     break;
   case HEXAHEDRA:
-    ellipticBuildContinuousGalerkinHex3D(elliptic, ellipticFine, A, nnz, ogs, globalStarts);
+    ellipticBuildContinuousGalerkinHex3D(elliptic,
+                                         ellipticFine,
+                                         A,
+                                         nnz,
+                                         ogs,
+                                         globalStarts);
     break;
   default:
     break;
@@ -155,7 +162,13 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
   int *owner = (int *)calloc(Ngather, sizeof(int));
 
   // every gathered degree of freedom has its own global id
-  MPI_Allgather(&Ngather, 1, MPI_HLONG, globalStarts + 1, 1, MPI_HLONG, platform->comm.mpiComm);
+  MPI_Allgather(&Ngather,
+                1,
+                MPI_HLONG,
+                globalStarts + 1,
+                1,
+                MPI_HLONG,
+                platform->comm.mpiComm);
   for (int r = 0; r < platform->comm.mpiCommSize; ++r)
     globalStarts[r + 1] = globalStarts[r] + globalStarts[r + 1];
 
@@ -181,8 +194,10 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
   nonZero_t *sendNonZeros = (nonZero_t *)calloc(nnzLocal, sizeof(nonZero_t));
   int *AsendCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
   int *ArecvCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
-  int *AsendOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
-  int *ArecvOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  int *AsendOffsets =
+      (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  int *ArecvOffsets =
+      (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
 
   int *mask = (int *)calloc(mesh->Np * mesh->Nelements, sizeof(int));
   if (elliptic->Nmasked > 0) {
@@ -200,8 +215,10 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
   q = (dfloat *)calloc(meshf->Np * mesh->Nelements, sizeof(dfloat));
   Aq = (dfloat *)calloc(meshf->Np * mesh->Nelements, sizeof(dfloat));
 
-  occa::memory o_q = platform->device.malloc(meshf->Np * mesh->Nelements * sizeof(dfloat), q);
-  occa::memory o_Aq = platform->device.malloc(meshf->Np * mesh->Nelements * sizeof(dfloat), Aq);
+  occa::memory o_q =
+      platform->device.malloc(meshf->Np * mesh->Nelements * sizeof(dfloat), q);
+  occa::memory o_Aq =
+      platform->device.malloc(meshf->Np * mesh->Nelements * sizeof(dfloat), Aq);
 
   for (int jj = 0; jj < mesh->Np; jj++)
     ellipticGenerateCoarseBasisHex3D(b, jj, ellipticFine);
@@ -220,7 +237,9 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
         int idn = nx + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
         // ok
         for (dlong e = 0; e < mesh->Nelements; e++)
-          memcpy(&q[e * meshf->Np], &b[idn * meshf->Np], meshf->Np * sizeof(dfloat));
+          memcpy(&q[e * meshf->Np],
+                 &b[idn * meshf->Np],
+                 meshf->Np * sizeof(dfloat));
 
         o_q.copyFrom(q);
         ellipticOperator(ellipticFine, o_q, o_Aq, dfloatString, false);
@@ -246,7 +265,8 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
                   sendNonZeros[cnt].val = val;
                   sendNonZeros[cnt].row = globalNumbering[e * mesh->Np + idm];
                   sendNonZeros[cnt].col = globalNumbering[e * mesh->Np + idn];
-                  sendNonZeros[cnt].ownerRank = globalOwners[e * mesh->Np + idm];
+                  sendNonZeros[cnt].ownerRank =
+                      globalOwners[e * mesh->Np + idm];
                   cnt++;
                 }
               }
@@ -282,7 +302,13 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
   qsort(sendNonZeros, cnt, sizeof(nonZero_t), parallelCompareRowColumn);
 
   // find how many nodes to expect (should use sparse version)
-  MPI_Alltoall(AsendCounts, 1, MPI_INT, ArecvCounts, 1, MPI_INT, platform->comm.mpiComm);
+  MPI_Alltoall(AsendCounts,
+               1,
+               MPI_INT,
+               ArecvCounts,
+               1,
+               MPI_INT,
+               platform->comm.mpiComm);
 
   // find send and recv offsets for gather
   *nnz = 0;
@@ -305,7 +331,8 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t *elliptic,
                 MPI_NONZERO_T,
                 platform->comm.mpiComm);
 
-  // sort received non-zero entries by row block (may need to switch compareRowColumn tests)
+  // sort received non-zero entries by row block (may need to switch
+  // compareRowColumn tests)
   qsort((*A), *nnz, sizeof(nonZero_t), parallelCompareRowColumn);
 
   // compress duplicates

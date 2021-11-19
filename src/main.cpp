@@ -128,14 +128,15 @@ cmdOptions *processCmdLineOptions(int argc, char **argv, const MPI_Comm &comm)
 
   if (rank == 0) {
     while (1) {
-      static struct option long_options[] = {{"setup", required_argument, 0, 's'},
-                                             {"cimode", required_argument, 0, 'c'},
-                                             {"build-only", optional_argument, 0, 'b'},
-                                             {"debug", no_argument, 0, 'd'},
-                                             {"backend", required_argument, 0, 't'},
-                                             {"device-id", required_argument, 0, 'i'},
-                                             {"help", optional_argument, 0, 'h'},
-                                             {0, 0, 0, 0}};
+      static struct option long_options[] = {
+          {"setup", required_argument, 0, 's'},
+          {"cimode", required_argument, 0, 'c'},
+          {"build-only", optional_argument, 0, 'b'},
+          {"debug", no_argument, 0, 'd'},
+          {"backend", required_argument, 0, 't'},
+          {"device-id", required_argument, 0, 'i'},
+          {"help", optional_argument, 0, 'h'},
+          {0, 0, 0, 0}};
       int option_index = 0;
       int c = getopt_long(argc, argv, "", long_options, &option_index);
 
@@ -146,8 +147,10 @@ cmdOptions *processCmdLineOptions(int argc, char **argv, const MPI_Comm &comm)
       case 's':
         cmdOpt->setupFile.assign(optarg);
         if (cmdOpt->setupFile.find(".par") != std::string::npos)
-          cmdOpt->setupFile.erase(cmdOpt->setupFile.find(".par"), std::string::npos);
-        if (cmdOpt->setupFile.substr(cmdOpt->setupFile.find_last_of(".") + 1) == "sess") {
+          cmdOpt->setupFile.erase(cmdOpt->setupFile.find(".par"),
+                                  std::string::npos);
+        if (cmdOpt->setupFile.substr(cmdOpt->setupFile.find_last_of(".") + 1) ==
+            "sess") {
           cmdOpt->multiSessionFile = cmdOpt->setupFile;
           cmdOpt->setupFile.clear();
         }
@@ -225,7 +228,8 @@ cmdOptions *processCmdLineOptions(int argc, char **argv, const MPI_Comm &comm)
         std::cout << "usage: ./nekrs [--help <par>] "
                   << "--setup <par|sess file> "
                   << "[ --build-only <#procs> ] [ --cimode <id> ] [ --debug ] "
-                  << "[ --backend <CPU|CUDA|HIP|OPENCL> ] [ --device-id <id|LOCAL-RANK> ]"
+                  << "[ --backend <CPU|CUDA|HIP|OPENCL> ] [ --device-id "
+                     "<id|LOCAL-RANK> ]"
                   << "\n";
       }
     }
@@ -249,7 +253,8 @@ MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm)
     if (rank == 0) {
       std::ifstream f(cmdOpt->multiSessionFile);
       if (!f) {
-        std::cout << "FATAL ERROR: Cannot find sess file " << cmdOpt->multiSessionFile << "!\n";
+        std::cout << "FATAL ERROR: Cannot find sess file "
+                  << cmdOpt->multiSessionFile << "!\n";
         fflush(stdout);
         MPI_Abort(comm, EXIT_FAILURE);
       }
@@ -292,7 +297,8 @@ MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm)
     MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, comm);
     if (err) {
       if (rank == 0)
-        std::cout << "FATAL ERROR: size of sub-communicators does not match parent!\n";
+        std::cout << "FATAL ERROR: size of sub-communicators does not match "
+                     "parent!\n";
       fflush(stdout);
       MPI_Abort(comm, EXIT_FAILURE);
     }
@@ -320,8 +326,9 @@ MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm)
     cmdOpt->sizeTarget = size;
 
     if (cmdOpt->debug) {
-      std::cout << "globalRank:" << rankGlobal << " localRank: " << rank << " commSize: " << size
-                << " setupFile:" << cmdOpt->setupFile << "\n";
+      std::cout << "globalRank:" << rankGlobal << " localRank: " << rank
+                << " commSize: " << size << " setupFile:" << cmdOpt->setupFile
+                << "\n";
     }
     fflush(stdout);
     MPI_Barrier(comm);
@@ -329,7 +336,9 @@ MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm)
     if (rank == 0) {
       const std::string outputFile = cmdOpt->setupFile + ".log";
       std::cout << "redirecting output to " << outputFile << " ...\n";
-      const int fd = open(outputFile.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IWUSR | S_IRUSR);
+      const int fd = open(outputFile.c_str(),
+                          O_WRONLY | O_CREAT | O_APPEND,
+                          S_IWUSR | S_IRUSR);
       dup2(fd, fileno(stderr));
       dup2(fd, fileno(stdout));
     }
@@ -406,7 +415,8 @@ int main(int argc, char **argv)
     const std::string casepath = cmdOpt->setupFile.substr(0, last_slash);
     chdir(casepath.c_str());
     const std::string casename =
-        cmdOpt->setupFile.substr(last_slash, cmdOpt->setupFile.length() - last_slash);
+        cmdOpt->setupFile.substr(last_slash,
+                                 cmdOpt->setupFile.length() - last_slash);
     if (casepath.length() > 0)
       chdir(casepath.c_str());
     cmdOpt->setupFile.assign(casename);

@@ -41,7 +41,10 @@ void quadrature_rule(double q_r[4][3], double q_w[4])
   q_w[2] = 1.0 / 24.0;
   q_w[3] = 1.0 / 24.0;
 }
-long long bisection_search_index(const long long *sortedArr, long long value, long long start, long long end)
+long long bisection_search_index(const long long *sortedArr,
+                                 long long value,
+                                 long long start,
+                                 long long end)
 {
   long long fail = -1;
   long long L = start;
@@ -61,7 +64,10 @@ long long bisection_search_index(const long long *sortedArr, long long value, lo
   return fail;
 }
 
-long long linear_search_index(const long long *unsortedArr, long long value, long long start, long long end)
+long long linear_search_index(const long long *unsortedArr,
+                              long long value,
+                              long long start,
+                              long long end)
 {
   long long fail = -1;
   for (long long idx = start; idx < end; ++idx) {
@@ -76,7 +82,10 @@ long long linear_search_index(const long long *unsortedArr, long long value, lon
 double phi_3D_1(double q_r[4][3], int q) { return q_r[q][0]; }
 double phi_3D_2(double q_r[4][3], int q) { return q_r[q][1]; }
 double phi_3D_3(double q_r[4][3], int q) { return q_r[q][2]; }
-double phi_3D_4(double q_r[4][3], int q) { return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2]; }
+double phi_3D_4(double q_r[4][3], int q)
+{
+  return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2];
+}
 void dphi(double deriv[3], int q)
 {
   if (q == 0) {
@@ -278,7 +287,12 @@ SEMFEMData *ellipticBuildSEMFEM(const int N_,
     {
       long long numRowsGlobal64;
       long long numRows64 = numRows;
-      comm_allreduce(&comm, gs_long_long, gs_add, &numRows64, 1, &numRowsGlobal64);
+      comm_allreduce(&comm,
+                     gs_long_long,
+                     gs_add,
+                     &numRows64,
+                     1,
+                     &numRowsGlobal64);
       if (numRowsGlobal64 > std::numeric_limits<int>::max()) {
         if (comm.id == 0)
           printf("Number of global rows requires BigInt support!");
@@ -286,7 +300,8 @@ SEMFEMData *ellipticBuildSEMFEM(const int N_,
       }
     }
 
-    HYPRE_BigInt *ownedRows = (HYPRE_BigInt *)calloc(numRows, sizeof(HYPRE_BigInt));
+    HYPRE_BigInt *ownedRows =
+        (HYPRE_BigInt *)calloc(numRows, sizeof(HYPRE_BigInt));
     int ctr = 0;
     for (long long row = row_start; row <= row_end; ++row)
       ownedRows[ctr++] = row;
@@ -370,10 +385,17 @@ void matrix_distribution()
   long long maximum_value = 0;
 
   for (idx = 0; idx < n_xyze; idx++) {
-    maximum_value_local = (glo_num[idx] > maximum_value_local) ? glo_num[idx] : maximum_value_local;
+    maximum_value_local = (glo_num[idx] > maximum_value_local)
+                              ? glo_num[idx]
+                              : maximum_value_local;
   }
 
-  comm_allreduce(&comm, gs_long_long, gs_max, &maximum_value_local, 1, &maximum_value);
+  comm_allreduce(&comm,
+                 gs_long_long,
+                 gs_max,
+                 &maximum_value_local,
+                 1,
+                 &maximum_value);
   const long long nstar = maximum_value / comm.np + 1;
 
   struct ranking_tuple {
@@ -385,7 +407,8 @@ void matrix_distribution()
   struct array ranking_transfer;
   array_init(ranking_tuple, &ranking_transfer, n_xyze);
   ranking_transfer.n = n_xyze;
-  struct ranking_tuple *ranking_tuple_array = (struct ranking_tuple *)ranking_transfer.ptr;
+  struct ranking_tuple *ranking_tuple_array =
+      (struct ranking_tuple *)ranking_transfer.ptr;
 
   for (idx = 0; idx < ranking_transfer.n; idx++) {
     ranking_tuple_array[idx].rank = glo_num[idx];
@@ -395,11 +418,20 @@ void matrix_distribution()
 
   struct crystal crystal_router_handle;
   crystal_init(&crystal_router_handle, &comm);
-  sarray_transfer(ranking_tuple, &ranking_transfer, proc, 1, &crystal_router_handle);
+  sarray_transfer(ranking_tuple,
+                  &ranking_transfer,
+                  proc,
+                  1,
+                  &crystal_router_handle);
   ranking_tuple_array = (struct ranking_tuple *)ranking_transfer.ptr;
 
   buffer_init(&my_buffer, 1);
-  sarray_sort(ranking_tuple, ranking_transfer.ptr, ranking_transfer.n, rank, 1, &my_buffer);
+  sarray_sort(ranking_tuple,
+              ranking_transfer.ptr,
+              ranking_transfer.n,
+              rank,
+              1,
+              &my_buffer);
 
   long long current_rank = ranking_tuple_array[0].rank;
   long long current_count = 0;
@@ -430,11 +462,20 @@ void matrix_distribution()
     ranking_tuple_array[idx].rank += rank_start;
   }
 
-  sarray_transfer(ranking_tuple, &ranking_transfer, proc, 1, &crystal_router_handle);
+  sarray_transfer(ranking_tuple,
+                  &ranking_transfer,
+                  proc,
+                  1,
+                  &crystal_router_handle);
   ranking_tuple_array = (struct ranking_tuple *)ranking_transfer.ptr;
 
   buffer_init(&my_buffer, 1);
-  sarray_sort(ranking_tuple, ranking_transfer.ptr, ranking_transfer.n, idx, 0, &my_buffer);
+  sarray_sort(ranking_tuple,
+              ranking_transfer.ptr,
+              ranking_transfer.n,
+              idx,
+              0,
+              &my_buffer);
 
   for (idx = 0; idx < n_xyze; idx++) {
     glo_num[idx] = ranking_tuple_array[idx].rank;
@@ -493,7 +534,8 @@ void construct_coo_graph()
     for (auto &&idx_row_lookup_and_col_lookups : rowIdxToColIdxMap) {
       auto row_lookup = idx_row_lookup_and_col_lookups.first;
       for (auto &&col_lookup : idx_row_lookup_and_col_lookups.second) {
-        if (pmask[e * n_xyz + row_lookup] > 0.0 && pmask[e * n_xyz + col_lookup] > 0.0) {
+        if (pmask[e * n_xyz + row_lookup] > 0.0 &&
+            pmask[e * n_xyz + col_lookup] > 0.0) {
           long long row = glo_num[e * n_xyz + row_lookup];
           long long col = glo_num[e * n_xyz + col_lookup];
           graph[row].emplace(col);
@@ -647,9 +689,12 @@ void fem_assembly_host()
               for (int j = 0; j < n_dim + 1; j++) {
                 if ((pmask[idx[t_map[t][i]] + e * n_x * n_x * n_x] > 0.0) &&
                     (pmask[idx[t_map[t][j]] + e * n_x * n_x * n_x] > 0.0)) {
-                  long long row = glo_num[idx[t_map[t][i]] + e * n_x * n_x * n_x];
-                  long long col = glo_num[idx[t_map[t][j]] + e * n_x * n_x * n_x];
-                  long long local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  long long row =
+                      glo_num[idx[t_map[t][i]] + e * n_x * n_x * n_x];
+                  long long col =
+                      glo_num[idx[t_map[t][j]] + e * n_x * n_x * n_x];
+                  long long local_row_id =
+                      bisection_search_index(rows, row, 0, nrows);
                   long long start = rowOffsets[local_row_id];
                   long long end = rowOffsets[local_row_id + 1];
 
@@ -724,13 +769,14 @@ void fem_assembly_device()
                                                 byteOffset,
                                                 bytesAllocated,
                                                 allocations.o_rowsAlloc);
-  occa::memory o_rowOffsets = scratchOrAllocateMemory(nrows + 1,
-                                                      sizeof(long long),
-                                                      rowOffsets,
-                                                      bytesRemaining,
-                                                      byteOffset,
-                                                      bytesAllocated,
-                                                      allocations.o_rowOffsetsAlloc);
+  occa::memory o_rowOffsets =
+      scratchOrAllocateMemory(nrows + 1,
+                              sizeof(long long),
+                              rowOffsets,
+                              bytesRemaining,
+                              byteOffset,
+                              bytesAllocated,
+                              allocations.o_rowOffsetsAlloc);
   occa::memory o_cols = scratchOrAllocateMemory(nnz,
                                                 sizeof(long long),
                                                 cols,
@@ -849,7 +895,11 @@ void fem_assembly()
     printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 
-void load() { computeStiffnessMatrixKernel = platform->kernels.get("computeStiffnessMatrix"); }
+void load()
+{
+  computeStiffnessMatrixKernel =
+      platform->kernels.get("computeStiffnessMatrix");
+}
 void mesh_connectivity(int v_coord[8][3], int t_map[8][4])
 {
 

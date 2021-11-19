@@ -15,7 +15,8 @@ public:
                       const void *src = nullptr,
                       const occa::properties &properties = occa::properties());
   occa::memory malloc(const size_t Nbytes, const occa::properties &properties);
-  occa::memory malloc(const hlong Nwords, const dlong wordSize, occa::memory src);
+  occa::memory
+  malloc(const hlong Nwords, const dlong wordSize, occa::memory src);
   occa::memory malloc(const hlong Nwords, const dlong wordSize);
 
   occa::memory mallocHost(const size_t Nbytes);
@@ -30,7 +31,9 @@ public:
                            const occa::properties &props,
                            const std::string &suffix,
                            bool buildRank0) const;
-  occa::kernel buildKernel(const std::string &fullPath, const occa::properties &props, bool buildRank0) const;
+  occa::kernel buildKernel(const std::string &fullPath,
+                           const occa::properties &props,
+                           bool buildRank0) const;
 
   // collective
   occa::kernel buildKernel(const std::string &fileName,
@@ -41,9 +44,11 @@ public:
 
 private:
   // non-collective
-  occa::kernel buildKernel(const std::string &fullPath, const occa::properties &props) const;
-  occa::kernel
-  buildKernel(const std::string &fullPath, const occa::properties &props, const std::string &suffix) const;
+  occa::kernel buildKernel(const std::string &fullPath,
+                           const occa::properties &props) const;
+  occa::kernel buildKernel(const std::string &fullPath,
+                           const occa::properties &props,
+                           const std::string &suffix) const;
   occa::kernel buildKernel(const std::string &fileName,
                            const std::string &kernelName,
                            const occa::properties &props,

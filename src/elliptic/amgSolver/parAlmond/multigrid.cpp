@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -42,7 +43,8 @@ void solver_t::kcycle(int k)
 
   // check for base level
   if (k == baseLevel) {
-    if (options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE") && !options.compareArgs("AMG SOLVER", "AMG"))
+    if (options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE") &&
+        !options.compareArgs("AMG SOLVER", "AMG"))
       level->smooth(rhs, x, true);
     else
       coarseLevel->solve(rhs, x);

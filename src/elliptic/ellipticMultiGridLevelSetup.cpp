@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -41,11 +41,12 @@ MGLevel::MGLevel(elliptic_t *ellipticBase,
                  parAlmond::KrylovType ktype_,
                  MPI_Comm comm_,
                  bool _isCoarse)
-    : multigridLevel(ellipticBase->mesh->Nelements * ellipticBase->mesh->Np,
-                     (ellipticBase->mesh->Nelements + ellipticBase->mesh->totalHaloPairs) *
-                         ellipticBase->mesh->Np,
-                     ktype_,
-                     comm_)
+    : multigridLevel(
+          ellipticBase->mesh->Nelements * ellipticBase->mesh->Np,
+          (ellipticBase->mesh->Nelements + ellipticBase->mesh->totalHaloPairs) *
+              ellipticBase->mesh->Np,
+          ktype_,
+          comm_)
 {
   isCoarse = _isCoarse;
 
@@ -81,7 +82,8 @@ MGLevel::MGLevel(elliptic_t *ellipticBase, // finest level
                  MPI_Comm comm_,
                  bool _isCoarse)
     : multigridLevel(ellipticCoarse->mesh->Nelements * ellipticCoarse->mesh->Np,
-                     (ellipticCoarse->mesh->Nelements + ellipticCoarse->mesh->totalHaloPairs) *
+                     (ellipticCoarse->mesh->Nelements +
+                      ellipticCoarse->mesh->totalHaloPairs) *
                          ellipticCoarse->mesh->Np,
                      ktype_,
                      comm_)
@@ -118,12 +120,15 @@ void MGLevel::setupSmoother(elliptic_t *ellipticBase)
 {
 
   dfloat minMultiplier;
-  options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", minMultiplier);
+  options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR",
+                  minMultiplier);
 
   dfloat maxMultiplier;
-  options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
+  options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR",
+                  maxMultiplier);
 
-  if (options.compareArgs("MULTIGRID SMOOTHER", "ASM") || options.compareArgs("MULTIGRID SMOOTHER", "RAS")) {
+  if (options.compareArgs("MULTIGRID SMOOTHER", "ASM") ||
+      options.compareArgs("MULTIGRID SMOOTHER", "RAS")) {
     stype = SmootherType::SCHWARZ;
     smtypeUp = SecondarySmootherType::JACOBI;
     smtypeDown = SecondarySmootherType::JACOBI;
@@ -142,7 +147,8 @@ void MGLevel::setupSmoother(elliptic_t *ellipticBase)
     }
     if (options.compareArgs("MULTIGRID DOWNWARD SMOOTHER", "JACOBI") ||
         options.compareArgs("MULTIGRID UPWARD SMOOTHER", "JACOBI")) {
-      o_invDiagA = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat));
+      o_invDiagA =
+          platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat));
       ellipticUpdateJacobi(elliptic, o_invDiagA);
       if (options.compareArgs("MULTIGRID UPWARD SMOOTHER", "JACOBI"))
         smtypeUp = SecondarySmootherType::JACOBI;
@@ -150,12 +156,14 @@ void MGLevel::setupSmoother(elliptic_t *ellipticBase)
         smtypeDown = SecondarySmootherType::JACOBI;
     }
   }
-  else if (options.compareArgs("MULTIGRID SMOOTHER", "DAMPEDJACOBI")) { // default to damped jacobi
+  else if (options.compareArgs("MULTIGRID SMOOTHER",
+                               "DAMPEDJACOBI")) { // default to damped jacobi
     stype = SmootherType::JACOBI;
     smtypeUp = SecondarySmootherType::JACOBI;
     smtypeDown = SecondarySmootherType::JACOBI;
 
-    o_invDiagA = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat));
+    o_invDiagA =
+        platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat));
     ellipticUpdateJacobi(elliptic, o_invDiagA);
 
     if (options.compareArgs("MULTIGRID SMOOTHER", "CHEBYSHEV")) {
@@ -182,23 +190,40 @@ void MGLevel::Report()
   hlong totalNrows = 0;
   dfloat avgNrows;
 
-  MPI_Allreduce(&Nrows, &maxNrows, 1, MPI_DLONG, MPI_MAX, platform->comm.mpiComm);
-  MPI_Allreduce(&hNrows, &totalNrows, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(&Nrows,
+                &maxNrows,
+                1,
+                MPI_DLONG,
+                MPI_MAX,
+                platform->comm.mpiComm);
+  MPI_Allreduce(&hNrows,
+                &totalNrows,
+                1,
+                MPI_HLONG,
+                MPI_SUM,
+                platform->comm.mpiComm);
   avgNrows = (dfloat)totalNrows / platform->comm.mpiCommSize;
 
   if (Nrows == 0)
     Nrows = maxNrows; // set this so it's ignored for the global min
-  MPI_Allreduce(&Nrows, &minNrows, 1, MPI_DLONG, MPI_MIN, platform->comm.mpiComm);
+  MPI_Allreduce(&Nrows,
+                &minNrows,
+                1,
+                MPI_DLONG,
+                MPI_MIN,
+                platform->comm.mpiComm);
 
   char smootherString[BUFSIZ];
   if (!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
-    if (stype == SmootherType::CHEBYSHEV && smtypeDown == SecondarySmootherType::JACOBI)
+    if (stype == SmootherType::CHEBYSHEV &&
+        smtypeDown == SecondarySmootherType::JACOBI)
       strcpy(smootherString, "Chebyshev+Jacobi ");
     else if (stype == SmootherType::SCHWARZ)
       strcpy(smootherString, "Schwarz          ");
     else if (stype == SmootherType::JACOBI)
       strcpy(smootherString, "Jacobi           ");
-    else if (stype == SmootherType::CHEBYSHEV && smtypeDown == SecondarySmootherType::SCHWARZ)
+    else if (stype == SmootherType::CHEBYSHEV &&
+             smtypeDown == SecondarySmootherType::SCHWARZ)
       strcpy(smootherString, "Chebyshev+Schwarz");
     else
       strcpy(smootherString, "???");
@@ -211,11 +236,13 @@ void MGLevel::Report()
       if (options.compareArgs("AMG SOLVER", "AMGX"))
         strcpy(smootherString, "AMGX             ");
       printf("|    AMG     |   Matrix        | %s |\n", smootherString);
-      printf("     |            |     Degree %2d   |                   |\n", degree);
+      printf("     |            |     Degree %2d   |                   |\n",
+             degree);
     }
     else {
       printf("|    pMG     |   Matrix-free   | %s |\n", smootherString);
-      printf("     |            |     Degree %2d   |                   |\n", degree);
+      printf("     |            |     Degree %2d   |                   |\n",
+             degree);
     }
   }
 }
@@ -245,7 +272,8 @@ void MGLevel::buildCoarsenerQuadHex(mesh_t **meshLevels, int Nf, int Nc)
       for (int j = 0; j < NqCoarse; j++) {
         P[i * NqCoarse + j] = 0.;
         for (int k = 0; k < Nq; k++)
-          P[i * NqCoarse + j] += meshLevels[n]->interpRaise[i * Nq + k] * Ptmp[k * NqCoarse + j];
+          P[i * NqCoarse + j] +=
+              meshLevels[n]->interpRaise[i * Nq + k] * Ptmp[k * NqCoarse + j];
       }
   }
 
@@ -275,7 +303,20 @@ static void eig(const int Nrows, double *A, double *WR, double *WI)
 
   int INFO = -999;
 
-  dgeev_(&JOBVL, &JOBVR, &N, A, &LDA, WR, WI, VL, &LDA, VR, &LDA, WORK, &LWORK, &INFO);
+  dgeev_(&JOBVL,
+         &JOBVR,
+         &N,
+         A,
+         &LDA,
+         WR,
+         WI,
+         VL,
+         &LDA,
+         VR,
+         &LDA,
+         WORK,
+         &LWORK,
+         &INFO);
 
   assert(INFO == 0);
 
@@ -297,7 +338,12 @@ dfloat MGLevel::maxEigSmoothAx()
 
   hlong Nlocal = (hlong)Nrows;
   hlong Ntotal = 0;
-  MPI_Allreduce(&Nlocal, &Ntotal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(&Nlocal,
+                &Ntotal,
+                1,
+                MPI_HLONG,
+                MPI_SUM,
+                platform->comm.mpiComm);
 
   int k;
   if (Ntotal > 10)
@@ -315,7 +361,8 @@ dfloat MGLevel::maxEigSmoothAx()
   occa::memory *o_V = new occa::memory[k + 1];
 
   size_t offset = 0;
-  const size_t vectorSize = ((M * sizeof(dfloat)) / ALIGN_SIZE + 1) * ALIGN_SIZE;
+  const size_t vectorSize =
+      ((M * sizeof(dfloat)) / ALIGN_SIZE + 1) * ALIGN_SIZE;
 
   for (int i = 0; i <= k; i++) {
     if (offset + vectorSize < platform->o_mempool.o_ptr.size()) {
@@ -365,16 +412,23 @@ dfloat MGLevel::maxEigSmoothAx()
   }
 
   o_Vx.copyFrom(Vx, M * sizeof(dfloat));
-  dfloat norm_vo = platform->linAlg->weightedInnerProdMany(Nlocal,
-                                                           elliptic->Nfields,
-                                                           elliptic->Ntotal,
-                                                           elliptic->o_invDegree,
-                                                           o_Vx,
-                                                           o_Vx,
-                                                           platform->comm.mpiComm);
+  dfloat norm_vo =
+      platform->linAlg->weightedInnerProdMany(Nlocal,
+                                              elliptic->Nfields,
+                                              elliptic->Ntotal,
+                                              elliptic->o_invDegree,
+                                              o_Vx,
+                                              o_Vx,
+                                              platform->comm.mpiComm);
   norm_vo = sqrt(norm_vo);
 
-  platform->linAlg->axpbyMany(Nlocal, elliptic->Nfields, elliptic->Ntotal, 1. / norm_vo, o_Vx, 0.0, o_V[0]);
+  platform->linAlg->axpbyMany(Nlocal,
+                              elliptic->Nfields,
+                              elliptic->Ntotal,
+                              1. / norm_vo,
+                              o_Vx,
+                              0.0,
+                              o_V[0]);
 
   for (int j = 0; j < k; j++) {
     // v[j+1] = invD*(A*v[j])
@@ -387,31 +441,43 @@ dfloat MGLevel::maxEigSmoothAx()
     // modified Gram-Schmidth
     for (int i = 0; i <= j; i++) {
       // H(i,j) = v[i]'*A*v[j]
-      dfloat hij = platform->linAlg->weightedInnerProdMany(Nlocal,
-                                                           elliptic->Nfields,
-                                                           elliptic->Ntotal,
-                                                           elliptic->o_invDegree,
-                                                           o_V[i],
-                                                           o_V[j + 1],
-                                                           platform->comm.mpiComm);
+      dfloat hij =
+          platform->linAlg->weightedInnerProdMany(Nlocal,
+                                                  elliptic->Nfields,
+                                                  elliptic->Ntotal,
+                                                  elliptic->o_invDegree,
+                                                  o_V[i],
+                                                  o_V[j + 1],
+                                                  platform->comm.mpiComm);
 
       // v[j+1] = v[j+1] - hij*v[i]
-      platform->linAlg->axpbyMany(Nlocal, elliptic->Nfields, elliptic->Ntotal, -hij, o_V[i], 1.0, o_V[j + 1]);
+      platform->linAlg->axpbyMany(Nlocal,
+                                  elliptic->Nfields,
+                                  elliptic->Ntotal,
+                                  -hij,
+                                  o_V[i],
+                                  1.0,
+                                  o_V[j + 1]);
 
       H[i + j * k] = (double)hij;
     }
 
     if (j + 1 < k) {
       // v[j+1] = v[j+1]/||v[j+1]||
-      dfloat norm_vj = platform->linAlg->weightedInnerProdMany(Nlocal,
-                                                               elliptic->Nfields,
-                                                               elliptic->Ntotal,
-                                                               elliptic->o_invDegree,
-                                                               o_V[j + 1],
-                                                               o_V[j + 1],
-                                                               platform->comm.mpiComm);
+      dfloat norm_vj =
+          platform->linAlg->weightedInnerProdMany(Nlocal,
+                                                  elliptic->Nfields,
+                                                  elliptic->Ntotal,
+                                                  elliptic->o_invDegree,
+                                                  o_V[j + 1],
+                                                  o_V[j + 1],
+                                                  platform->comm.mpiComm);
       norm_vj = sqrt(norm_vj);
-      platform->linAlg->scaleMany(Nlocal, elliptic->Nfields, elliptic->Ntotal, 1 / norm_vj, o_V[j + 1]);
+      platform->linAlg->scaleMany(Nlocal,
+                                  elliptic->Nfields,
+                                  elliptic->Ntotal,
+                                  1 / norm_vj,
+                                  o_V[j + 1]);
 
       H[j + 1 + j * k] = (double)norm_vj;
     }

@@ -6,7 +6,8 @@
 #include <array>
 
 /**
- * Persson's artificial viscosity method (http://persson.berkeley.edu/pub/persson06shock.pdf) with P1
+ * Persson's artificial viscosity method
+ *(http://persson.berkeley.edu/pub/persson06shock.pdf) with P1
  **/
 
 namespace avm {
@@ -28,8 +29,11 @@ void allocateMemory(cds_t *cds)
 {
   mesh_t *mesh = cds->mesh[0];
   if (udf.properties == nullptr)
-    o_diffOld = platform->device.malloc(cds->fieldOffsetSum, sizeof(dfloat), cds->o_diff);
-  o_vertexIds = platform->device.malloc(mesh->Nverts * sizeof(int), mesh->vertexNodes);
+    o_diffOld = platform->device.malloc(cds->fieldOffsetSum,
+                                        sizeof(dfloat),
+                                        cds->o_diff);
+  o_vertexIds =
+      platform->device.malloc(mesh->Nverts * sizeof(int), mesh->vertexNodes);
   o_r = platform->device.malloc(mesh->Np * sizeof(dfloat), mesh->r);
   o_s = platform->device.malloc(mesh->Np * sizeof(dfloat), mesh->s);
   o_t = platform->device.malloc(mesh->Np * sizeof(dfloat), mesh->t);
@@ -56,7 +60,10 @@ void setup(cds_t *cds)
   compileKernels(cds);
 }
 
-occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S)
+occa::memory computeEps(nrs_t *nrs,
+                        const dfloat time,
+                        const dlong scalarIndex,
+                        occa::memory o_S)
 {
   cds_t *cds = nrs->cds;
 
@@ -89,12 +96,15 @@ occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, 
                                 o_filteredField,
                                 o_logRelativeMassHighestMode);
 
-  const bool useHPFResidual = cds->options[scalarIndex].compareArgs("REGULARIZATION METHOD", "HPF_RESIDUAL");
+  const bool useHPFResidual =
+      cds->options[scalarIndex].compareArgs("REGULARIZATION METHOD",
+                                            "HPF_RESIDUAL");
 
   dfloat Uinf = 1.0;
   if (useHPFResidual) {
 
-    occa::memory o_rhoField = cds->o_rho + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    occa::memory o_rhoField =
+        cds->o_rho + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
 
     if (recomputeUrst) {
       nrs->UrstKernel(cds->meshV->Nelements,
@@ -116,18 +126,28 @@ occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, 
                                      o_rhoField,
                                      o_hpfResidual);
 
-    occa::memory o_S_field = o_S + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    occa::memory o_S_field =
+        o_S + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
 
     const dfloat Uavg =
-        platform->linAlg->weightedNorm2(mesh->Nlocal, mesh->o_LMM, o_S_field, platform->comm.mpiComm) /
+        platform->linAlg->weightedNorm2(mesh->Nlocal,
+                                        mesh->o_LMM,
+                                        o_S_field,
+                                        platform->comm.mpiComm) /
         sqrt(mesh->volume);
 
     platform->linAlg->fill(mesh->Nlocal, Uavg, o_filteredField);
 
-    platform->linAlg->axpby(mesh->Nlocal, -1.0, o_S_field, 1.0, o_filteredField);
+    platform->linAlg->axpby(mesh->Nlocal,
+                            -1.0,
+                            o_S_field,
+                            1.0,
+                            o_filteredField);
 
     if (Uavg > 0.0) {
-      Uinf = platform->linAlg->max(mesh->Nlocal, o_filteredField, platform->comm.mpiComm);
+      Uinf = platform->linAlg->max(mesh->Nlocal,
+                                   o_filteredField,
+                                   platform->comm.mpiComm);
     }
     Uinf = 1.0 / Uinf;
   }
@@ -138,10 +158,12 @@ occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, 
   cds->options[scalarIndex].getArgs("REGULARIZATION VISMAX COEFF", coeff);
 
   dfloat rampParameter = 1.0;
-  cds->options[scalarIndex].getArgs("REGULARIZATION RAMP CONSTANT", rampParameter);
+  cds->options[scalarIndex].getArgs("REGULARIZATION RAMP CONSTANT",
+                                    rampParameter);
 
   dfloat scalingCoeff = 1.0;
-  cds->options[scalarIndex].getArgs("REGULARIZATION SCALING COEFF", scalingCoeff);
+  cds->options[scalarIndex].getArgs("REGULARIZATION SCALING COEFF",
+                                    scalingCoeff);
 
   computeMaxViscKernel(mesh->Nelements,
                        cds->vFieldOffset,
@@ -160,7 +182,8 @@ occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, 
                        o_epsilon // max(|df/du|) <- max visc
   );
 
-  const bool makeCont = cds->options[scalarIndex].compareArgs("REGULARIZATION AVM C0", "TRUE");
+  const bool makeCont =
+      cds->options[scalarIndex].compareArgs("REGULARIZATION AVM C0", "TRUE");
   if (makeCont) {
     oogs_t *gsh;
     if (scalarIndex) {
@@ -169,14 +192,22 @@ occa::memory computeEps(nrs_t *nrs, const dfloat time, const dlong scalarIndex, 
     else {
       gsh = cds->gshT;
     }
-    oogs::startFinish(o_epsilon, 1, cds->fieldOffset[scalarIndex], ogsDfloat, ogsMax, gsh);
+    oogs::startFinish(o_epsilon,
+                      1,
+                      cds->fieldOffset[scalarIndex],
+                      ogsDfloat,
+                      ogsMax,
+                      gsh);
     interpolateP1Kernel(mesh->Nelements, o_vertexIds, o_r, o_s, o_t, o_epsilon);
   }
 
   return o_epsilon;
 }
 
-void apply(nrs_t *nrs, const dfloat time, const dlong scalarIndex, occa::memory o_S)
+void apply(nrs_t *nrs,
+           const dfloat time,
+           const dlong scalarIndex,
+           occa::memory o_S)
 {
   cds_t *cds = nrs->cds;
   const int verbose = platform->options.compareArgs("VERBOSE", "TRUE");
@@ -192,12 +223,18 @@ void apply(nrs_t *nrs, const dfloat time, const dlong scalarIndex, occa::memory 
   }
   occa::memory o_eps = computeEps(nrs, time, scalarIndex, o_S);
   if (verbose && platform->comm.mpiRank == 0) {
-    const dfloat maxEps = platform->linAlg->max(mesh->Nlocal, o_eps, platform->comm.mpiComm);
-    const dfloat minEps = platform->linAlg->min(mesh->Nlocal, o_eps, platform->comm.mpiComm);
-    occa::memory o_S_slice = cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
-    const dfloat maxDiff = platform->linAlg->max(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
-    const dfloat minDiff = platform->linAlg->min(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
-    printf("Applying a min/max artificial viscosity of (%f,%f) to a field with min/max visc (%f,%f) (field = "
+    const dfloat maxEps =
+        platform->linAlg->max(mesh->Nlocal, o_eps, platform->comm.mpiComm);
+    const dfloat minEps =
+        platform->linAlg->min(mesh->Nlocal, o_eps, platform->comm.mpiComm);
+    occa::memory o_S_slice =
+        cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    const dfloat maxDiff =
+        platform->linAlg->max(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
+    const dfloat minDiff =
+        platform->linAlg->min(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
+    printf("Applying a min/max artificial viscosity of (%f,%f) to a field with "
+           "min/max visc (%f,%f) (field = "
            "%d)\n",
            minEps,
            maxEps,
@@ -206,13 +243,20 @@ void apply(nrs_t *nrs, const dfloat time, const dlong scalarIndex, occa::memory 
            scalarIndex);
   }
 
-  platform->linAlg->axpby(mesh->Nlocal, 1.0, o_eps, 1.0, cds->o_diff, 0, scalarOffset);
+  platform->linAlg
+      ->axpby(mesh->Nlocal, 1.0, o_eps, 1.0, cds->o_diff, 0, scalarOffset);
 
   if (verbose && platform->comm.mpiRank == 0) {
-    occa::memory o_S_slice = cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
-    const dfloat maxDiff = platform->linAlg->max(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
-    const dfloat minDiff = platform->linAlg->min(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
-    printf("Field (%d) now has a min/max visc: (%f,%f)\n", scalarIndex, minDiff, maxDiff);
+    occa::memory o_S_slice =
+        cds->o_diff + cds->fieldOffsetScan[scalarIndex] * sizeof(dfloat);
+    const dfloat maxDiff =
+        platform->linAlg->max(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
+    const dfloat minDiff =
+        platform->linAlg->min(mesh->Nlocal, o_S_slice, platform->comm.mpiComm);
+    printf("Field (%d) now has a min/max visc: (%f,%f)\n",
+           scalarIndex,
+           minDiff,
+           maxDiff);
   }
 }
 

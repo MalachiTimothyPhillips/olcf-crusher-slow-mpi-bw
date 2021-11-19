@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +29,10 @@ SOFTWARE.
 
 namespace parAlmond {
 
-multigridLevel::multigridLevel(dlong N, dlong M, KrylovType ktype_, MPI_Comm comm_)
+multigridLevel::multigridLevel(dlong N,
+                               dlong M,
+                               KrylovType ktype_,
+                               MPI_Comm comm_)
     : Nrows(N), Ncols(M), ktype(ktype_)
 {
   comm = comm_;
@@ -72,7 +76,10 @@ multigridLevel::~multigridLevel()
     o_weight.free();
 }
 
-void multigridLevel::kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm_rhs, dfloat *norm_rhstilde)
+void multigridLevel::kcycleOp1(dfloat *alpha1,
+                               dfloat *rho1,
+                               dfloat *norm_rhs,
+                               dfloat *norm_rhstilde)
 {
 
   // ck = x
@@ -96,7 +103,8 @@ void multigridLevel::kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm_rhs, d
   const dfloat a = -(*alpha1) / (*rho1);
 
   // rhs = rhs - (alpha1/rho1)*vk
-  *norm_rhstilde = sqrt(vectorAddInnerProd(Nrows, a, vk, 1.0, rhs, o_weight, weighted, comm));
+  *norm_rhstilde = sqrt(
+      vectorAddInnerProd(Nrows, a, vk, 1.0, rhs, o_weight, weighted, comm));
 }
 
 void multigridLevel::kcycleOp2(const dfloat alpha1, const dfloat rho1)
@@ -131,7 +139,10 @@ void multigridLevel::kcycleOp2(const dfloat alpha1, const dfloat rho1)
   }
 }
 
-void multigridLevel::device_kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm_rhs, dfloat *norm_rhstilde)
+void multigridLevel::device_kcycleOp1(dfloat *alpha1,
+                                      dfloat *rho1,
+                                      dfloat *norm_rhs,
+                                      dfloat *norm_rhstilde)
 {
 
   // ck = x
@@ -155,7 +166,8 @@ void multigridLevel::device_kcycleOp1(dfloat *alpha1, dfloat *rho1, dfloat *norm
   const dfloat a = -(*alpha1) / (*rho1);
 
   // rhs = rhs - (alpha1/rho1)*vk
-  *norm_rhstilde = sqrt(vectorAddInnerProd(Nrows, a, o_vk, 1.0, o_rhs, o_weight, weighted, comm));
+  *norm_rhstilde = sqrt(
+      vectorAddInnerProd(Nrows, a, o_vk, 1.0, o_rhs, o_weight, weighted, comm));
 }
 
 void multigridLevel::device_kcycleOp2(const dfloat alpha1, const dfloat rho1)
@@ -167,10 +179,26 @@ void multigridLevel::device_kcycleOp2(const dfloat alpha1, const dfloat rho1)
   dfloat rho[3];
 
   if (ktype == PCG)
-    kcycleCombinedOp2(Nrows, rho, o_x, o_vk, o_wk, o_rhs, o_weight, weighted, comm);
+    kcycleCombinedOp2(Nrows,
+                      rho,
+                      o_x,
+                      o_vk,
+                      o_wk,
+                      o_rhs,
+                      o_weight,
+                      weighted,
+                      comm);
 
   if (ktype == GMRES)
-    kcycleCombinedOp2(Nrows, rho, o_wk, o_vk, o_wk, o_rhs, o_weight, weighted, comm);
+    kcycleCombinedOp2(Nrows,
+                      rho,
+                      o_wk,
+                      o_vk,
+                      o_wk,
+                      o_rhs,
+                      o_weight,
+                      weighted,
+                      comm);
 
   const dfloat gamma = rho[0];
   const dfloat beta = rho[1];

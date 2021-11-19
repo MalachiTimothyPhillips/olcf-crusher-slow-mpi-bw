@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -102,7 +102,13 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
   int *owner = (int *)calloc(Ngather, sizeof(int));
 
   // every gathered degree of freedom has its own global id
-  MPI_Allgather(&Ngather, 1, MPI_HLONG, globalStarts + 1, 1, MPI_HLONG, platform->comm.mpiComm);
+  MPI_Allgather(&Ngather,
+                1,
+                MPI_HLONG,
+                globalStarts + 1,
+                1,
+                MPI_HLONG,
+                platform->comm.mpiComm);
   for (int r = 0; r < platform->comm.mpiCommSize; ++r)
     globalStarts[r + 1] = globalStarts[r] + globalStarts[r + 1];
 
@@ -128,8 +134,10 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
   nonZero_t *sendNonZeros = (nonZero_t *)calloc(nnzLocal, sizeof(nonZero_t));
   int *AsendCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
   int *ArecvCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
-  int *AsendOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
-  int *ArecvOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  int *AsendOffsets =
+      (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  int *ArecvOffsets =
+      (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
 
   int *mask = (int *)calloc(mesh->Np * mesh->Nelements, sizeof(int));
   if (elliptic->Nmasked > 0) {
@@ -162,63 +170,82 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
                 if ((ny == my) && (nz == mz)) {
                   for (int k = 0; k < mesh->Nq; k++) {
                     id = k + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                    dfloat Grr = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G00ID * mesh->Np];
+                    dfloat Grr = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                            G00ID * mesh->Np];
 
-                    val += Grr * mesh->D[nx + k * mesh->Nq] * mesh->D[mx + k * mesh->Nq];
+                    val += Grr * mesh->D[nx + k * mesh->Nq] *
+                           mesh->D[mx + k * mesh->Nq];
                   }
                 }
 
                 if (nz == mz) {
                   id = mx + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                  dfloat Grs = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G01ID * mesh->Np];
-                  val += Grs * mesh->D[nx + mx * mesh->Nq] * mesh->D[my + ny * mesh->Nq];
+                  dfloat Grs = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G01ID * mesh->Np];
+                  val += Grs * mesh->D[nx + mx * mesh->Nq] *
+                         mesh->D[my + ny * mesh->Nq];
 
                   id = nx + my * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                  dfloat Gsr = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G01ID * mesh->Np];
-                  val += Gsr * mesh->D[mx + nx * mesh->Nq] * mesh->D[ny + my * mesh->Nq];
+                  dfloat Gsr = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G01ID * mesh->Np];
+                  val += Gsr * mesh->D[mx + nx * mesh->Nq] *
+                         mesh->D[ny + my * mesh->Nq];
                 }
 
                 if (ny == my) {
                   id = mx + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                  dfloat Grt = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G02ID * mesh->Np];
-                  val += Grt * mesh->D[nx + mx * mesh->Nq] * mesh->D[mz + nz * mesh->Nq];
+                  dfloat Grt = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G02ID * mesh->Np];
+                  val += Grt * mesh->D[nx + mx * mesh->Nq] *
+                         mesh->D[mz + nz * mesh->Nq];
 
                   id = nx + ny * mesh->Nq + mz * mesh->Nq * mesh->Nq;
-                  dfloat Gst = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G02ID * mesh->Np];
-                  val += Gst * mesh->D[mx + nx * mesh->Nq] * mesh->D[nz + mz * mesh->Nq];
+                  dfloat Gst = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G02ID * mesh->Np];
+                  val += Gst * mesh->D[mx + nx * mesh->Nq] *
+                         mesh->D[nz + mz * mesh->Nq];
                 }
 
                 if ((nx == mx) && (nz == mz)) {
                   for (int k = 0; k < mesh->Nq; k++) {
                     id = nx + k * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                    dfloat Gss = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G11ID * mesh->Np];
+                    dfloat Gss = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                            G11ID * mesh->Np];
 
-                    val += Gss * mesh->D[ny + k * mesh->Nq] * mesh->D[my + k * mesh->Nq];
+                    val += Gss * mesh->D[ny + k * mesh->Nq] *
+                           mesh->D[my + k * mesh->Nq];
                   }
                 }
 
                 if (nx == mx) {
                   id = nx + my * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                  dfloat Gst = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G12ID * mesh->Np];
-                  val += Gst * mesh->D[ny + my * mesh->Nq] * mesh->D[mz + nz * mesh->Nq];
+                  dfloat Gst = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G12ID * mesh->Np];
+                  val += Gst * mesh->D[ny + my * mesh->Nq] *
+                         mesh->D[mz + nz * mesh->Nq];
 
                   id = nx + ny * mesh->Nq + mz * mesh->Nq * mesh->Nq;
-                  dfloat Gts = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G12ID * mesh->Np];
-                  val += Gts * mesh->D[my + ny * mesh->Nq] * mesh->D[nz + mz * mesh->Nq];
+                  dfloat Gts = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                          G12ID * mesh->Np];
+                  val += Gts * mesh->D[my + ny * mesh->Nq] *
+                         mesh->D[nz + mz * mesh->Nq];
                 }
 
                 if ((nx == mx) && (ny == my)) {
                   for (int k = 0; k < mesh->Nq; k++) {
                     id = nx + ny * mesh->Nq + k * mesh->Nq * mesh->Nq;
-                    dfloat Gtt = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + G22ID * mesh->Np];
+                    dfloat Gtt = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                            G22ID * mesh->Np];
 
-                    val += Gtt * mesh->D[nz + k * mesh->Nq] * mesh->D[mz + k * mesh->Nq];
+                    val += Gtt * mesh->D[nz + k * mesh->Nq] *
+                           mesh->D[mz + k * mesh->Nq];
                   }
                 }
 
                 if ((nx == mx) && (ny == my) && (nz == mz)) {
                   id = nx + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-                  dfloat JW = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id + GWJID * mesh->Np];
+                  dfloat JW = mesh->ggeo[e * mesh->Np * mesh->Nggeo + id +
+                                         GWJID * mesh->Np];
                   val += JW * lambda;
                 }
 
@@ -228,7 +255,8 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
                   sendNonZeros[cnt].val = val;
                   sendNonZeros[cnt].row = globalNumbering[e * mesh->Np + idn];
                   sendNonZeros[cnt].col = globalNumbering[e * mesh->Np + idm];
-                  sendNonZeros[cnt].ownerRank = globalOwners[e * mesh->Np + idn];
+                  sendNonZeros[cnt].ownerRank =
+                      globalOwners[e * mesh->Np + idn];
                   cnt++;
                 }
               }
@@ -258,7 +286,13 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
   qsort(sendNonZeros, cnt, sizeof(nonZero_t), parallelCompareRowColumn);
 
   // find how many nodes to expect (should use sparse version)
-  MPI_Alltoall(AsendCounts, 1, MPI_INT, ArecvCounts, 1, MPI_INT, platform->comm.mpiComm);
+  MPI_Alltoall(AsendCounts,
+               1,
+               MPI_INT,
+               ArecvCounts,
+               1,
+               MPI_INT,
+               platform->comm.mpiComm);
 
   // find send and recv offsets for gather
   *nnz = 0;
@@ -281,7 +315,8 @@ void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
                 MPI_NONZERO_T,
                 platform->comm.mpiComm);
 
-  // sort received non-zero entries by row block (may need to switch compareRowColumn tests)
+  // sort received non-zero entries by row block (may need to switch
+  // compareRowColumn tests)
   qsort((*A), *nnz, sizeof(nonZero_t), parallelCompareRowColumn);
 
   // compress duplicates

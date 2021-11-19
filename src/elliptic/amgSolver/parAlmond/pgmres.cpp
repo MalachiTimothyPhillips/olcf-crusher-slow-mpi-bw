@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +29,13 @@ SOFTWARE.
 
 namespace parAlmond {
 
-void gmresUpdate(dlong Nrows, dfloat *x, dfloat **V, dfloat *H, dfloat *s, int Niter, int maxIt)
+void gmresUpdate(dlong Nrows,
+                 dfloat *x,
+                 dfloat **V,
+                 dfloat *H,
+                 dfloat *s,
+                 int Niter,
+                 int maxIt)
 {
 
   dfloat *y = (dfloat *)calloc(Niter, sizeof(dfloat));
@@ -49,7 +56,13 @@ void gmresUpdate(dlong Nrows, dfloat *x, dfloat **V, dfloat *H, dfloat *s, int N
   free(y);
 }
 
-void gmresUpdate(dlong Nrows, occa::memory o_x, occa::memory *o_V, dfloat *H, dfloat *s, int Niter, int maxIt)
+void gmresUpdate(dlong Nrows,
+                 occa::memory o_x,
+                 occa::memory *o_V,
+                 dfloat *H,
+                 dfloat *s,
+                 int Niter,
+                 int maxIt)
 {
 
   dfloat *y = (dfloat *)calloc(Niter, sizeof(dfloat));
@@ -113,7 +126,9 @@ void solver_t::pgmres(const int maxIt, const dfloat tol)
   dfloat **V = (dfloat **)calloc(maxIt, sizeof(dfloat *));
 
   for (int i = 0; i < maxIt; ++i) {
-    V[i] = (dfloat *)calloc(m, sizeof(dfloat)); // TODO this is way too much memory if maxit is large
+    V[i] = (dfloat *)calloc(
+        m,
+        sizeof(dfloat)); // TODO this is way too much memory if maxit is large
   }
 
   // V(:,0) = r/nr

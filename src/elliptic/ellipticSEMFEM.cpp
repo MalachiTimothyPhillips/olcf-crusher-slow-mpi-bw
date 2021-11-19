@@ -20,7 +20,8 @@ dlong numRowsSEMFEM;
 void ellipticSEMFEMSetup(elliptic_t *elliptic)
 {
 
-  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
+  const int useFP32 =
+      elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
   gatherKernel = platform->kernels.get("gather");
   scatterKernel = platform->kernels.get("scatter");
 
@@ -54,13 +55,18 @@ void ellipticSEMFEMSetup(elliptic_t *elliptic)
   const int sizeType = useFP32 ? sizeof(float) : sizeof(dfloat);
   const long long numRows = data->rowEnd - data->rowStart + 1;
   o_dofMap = platform->device.malloc(numRows * sizeof(long long), data->dofMap);
-  o_SEMFEMBuffer1 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
-  o_SEMFEMBuffer2 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
+  o_SEMFEMBuffer1 =
+      platform->device.malloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
+  o_SEMFEMBuffer2 =
+      platform->device.malloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
 
-  const bool useDevice = platform->options.compareArgs("AMG SOLVER LOCATION", "GPU");
+  const bool useDevice =
+      platform->options.compareArgs("AMG SOLVER LOCATION", "GPU");
   if (!useDevice) {
-    SEMFEMBuffer1_h_d = (dfloat *)calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
-    SEMFEMBuffer2_h_d = (dfloat *)calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
+    SEMFEMBuffer1_h_d =
+        (dfloat *)calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
+    SEMFEMBuffer2_h_d =
+        (dfloat *)calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
   }
 
   numRowsSEMFEM = numRows;
@@ -87,7 +93,8 @@ void ellipticSEMFEMSetup(elliptic_t *elliptic)
     platform->options.getArgs("BOOMERAMG ITERATIONS", settings[3]);
     platform->options.getArgs("BOOMERAMG STRONG THRESHOLD", settings[8]);
     platform->options.getArgs("BOOMERAMG NONGALERKIN TOLERANCE", settings[9]);
-    platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS", settings[10]);
+    platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS",
+                              settings[10]);
 
     if (useFP32) {
       if (platform->comm.mpiRank == 0)
@@ -103,17 +110,18 @@ void ellipticSEMFEMSetup(elliptic_t *elliptic)
       ABORT(1);
     }
 
-    setupRetVal = boomerAMGSetup(numRows,
-                                 data->nnz,
-                                 data->Ai,
-                                 data->Aj,
-                                 data->Av,
-                                 (int)elliptic->allNeumann,
-                                 platform->comm.mpiComm,
-                                 1, /* Nthreads */
-                                 useDevice ? platform->device.id() : -1,
-                                 0, /* do not use FP32 - hardwired as no runtime switch is available */
-                                 settings);
+    setupRetVal = boomerAMGSetup(
+        numRows,
+        data->nnz,
+        data->Ai,
+        data->Aj,
+        data->Av,
+        (int)elliptic->allNeumann,
+        platform->comm.mpiComm,
+        1, /* Nthreads */
+        useDevice ? platform->device.id() : -1,
+        0, /* do not use FP32 - hardwired as no runtime switch is available */
+        settings);
   }
   else if (elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX")) {
     if (platform->device.mode() != "CUDA") {
@@ -157,7 +165,9 @@ void ellipticSEMFEMSetup(elliptic_t *elliptic)
   fflush(stdout);
 }
 
-void ellipticSEMFEMSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_z)
+void ellipticSEMFEMSolve(elliptic_t *elliptic,
+                         occa::memory &o_r,
+                         occa::memory &o_z)
 {
   mesh_t *mesh = elliptic->mesh;
 
@@ -170,11 +180,14 @@ void ellipticSEMFEMSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &
 
   if (elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")) {
 
-    const bool useDevice = platform->options.compareArgs("AMG SOLVER LOCATION", "GPU");
+    const bool useDevice =
+        platform->options.compareArgs("AMG SOLVER LOCATION", "GPU");
     if (platform->device.mode() != "Serial" && !useDevice) {
-      o_buffer.copyTo(SEMFEMBuffer1_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+      o_buffer.copyTo(SEMFEMBuffer1_h_d,
+                      elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
       boomerAMGSolve(SEMFEMBuffer2_h_d, SEMFEMBuffer1_h_d);
-      o_buffer2.copyFrom(SEMFEMBuffer2_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+      o_buffer2.copyFrom(SEMFEMBuffer2_h_d,
+                         elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
     }
     else {
       boomerAMGSolve(o_buffer2.ptr(), o_buffer.ptr());
@@ -186,5 +199,10 @@ void ellipticSEMFEMSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &
 
   scatterKernel(numRowsSEMFEM, o_dofMap, o_buffer2, o_z);
 
-  oogs::startFinish(o_z, 1, mesh->Np * mesh->Nelements, ogsDfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_z,
+                    1,
+                    mesh->Np * mesh->Nelements,
+                    ogsDfloat,
+                    ogsAdd,
+                    elliptic->oogs);
 }

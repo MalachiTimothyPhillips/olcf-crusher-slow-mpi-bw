@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -66,8 +66,10 @@ void meshLoadReferenceNodesHex3D(mesh3D *mesh, int N, int cubN)
   mesh->DW = (dfloat *)malloc(mesh->Nq * mesh->Nq * sizeof(dfloat));
   DWmatrix1D(mesh->N, mesh->D, mesh->DW);
 
-  mesh->interpRaise = (dfloat *)calloc((mesh->Nq + 1) * mesh->Nq, sizeof(dfloat));
-  mesh->interpLower = (dfloat *)calloc((mesh->Nq - 1) * (mesh->Nq), sizeof(dfloat));
+  mesh->interpRaise =
+      (dfloat *)calloc((mesh->Nq + 1) * mesh->Nq, sizeof(dfloat));
+  mesh->interpLower =
+      (dfloat *)calloc((mesh->Nq - 1) * (mesh->Nq), sizeof(dfloat));
   DegreeRaiseMatrix1D(mesh->N, mesh->N + 1, mesh->interpRaise);
   DegreeRaiseMatrix1D(mesh->N - 1, mesh->N, mesh->interpLower);
 
@@ -76,9 +78,8 @@ void meshLoadReferenceNodesHex3D(mesh3D *mesh, int N, int cubN)
   intw = (dfloat*) malloc(meshP->Nq * sizeof(dfloat));
   JacobiGLL(meshP->N, intr, intw);
   mesh->interp = (dfloat*) calloc(mesh->Nq * meshP->Nq, sizeof(dfloat));
-  InterpolationMatrix1D(mesh->N, mesh->Nq, mesh->r, meshP->Nq, intr, mesh->interp);
-  free(intr);
-  free(intw);
+  InterpolationMatrix1D(mesh->N, mesh->Nq, mesh->r, meshP->Nq, intr,
+  mesh->interp); free(intr); free(intw);
   */
 
   mesh->cubNfp = mesh->cubNq * mesh->cubNq;
@@ -88,18 +89,29 @@ void meshLoadReferenceNodesHex3D(mesh3D *mesh, int N, int cubN)
   // JacobiGLL(mesh->cubNq - 1, mesh->cubr, mesh->cubw);
   JacobiGQ(0, 0, mesh->cubNq - 1, mesh->cubr, mesh->cubw);
   mesh->cubInterp = (dfloat *)calloc(mesh->Nq * mesh->cubNq, sizeof(dfloat));
-  InterpolationMatrix1D(mesh->N,
-                        mesh->Nq,
-                        mesh->r,
-                        mesh->cubNq,
-                        mesh->cubr,
-                        mesh->cubInterp); // uses the fact that r = gllz for 1:Nq
+  InterpolationMatrix1D(
+      mesh->N,
+      mesh->Nq,
+      mesh->r,
+      mesh->cubNq,
+      mesh->cubr,
+      mesh->cubInterp); // uses the fact that r = gllz for 1:Nq
   mesh->cubProject = (dfloat *)calloc(mesh->cubNq * mesh->Nq, sizeof(dfloat));
-  matrixTranspose(mesh->cubNq, mesh->Nq, mesh->cubInterp, mesh->Nq, mesh->cubProject, mesh->cubNq);
+  matrixTranspose(mesh->cubNq,
+                  mesh->Nq,
+                  mesh->cubInterp,
+                  mesh->Nq,
+                  mesh->cubProject,
+                  mesh->cubNq);
 
   // cubature derivates matrix, cubD: differentiate on cubature nodes
   mesh->cubD = (dfloat *)malloc(mesh->cubNq * mesh->cubNq * sizeof(dfloat));
-  Dmatrix1D(mesh->cubNq - 1, mesh->cubNq, mesh->cubr, mesh->cubNq, mesh->cubr, mesh->cubD);
+  Dmatrix1D(mesh->cubNq - 1,
+            mesh->cubNq,
+            mesh->cubr,
+            mesh->cubNq,
+            mesh->cubr,
+            mesh->cubD);
   // weak cubature derivative = cubD^T
   mesh->cubDW = (dfloat *)calloc(mesh->cubNq * mesh->cubNq, sizeof(dfloat));
   for (int i = 0; i < mesh->cubNq; ++i)
@@ -109,35 +121,43 @@ void meshLoadReferenceNodesHex3D(mesh3D *mesh, int N, int cubN)
   dfloat NODETOL = 1e-6;
   mesh->vertexNodes = (int *)calloc(mesh->Nverts, sizeof(int));
   for (int n = 0; n < mesh->Np; ++n) {
-    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) + (mesh->s[n] + 1) * (mesh->s[n] + 1) +
+    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) +
+            (mesh->s[n] + 1) * (mesh->s[n] + 1) +
             (mesh->t[n] + 1) * (mesh->t[n] + 1) <
         NODETOL)
       mesh->vertexNodes[0] = n;
-    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) + (mesh->s[n] + 1) * (mesh->s[n] + 1) +
+    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) +
+            (mesh->s[n] + 1) * (mesh->s[n] + 1) +
             (mesh->t[n] + 1) * (mesh->t[n] + 1) <
         NODETOL)
       mesh->vertexNodes[1] = n;
-    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) + (mesh->s[n] - 1) * (mesh->s[n] - 1) +
+    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) +
+            (mesh->s[n] - 1) * (mesh->s[n] - 1) +
             (mesh->t[n] + 1) * (mesh->t[n] + 1) <
         NODETOL)
       mesh->vertexNodes[2] = n;
-    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) + (mesh->s[n] - 1) * (mesh->s[n] - 1) +
+    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) +
+            (mesh->s[n] - 1) * (mesh->s[n] - 1) +
             (mesh->t[n] + 1) * (mesh->t[n] + 1) <
         NODETOL)
       mesh->vertexNodes[3] = n;
-    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) + (mesh->s[n] + 1) * (mesh->s[n] + 1) +
+    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) +
+            (mesh->s[n] + 1) * (mesh->s[n] + 1) +
             (mesh->t[n] - 1) * (mesh->t[n] - 1) <
         NODETOL)
       mesh->vertexNodes[4] = n;
-    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) + (mesh->s[n] + 1) * (mesh->s[n] + 1) +
+    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) +
+            (mesh->s[n] + 1) * (mesh->s[n] + 1) +
             (mesh->t[n] - 1) * (mesh->t[n] - 1) <
         NODETOL)
       mesh->vertexNodes[5] = n;
-    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) + (mesh->s[n] - 1) * (mesh->s[n] - 1) +
+    if ((mesh->r[n] - 1) * (mesh->r[n] - 1) +
+            (mesh->s[n] - 1) * (mesh->s[n] - 1) +
             (mesh->t[n] - 1) * (mesh->t[n] - 1) <
         NODETOL)
       mesh->vertexNodes[6] = n;
-    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) + (mesh->s[n] - 1) * (mesh->s[n] - 1) +
+    if ((mesh->r[n] + 1) * (mesh->r[n] + 1) +
+            (mesh->s[n] - 1) * (mesh->s[n] - 1) +
             (mesh->t[n] - 1) * (mesh->t[n] - 1) <
         NODETOL)
       mesh->vertexNodes[7] = n;

@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -175,7 +176,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
   if (recvNtotal)
     nnz++;
   for (dlong i = 1; i < recvNtotal; i++)
-    if ((recvPTAP[i].row != recvPTAP[i - 1].row) || (recvPTAP[i].col != recvPTAP[i - 1].col))
+    if ((recvPTAP[i].row != recvPTAP[i - 1].row) ||
+        (recvPTAP[i].col != recvPTAP[i - 1].col))
       nnz++;
 
   nonzero_t *PTAP = (nonzero_t *)calloc(nnz, sizeof(nonzero_t));
@@ -185,7 +187,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
   if (recvNtotal)
     PTAP[nnz++] = recvPTAP[0];
   for (dlong i = 1; i < recvNtotal; i++) {
-    if ((recvPTAP[i].row != recvPTAP[i - 1].row) || (recvPTAP[i].col != recvPTAP[i - 1].col)) {
+    if ((recvPTAP[i].row != recvPTAP[i - 1].row) ||
+        (recvPTAP[i].col != recvPTAP[i - 1].col)) {
       PTAP[nnz++] = recvPTAP[i];
     }
     else {
@@ -197,7 +200,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
   MPI_Barrier(A->comm);
   free(recvPTAP);
 
-  dlong numAggs = (dlong)(globalAggStarts[rank + 1] - globalAggStarts[rank]); // local number of aggregates
+  dlong numAggs = (dlong)(globalAggStarts[rank + 1] -
+                          globalAggStarts[rank]); // local number of aggregates
 
   parCSR *Ac = new parCSR(numAggs, numAggs, A->comm, A->device);
 
@@ -209,7 +213,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
 
   for (dlong n = 0; n < nnz; n++) {
     dlong row = (dlong)(PTAP[n].row - globalAggOffset);
-    if ((PTAP[n].col > globalAggStarts[rank] - 1) && (PTAP[n].col < globalAggStarts[rank + 1])) {
+    if ((PTAP[n].col > globalAggStarts[rank] - 1) &&
+        (PTAP[n].col < globalAggStarts[rank + 1])) {
       Ac->diag->rowStarts[row + 1]++;
     }
     else {
@@ -229,7 +234,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
   hlong *colIds = (hlong *)malloc(Ac->offd->nnz * sizeof(hlong));
   cnt = 0;
   for (dlong n = 0; n < nnz; n++) {
-    if ((PTAP[n].col <= (globalAggStarts[rank] - 1)) || (PTAP[n].col >= globalAggStarts[rank + 1])) {
+    if ((PTAP[n].col <= (globalAggStarts[rank] - 1)) ||
+        (PTAP[n].col >= globalAggStarts[rank + 1])) {
       colIds[cnt++] = PTAP[n].col;
     }
   }
@@ -245,7 +251,8 @@ parCSR *galerkinProd(parCSR *A, parCSR *P)
   dlong diagCnt = 0;
   dlong offdCnt = 0;
   for (dlong n = 0; n < nnz; n++) {
-    if ((PTAP[n].col > globalAggStarts[rank] - 1) && (PTAP[n].col < globalAggStarts[rank + 1])) {
+    if ((PTAP[n].col > globalAggStarts[rank] - 1) &&
+        (PTAP[n].col < globalAggStarts[rank + 1])) {
       Ac->diag->cols[diagCnt] = (dlong)(PTAP[n].col - globalAggOffset);
       Ac->diag->vals[diagCnt] = PTAP[n].val;
 

@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -37,7 +37,8 @@ void SolutionProjection::matvec(occa::memory &o_Ax,
                                 const dlong x_offset)
 {
   occa::memory o_xtmp = o_x + Nfields * fieldOffset * x_offset * sizeof(dfloat);
-  occa::memory o_Axtmp = o_Ax + Nfields * fieldOffset * Ax_offset * sizeof(dfloat);
+  occa::memory o_Axtmp =
+      o_Ax + Nfields * fieldOffset * Ax_offset * sizeof(dfloat);
   matvecOperator(o_xtmp, o_Axtmp);
 }
 
@@ -57,7 +58,9 @@ void SolutionProjection::updateProjectionSpace()
       o_bb,
       platform->comm.mpiComm,
       alpha,
-      (type == ProjectionType::CLASSIC) ? Nfields * (numVecsProjection - 1) * fieldOffset : 0);
+      (type == ProjectionType::CLASSIC)
+          ? Nfields * (numVecsProjection - 1) * fieldOffset
+          : 0);
   o_alpha.copyFrom(alpha, sizeof(dfloat) * numVecsProjection);
 
   const dfloat norm_orig = alpha[numVecsProjection - 1];
@@ -90,14 +93,16 @@ void SolutionProjection::updateProjectionSpace()
                                 fieldOffset,
                                 scale,
                                 o_xx,
-                                fieldOffset * Nfields * (numVecsProjection - 1));
+                                fieldOffset * Nfields *
+                                    (numVecsProjection - 1));
     if (type == ProjectionType::CLASSIC)
       platform->linAlg->scaleMany(Nlocal,
                                   Nfields,
                                   fieldOffset,
                                   scale,
                                   o_bb,
-                                  fieldOffset * Nfields * (numVecsProjection - 1));
+                                  fieldOffset * Nfields *
+                                      (numVecsProjection - 1));
   }
   else {
     if (verbose && platform->comm.mpiRank == 0) {
@@ -128,14 +133,26 @@ void SolutionProjection::computePreProjection(occa::memory &o_r)
                                            Nfields * 0 * fieldOffset);
   o_alpha.copyFrom(alpha, sizeof(dfloat) * numVecsProjection);
 
-  accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_xx, o_xbar);
+  accumulateKernel(Nlocal,
+                   numVecsProjection,
+                   fieldOffset,
+                   o_alpha,
+                   o_xx,
+                   o_xbar);
   if (type == ProjectionType::CLASSIC) {
-    accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_bb, o_rtmp);
-    platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_rtmp, one, o_r);
+    accumulateKernel(Nlocal,
+                     numVecsProjection,
+                     fieldOffset,
+                     o_alpha,
+                     o_bb,
+                     o_rtmp);
+    platform->linAlg
+        ->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_rtmp, one, o_r);
   }
   else if (type == ProjectionType::ACONJ) {
     matvec(o_bb, 0, o_xbar, 0);
-    platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_bb, one, o_r);
+    platform->linAlg
+        ->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_bb, one, o_r);
   }
 }
 
@@ -152,7 +169,8 @@ void SolutionProjection::computePostProjection(occa::memory &o_x)
   }
   else if (numVecsProjection == maxNumVecsProjection) {
     numVecsProjection = 1;
-    platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
+    platform->linAlg
+        ->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
     o_xx.copyFrom(o_x, Nfields * fieldOffset * sizeof(dfloat));
   }
   else {
@@ -160,21 +178,27 @@ void SolutionProjection::computePostProjection(occa::memory &o_x)
     // xx[m-1] = x
     o_xx.copyFrom(o_x,
                   Nfields * fieldOffset * sizeof(dfloat),
-                  Nfields * (numVecsProjection - 1) * fieldOffset * sizeof(dfloat),
+                  Nfields * (numVecsProjection - 1) * fieldOffset *
+                      sizeof(dfloat),
                   0);
     // x = x + xbar
-    platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
+    platform->linAlg
+        ->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
   }
   const dlong previousNumVecsProjection = numVecsProjection;
-  const dlong bOffset = (type == ProjectionType::CLASSIC) ? numVecsProjection - 1 : 0;
+  const dlong bOffset =
+      (type == ProjectionType::CLASSIC) ? numVecsProjection - 1 : 0;
   matvec(o_bb, bOffset, o_xx, numVecsProjection - 1);
 
   updateProjectionSpace();
-  if (numVecsProjection < previousNumVecsProjection) { // Last vector was linearly dependent, reset space
+  if (numVecsProjection <
+      previousNumVecsProjection) { // Last vector was linearly dependent, reset
+                                   // space
     numVecsProjection = 1;
     o_xx.copyFrom(o_x,
                   Nfields * fieldOffset *
-                      sizeof(dfloat)); // writes first n words of o_xx, first approximation vector
+                      sizeof(dfloat)); // writes first n words of o_xx, first
+                                       // approximation vector
     matvec(o_bb, 0, o_xx, 0);
     updateProjectionSpace();
   }
@@ -184,9 +208,10 @@ SolutionProjection::SolutionProjection(elliptic_t &elliptic,
                                        const ProjectionType _type,
                                        const dlong _maxNumVecsProjection,
                                        const dlong _numTimeSteps)
-    : maxNumVecsProjection(_maxNumVecsProjection), numTimeSteps(_numTimeSteps), type(_type),
-      Nlocal(elliptic.mesh->Np * elliptic.mesh->Nelements), fieldOffset(elliptic.Ntotal),
-      Nfields(elliptic.Nfields), o_invDegree(elliptic.mesh->ogs->o_invDegree), o_rtmp(elliptic.o_z),
+    : maxNumVecsProjection(_maxNumVecsProjection), numTimeSteps(_numTimeSteps),
+      type(_type), Nlocal(elliptic.mesh->Np * elliptic.mesh->Nelements),
+      fieldOffset(elliptic.Ntotal), Nfields(elliptic.Nfields),
+      o_invDegree(elliptic.mesh->ogs->o_invDegree), o_rtmp(elliptic.o_z),
       o_Ap(elliptic.o_Ap)
 {
   platform_t *platform = platform_t::getInstance();
@@ -196,17 +221,20 @@ SolutionProjection::SolutionProjection(elliptic_t &elliptic,
   alpha = (dfloat *)calloc(maxNumVecsProjection, sizeof(dfloat));
   o_alpha = platform->device.malloc(maxNumVecsProjection, sizeof(dfloat));
   o_xbar = platform->device.malloc(Nfields * fieldOffset, sizeof(dfloat));
-  o_xx = platform->device.malloc(Nfields * fieldOffset * maxNumVecsProjection, sizeof(dfloat));
+  o_xx = platform->device.malloc(Nfields * fieldOffset * maxNumVecsProjection,
+                                 sizeof(dfloat));
   o_bb =
-      platform->device.malloc((type == ProjectionType::CLASSIC) ? Nfields * fieldOffset * maxNumVecsProjection
-                                                                : Nfields * fieldOffset,
+      platform->device.malloc((type == ProjectionType::CLASSIC)
+                                  ? Nfields * fieldOffset * maxNumVecsProjection
+                                  : Nfields * fieldOffset,
                               sizeof(dfloat));
 
   std::string kernelName;
   const std::string sectionIdentifier = std::to_string(Nfields) + "-";
 
   {
-    multiScaledAddwOffsetKernel = platform->kernels.get(sectionIdentifier + "multiScaledAddwOffset");
+    multiScaledAddwOffsetKernel =
+        platform->kernels.get(sectionIdentifier + "multiScaledAddwOffset");
     accumulateKernel = platform->kernels.get(sectionIdentifier + "accumulate");
   }
 

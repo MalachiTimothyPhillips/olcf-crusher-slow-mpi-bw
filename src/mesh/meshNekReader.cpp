@@ -23,10 +23,17 @@ void meshNekReaderHex3D(int N, mesh_t *mesh)
   if (!mesh->cht)
     mesh->Nelements = nekData.nelv;
 
-  const int faceVertices[6][4] =
-      {{0, 1, 2, 3}, {0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
-  mesh->faceVertices = (int *)calloc(mesh->NfaceVertices * mesh->Nfaces, sizeof(int));
-  memcpy(mesh->faceVertices, faceVertices[0], mesh->NfaceVertices * mesh->Nfaces * sizeof(int));
+  const int faceVertices[6][4] = {{0, 1, 2, 3},
+                                  {0, 1, 5, 4},
+                                  {1, 2, 6, 5},
+                                  {2, 3, 7, 6},
+                                  {3, 0, 4, 7},
+                                  {4, 5, 6, 7}};
+  mesh->faceVertices =
+      (int *)calloc(mesh->NfaceVertices * mesh->Nfaces, sizeof(int));
+  memcpy(mesh->faceVertices,
+         faceVertices[0],
+         mesh->NfaceVertices * mesh->Nfaces * sizeof(int));
 
   // pre-processor maps
   const int vtxMap[] = {0, 1, 3, 2, 4, 5, 7, 6};
@@ -38,7 +45,8 @@ void meshNekReaderHex3D(int N, mesh_t *mesh)
   mesh->EToV = (hlong *)calloc(mesh->Nelements * mesh->Nverts, sizeof(hlong));
   for (int e = 0; e < mesh->Nelements; ++e)
     for (int j = 0; j < mesh->Nverts; j++)
-      mesh->EToV[e * mesh->Nverts + j] = nekData.glo_num[e * mesh->Nverts + vtxMap[j]];
+      mesh->EToV[e * mesh->Nverts + j] =
+          nekData.glo_num[e * mesh->Nverts + vtxMap[j]];
 
   // find number of boundary faces
   hlong NboundaryFaces = 0;
@@ -52,7 +60,12 @@ void meshNekReaderHex3D(int N, mesh_t *mesh)
       bid++;
     }
 
-  MPI_Allreduce(MPI_IN_PLACE, &NboundaryFaces, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                &NboundaryFaces,
+                1,
+                MPI_HLONG,
+                MPI_SUM,
+                platform->comm.mpiComm);
   if (platform->comm.mpiRank == 0) {
     int n = nekData.NboundaryIDt;
     if (!mesh->cht)

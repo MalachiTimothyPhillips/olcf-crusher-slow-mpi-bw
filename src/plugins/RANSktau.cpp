@@ -108,10 +108,19 @@ void RANSktau::updateProperties()
   cds_t *cds = nrs->cds;
 
   occa::memory o_mue = nrs->o_mue;
-  occa::memory o_diff = cds->o_diff + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
+  occa::memory o_diff =
+      cds->o_diff + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
 
   limitKernel(mesh->Nelements * mesh->Np, o_k, o_tau);
-  mueKernel(mesh->Nelements * mesh->Np, nrs->fieldOffset, rho, mueLam, o_k, o_tau, o_mut, o_mue, o_diff);
+  mueKernel(mesh->Nelements * mesh->Np,
+            nrs->fieldOffset,
+            rho,
+            mueLam,
+            o_k,
+            o_tau,
+            o_mut,
+            o_mue,
+            o_diff);
 }
 
 occa::memory RANSktau::o_mue_t() { return o_mut; }
@@ -125,18 +134,39 @@ void RANSktau::updateSourceTerms()
   occa::memory o_SijMag2 = platform->o_mempool.slice1;
   occa::memory o_SijOij = platform->o_mempool.slice2;
 
-  occa::memory o_FS = cds->o_FS + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
-  occa::memory o_BFDiag = cds->o_BFDiag + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
+  occa::memory o_FS =
+      cds->o_FS + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
+  occa::memory o_BFDiag =
+      cds->o_BFDiag + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
 
   const int NSOfields = 9;
-  SijOijKernel(mesh->Nelements, nrs->fieldOffset, mesh->o_vgeo, mesh->o_D, nrs->o_U, o_SijOij);
+  SijOijKernel(mesh->Nelements,
+               nrs->fieldOffset,
+               mesh->o_vgeo,
+               mesh->o_D,
+               nrs->o_U,
+               o_SijOij);
 
-  ogsGatherScatterMany(o_SijOij, NSOfields, nrs->fieldOffset, ogsDfloat, ogsAdd, mesh->ogs);
+  ogsGatherScatterMany(o_SijOij,
+                       NSOfields,
+                       nrs->fieldOffset,
+                       ogsDfloat,
+                       ogsAdd,
+                       mesh->ogs);
 
-  platform->linAlg
-      ->axmyMany(mesh->Nlocal, NSOfields, nrs->fieldOffset, 0, 1.0, nrs->meshV->o_invLMM, o_SijOij);
+  platform->linAlg->axmyMany(mesh->Nlocal,
+                             NSOfields,
+                             nrs->fieldOffset,
+                             0,
+                             1.0,
+                             nrs->meshV->o_invLMM,
+                             o_SijOij);
 
-  SijOijMag2Kernel(mesh->Nelements * mesh->Np, nrs->fieldOffset, o_SijOij, o_OiOjSk, o_SijMag2);
+  SijOijMag2Kernel(mesh->Nelements * mesh->Np,
+                   nrs->fieldOffset,
+                   o_SijOij,
+                   o_OiOjSk,
+                   o_SijMag2);
 
   limitKernel(mesh->Nelements * mesh->Np, o_k, o_tau);
 
@@ -159,7 +189,11 @@ void RANSktau::setup(nrs_t *nrsIn, dfloat mueIn, dfloat rhoIn, int ifld)
   setup(nrsIn, mueIn, rhoIn, ifld, NULL);
 }
 
-void RANSktau::setup(nrs_t *nrsIn, dfloat mueIn, dfloat rhoIn, int ifld, const dfloat *coeffIn)
+void RANSktau::setup(nrs_t *nrsIn,
+                     dfloat mueIn,
+                     dfloat rhoIn,
+                     int ifld,
+                     const dfloat *coeffIn)
 {
   if (setupCalled)
     return;
@@ -178,10 +212,12 @@ void RANSktau::setup(nrs_t *nrsIn, dfloat mueIn, dfloat rhoIn, int ifld, const d
   o_k = cds->o_S + cds->fieldOffsetScan[kFieldIndex] * sizeof(dfloat);
   o_tau = cds->o_S + cds->fieldOffsetScan[kFieldIndex + 1] * sizeof(dfloat);
 
-  o_mut = platform->device.malloc(cds->fieldOffset[kFieldIndex], sizeof(dfloat));
+  o_mut =
+      platform->device.malloc(cds->fieldOffset[kFieldIndex], sizeof(dfloat));
 
   if (!cds->o_BFDiag.ptr()) {
-    cds->o_BFDiag = platform->device.malloc(cds->fieldOffsetSum, sizeof(dfloat));
+    cds->o_BFDiag =
+        platform->device.malloc(cds->fieldOffsetSum, sizeof(dfloat));
     platform->linAlg->fill(cds->fieldOffsetSum, 0.0, cds->o_BFDiag);
   }
 

@@ -10,7 +10,7 @@
 #include "nrs.hpp"
 
 #define DECLARE_USER_FUNC(a) void nek_##a(void);
-#define DEFINE_USER_FUNC(a)                                                                                  \
+#define DEFINE_USER_FUNC(a)                                                    \
   void nek_##a(void) { (*a##_ptr)(); }
 
 struct setupAide;
@@ -99,7 +99,11 @@ DECLARE_USER_FUNC(userqtl)
 }
 #endif
 
-void buildNekInterface(const char *casename, int nFields, int N, int np, setupAide &options);
+void buildNekInterface(const char *casename,
+                       int nFields,
+                       int N,
+                       int np,
+                       setupAide &options);
 namespace nek {
 void *ptr(const char *id);
 void *scPtr(int id);
@@ -115,7 +119,12 @@ void outfld(const char *filename,
 void uic(int ifield);
 void end(void);
 void map_m_to_n(double *a, int na, double *b, int nb);
-void outpost(double *v1, double *v2, double *v3, double *vp, double *vt, char *name);
+void outpost(double *v1,
+             double *v2,
+             double *v3,
+             double *vp,
+             double *vt,
+             char *name);
 int lglel(int e);
 void uf(double *u, double *v, double *w);
 int setup(nrs_t *nrs);

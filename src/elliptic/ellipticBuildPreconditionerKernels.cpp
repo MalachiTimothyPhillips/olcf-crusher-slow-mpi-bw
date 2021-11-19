@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -49,32 +49,42 @@ void ellipticBuildPreconditionerKernels(elliptic_t *elliptic)
     kernelName = "mask";
     mesh->maskKernel = platform->kernels.get(kernelName + orderSuffix);
 
-    mesh->maskPfloatKernel = platform->kernels.get(kernelName + orderSuffix + "pfloat");
+    mesh->maskPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix + "pfloat");
     kernelName = "fusedCopyDfloatToPfloat";
-    elliptic->fusedCopyDfloatToPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->fusedCopyDfloatToPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix);
     kernelName = "copyDfloatToPfloat";
-    elliptic->copyDfloatToPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->copyDfloatToPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "copyPfloatToDfloat";
-    elliptic->copyPfloatToDPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->copyPfloatToDPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "scaledAdd";
-    elliptic->scaledAddPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->scaledAddPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "dotMultiply";
-    elliptic->dotMultiplyPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->dotMultiplyPfloatKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateSmoothedSolutionVec";
-    elliptic->updateSmoothedSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->updateSmoothedSolutionVecKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateChebyshevSolutionVec";
-    elliptic->updateChebyshevSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->updateChebyshevSolutionVecKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateIntermediateSolutionVec";
-    elliptic->updateIntermediateSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->updateIntermediateSolutionVecKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "ellipticBlockBuildDiagonalHex3D";
-    elliptic->updateDiagonalKernel = platform->kernels.get(kernelName + orderSuffix);
+    elliptic->updateDiagonalKernel =
+        platform->kernels.get(kernelName + orderSuffix);
 
     elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
     elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");

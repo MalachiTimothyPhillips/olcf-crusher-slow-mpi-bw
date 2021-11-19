@@ -24,7 +24,10 @@ void writeFld(nrs_t *nrs, dfloat t, int outXYZ, int FP64, std::string suffix)
   writeFld(suffix, t, outXYZ, FP64, &nrs->o_U, &nrs->o_P, &o_s, Nscalar);
 }
 
-void writeFld(nrs_t *nrs, dfloat t, int outXYZ, int FP64) { writeFld(nrs, t, outXYZ, FP64, ""); }
+void writeFld(nrs_t *nrs, dfloat t, int outXYZ, int FP64)
+{
+  writeFld(nrs, t, outXYZ, FP64, "");
+}
 
 void writeFld(nrs_t *nrs, dfloat t, std::string suffix)
 {

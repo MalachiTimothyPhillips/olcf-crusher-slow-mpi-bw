@@ -75,17 +75,33 @@ void avg::reset()
   atime = 0;
 }
 
-void avg::EX(dlong N, dfloat a, dfloat b, int nflds, occa::memory o_x, occa::memory o_EX)
+void avg::EX(dlong N,
+             dfloat a,
+             dfloat b,
+             int nflds,
+             occa::memory o_x,
+             occa::memory o_EX)
 {
   EXKernel(N, nrs->fieldOffset, nflds, a, b, o_x, o_EX);
 }
 
-void avg::EXX(dlong N, dfloat a, dfloat b, int nflds, occa::memory o_x, occa::memory o_EXX)
+void avg::EXX(dlong N,
+              dfloat a,
+              dfloat b,
+              int nflds,
+              occa::memory o_x,
+              occa::memory o_EXX)
 {
   EXXKernel(N, nrs->fieldOffset, nflds, a, b, o_x, o_EXX);
 }
 
-void avg::EXY(dlong N, dfloat a, dfloat b, int nflds, occa::memory o_x, occa::memory o_y, occa::memory o_EXY)
+void avg::EXY(dlong N,
+              dfloat a,
+              dfloat b,
+              int nflds,
+              occa::memory o_x,
+              occa::memory o_y,
+              occa::memory o_EXY)
 {
   EXYKernel(N, nrs->fieldOffset, nflds, a, b, o_x, o_y, o_EXY);
 }
@@ -159,12 +175,15 @@ void avg::setup(nrs_t *nrs_)
   if (setupCalled)
     return;
 
-  o_Uavg = platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
-  o_Urms = platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
+  o_Uavg =
+      platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
+  o_Urms =
+      platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
   platform->linAlg->fill(nrs->fieldOffset * nrs->NVfields, 0.0, o_Uavg);
   platform->linAlg->fill(nrs->fieldOffset * nrs->NVfields, 0.0, o_Urms);
 
-  o_Urm2 = platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
+  o_Urm2 =
+      platform->device.malloc(nrs->fieldOffset * nrs->NVfields, sizeof(dfloat));
   platform->linAlg->fill(nrs->fieldOffset * nrs->NVfields, 0.0, o_Urm2);
 
   o_Pavg = platform->device.malloc(nrs->fieldOffset, sizeof(dfloat));

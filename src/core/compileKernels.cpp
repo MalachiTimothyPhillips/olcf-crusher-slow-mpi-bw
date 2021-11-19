@@ -13,9 +13,10 @@ std::string createOptionsPrefix(std::string section)
   if (section.find("temperature") != std::string::npos) {
     prefix = std::string("scalar00 ");
   }
-  std::transform(prefix.begin(), prefix.end(), prefix.begin(), [](unsigned char c) {
-    return std::toupper(c);
-  });
+  std::transform(prefix.begin(),
+                 prefix.end(),
+                 prefix.begin(),
+                 [](unsigned char c) { return std::toupper(c); });
   return prefix;
 }
 
@@ -50,7 +51,8 @@ void compileKernels()
 
   // Scalar section is omitted
   // as pressure section kernels are the same.
-  const std::vector<std::pair<std::string, int>> sections = {{"pressure", 1}, {"velocity", 0}};
+  const std::vector<std::pair<std::string, int>> sections = {{"pressure", 1},
+                                                             {"velocity", 0}};
 
   std::string section;
   int poissonEquation;
@@ -69,8 +71,12 @@ void compileKernels()
   {
     const bool buildNodeLocal = useNodeLocalCache();
     const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
-    auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
-    oogs::compile(platform->device.occaDevice(), platform->device.mode(), communicator, buildOnly);
+    auto communicator =
+        buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
+    oogs::compile(platform->device.occaDevice(),
+                  platform->device.mode(),
+                  communicator,
+                  buildOnly);
   }
 
   platform->kernels.compile();

@@ -16,7 +16,8 @@ occa::kernel device_t::buildNativeKernel(const std::string &fileName,
   return _device.buildKernel(fileName, kernelName, nativeProperties);
 }
 
-occa::kernel device_t::buildKernel(const std::string &fullPath, const occa::properties &props) const
+occa::kernel device_t::buildKernel(const std::string &fullPath,
+                                   const occa::properties &props) const
 {
   const std::string noSuffix = std::string("");
   return this->buildKernel(fullPath, props, noSuffix);
@@ -30,7 +31,8 @@ occa::kernel device_t::buildKernel(const std::string &fullPath,
   std::string kernelName;
   std::regex kernelNameRegex(R"((.+)\/(.+)\.)");
   std::smatch kernelNameMatch;
-  const bool foundKernelName = std::regex_search(fullPath, kernelNameMatch, kernelNameRegex);
+  const bool foundKernelName =
+      std::regex_search(fullPath, kernelNameMatch, kernelNameRegex);
 
   // e.g. /path/to/install/nekrs/okl/cds/advectMeshVelocityHex3D.okl
 
@@ -68,7 +70,8 @@ occa::kernel device_t::buildKernel(const std::string &fileName,
     occa::properties propsWithSuffix = props;
     propsWithSuffix["defines/SUFFIX"] = suffix;
     propsWithSuffix["defines/TOKEN_PASTE_(a,b)"] = std::string("a##b");
-    propsWithSuffix["defines/TOKEN_PASTE(a,b)"] = std::string("TOKEN_PASTE_(a,b)");
+    propsWithSuffix["defines/TOKEN_PASTE(a,b)"] =
+        std::string("TOKEN_PASTE_(a,b)");
     propsWithSuffix["defines/FUNC(a)"] = std::string("TOKEN_PASTE(a,SUFFIX)");
     const std::string alteredName = kernelName + suffix;
     return this->buildNativeKernel(fileName, alteredName, propsWithSuffix);
@@ -83,11 +86,13 @@ occa::kernel device_t::buildKernel(const std::string &fileName,
   const std::string suffix("");
   const bool buildNodeLocal = useNodeLocalCache();
   const int rank = buildNodeLocal ? _comm.localRank : _comm.mpiRank;
-  MPI_Comm localCommunicator = buildNodeLocal ? _comm.mpiCommLocal : _comm.mpiComm;
+  MPI_Comm localCommunicator =
+      buildNodeLocal ? _comm.mpiCommLocal : _comm.mpiComm;
   occa::kernel constructedKernel;
   for (int pass = 0; pass < 2; ++pass) {
     if ((pass == 0 && rank == 0) || (pass == 1 && rank != 0)) {
-      constructedKernel = this->buildKernel(fileName, kernelName, props, suffix);
+      constructedKernel =
+          this->buildKernel(fileName, kernelName, props, suffix);
     }
     MPI_Barrier(localCommunicator);
   }
@@ -104,7 +109,8 @@ occa::kernel device_t::buildKernel(const std::string &fullPath,
 
     const bool buildNodeLocal = useNodeLocalCache();
     const int rank = buildNodeLocal ? _comm.localRank : _comm.mpiRank;
-    MPI_Comm localCommunicator = buildNodeLocal ? _comm.mpiCommLocal : _comm.mpiComm;
+    MPI_Comm localCommunicator =
+        buildNodeLocal ? _comm.mpiCommLocal : _comm.mpiComm;
     occa::kernel constructedKernel;
     for (int pass = 0; pass < 2; ++pass) {
       if ((pass == 0 && rank == 0) || (pass == 1 && rank != 0)) {
@@ -118,8 +124,9 @@ occa::kernel device_t::buildKernel(const std::string &fullPath,
   return this->buildKernel(fullPath, props, suffix);
 }
 
-occa::kernel
-device_t::buildKernel(const std::string &fullPath, const occa::properties &props, bool buildRank0) const
+occa::kernel device_t::buildKernel(const std::string &fullPath,
+                                   const occa::properties &props,
+                                   bool buildRank0) const
 {
   std::string noSuffix = std::string("");
   return this->buildKernel(fullPath, props, noSuffix, buildRank0);
@@ -136,7 +143,8 @@ occa::memory device_t::mallocHost(const size_t Nbytes)
   return h_scratch;
 }
 
-occa::memory device_t::malloc(const size_t Nbytes, const occa::properties &properties)
+occa::memory device_t::malloc(const size_t Nbytes,
+                              const occa::properties &properties)
 {
   void *buffer = std::calloc(Nbytes, 1);
   occa::memory o_returnValue = _device.malloc(Nbytes, buffer, properties);
@@ -144,7 +152,9 @@ occa::memory device_t::malloc(const size_t Nbytes, const occa::properties &prope
   return o_returnValue;
 }
 
-occa::memory device_t::malloc(const size_t Nbytes, const void *src, const occa::properties &properties)
+occa::memory device_t::malloc(const size_t Nbytes,
+                              const void *src,
+                              const occa::properties &properties)
 {
   void *buffer;
   buffer = std::calloc(Nbytes, 1);
@@ -154,7 +164,8 @@ occa::memory device_t::malloc(const size_t Nbytes, const void *src, const occa::
   return o_returnValue;
 }
 
-occa::memory device_t::malloc(const hlong Nword, const dlong wordSize, occa::memory src)
+occa::memory
+device_t::malloc(const hlong Nword, const dlong wordSize, occa::memory src)
 {
   return _device.malloc(Nword * wordSize, src);
 }
@@ -198,7 +209,10 @@ device_t::device_t(setupAide &options, comm_t &comm) : _comm(comm)
   else if (strcasecmp(requestedOccaMode.c_str(), "OPENCL") == 0) {
     int plat = 0;
     options.getArgs("PLATFORM NUMBER", plat);
-    sprintf(deviceConfig, "{mode: 'OpenCL', device_id: %d, platform_id: %d}", device_id, plat);
+    sprintf(deviceConfig,
+            "{mode: 'OpenCL', device_id: %d, platform_id: %d}",
+            device_id,
+            plat);
   }
   else if (strcasecmp(requestedOccaMode.c_str(), "OPENMP") == 0) {
     if (worldRank == 0)

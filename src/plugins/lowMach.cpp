@@ -40,7 +40,8 @@ void lowMach::buildKernel(occa::properties kernelInfo)
 
     kernelName = "surfaceFlux";
     fileName = path + kernelName + extension;
-    surfaceFluxKernel = platform->device.buildKernel(fileName, kernelInfo, true);
+    surfaceFluxKernel =
+        platform->device.buildKernel(fileName, kernelInfo, true);
   }
 }
 
@@ -77,12 +78,23 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
                             cds->o_S,
                             platform->o_mempool.slice0);
 
-  oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+  oogs::startFinish(platform->o_mempool.slice0,
+                    nrs->NVfields,
+                    nrs->fieldOffset,
+                    ogsDfloat,
+                    ogsAdd,
+                    nrs->gsh);
 
-  platform->linAlg
-      ->axmyVector(mesh->Nlocal, nrs->fieldOffset, 0, 1.0, nrs->meshV->o_invLMM, platform->o_mempool.slice0);
+  platform->linAlg->axmyVector(mesh->Nlocal,
+                               nrs->fieldOffset,
+                               0,
+                               1.0,
+                               nrs->meshV->o_invLMM,
+                               platform->o_mempool.slice0);
 
-  platform->linAlg->fill(mesh->Nelements * mesh->Np, 0.0, platform->o_mempool.slice3);
+  platform->linAlg->fill(mesh->Nelements * mesh->Np,
+                         0.0,
+                         platform->o_mempool.slice3);
   if (udf.sEqnSource) {
     platform->timer.tic("udfSEqnSource", 1);
     udf.sEqnSource(nrs, time, cds->o_S, platform->o_mempool.slice3);
@@ -109,7 +121,8 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
     const dlong Nlocal = mesh->Nlocal;
 
     linAlg->axmyz(Nlocal, 1.0, mesh->o_LMM, o_div, platform->o_mempool.slice0);
-    const dfloat termQ = linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
+    const dfloat termQ =
+        linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
 
     surfaceFluxKernel(mesh->Nelements,
                       mesh->o_sgeo,
@@ -118,11 +131,17 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
                       nrs->fieldOffset,
                       nrs->o_Ue,
                       platform->o_mempool.slice0);
-    platform->o_mempool.slice0.copyTo(platform->mempool.slice0, mesh->Nelements * sizeof(dfloat));
+    platform->o_mempool.slice0.copyTo(platform->mempool.slice0,
+                                      mesh->Nelements * sizeof(dfloat));
     dfloat termV = 0.0;
     for (int i = 0; i < mesh->Nelements; ++i)
       termV += platform->mempool.slice0[i];
-    MPI_Allreduce(MPI_IN_PLACE, &termV, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+    MPI_Allreduce(MPI_IN_PLACE,
+                  &termV,
+                  1,
+                  MPI_DFLOAT,
+                  MPI_SUM,
+                  platform->comm.mpiComm);
 
     p0thHelperKernel(Nlocal,
                      dd,
@@ -132,7 +151,8 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
                      platform->o_mempool.slice0,
                      platform->o_mempool.slice1);
     const dfloat prhs =
-        (termQ - termV) / linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
+        (termQ - termV) /
+        linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
     linAlg->axpby(Nlocal, -prhs, platform->o_mempool.slice1, 1.0, o_div);
 
     dfloat Saqpq = 0.0;
@@ -153,5 +173,7 @@ void lowMach::dpdt(occa::memory o_FU)
   nrs_t *nrs = the_nrs;
   mesh_t *mesh = nrs->meshV;
   if (!qThermal)
-    platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, o_FU);
+    platform->linAlg->add(mesh->Nlocal,
+                          nrs->dp0thdt * (gamma0 - 1.0) / gamma0,
+                          o_FU);
 }

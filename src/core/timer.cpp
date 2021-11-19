@@ -28,7 +28,10 @@ occa::device device_;
 MPI_Comm comm_;
 } // namespace
 
-timer_t::timer_t(MPI_Comm comm, occa::device device, int ifSync) { init(comm, device, ifSync); }
+timer_t::timer_t(MPI_Comm comm, occa::device device, int ifSync)
+{
+  init(comm, device, ifSync);
+}
 void timer_t::init(MPI_Comm comm, occa::device device, int ifSync)
 {
   device_ = device;
@@ -192,7 +195,10 @@ double timer_t::query(const std::string tag, const std::string metric)
   double retVal;
 
   std::string upperMetric = metric;
-  std::transform(upperMetric.begin(), upperMetric.end(), upperMetric.begin(), ::toupper);
+  std::transform(upperMetric.begin(),
+                 upperMetric.end(),
+                 upperMetric.begin(),
+                 ::toupper);
 
   if (upperMetric.compare("HOST:MIN") == 0) {
     MPI_Allreduce(&hostElapsed, &retVal, 1, MPI_DOUBLE, MPI_MIN, comm_);
@@ -237,7 +243,9 @@ std::string printPercentage(double num, double dom)
   return std::string(buf);
 }
 
-void timer_t::printStatEntry(std::string name, std::string tag, std::string type)
+void timer_t::printStatEntry(std::string name,
+                             std::string tag,
+                             std::string type)
 {
   int rank;
   MPI_Comm_rank(comm_, &rank);
@@ -247,7 +255,8 @@ void timer_t::printStatEntry(std::string name, std::string tag, std::string type
   if (tTag > 0) {
     if (rank == 0) {
       std::cout << name << tTag << "s"
-                << "  " << printPercentage(tTag, tSolve) << "  " << nCalls << "\n";
+                << "  " << printPercentage(tTag, tSolve) << "  " << nCalls
+                << "\n";
     }
   }
 }
@@ -271,15 +280,18 @@ void timer_t::printRunStat(int step)
   MPI_Comm_rank(comm_, &rank);
 
   set("velocity proj",
-      query("velocity proj pre", "DEVICE:MAX") + query("velocity proj post", "DEVICE:MAX"),
+      query("velocity proj pre", "DEVICE:MAX") +
+          query("velocity proj post", "DEVICE:MAX"),
       count("velocity proj pre"));
 
   set("pressure proj",
-      query("pressure proj pre", "DEVICE:MAX") + query("pressure proj post", "DEVICE:MAX"),
+      query("pressure proj pre", "DEVICE:MAX") +
+          query("pressure proj post", "DEVICE:MAX"),
       count("pressure proj pre"));
 
   set("scalar proj",
-      query("scalar proj pre", "DEVICE:MAX") + query("scalar proj post", "DEVICE:MAX"),
+      query("scalar proj pre", "DEVICE:MAX") +
+          query("scalar proj post", "DEVICE:MAX"),
       count("scalar proj pre"));
 
   double gsTime = ogsTime(/* reportHostTime */ true);
@@ -327,8 +339,12 @@ void timer_t::printRunStat(int step)
   printStatEntry("      projection        ", "velocity proj", "DEVICE:MAX");
 
   printStatEntry("    pressureSolve       ", "pressureSolve", "DEVICE:MAX");
-  printStatEntry("      preconditioner    ", "pressure preconditioner", "DEVICE:MAX");
-  printStatEntry("        pMG smoother    ", "pressure preconditioner smoother", "DEVICE:MAX");
+  printStatEntry("      preconditioner    ",
+                 "pressure preconditioner",
+                 "DEVICE:MAX");
+  printStatEntry("        pMG smoother    ",
+                 "pressure preconditioner smoother",
+                 "DEVICE:MAX");
   printStatEntry("        coarse grid     ", "coarseSolve", "DEVICE:MAX");
   printStatEntry("      projection        ", "pressure proj", "DEVICE:MAX");
 

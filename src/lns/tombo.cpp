@@ -101,10 +101,19 @@ occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage)
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
 
-  oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+  oogs::startFinish(platform->o_mempool.slice0,
+                    nrs->NVfields,
+                    nrs->fieldOffset,
+                    ogsDfloat,
+                    ogsAdd,
+                    nrs->gsh);
 
-  platform->linAlg
-      ->axmyVector(mesh->Nlocal, nrs->fieldOffset, 0, 1.0, nrs->meshV->o_invLMM, platform->o_mempool.slice0);
+  platform->linAlg->axmyVector(mesh->Nlocal,
+                               nrs->fieldOffset,
+                               0,
+                               1.0,
+                               nrs->meshV->o_invLMM,
+                               platform->o_mempool.slice0);
 
   nrs->curlKernel(mesh->Nelements,
                   mesh->o_vgeo,
@@ -140,10 +149,19 @@ occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage)
                          platform->o_mempool.slice0,
                          platform->o_mempool.slice6);
 
-  oogs::startFinish(platform->o_mempool.slice6, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+  oogs::startFinish(platform->o_mempool.slice6,
+                    nrs->NVfields,
+                    nrs->fieldOffset,
+                    ogsDfloat,
+                    ogsAdd,
+                    nrs->gsh);
 
-  platform->linAlg
-      ->axmyVector(mesh->Nlocal, nrs->fieldOffset, 0, 1.0, nrs->meshV->o_invLMM, platform->o_mempool.slice6);
+  platform->linAlg->axmyVector(mesh->Nlocal,
+                               nrs->fieldOffset,
+                               0,
+                               1.0,
+                               nrs->meshV->o_invLMM,
+                               platform->o_mempool.slice6);
 
   nrs->wDivergenceVolumeKernel(mesh->Nelements,
                                mesh->o_vgeo,
@@ -169,7 +187,9 @@ occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage)
                                platform->o_mempool.slice3);
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
-  ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
+  ellipticSolve(nrs->pSolver,
+                platform->o_mempool.slice3,
+                platform->o_mempool.slice1);
 
   return platform->o_mempool.slice1;
 }
@@ -182,7 +202,11 @@ occa::memory velocitySolve(nrs_t *nrs, dfloat time, int stage)
   if (platform->options.compareArgs("STRESSFORMULATION", "TRUE"))
     scale = 2. / 3;
 
-  platform->linAlg->axmyz(mesh->Nlocal, scale, nrs->o_mue, nrs->o_div, platform->o_mempool.slice3);
+  platform->linAlg->axmyz(mesh->Nlocal,
+                          scale,
+                          nrs->o_mue,
+                          nrs->o_div,
+                          platform->o_mempool.slice3);
 
   nrs->gradientVolumeKernel(mesh->Nelements,
                             mesh->o_vgeo,
@@ -225,15 +249,25 @@ occa::memory velocitySolve(nrs_t *nrs, dfloat time, int stage)
                          nrs->o_rho,
                          platform->o_mempool.slice3);
 
-  platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  platform->o_mempool.slice0.copyFrom(nrs->o_U,
+                                      nrs->NVfields * nrs->fieldOffset *
+                                          sizeof(dfloat));
 
   if (nrs->uvwSolver) {
-    ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
+    ellipticSolve(nrs->uvwSolver,
+                  platform->o_mempool.slice3,
+                  platform->o_mempool.slice0);
   }
   else {
-    ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
-    ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
-    ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2);
+    ellipticSolve(nrs->uSolver,
+                  platform->o_mempool.slice3,
+                  platform->o_mempool.slice0);
+    ellipticSolve(nrs->vSolver,
+                  platform->o_mempool.slice4,
+                  platform->o_mempool.slice1);
+    ellipticSolve(nrs->wSolver,
+                  platform->o_mempool.slice5,
+                  platform->o_mempool.slice2);
   }
 
   return platform->o_mempool.slice0;

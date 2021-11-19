@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -52,7 +52,9 @@ void meshHaloExchange(mesh_t *mesh,
     // outgoing element
     int e = mesh->haloElementList[i];
     // copy element e data to sendBuffer
-    memcpy(((char *)sendBuffer) + i * Nbytes, ((char *)sourceBuffer) + e * Nbytes, Nbytes);
+    memcpy(((char *)sendBuffer) + i * Nbytes,
+           ((char *)sourceBuffer) + e * Nbytes,
+           Nbytes);
   }
 
   // initiate immediate send  and receives to each other process as needed
@@ -84,12 +86,19 @@ void meshHaloExchange(mesh_t *mesh,
 
   //  printf("mesh->NhaloMessages = %d\n", mesh->NhaloMessages);
 
-  // Wait for all sent messages to have left and received messages to have arrived
-  MPI_Status *sendStatus = (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
-  MPI_Status *recvStatus = (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
+  // Wait for all sent messages to have left and received messages to have
+  // arrived
+  MPI_Status *sendStatus =
+      (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
+  MPI_Status *recvStatus =
+      (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
 
-  MPI_Waitall(mesh->NhaloMessages, (MPI_Request *)mesh->haloRecvRequests, recvStatus);
-  MPI_Waitall(mesh->NhaloMessages, (MPI_Request *)mesh->haloSendRequests, sendStatus);
+  MPI_Waitall(mesh->NhaloMessages,
+              (MPI_Request *)mesh->haloRecvRequests,
+              recvStatus);
+  MPI_Waitall(mesh->NhaloMessages,
+              (MPI_Request *)mesh->haloSendRequests,
+              sendStatus);
 
   free(recvStatus);
   free(sendStatus);
@@ -145,12 +154,19 @@ void meshHaloExchangeStart(mesh_t *mesh,
 void meshHaloExchangeFinish(mesh_t *mesh)
 {
   if (mesh->totalHaloPairs > 0) {
-    // Wait for all sent messages to have left and received messages to have arrived
-    MPI_Status *sendStatus = (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
-    MPI_Status *recvStatus = (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
+    // Wait for all sent messages to have left and received messages to have
+    // arrived
+    MPI_Status *sendStatus =
+        (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
+    MPI_Status *recvStatus =
+        (MPI_Status *)calloc(mesh->NhaloMessages, sizeof(MPI_Status));
 
-    MPI_Waitall(mesh->NhaloMessages, (MPI_Request *)mesh->haloRecvRequests, recvStatus);
-    MPI_Waitall(mesh->NhaloMessages, (MPI_Request *)mesh->haloSendRequests, sendStatus);
+    MPI_Waitall(mesh->NhaloMessages,
+                (MPI_Request *)mesh->haloRecvRequests,
+                recvStatus);
+    MPI_Waitall(mesh->NhaloMessages,
+                (MPI_Request *)mesh->haloSendRequests,
+                sendStatus);
 
     free(recvStatus);
     free(sendStatus);
@@ -180,8 +196,10 @@ void meshHaloExchange(mesh_t *mesh,
           ++Nmessages;
       }
 
-    MPI_Request *sendRequests = (MPI_Request *)calloc(Nmessages, sizeof(MPI_Request));
-    MPI_Request *recvRequests = (MPI_Request *)calloc(Nmessages, sizeof(MPI_Request));
+    MPI_Request *sendRequests =
+        (MPI_Request *)calloc(Nmessages, sizeof(MPI_Request));
+    MPI_Request *recvRequests =
+        (MPI_Request *)calloc(Nmessages, sizeof(MPI_Request));
 
     // initiate immediate send  and receives to each other process as needed
     int offset = 0;
@@ -209,9 +227,12 @@ void meshHaloExchange(mesh_t *mesh,
         }
       }
 
-    // Wait for all sent messages to have left and received messages to have arrived
-    MPI_Status *sendStatus = (MPI_Status *)calloc(Nmessages, sizeof(MPI_Status));
-    MPI_Status *recvStatus = (MPI_Status *)calloc(Nmessages, sizeof(MPI_Status));
+    // Wait for all sent messages to have left and received messages to have
+    // arrived
+    MPI_Status *sendStatus =
+        (MPI_Status *)calloc(Nmessages, sizeof(MPI_Status));
+    MPI_Status *recvStatus =
+        (MPI_Status *)calloc(Nmessages, sizeof(MPI_Status));
 
     MPI_Waitall(Nmessages, recvRequests, recvStatus);
     MPI_Waitall(Nmessages, sendRequests, sendStatus);

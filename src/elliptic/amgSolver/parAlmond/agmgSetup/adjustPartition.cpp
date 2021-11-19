@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -102,7 +103,8 @@ void adjustPartition(agmgLevel *level, hlong *FineToCoarse, setupAide options)
     recvOffsets[r + 1] = recvOffsets[r] + recvCounts[r];
     recvNtotal += recvCounts[r];
   }
-  parallelAggregate_t *recvAggs = (parallelAggregate_t *)calloc(recvNtotal, sizeof(parallelAggregate_t));
+  parallelAggregate_t *recvAggs =
+      (parallelAggregate_t *)calloc(recvNtotal, sizeof(parallelAggregate_t));
 
   MPI_Alltoallv(sendAggs,
                 sendCounts,
@@ -136,7 +138,8 @@ void adjustPartition(agmgLevel *level, hlong *FineToCoarse, setupAide options)
   aggStarts[NumUniqueAggs] = recvNtotal;
 
   if (options.compareArgs("PARALMOND PARTITION",
-                          "DISTRIBUTED")) { // rank that contributes most to the aggregate ownes it
+                          "DISTRIBUTED")) { // rank that contributes most to the
+                                            // aggregate ownes it
     // use a random dfloat for each rank to break ties.
     dfloat rand = (dfloat)drand48();
     dfloat *gRands = (dfloat *)calloc(size, sizeof(dfloat));
@@ -149,7 +152,8 @@ void adjustPartition(agmgLevel *level, hlong *FineToCoarse, setupAide options)
       for (int r = 0; r < size; r++)
         rankCounts[r] = gRands[r];
 
-      // count the number of contributions to the aggregate from the separate ranks
+      // count the number of contributions to the aggregate from the separate
+      // ranks
       for (dlong i = aggStarts[n]; i < aggStarts[n + 1]; i++)
         rankCounts[recvAggs[i].originRank]++;
 
@@ -175,10 +179,12 @@ void adjustPartition(agmgLevel *level, hlong *FineToCoarse, setupAide options)
 
       int minrank = size;
 
-      // count the number of contributions to the aggregate from the separate ranks
+      // count the number of contributions to the aggregate from the separate
+      // ranks
       for (dlong i = aggStarts[n]; i < aggStarts[n + 1]; i++) {
 
-        minrank = (recvAggs[i].originRank < minrank) ? recvAggs[i].originRank : minrank;
+        minrank = (recvAggs[i].originRank < minrank) ? recvAggs[i].originRank
+                                                     : minrank;
       }
 
       // set this aggregate's owner
@@ -200,7 +206,13 @@ void adjustPartition(agmgLevel *level, hlong *FineToCoarse, setupAide options)
     newSendCounts[recvAggs[i].ownerRank]++;
 
   // find how many nodes to expect (should use sparse version)
-  MPI_Alltoall(newSendCounts, 1, MPI_INT, newRecvCounts, 1, MPI_INT, agmg::comm);
+  MPI_Alltoall(newSendCounts,
+               1,
+               MPI_INT,
+               newRecvCounts,
+               1,
+               MPI_INT,
+               agmg::comm);
 
   // find send and recv offsets for gather
   dlong newRecvNtotal = 0;

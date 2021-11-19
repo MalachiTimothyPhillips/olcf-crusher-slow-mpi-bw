@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -141,7 +142,8 @@ parCSR::parCSR(dlong N, dlong M) : matrix_t(N, M)
   nullSpace = false;
 }
 
-parCSR::parCSR(dlong N, dlong M, MPI_Comm comm_, occa::device device_) : matrix_t(N, M)
+parCSR::parCSR(dlong N, dlong M, MPI_Comm comm_, occa::device device_)
+    : matrix_t(N, M)
 {
   MPI_Comm_dup(comm_, &comm);
   device = device_;
@@ -264,7 +266,8 @@ void parCSR::haloSetup(hlong *colIds)
   hlong globalOffset = globalColStarts[rank];
 
   // collect the unique nonlocal column ids
-  parallelId_t *parIds = (parallelId_t *)malloc(offd->nnz * sizeof(parallelId_t));
+  parallelId_t *parIds =
+      (parallelId_t *)malloc(offd->nnz * sizeof(parallelId_t));
 
   for (dlong n = 0; n < offd->nnz; n++) {
     parIds[n].localId = n;
@@ -328,11 +331,13 @@ void parCSR::haloSetup(hlong *colIds)
   ogsGatherScatter(minRank,
                    ogsInt,
                    ogsMin,
-                   ogs); // minRank[n] contains the smallest rank taking part in the gather of node n
+                   ogs); // minRank[n] contains the smallest rank taking part in
+                         // the gather of node n
   ogsGatherScatter(maxRank,
                    ogsInt,
                    ogsMax,
-                   ogs); // maxRank[n] contains the largest rank taking part in the gather of node n
+                   ogs); // maxRank[n] contains the largest rank taking part in
+                         // the gather of node n
 
   // count the local nodes that must be shared
   Nshared = 0;
@@ -340,7 +345,8 @@ void parCSR::haloSetup(hlong *colIds)
     if ((minRank[i] != rank) || (maxRank[i] != rank))
       Nshared++;
 
-  // total nodes involved in communication is the local nodes which must be shared
+  // total nodes involved in communication is the local nodes which must be
+  // shared
   //  + the number of nodes which need to be recieved.
   Nhalo = Nshared + Noffdcols;
 
@@ -356,7 +362,8 @@ void parCSR::haloSetup(hlong *colIds)
     }
   }
   for (dlong n = 0; n < Noffdcols; n++) {
-    ghaloIds[Nhalo++] = -(offdcols[n] + 1); // negative -> does not participate in sum
+    ghaloIds[Nhalo++] =
+        -(offdcols[n] + 1); // negative -> does not participate in sum
   }
 
   // construct the parCSR ogs object for comms
@@ -392,7 +399,9 @@ void parCSR::haloExchangeStart(dfloat *x)
 void parCSR::haloExchangeFinish(dfloat *x)
 {
   ogsGatherScatter(pinnedScratch, ogsDfloat, ogsAdd, ogsHalo);
-  memcpy(x + NlocalCols, ((dfloat *)pinnedScratch) + Nshared, (Nhalo - Nshared) * sizeof(dfloat));
+  memcpy(x + NlocalCols,
+         ((dfloat *)pinnedScratch) + Nshared,
+         (Nhalo - Nshared) * sizeof(dfloat));
 }
 
 void parCSR::haloExchangeStart(occa::memory o_x)
@@ -559,7 +568,8 @@ parHYB::parHYB(parCSR *A) : matrix_t(A->Nrows, A->Ncols)
     minNnzPerRow = (rowNnz < minNnzPerRow) ? rowNnz : minNnzPerRow;
   }
 
-  // This chooses the nnzPerRow by binning. Just pack all the local nonzeros in ELL
+  // This chooses the nnzPerRow by binning. Just pack all the local nonzeros in
+  // ELL
   /*
   // create bins
   int numBins = maxNnzPerRow - minNnzPerRow + 1;
@@ -766,7 +776,9 @@ void parHYB::haloExchangeStart(dfloat *x)
 void parHYB::haloExchangeFinish(dfloat *x)
 {
   ogsGatherScatter(pinnedScratch, ogsDfloat, ogsAdd, ogsHalo);
-  memcpy(x + NlocalCols, ((dfloat *)pinnedScratch) + Nshared, (Nhalo - Nshared) * sizeof(dfloat));
+  memcpy(x + NlocalCols,
+         ((dfloat *)pinnedScratch) + Nshared,
+         (Nhalo - Nshared) * sizeof(dfloat));
 }
 
 void parHYB::haloExchangeStart(occa::memory o_x)

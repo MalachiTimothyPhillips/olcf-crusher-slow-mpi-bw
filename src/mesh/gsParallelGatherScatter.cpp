@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -33,7 +33,10 @@
 
 #include "gslib.h"
 
-void gsParallelGatherScatter(void *gsh, void *v, const char *type, const char *op)
+void gsParallelGatherScatter(void *gsh,
+                             void *v,
+                             const char *type,
+                             const char *op)
 {
   /* need gs_float or gs_double */
   if (!strcmp(type, "float")) {
@@ -67,7 +70,11 @@ void gsParallelGatherScatter(void *gsh, void *v, const char *type, const char *o
   }
 }
 
-void gsVecParallelGatherScatter(void *gsh, void *v, const int k, const char *type, const char *op)
+void gsVecParallelGatherScatter(void *gsh,
+                                void *v,
+                                const int k,
+                                const char *type,
+                                const char *op)
 {
   /* need gs_float or gs_double */
   if (!strcmp(type, "float")) {

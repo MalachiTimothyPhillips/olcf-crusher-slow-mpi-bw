@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -85,13 +85,15 @@ int compareFaces(const void *a, const void *b)
 void meshConnect(mesh_t *mesh)
 {
   /* build list of faces */
-  face_t *faces = (face_t *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(face_t));
+  face_t *faces =
+      (face_t *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(face_t));
 
   dlong cnt = 0;
   for (dlong e = 0; e < mesh->Nelements; ++e)
     for (int f = 0; f < mesh->Nfaces; ++f) {
       for (int n = 0; n < mesh->NfaceVertices; ++n) {
-        dlong vid = e * mesh->Nverts + mesh->faceVertices[f * mesh->NfaceVertices + n];
+        dlong vid =
+            e * mesh->Nverts + mesh->faceVertices[f * mesh->NfaceVertices + n];
         faces[cnt].v[n] = mesh->EToV[vid];
       }
 

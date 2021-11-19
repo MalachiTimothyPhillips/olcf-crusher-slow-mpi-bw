@@ -31,8 +31,9 @@ dfloat filterJacobiP(dfloat a, dfloat alpha, dfloat beta, int N)
   dfloat *P = (dfloat *)calloc((N + 1), sizeof(dfloat));
 
   // Zero order
-  dfloat gamma0 = pow(2, (alpha + beta + 1)) / (alpha + beta + 1) * filterFactorial(alpha) *
-                  filterFactorial(beta) / filterFactorial(alpha + beta);
+  dfloat gamma0 = pow(2, (alpha + beta + 1)) / (alpha + beta + 1) *
+                  filterFactorial(alpha) * filterFactorial(beta) /
+                  filterFactorial(alpha + beta);
   dfloat p0 = 1.0 / sqrt(gamma0);
 
   if (N == 0) {
@@ -52,13 +53,14 @@ dfloat filterJacobiP(dfloat a, dfloat alpha, dfloat beta, int N)
   P[1] = p1;
 
   /// Repeat value in recurrence.
-  dfloat aold = 2 / (2 + alpha + beta) * sqrt((alpha + 1.) * (beta + 1.) / (alpha + beta + 3.));
+  dfloat aold = 2 / (2 + alpha + beta) *
+                sqrt((alpha + 1.) * (beta + 1.) / (alpha + beta + 3.));
   /// Forward recurrence using the symmetry of the recurrence.
   for (int i = 1; i <= N - 1; ++i) {
     dfloat h1 = 2. * i + alpha + beta;
-    dfloat anew =
-        2. / (h1 + 2.) *
-        sqrt((i + 1.) * (i + 1. + alpha + beta) * (i + 1 + alpha) * (i + 1 + beta) / (h1 + 1) / (h1 + 3));
+    dfloat anew = 2. / (h1 + 2.) *
+                  sqrt((i + 1.) * (i + 1. + alpha + beta) * (i + 1 + alpha) *
+                       (i + 1 + beta) / (h1 + 1) / (h1 + 3));
     dfloat bnew = -(alpha * alpha - beta * beta) / h1 / (h1 + 2);
     P[i + 1] = 1. / anew * (-aold * P[i - 1] + (ax - bnew) * P[i]);
     aold = anew;
@@ -85,7 +87,8 @@ double *filterSetup(mesh_t *mesh, const dlong filterNc)
 {
   if (filterNc < 1) {
     if (platform->comm.mpiRank == 0)
-      printf("ERROR: filterNc must be at least 1, but is set to %d\n", filterNc);
+      printf("ERROR: filterNc must be at least 1, but is set to %d\n",
+             filterNc);
     ABORT(EXIT_FAILURE);
   }
 
@@ -136,13 +139,38 @@ double *filterSetup(mesh_t *mesh, const dlong filterNc)
 
   double *C = (double *)calloc(Nmodes * Nmodes, sizeof(double));
   int LDC = Nmodes;
-  dgemm_(&TRANSA, &TRANSB, &MD, &ND, &KD, &ALPHA, A, &LDA, iV, &LDB, &BETA, C, &LDC);
+  dgemm_(&TRANSA,
+         &TRANSB,
+         &MD,
+         &ND,
+         &KD,
+         &ALPHA,
+         A,
+         &LDA,
+         iV,
+         &LDB,
+         &BETA,
+         C,
+         &LDC);
 
   TRANSA = 'T';
   TRANSB = 'N';
-  dgemm_(&TRANSA, &TRANSB, &MD, &ND, &KD, &ALPHA, V, &LDA, C, &LDB, &BETA, A, &LDC);
+  dgemm_(&TRANSA,
+         &TRANSB,
+         &MD,
+         &ND,
+         &KD,
+         &ALPHA,
+         V,
+         &LDA,
+         C,
+         &LDB,
+         &BETA,
+         A,
+         &LDC);
 
-  // occa::memory o_filterMT =  platform->device.malloc(Nmodes * Nmodes * sizeof(dfloat), A); // copy Tranpose
+  // occa::memory o_filterMT =  platform->device.malloc(Nmodes * Nmodes *
+  // sizeof(dfloat), A); // copy Tranpose
 
   free(C);
   free(V);

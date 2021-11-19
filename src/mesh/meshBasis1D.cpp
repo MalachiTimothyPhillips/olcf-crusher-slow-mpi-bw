@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -51,7 +51,10 @@ void OrthonormalBasis1D(dfloat a, int i, dfloat *P)
   *P = JacobiP(a, 0, 0, i); // Legendre Polynomials
 }
 
-void GradOrthonormalBasis1D(dfloat a, int i, dfloat *Pr) { *Pr = GradJacobiP(a, 0, 0, i); }
+void GradOrthonormalBasis1D(dfloat a, int i, dfloat *Pr)
+{
+  *Pr = GradJacobiP(a, 0, 0, i);
+}
 
 // ------------------------------------------------------------------------
 // 1D VANDERMONDE MATRICES
@@ -94,7 +97,12 @@ void MassMatrix1D(int _Np, dfloat *V, dfloat *_MM)
   matrixInverse(_Np, _MM);
 }
 
-void Dmatrix1D(int _N, int NpointsIn, dfloat *_rIn, int NpointsOut, dfloat *_rOut, dfloat *_Dr)
+void Dmatrix1D(int _N,
+               int NpointsIn,
+               dfloat *_rIn,
+               int NpointsOut,
+               dfloat *_rOut,
+               dfloat *_Dr)
 {
   // need NpointsIn = (_N+1)
   if (NpointsIn != _N + 1) {
@@ -132,7 +140,8 @@ void DWmatrix1D(int _N, dfloat *_D, dfloat *_DT)
   /*
      dfloat *r1D  = (dfloat *) calloc(_Nq, sizeof(dfloat));
      dfloat *w1D  = (dfloat *) calloc(_Nq, sizeof(dfloat));
-     JacobiGLL(_N, r1D, w1D); // i.e. 1D gll points and correspondin weights from mass lumping
+     JacobiGLL(_N, r1D, w1D); // i.e. 1D gll points and correspondin weights
+     from mass lumping
 
      dfloat *V1D  = (dfloat *) calloc(_Nq*_Nq, sizeof(dfloat));
      dfloat *V1Dr = (dfloat *) calloc(_Nq*_Nq, sizeof(dfloat));
@@ -155,7 +164,12 @@ void DWmatrix1D(int _N, dfloat *_D, dfloat *_DT)
    */
 }
 
-void InterpolationMatrix1D(int _N, int NpointsIn, dfloat *rIn, int NpointsOut, dfloat *rOut, dfloat *I)
+void InterpolationMatrix1D(int _N,
+                           int NpointsIn,
+                           dfloat *rIn,
+                           int NpointsOut,
+                           dfloat *rOut,
+                           dfloat *I)
 {
   // need NpointsIn = (_N+1)
   if (NpointsIn != _N + 1) {
@@ -193,14 +207,19 @@ void DegreeRaiseMatrix1D(int Nc, int Nf, dfloat *P)
   free(rf);
 }
 
-void CubatureWeakDmatrix1D(int _Nq, int _cubNq, dfloat *_cubProject, dfloat *_cubD, dfloat *_cubPDT)
+void CubatureWeakDmatrix1D(int _Nq,
+                           int _cubNq,
+                           dfloat *_cubProject,
+                           dfloat *_cubD,
+                           dfloat *_cubPDT)
 {
   // cubPDT = cubProject*cubD';
   for (int n = 0; n < _Nq; ++n)
     for (int m = 0; m < _cubNq; ++m) {
       _cubPDT[n * _cubNq + m] = 0.0;
       for (int k = 0; k < _cubNq; ++k)
-        _cubPDT[n * _cubNq + m] += _cubProject[n * _cubNq + k] * _cubD[m * _cubNq + k];
+        _cubPDT[n * _cubNq + m] +=
+            _cubProject[n * _cubNq + k] * _cubD[m * _cubNq + k];
     }
 }
 
@@ -221,7 +240,8 @@ dfloat JacobiP(dfloat a, dfloat alpha, dfloat beta, int _N)
   dfloat *P = (dfloat *)calloc((_N + 1), sizeof(dfloat));
 
   // Zero order
-  dfloat gamma0 = pow(2, (alpha + beta + 1)) / (alpha + beta + 1) * mygamma(1 + alpha) * mygamma(1 + beta) /
+  dfloat gamma0 = pow(2, (alpha + beta + 1)) / (alpha + beta + 1) *
+                  mygamma(1 + alpha) * mygamma(1 + beta) /
                   mygamma(1 + alpha + beta);
   dfloat p0 = 1.0 / sqrt(gamma0);
 
@@ -242,13 +262,14 @@ dfloat JacobiP(dfloat a, dfloat alpha, dfloat beta, int _N)
   P[1] = p1;
 
   /// Repeat value in recurrence.
-  dfloat aold = 2 / (2 + alpha + beta) * sqrt((alpha + 1.) * (beta + 1.) / (alpha + beta + 3.));
+  dfloat aold = 2 / (2 + alpha + beta) *
+                sqrt((alpha + 1.) * (beta + 1.) / (alpha + beta + 3.));
   /// Forward recurrence using the symmetry of the recurrence.
   for (int i = 1; i <= _N - 1; ++i) {
     dfloat h1 = 2. * i + alpha + beta;
-    dfloat anew =
-        2. / (h1 + 2.) *
-        sqrt((i + 1.) * (i + 1. + alpha + beta) * (i + 1 + alpha) * (i + 1 + beta) / (h1 + 1) / (h1 + 3));
+    dfloat anew = 2. / (h1 + 2.) *
+                  sqrt((i + 1.) * (i + 1. + alpha + beta) * (i + 1 + alpha) *
+                       (i + 1 + beta) / (h1 + 1) / (h1 + 3));
     dfloat bnew = -(alpha * alpha - beta * beta) / h1 / (h1 + 2);
     P[i + 1] = 1. / anew * (-aold * P[i - 1] + (ax - bnew) * P[i]);
     aold = anew;
@@ -264,7 +285,8 @@ dfloat GradJacobiP(dfloat a, dfloat alpha, dfloat beta, int _N)
   dfloat PNr = 0;
 
   if (_N > 0)
-    PNr = sqrt(_N * (_N + alpha + beta + 1.)) * JacobiP(a, alpha + 1.0, beta + 1.0, _N - 1);
+    PNr = sqrt(_N * (_N + alpha + beta + 1.)) *
+          JacobiP(a, alpha + 1.0, beta + 1.0, _N - 1);
 
   return PNr;
 }
@@ -325,16 +347,19 @@ void JacobiGQ(dfloat alpha, dfloat beta, int _N, dfloat *_x, dfloat *_w)
   // J = J + J';
   for (int n = 0; n <= _N; ++n) {
     // J = diag(-1/2*(alpha^2-beta^2)./(h1+2)./h1) + ...
-    J[n * (_N + 1) + n] += -0.5 * (alpha * alpha - beta * beta) / ((h1[n] + 2) * h1[n]) * 2; // *2 for symm
+    J[n * (_N + 1) + n] += -0.5 * (alpha * alpha - beta * beta) /
+                           ((h1[n] + 2) * h1[n]) * 2; // *2 for symm
 
     //    diag(2./(h1(1:_N)+2).*sqrt((1:_N).*((1:_N)+alpha+beta).*((1:_N)+alpha).*((1:_N)+beta)./(h1(1:_N)+1)./(h1(1:_N)+3)),1);
     if (n < _N) {
       J[n * (_N + 1) + n + 1] +=
-          (2. / (h1[n] + 2.)) * sqrt((n + 1) * (n + 1 + alpha + beta) * (n + 1 + alpha) * (n + 1 + beta) /
-                                     ((h1[n] + 1) * (h1[n] + 3)));
+          (2. / (h1[n] + 2.)) *
+          sqrt((n + 1) * (n + 1 + alpha + beta) * (n + 1 + alpha) *
+               (n + 1 + beta) / ((h1[n] + 1) * (h1[n] + 3)));
       J[(n + 1) * (_N + 1) + n] +=
-          (2. / (h1[n] + 2.)) * sqrt((n + 1) * (n + 1 + alpha + beta) * (n + 1 + alpha) * (n + 1 + beta) /
-                                     ((h1[n] + 1) * (h1[n] + 3)));
+          (2. / (h1[n] + 2.)) *
+          sqrt((n + 1) * (n + 1 + alpha + beta) * (n + 1 + alpha) *
+               (n + 1 + beta) / ((h1[n] + 1) * (h1[n] + 3)));
     }
   }
 
@@ -356,9 +381,11 @@ void JacobiGQ(dfloat alpha, dfloat beta, int _N, dfloat *_x, dfloat *_w)
   // _x = diag(D);
   matrixEig(_N + 1, J, VR, _x, WI);
 
-  //_w = (V(1,:)').^2*2^(alpha+beta+1)/(alpha+beta+1)*gamma(alpha+1)*.gamma(beta+1)/gamma(alpha+beta+1);
+  //_w =
+  //(V(1,:)').^2*2^(alpha+beta+1)/(alpha+beta+1)*gamma(alpha+1)*.gamma(beta+1)/gamma(alpha+beta+1);
   for (int n = 0; n <= _N; ++n)
-    _w[n] = pow(VR[0 * (_N + 1) + n], 2) * (pow(2, alpha + beta + 1) / (alpha + beta + 1)) *
+    _w[n] = pow(VR[0 * (_N + 1) + n], 2) *
+            (pow(2, alpha + beta + 1) / (alpha + beta + 1)) *
             mygamma(alpha + 1) * mygamma(beta + 1) / mygamma(alpha + beta + 1);
 
   // sloppy sort
@@ -386,7 +413,8 @@ void JacobiGQ(dfloat alpha, dfloat beta, int _N, dfloat *_x, dfloat *_w)
 
 /*
    // C0 basis
-   int meshContinuousVandermonde1D(int _N, int Npoints, dfloat *_r, dfloat **V, dfloat **Vr){
+   int meshContinuousVandermonde1D(int _N, int Npoints, dfloat *_r, dfloat **V,
+ dfloat **Vr){
 
    int _Np = (_N+1);
 
@@ -497,7 +525,8 @@ void JacobiGQ(dfloat alpha, dfloat beta, int _N, dfloat *_x, dfloat *_w)
    meshVandermonde1D(_N, cubNp, cubr, &cubV, &cubVr);
 
    // cubDrT = V*transpose(cVr)*diag(cubw);
-   // cubProject = V*cV'*diag(cubw); %% relies on (transpose(cV)*diag(cubw)*cV being the identity)
+   // cubProject = V*cV'*diag(cubw); %% relies on (transpose(cV)*diag(cubw)*cV
+ being the identity)
 
    for(int n=0;n<cubNp;++n){
     for(int m=0;m<_Np;++m){

@@ -32,7 +32,8 @@ uint32_t fchecksum(std::ifstream &file)
 
 void oudfFindDirichlet(std::string &field)
 {
-  if (field.find("velocity") != std::string::npos && !velocityDirichletConditions) {
+  if (field.find("velocity") != std::string::npos &&
+      !velocityDirichletConditions) {
     if (platform->comm.mpiRank == 0)
       std::cout << "Cannot find oudf function: velocityDirichletConditions!\n";
     ABORT(EXIT_FAILURE);
@@ -44,14 +45,16 @@ void oudfFindDirichlet(std::string &field)
   }
   if (field == "pressure" && !pressureDirichletConditions) {
     if (platform->comm.mpiRank == 0)
-      std::cout << "WARNING: Cannot find oudf function: pressureDirichletConditions!\n";
+      std::cout << "WARNING: Cannot find oudf function: "
+                   "pressureDirichletConditions!\n";
     // ABORT(EXIT_FAILURE); this bc is optional
   }
 }
 
 void oudfFindNeumann(std::string &field)
 {
-  if (field.find("velocity") != std::string::npos && !velocityNeumannConditions) {
+  if (field.find("velocity") != std::string::npos &&
+      !velocityNeumannConditions) {
     if (platform->comm.mpiRank == 0)
       std::cout << "Cannot find oudf function: velocityNeumannConditions!\n";
     ABORT(EXIT_FAILURE);
@@ -104,27 +107,37 @@ void oudfInit(setupAide &options)
 
     out << buffer.str();
 
-    bool found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+velocityDirichletConditions)"));
+    bool found = std::regex_search(
+        buffer.str(),
+        std::regex(R"(\s*void\s+velocityDirichletConditions)"));
     velocityDirichletConditions = found;
     if (!found)
       out << "void velocityDirichletConditions(bcData *bc){}\n";
 
-    found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+velocityNeumannConditions)"));
+    found =
+        std::regex_search(buffer.str(),
+                          std::regex(R"(\s*void\s+velocityNeumannConditions)"));
     velocityNeumannConditions = found;
     if (!found)
       out << "void velocityNeumannConditions(bcData *bc){}\n";
 
-    found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+pressureDirichletConditions)"));
+    found = std::regex_search(
+        buffer.str(),
+        std::regex(R"(\s*void\s+pressureDirichletConditions)"));
     pressureDirichletConditions = found;
     if (!found)
       out << "void pressureDirichletConditions(bcData *bc){}\n";
 
-    found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+scalarNeumannConditions)"));
+    found =
+        std::regex_search(buffer.str(),
+                          std::regex(R"(\s*void\s+scalarNeumannConditions)"));
     scalarNeumannConditions = found;
     if (!found)
       out << "void scalarNeumannConditions(bcData *bc){}\n";
 
-    found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+scalarDirichletConditions)"));
+    found =
+        std::regex_search(buffer.str(),
+                          std::regex(R"(\s*void\s+scalarDirichletConditions)"));
     scalarDirichletConditions = found;
     if (!found)
       out << "void scalarDirichletConditions(bcData *bc){}\n";
@@ -181,14 +194,17 @@ void udfBuild(const char *udfFile, setupAide &options)
       if (platform->comm.mpiRank == 0)
         printf("building udf ... \n");
       fflush(stdout);
-      std::string pipeToNull =
-          (platform->comm.mpiRank == 0) ? std::string("") : std::string("> /dev/null 2>&1");
-      if (isFileNewer(udfFile, udfFileCache.c_str()) || !fileExists(udfLib.c_str())) {
+      std::string pipeToNull = (platform->comm.mpiRank == 0)
+                                   ? std::string("")
+                                   : std::string("> /dev/null 2>&1");
+      if (isFileNewer(udfFile, udfFileCache.c_str()) ||
+          !fileExists(udfLib.c_str())) {
         char udfFileResolved[BUFSIZ];
         realpath(udfFile, udfFileResolved);
         sprintf(cmd,
                 "cd %s/udf && cp -f %s udf.cpp && cp -f %s/CMakeLists.txt . && "
-                "rm -f *.so && cmake -Wno-dev -DCASE_DIR=\"%s\" -DCMAKE_CXX_COMPILER=\"$NEKRS_CXX\" "
+                "rm -f *.so && cmake -Wno-dev -DCASE_DIR=\"%s\" "
+                "-DCMAKE_CXX_COMPILER=\"$NEKRS_CXX\" "
                 "-DCMAKE_CXX_FLAGS=\"$NEKRS_CXXFLAGS\" . %s",
                 cache_dir.c_str(),
                 udfFileResolved,
@@ -200,7 +216,10 @@ void udfBuild(const char *udfFile, setupAide &options)
         if (system(cmd))
           return EXIT_FAILURE;
       }
-      sprintf(cmd, "cd %s/udf && make %s", cache_dir.c_str(), pipeToNull.c_str());
+      sprintf(cmd,
+              "cd %s/udf && make %s",
+              cache_dir.c_str(),
+              pipeToNull.c_str());
       if (system(cmd))
         return EXIT_FAILURE;
       fileSync(udfLib.c_str());
@@ -212,7 +231,12 @@ void udfBuild(const char *udfFile, setupAide &options)
     return 0;
   }();
 
-  MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                &err,
+                1,
+                MPI_INT,
+                MPI_SUM,
+                platform->comm.mpiComm);
   if (err)
     ABORT(EXIT_FAILURE);
 }

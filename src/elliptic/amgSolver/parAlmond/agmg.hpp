@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -75,13 +76,21 @@ public:
   void Report();
 };
 
-agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options);
+agmgLevel *
+coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options);
 
 parCSR *strongGraph(parCSR *A);
 
-void formAggregates(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts, setupAide options);
+void formAggregates(parCSR *A,
+                    parCSR *C,
+                    hlong *FineToCoarse,
+                    hlong *globalAggStarts,
+                    setupAide options);
 
-parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse, hlong *globalAggStarts, dfloat **nullCoarseA);
+parCSR *constructProlongation(parCSR *A,
+                              hlong *FineToCoarse,
+                              hlong *globalAggStarts,
+                              dfloat **nullCoarseA);
 
 parCSR *transpose(parCSR *A);
 
@@ -89,7 +98,10 @@ parCSR *galerkinProd(parCSR *A, parCSR *P);
 
 void setupAgmgSmoother(agmgLevel *level, SmoothType s, int ChebIterations);
 
-void allocateAgmgVectors(agmgLevel *level, int k, int numLevels, CycleType ctype);
+void allocateAgmgVectors(agmgLevel *level,
+                         int k,
+                         int numLevels,
+                         CycleType ctype);
 
 void syncAgmgToDevice(agmgLevel *level, int k, int numLevels, CycleType ctype);
 

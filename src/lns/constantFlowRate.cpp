@@ -6,15 +6,21 @@
 
 namespace {
 static dfloat constantFlowScale = 0.0;
-inline dfloat distance(dfloat x1, dfloat x2, dfloat y1, dfloat y2, dfloat z1, dfloat z2)
+inline dfloat
+distance(dfloat x1, dfloat x2, dfloat y1, dfloat y2, dfloat z1, dfloat z2)
 {
   const dfloat dist_x = x1 - x2;
   const dfloat dist_y = y1 - y2;
   const dfloat dist_z = z1 - z2;
   return std::sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z);
 }
-inline void
-computeDirection(dfloat x1, dfloat x2, dfloat y1, dfloat y2, dfloat z1, dfloat z2, dfloat *direction)
+inline void computeDirection(dfloat x1,
+                             dfloat x2,
+                             dfloat y1,
+                             dfloat y2,
+                             dfloat z1,
+                             dfloat z2,
+                             dfloat *direction)
 {
   direction[0] = x1 - x2;
   direction[1] = y1 - y2;
@@ -61,7 +67,9 @@ bool checkIfRecompute(nrs_t *nrs, int tstep)
 
   if (delta > TOL) {
     adjustFlowRate = true;
-    nrs->o_prevProp.copyFrom(nrs->o_prop, nPropertyFields * nrs->fieldOffset * sizeof(dfloat));
+    nrs->o_prevProp.copyFrom(nrs->o_prop,
+                             nPropertyFields * nrs->fieldOffset *
+                                 sizeof(dfloat));
   }
 
   adjustFlowRate |= platform->options.compareArgs("MOVING MESH", "TRUE");
@@ -85,9 +93,12 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
 
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 
-  const bool X_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "X");
-  const bool Y_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Y");
-  const bool Z_aligned = platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Z");
+  const bool X_aligned =
+      platform->options.compareArgs("CONSTANT FLOW DIRECTION", "X");
+  const bool Y_aligned =
+      platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Y");
+  const bool Z_aligned =
+      platform->options.compareArgs("CONSTANT FLOW DIRECTION", "Z");
   const bool directionAligned = X_aligned || Y_aligned || Z_aligned;
 
   if (!directionAligned) {
@@ -99,8 +110,10 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
     ABORT(1);
   }
 
-  const bool recomputeBaseFlowRate = ConstantFlowRate::checkIfRecompute(nrs, tstep);
-  const bool recomputeDirection = ConstantFlowRate::checkIfRecomputeDirection(nrs, tstep);
+  const bool recomputeBaseFlowRate =
+      ConstantFlowRate::checkIfRecompute(nrs, tstep);
+  const bool recomputeDirection =
+      ConstantFlowRate::checkIfRecomputeDirection(nrs, tstep);
 
   if (recomputeDirection) {
     if (directionAligned) {
@@ -124,15 +137,19 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
         flowDirection[2] = 1.0;
       }
 
-      const dfloat maxCoord = platform->linAlg->max(mesh->Nlocal, o_coord, platform->comm.mpiComm);
-      const dfloat minCoord = platform->linAlg->min(mesh->Nlocal, o_coord, platform->comm.mpiComm);
+      const dfloat maxCoord =
+          platform->linAlg->max(mesh->Nlocal, o_coord, platform->comm.mpiComm);
+      const dfloat minCoord =
+          platform->linAlg->min(mesh->Nlocal, o_coord, platform->comm.mpiComm);
       lengthScale = maxCoord - minCoord;
     }
     else {
 
       occa::memory o_centroid = platform->o_mempool.slice0;
       occa::memory o_counts = platform->o_mempool.slice3;
-      platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
+      platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3,
+                             0.0,
+                             o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
       nrs->computeFaceCentroidKernel(mesh->Nelements,
                                      nrs->fromBID,
@@ -145,25 +162,32 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
                                      o_counts);
 
       dfloat NfacesContrib =
-          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces, o_counts, platform->comm.mpiComm);
-      dfloat sumFaceAverages_x = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                       o_centroid,
-                                                       platform->comm.mpiComm,
-                                                       0 * mesh->Nelements * mesh->Nfaces);
-      dfloat sumFaceAverages_y = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                       o_centroid,
-                                                       platform->comm.mpiComm,
-                                                       1 * mesh->Nelements * mesh->Nfaces);
-      dfloat sumFaceAverages_z = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                       o_centroid,
-                                                       platform->comm.mpiComm,
-                                                       2 * mesh->Nelements * mesh->Nfaces);
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_counts,
+                                platform->comm.mpiComm);
+      dfloat sumFaceAverages_x =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                0 * mesh->Nelements * mesh->Nfaces);
+      dfloat sumFaceAverages_y =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                1 * mesh->Nelements * mesh->Nfaces);
+      dfloat sumFaceAverages_z =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                2 * mesh->Nelements * mesh->Nfaces);
 
       const dfloat centroidFrom_x = sumFaceAverages_x / NfacesContrib;
       const dfloat centroidFrom_y = sumFaceAverages_y / NfacesContrib;
       const dfloat centroidFrom_z = sumFaceAverages_z / NfacesContrib;
 
-      platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
+      platform->linAlg->fill(mesh->Nelements * mesh->Nfaces * 3,
+                             0.0,
+                             o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
       nrs->computeFaceCentroidKernel(mesh->Nelements,
                                      nrs->toBID,
@@ -175,26 +199,35 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
                                      o_centroid,
                                      o_counts);
 
-      NfacesContrib = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces, o_counts, platform->comm.mpiComm);
-      sumFaceAverages_x = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                o_centroid,
-                                                platform->comm.mpiComm,
-                                                0 * mesh->Nelements * mesh->Nfaces);
-      sumFaceAverages_y = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                o_centroid,
-                                                platform->comm.mpiComm,
-                                                1 * mesh->Nelements * mesh->Nfaces);
-      sumFaceAverages_z = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
-                                                o_centroid,
-                                                platform->comm.mpiComm,
-                                                2 * mesh->Nelements * mesh->Nfaces);
+      NfacesContrib = platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                            o_counts,
+                                            platform->comm.mpiComm);
+      sumFaceAverages_x =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                0 * mesh->Nelements * mesh->Nfaces);
+      sumFaceAverages_y =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                1 * mesh->Nelements * mesh->Nfaces);
+      sumFaceAverages_z =
+          platform->linAlg->sum(mesh->Nelements * mesh->Nfaces,
+                                o_centroid,
+                                platform->comm.mpiComm,
+                                2 * mesh->Nelements * mesh->Nfaces);
 
       const dfloat centroidTo_x = sumFaceAverages_x / NfacesContrib;
       const dfloat centroidTo_y = sumFaceAverages_y / NfacesContrib;
       const dfloat centroidTo_z = sumFaceAverages_z / NfacesContrib;
 
-      lengthScale =
-          distance(centroidFrom_x, centroidTo_x, centroidFrom_y, centroidTo_y, centroidFrom_z, centroidTo_z);
+      lengthScale = distance(centroidFrom_x,
+                             centroidTo_x,
+                             centroidFrom_y,
+                             centroidTo_y,
+                             centroidFrom_z,
+                             centroidTo_z);
 
       computeDirection(centroidFrom_x,
                        centroidTo_x,
@@ -283,8 +316,10 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
   // scale by mass matrix
   platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_currentFlowRate);
 
-  const dfloat currentFlowRate =
-      platform->linAlg->sum(mesh->Nlocal, o_currentFlowRate, platform->comm.mpiComm) / lengthScale;
+  const dfloat currentFlowRate = platform->linAlg->sum(mesh->Nlocal,
+                                                       o_currentFlowRate,
+                                                       platform->comm.mpiComm) /
+                                 lengthScale;
 
   if (recomputeBaseFlowRate) {
     nrs->computeFieldDotNormalKernel(mesh->Nlocal,
@@ -297,7 +332,10 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
 
     // scale by mass matrix
     platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_baseFlowRate);
-    baseFlowRate = platform->linAlg->sum(mesh->Nlocal, o_baseFlowRate, platform->comm.mpiComm) / lengthScale;
+    baseFlowRate = platform->linAlg->sum(mesh->Nlocal,
+                                         o_baseFlowRate,
+                                         platform->comm.mpiComm) /
+                   lengthScale;
   }
 
   // user specifies a mean velocity, not volumetric flow rate
@@ -311,9 +349,18 @@ bool apply(nrs_t *nrs, int tstep, dfloat time)
   constantFlowScale = deltaFlowRate / baseFlowRate;
 
   // vx += scale * vxc
-  platform->linAlg
-      ->axpbyMany(mesh->Nlocal, nrs->NVfields, nrs->fieldOffset, constantFlowScale, nrs->o_Uc, 1.0, nrs->o_U);
-  platform->linAlg->axpby(mesh->Nlocal, constantFlowScale, nrs->o_Pc, 1.0, nrs->o_P);
+  platform->linAlg->axpbyMany(mesh->Nlocal,
+                              nrs->NVfields,
+                              nrs->fieldOffset,
+                              constantFlowScale,
+                              nrs->o_Uc,
+                              1.0,
+                              nrs->o_U);
+  platform->linAlg->axpby(mesh->Nlocal,
+                          constantFlowScale,
+                          nrs->o_Pc,
+                          1.0,
+                          nrs->o_P);
 
   return recomputeBaseFlowRate;
 }
@@ -332,7 +379,10 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time)
     occa::memory &o_gradPCoeff = platform->o_mempool.slice0;
     occa::memory &o_Prhs = platform->o_mempool.slice3;
 
-    nrs->setEllipticCoeffPressureKernel(mesh->Nlocal, nrs->fieldOffset, nrs->o_rho, nrs->o_ellipticCoeff);
+    nrs->setEllipticCoeffPressureKernel(mesh->Nlocal,
+                                        nrs->fieldOffset,
+                                        nrs->o_rho,
+                                        nrs->o_ellipticCoeff);
 
     nrs->gradientVolumeKernel(mesh->Nelements,
                               mesh->o_vgeo,
@@ -369,9 +419,19 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time)
 
       // take care of Neumann-Dirichlet shared edges across elements
       if (sweep == 0)
-        oogs::startFinish(platform->o_mempool.slice6, 1, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
+        oogs::startFinish(platform->o_mempool.slice6,
+                          1,
+                          nrs->fieldOffset,
+                          ogsDfloat,
+                          ogsMax,
+                          nrs->gsh);
       if (sweep == 1)
-        oogs::startFinish(platform->o_mempool.slice6, 1, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
+        oogs::startFinish(platform->o_mempool.slice6,
+                          1,
+                          nrs->fieldOffset,
+                          ogsDfloat,
+                          ogsMin,
+                          nrs->gsh);
     }
 
     if (nrs->pSolver->Nmasked)
@@ -396,9 +456,18 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time)
                                 nrs->o_ellipticCoeff);
     occa::memory &o_RhsVel = platform->o_mempool.slice0;
     occa::memory &o_BF = platform->o_mempool.slice3;
-    o_BF.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), 0 * nrs->fieldOffset * sizeof(dfloat), 0);
-    o_BF.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), 1 * nrs->fieldOffset * sizeof(dfloat), 0);
-    o_BF.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), 2 * nrs->fieldOffset * sizeof(dfloat), 0);
+    o_BF.copyFrom(mesh->o_LMM,
+                  mesh->Nlocal * sizeof(dfloat),
+                  0 * nrs->fieldOffset * sizeof(dfloat),
+                  0);
+    o_BF.copyFrom(mesh->o_LMM,
+                  mesh->Nlocal * sizeof(dfloat),
+                  1 * nrs->fieldOffset * sizeof(dfloat),
+                  0);
+    o_BF.copyFrom(mesh->o_LMM,
+                  mesh->Nlocal * sizeof(dfloat),
+                  2 * nrs->fieldOffset * sizeof(dfloat),
+                  0);
     nrs->gradientVolumeKernel(mesh->Nelements,
                               mesh->o_vgeo,
                               mesh->o_D,
@@ -408,17 +477,24 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time)
     );
 
     // rhs = -\grad{P_c} + BF n_i
-    platform->linAlg->scaleMany(mesh->Nlocal, nrs->NVfields, nrs->fieldOffset, -1.0, o_RhsVel);
+    platform->linAlg->scaleMany(mesh->Nlocal,
+                                nrs->NVfields,
+                                nrs->fieldOffset,
+                                -1.0,
+                                o_RhsVel);
 
     for (int dim = 0; dim < ndim; ++dim) {
       const dlong offset = dim * nrs->fieldOffset;
       const dfloat n_dim = nrs->flowDirection[dim];
-      platform->linAlg->axpby(mesh->Nlocal, n_dim, o_BF, 1.0, o_RhsVel, offset, offset);
+      platform->linAlg
+          ->axpby(mesh->Nlocal, n_dim, o_BF, 1.0, o_RhsVel, offset, offset);
     }
 
     if (nrs->uvwSolver) {
       if (nrs->uvwSolver->Nmasked)
-        nrs->maskKernel(nrs->uvwSolver->Nmasked, nrs->uvwSolver->o_maskIds, o_RhsVel);
+        nrs->maskKernel(nrs->uvwSolver->Nmasked,
+                        nrs->uvwSolver->o_maskIds,
+                        o_RhsVel);
     }
     else {
       if (nrs->uSolver->Nmasked)

@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +45,11 @@ void vectorScale(const dlong m, const dfloat alpha, dfloat *a);
 void vectorAddScalar(const dlong m, const dfloat alpha, dfloat *a);
 
 // y = beta*y + alpha*x
-void vectorAdd(const dlong n, const dfloat alpha, const dfloat *x, const dfloat beta, dfloat *y);
+void vectorAdd(const dlong n,
+               const dfloat alpha,
+               const dfloat *x,
+               const dfloat beta,
+               dfloat *y);
 
 // z = beta*y + alpha*x
 void vectorAdd(const dlong n,
@@ -67,7 +72,8 @@ void vectorDotStar(const dlong m,
 
 dfloat vectorNorm(const dlong n, const dfloat *a, MPI_Comm comm);
 
-dfloat vectorInnerProd(const dlong n, const dfloat *a, const dfloat *b, MPI_Comm comm);
+dfloat
+vectorInnerProd(const dlong n, const dfloat *a, const dfloat *b, MPI_Comm comm);
 
 dfloat vectorMaxAbs(const dlong n, const dfloat *a, MPI_Comm comm);
 
@@ -116,7 +122,11 @@ void vectorScale(const dlong N, const dfloat alpha, occa::memory o_a);
 
 void vectorAddScalar(const dlong N, const dfloat alpha, occa::memory o_a);
 
-void vectorAdd(const dlong N, const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y);
+void vectorAdd(const dlong N,
+               const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y);
 
 void vectorAdd(const dlong N,
                const dfloat alpha,
@@ -136,7 +146,10 @@ void vectorDotStar(const dlong N,
 
 dfloat vectorNorm(const dlong n, occa::memory o_a, MPI_Comm comm);
 
-dfloat vectorInnerProd(const dlong N, occa::memory o_x, occa::memory o_y, MPI_Comm comm);
+dfloat vectorInnerProd(const dlong N,
+                       occa::memory o_x,
+                       occa::memory o_y,
+                       MPI_Comm comm);
 
 dfloat vectorMaxAbs(const dlong n, occa::memory o_a, MPI_Comm comm);
 

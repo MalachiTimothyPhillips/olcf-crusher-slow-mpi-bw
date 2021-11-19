@@ -26,16 +26,37 @@ static void (*nek_ptr_ptr)(void **, char *, int *);
 static void (*nek_scptr_ptr)(int *, void *);
 static void (*nek_outfld_ptr)(char *, int);
 static void (*nek_resetio_ptr)(void);
-static void (*nek_setio_ptr)(double *, int *, int *, int *, int *, int *, int *);
+static void (
+    *nek_setio_ptr)(double *, int *, int *, int *, int *, int *, int *);
 static void (*nek_uic_ptr)(int *);
 static void (*nek_end_ptr)(void);
 static void (*nek_restart_ptr)(char *, int *);
-static void (*nek_map_m_to_n_ptr)(double *a, int *na, double *b, int *nb, int *if3d, double *w, int *nw);
-static void (*nek_outpost_ptr)(double *v1, double *v2, double *v3, double *vp, double *vt, char *name, int);
+static void (*nek_map_m_to_n_ptr)(double *a,
+                                  int *na,
+                                  double *b,
+                                  int *nb,
+                                  int *if3d,
+                                  double *w,
+                                  int *nw);
+static void (*nek_outpost_ptr)(double *v1,
+                               double *v2,
+                               double *v3,
+                               double *vp,
+                               double *vt,
+                               char *name,
+                               int);
 static void (*nek_uf_ptr)(double *, double *, double *);
 static int (*nek_lglel_ptr)(int *);
 static void (*nek_bootstrap_ptr)(int *, char *, char *, char *, int, int, int);
-static void (*nek_setup_ptr)(int *, int *, int *, int *, double *, double *, double *, double *, double *);
+static void (*nek_setup_ptr)(int *,
+                             int *,
+                             int *,
+                             int *,
+                             double *,
+                             double *,
+                             double *,
+                             double *,
+                             double *);
 static void (*nek_ifoutfld_ptr)(int *);
 static void (*nek_setics_ptr)(void);
 static int (*nek_bcmap_ptr)(int *, int *, int *);
@@ -257,15 +278,23 @@ void set_usr_handles(const char *session_in, int verbose)
   userchk_ptr = (void (*)(void))dlsym(handle, fname("userchk"));
   check_error(dlerror());
 
-  nek_ptr_ptr = (void (*)(void **, char *, int *))dlsym(handle, fname("nekf_ptr"));
+  nek_ptr_ptr =
+      (void (*)(void **, char *, int *))dlsym(handle, fname("nekf_ptr"));
   check_error(dlerror());
   nek_scptr_ptr = (void (*)(int *, void *))dlsym(handle, fname("nekf_scptr"));
   check_error(dlerror());
-  nek_bootstrap_ptr =
-      (void (*)(int *, char *, char *, char *, int, int, int))dlsym(handle, fname("nekf_bootstrap"));
+  nek_bootstrap_ptr = (void (*)(int *, char *, char *, char *, int, int, int))
+      dlsym(handle, fname("nekf_bootstrap"));
   check_error(dlerror());
-  nek_setup_ptr = (void (*)(int *, int *, int *, int *, double *, double *, double *, double *, double *))
-      dlsym(handle, fname("nekf_setup"));
+  nek_setup_ptr = (void (*)(int *,
+                            int *,
+                            int *,
+                            int *,
+                            double *,
+                            double *,
+                            double *,
+                            double *,
+                            double *))dlsym(handle, fname("nekf_setup"));
   check_error(dlerror());
   nek_uic_ptr = (void (*)(int *))dlsym(handle, fname("nekf_uic"));
   check_error(dlerror());
@@ -275,13 +304,15 @@ void set_usr_handles(const char *session_in, int verbose)
   check_error(dlerror());
   nek_resetio_ptr = (void (*)(void))dlsym(handle, fname("nekf_resetio"));
   check_error(dlerror());
-  nek_setio_ptr =
-      (void (*)(double *, int *, int *, int *, int *, int *, int *))dlsym(handle, fname("nekf_setio"));
+  nek_setio_ptr = (void (*)(double *, int *, int *, int *, int *, int *, int *))
+      dlsym(handle, fname("nekf_setio"));
   check_error(dlerror());
-  nek_restart_ptr = (void (*)(char *, int *))dlsym(handle, fname("nekf_restart"));
+  nek_restart_ptr =
+      (void (*)(char *, int *))dlsym(handle, fname("nekf_restart"));
   check_error(dlerror());
   check_error(dlerror());
-  nek_uf_ptr = (void (*)(double *, double *, double *))dlsym(handle, fname("nekf_uf"));
+  nek_uf_ptr =
+      (void (*)(double *, double *, double *))dlsym(handle, fname("nekf_uf"));
   check_error(dlerror());
   nek_lglel_ptr = (int (*)(int *))dlsym(handle, fname("nekf_lglel"));
   check_error(dlerror());
@@ -289,21 +320,27 @@ void set_usr_handles(const char *session_in, int verbose)
   check_error(dlerror());
   nek_setics_ptr = (void (*)(void))dlsym(handle, fname("nekf_setics"));
   check_error(dlerror());
-  nek_bcmap_ptr = (int (*)(int *, int *, int *))dlsym(handle, fname("nekf_bcmap"));
+  nek_bcmap_ptr =
+      (int (*)(int *, int *, int *))dlsym(handle, fname("nekf_bcmap"));
   check_error(dlerror());
   nek_gen_bcmap_ptr = (void (*)(void))dlsym(handle, fname("nekf_gen_bcmap"));
   check_error(dlerror());
   nek_map_m_to_n_ptr =
-      (void (*)(double *, int *, double *, int *, int *, double *, int *))dlsym(handle, fname("map_m_to_n"));
+      (void (*)(double *, int *, double *, int *, int *, double *, int *))
+          dlsym(handle, fname("map_m_to_n"));
   check_error(dlerror());
   nek_nbid_ptr = (int (*)(int *))dlsym(handle, fname("nekf_nbid"));
   check_error(dlerror());
-  nek_set_vert_ptr = (long long (*)(int *, int *))dlsym(handle, fname("nekf_set_vert"));
+  nek_set_vert_ptr =
+      (long long (*)(int *, int *))dlsym(handle, fname("nekf_set_vert"));
   check_error(dlerror());
 
-  nek_setbd_ptr = (void (*)(double *, double *, int *))dlsym(handle, fname("setbd"));
+  nek_setbd_ptr =
+      (void (*)(double *, double *, int *))dlsym(handle, fname("setbd"));
   check_error(dlerror());
-  nek_setabbd_ptr = (void (*)(double *, double *, int *, int *))dlsym(handle, fname("setabbd"));
+  nek_setabbd_ptr =
+      (void (*)(double *, double *, int *, int *))dlsym(handle,
+                                                        fname("setabbd"));
   check_error(dlerror());
 
   nek_storesol_ptr = (void (*)(void))dlsym(handle, fname("nekf_storesol"));
@@ -314,17 +351,17 @@ void set_usr_handles(const char *session_in, int verbose)
   check_error(dlerror());
 
 #define postfix(x) x##_ptr
-#define load_or_noop(s)                                                                                      \
-  do {                                                                                                       \
-    postfix(s) = (void (*)(void))dlsym(handle, fname(#s));                                                   \
-    if (!(postfix(s))) {                                                                                     \
-      postfix(s) = noop_func;                                                                                \
-      if (verbose)                                                                                           \
-        printf("Setting function " #s " to noop_func.\n");                                                   \
-    }                                                                                                        \
-    else if (verbose) {                                                                                      \
-      printf("Loading " #s " from lib%s.so\n", session_in);                                                  \
-    }                                                                                                        \
+#define load_or_noop(s)                                                        \
+  do {                                                                         \
+    postfix(s) = (void (*)(void))dlsym(handle, fname(#s));                     \
+    if (!(postfix(s))) {                                                       \
+      postfix(s) = noop_func;                                                  \
+      if (verbose)                                                             \
+        printf("Setting function " #s " to noop_func.\n");                     \
+    }                                                                          \
+    else if (verbose) {                                                        \
+      printf("Loading " #s " from lib%s.so\n", session_in);                    \
+    }                                                                          \
   } while (0)
 
   load_or_noop(uservp);
@@ -482,7 +519,8 @@ void buildNekInterface(int ldimt, int N, int np, setupAide &options)
 
   int err = [&]() {
     if (buildRank == 0) {
-      const std::string cache_dir = std::string(getenv("NEKRS_CACHE_DIR")) + "/nek5000";
+      const std::string cache_dir =
+          std::string(getenv("NEKRS_CACHE_DIR")) + "/nek5000";
       mkdir(cache_dir.c_str(), S_IRWXU);
 
       const std::string installDir(getenv("NEKRS_HOME"));
@@ -521,7 +559,10 @@ void buildNekInterface(int ldimt, int N, int np, setupAide &options)
       }
       if (nelgt <= 0 || nelgv <= 0 || nelgv > nelgt) {
         if (rank == 0)
-          printf("\nERROR: Invalid nelgt=%lld / nelgv=%lld read from re2 header!\n", nelgt, nelgv);
+          printf("\nERROR: Invalid nelgt=%lld / nelgv=%lld read from re2 "
+                 "header!\n",
+                 nelgt,
+                 nelgv);
         ABORT(EXIT_FAILURE);
       }
 
@@ -558,10 +599,14 @@ void buildNekInterface(int ldimt, int N, int np, setupAide &options)
         recompile = 1;
       if (recompile) {
         const double tStart = MPI_Wtime();
-        const std::string pipeToNull = (rank == 0) ? std::string("") : std::string(">/dev/null 2>&1");
+        const std::string pipeToNull =
+            (rank == 0) ? std::string("") : std::string(">/dev/null 2>&1");
         const std::string include_dirs = "./ " + case_dir;
         if (rank == 0)
-          printf("building nekInterface for lx1=%d, lelt=%d and lelg=%d ...", N + 1, lelt, nelgt);
+          printf("building nekInterface for lx1=%d, lelt=%d and lelg=%d ...",
+                 N + 1,
+                 lelt,
+                 nelgt);
         fflush(stdout);
 
         sprintf(buf,
@@ -600,13 +645,21 @@ void buildNekInterface(int ldimt, int N, int np, setupAide &options)
     return 0;
   }();
 
-  MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                &err,
+                1,
+                MPI_INT,
+                MPI_SUM,
+                platform->comm.mpiComm);
   if (err)
     ABORT(EXIT_FAILURE);
 }
 
 namespace nek {
-int bcmap(int bid, int ifld, int isMesh) { return (*nek_bcmap_ptr)(&bid, &ifld, &isMesh); }
+int bcmap(int bid, int ifld, int isMesh)
+{
+  return (*nek_bcmap_ptr)(&bid, &ifld, &isMesh);
+}
 
 void gen_bcmap() { (*nek_gen_bcmap_ptr)(); }
 
@@ -712,7 +765,15 @@ int setup(nrs_t *nrs_in)
   dfloat lambda;
   options->getArgs("SCALAR00 DIFFUSIVITY", lambda);
 
-  (*nek_setup_ptr)(&flow, &nscal, &nBcRead, &meshPartType, &meshConTol, &rho, &mue, &rhoCp, &lambda);
+  (*nek_setup_ptr)(&flow,
+                   &nscal,
+                   &nBcRead,
+                   &meshPartType,
+                   &meshConTol,
+                   &rho,
+                   &mue,
+                   &rhoCp,
+                   &lambda);
 
   nekData.param = (double *)ptr("param");
   nekData.ifield = (int *)ptr("ifield");
@@ -989,7 +1050,10 @@ void copyFromNek(dfloat &time)
   }
 }
 
-long long set_glo_num(int nx, int isTMesh) { return (*nek_set_vert_ptr)(&nx, &isTMesh); }
+long long set_glo_num(int nx, int isTMesh)
+{
+  return (*nek_set_vert_ptr)(&nx, &isTMesh);
+}
 
 void bdfCoeff(double *g0, double *coeff, double *dt, int order)
 {
@@ -999,7 +1063,10 @@ void bdfCoeff(double *g0, double *coeff, double *dt, int order)
   memcpy(coeff, &nekCoeff[1], order * sizeof(double));
 }
 
-void extCoeff(double *coeff, double *dt, int nAB, int nBDF) { (*nek_setabbd_ptr)(coeff, dt, &nAB, &nBDF); }
+void extCoeff(double *coeff, double *dt, int nAB, int nBDF)
+{
+  (*nek_setabbd_ptr)(coeff, dt, &nAB, &nBDF);
+}
 void coeffAB(double *coeff, double *dt, int order)
 {
   int one = 1;

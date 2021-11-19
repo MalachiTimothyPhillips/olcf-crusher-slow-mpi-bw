@@ -40,10 +40,29 @@ double run(int Ntests, int BKmode, int Ndim, int computeGeom)
 
   for (int test = 0; test < Ntests; ++test) {
     if (computeGeom) {
-      axKernel(Nelements, offset, loffset, o_elementList, o_exyz, o_gllwz, o_D, o_S, o_lambda, o_q, o_Aq);
+      axKernel(Nelements,
+               offset,
+               loffset,
+               o_elementList,
+               o_exyz,
+               o_gllwz,
+               o_D,
+               o_S,
+               o_lambda,
+               o_q,
+               o_Aq);
     }
     else {
-      axKernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
+      axKernel(Nelements,
+               offset,
+               loffset,
+               o_elementList,
+               o_ggeo,
+               o_D,
+               o_S,
+               o_lambda,
+               o_q,
+               o_Aq);
     }
   }
 
@@ -100,18 +119,19 @@ int main(int argc, char **argv)
   int computeGeom = 0;
 
   while (1) {
-    static struct option long_options[] = {{"p-order", required_argument, 0, 'p'},
-                                           {"g-order", required_argument, 0, 'g'},
-                                           {"computeGeom", no_argument, 0, 'c'},
-                                           {"block-dim", required_argument, 0, 'd'},
-                                           {"elements", required_argument, 0, 'e'},
-                                           {"backend", required_argument, 0, 'b'},
-                                           {"arch", required_argument, 0, 'a'},
-                                           {"bk-mode", no_argument, 0, 'm'},
-                                           {"fp32", no_argument, 0, 'f'},
-                                           {"help", required_argument, 0, 'h'},
-                                           {"iterations", required_argument, 0, 'i'},
-                                           {0, 0, 0, 0}};
+    static struct option long_options[] = {
+        {"p-order", required_argument, 0, 'p'},
+        {"g-order", required_argument, 0, 'g'},
+        {"computeGeom", no_argument, 0, 'c'},
+        {"block-dim", required_argument, 0, 'd'},
+        {"elements", required_argument, 0, 'e'},
+        {"backend", required_argument, 0, 'b'},
+        {"arch", required_argument, 0, 'a'},
+        {"bk-mode", no_argument, 0, 'm'},
+        {"fp32", no_argument, 0, 'f'},
+        {"help", required_argument, 0, 'h'},
+        {"iterations", required_argument, 0, 'i'},
+        {0, 0, 0, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "", long_options, &option_index);
 
@@ -160,7 +180,8 @@ int main(int argc, char **argv)
 
   if (err || cmdCheck != 3) {
     if (rank == 0)
-      printf("Usage: ./nekrs-axhelm  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
+      printf("Usage: ./nekrs-axhelm  --p-order <n> --elements <n> --backend "
+             "<CPU|CUDA|HIP|OPENCL>\n"
              "                    [--block-dim <n>]\n"
              "                    [--g-order <n>] [--computeGeom]\n"
              "                    [--bk-mode] [--fp32] [--iterations <n>]\n");
@@ -229,7 +250,8 @@ int main(int argc, char **argv)
   dlong *elementList = (dlong *)calloc(Nelements, sizeof(dlong));
   for (int e = 0; e < Nelements; ++e)
     elementList[e] = e;
-  o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList);
+  o_elementList =
+      platform->device.malloc(Nelements * sizeof(dlong), elementList);
   free(elementList);
 
   void *DrV = randAlloc(Nq * Nq);
@@ -268,7 +290,8 @@ int main(int argc, char **argv)
   // *****
 
   // print statistics
-  const dfloat GDOFPerSecond = (size * Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
+  const dfloat GDOFPerSecond =
+      (size * Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
 
   size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
   bytesMoved += 6 * Np_g * wordSize;            // geo
@@ -282,10 +305,12 @@ int main(int argc, char **argv)
   const double gflops = Ndim * (size * flopCount * Nelements / elapsed) / 1.e9;
 
   if (rank == 0)
-    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests
-              << " Ndim=" << Ndim << " N=" << N << " Ng=" << Ng << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed << " bkMode=" << BKmode << " wordSize=" << 8 * wordSize
-              << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads
+              << " NRepetitions=" << Ntests << " Ndim=" << Ndim << " N=" << N
+              << " Ng=" << Ng << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " bkMode=" << BKmode
+              << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
+              << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
 
   MPI_Finalize();
   exit(0);

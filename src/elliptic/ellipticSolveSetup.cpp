@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -46,15 +46,18 @@ void ellipticSolveSetup(elliptic_t *elliptic)
       !options.compareArgs("DISCRETIZATION", "CONTINUOUS") &&
       !options.compareArgs("PRECONDITIONER", "JACOBI")) {
     if (platform->comm.mpiRank == 0)
-      printf("ERROR: Block solver is implemented for C0-HEXAHEDRA with Jacobi preconditioner only\n");
+      printf("ERROR: Block solver is implemented for C0-HEXAHEDRA with Jacobi "
+             "preconditioner only\n");
 
     ABORT(EXIT_FAILURE);
   }
 
-  if (options.compareArgs("COEFFICIENT", "VARIABLE") && elliptic->elementType != HEXAHEDRA &&
+  if (options.compareArgs("COEFFICIENT", "VARIABLE") &&
+      elliptic->elementType != HEXAHEDRA &&
       !options.compareArgs("DISCRETIZATION", "CONTINUOUS")) {
     if (platform->comm.mpiRank == 0)
-      printf("ERROR: Varibale coefficient solver is implemented for C0-HEXAHEDRA only\n");
+      printf("ERROR: Varibale coefficient solver is implemented for "
+             "C0-HEXAHEDRA only\n");
 
     ABORT(EXIT_FAILURE);
   }
@@ -63,8 +66,8 @@ void ellipticSolveSetup(elliptic_t *elliptic)
     if (options.compareArgs("PRECONDITIONER", "MULTIGRID") &&
         !options.compareArgs("MULTIGRID VARIABLE COEFFICIENT", "FALSE")) {
       if (platform->comm.mpiRank == 0)
-        printf(
-            "ERROR: Varibale coefficient solver is implemented for constant multigrid preconditioner only\n");
+        printf("ERROR: Varibale coefficient solver is implemented for constant "
+               "multigrid preconditioner only\n");
 
       ABORT(EXIT_FAILURE);
     }
@@ -72,14 +75,18 @@ void ellipticSolveSetup(elliptic_t *elliptic)
 
   if (options.compareArgs("KRYLOV SOLVER", "PGMRES")) {
     initializeGmresData(elliptic);
-    const std::string sectionIdentifier = std::to_string(elliptic->Nfields) + "-";
-    elliptic->gramSchmidtOrthogonalizationKernel =
-        platform->kernels.get(sectionIdentifier + "gramSchmidtOrthogonalization");
-    elliptic->updatePGMRESSolutionKernel = platform->kernels.get(sectionIdentifier + "updatePGMRESSolution");
-    elliptic->fusedResidualAndNormKernel = platform->kernels.get(sectionIdentifier + "fusedResidualAndNorm");
+    const std::string sectionIdentifier =
+        std::to_string(elliptic->Nfields) + "-";
+    elliptic->gramSchmidtOrthogonalizationKernel = platform->kernels.get(
+        sectionIdentifier + "gramSchmidtOrthogonalization");
+    elliptic->updatePGMRESSolutionKernel =
+        platform->kernels.get(sectionIdentifier + "updatePGMRESSolution");
+    elliptic->fusedResidualAndNormKernel =
+        platform->kernels.get(sectionIdentifier + "fusedResidualAndNorm");
   }
 
-  const size_t offsetBytes = elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat);
+  const size_t offsetBytes =
+      elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat);
   if (elliptic->o_wrk.size() < elliptic_t::NScratchFields * offsetBytes) {
     if (platform->comm.mpiRank == 0)
       printf("ERROR: mempool assigned for elliptic too small!");
@@ -100,7 +107,8 @@ void ellipticSolveSetup(elliptic_t *elliptic)
 
   const dlong Nblocks = (Nlocal + BLOCKSIZE - 1) / BLOCKSIZE;
   elliptic->tmpNormr = (dfloat *)calloc(Nblocks, sizeof(dfloat));
-  elliptic->o_tmpNormr = platform->device.malloc(Nblocks * sizeof(dfloat), elliptic->tmpNormr);
+  elliptic->o_tmpNormr =
+      platform->device.malloc(Nblocks * sizeof(dfloat), elliptic->tmpNormr);
 
   int useFlexible = options.compareArgs("KRYLOV SOLVER", "FLEXIBLE");
 
@@ -110,11 +118,18 @@ void ellipticSolveSetup(elliptic_t *elliptic)
   hlong NelementsLocal = mesh->Nelements;
   hlong NelementsGlobal = 0;
 
-  MPI_Allreduce(&NelementsLocal, &NelementsGlobal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
+  MPI_Allreduce(&NelementsLocal,
+                &NelementsGlobal,
+                1,
+                MPI_HLONG,
+                MPI_SUM,
+                platform->comm.mpiComm);
 
   elliptic->NelementsGlobal = NelementsGlobal;
 
-  elliptic->EToB = (int *)calloc(mesh->Nelements * mesh->Nfaces * elliptic->Nfields, sizeof(int));
+  elliptic->EToB =
+      (int *)calloc(mesh->Nelements * mesh->Nfaces * elliptic->Nfields,
+                    sizeof(int));
   int *allNeumann = (int *)calloc(elliptic->Nfields, sizeof(int));
 
   dfloat *lambda = (dfloat *)calloc(2 * elliptic->Ntotal, sizeof(dfloat));
@@ -123,7 +138,8 @@ void ellipticSolveSetup(elliptic_t *elliptic)
   for (int fld = 0; fld < elliptic->Nfields; fld++) {
     if (elliptic->coeffField) {
       int allzero = 1;
-      for (int n = 0; n < Nlocal; n++) { // check any non-zero value for each field
+      for (int n = 0; n < Nlocal;
+           n++) { // check any non-zero value for each field
         if (lambda[n + elliptic->Ntotal + fld * elliptic->loffset]) {
           allzero = 0;
           break;
@@ -132,7 +148,8 @@ void ellipticSolveSetup(elliptic_t *elliptic)
       allNeumann[fld] = allzero;
     }
     else {
-      allNeumann[fld] = (lambda[elliptic->Ntotal + fld * elliptic->loffset] == 0) ? 1 : 0;
+      allNeumann[fld] =
+          (lambda[elliptic->Ntotal + fld * elliptic->loffset] == 0) ? 1 : 0;
     }
   }
 
@@ -145,7 +162,9 @@ void ellipticSolveSetup(elliptic_t *elliptic)
         int bc = mesh->EToB[e * mesh->Nfaces + f];
         if (bc > 0) {
           int BC = elliptic->BCType[bc + elliptic->NBCType * fld];
-          elliptic->EToB[f + e * mesh->Nfaces + fld * mesh->Nelements * mesh->Nfaces] = BC; // record it
+          elliptic->EToB[f + e * mesh->Nfaces +
+                         fld * mesh->Nelements * mesh->Nfaces] =
+              BC; // record it
           if (BC != 2)
             allNeumann[fld] = 0; // check if its a Dirchlet for each field
         }
@@ -156,7 +175,12 @@ void ellipticSolveSetup(elliptic_t *elliptic)
   for (int fld = 0; fld < elliptic->Nfields; fld++) {
     int lallNeumann, gallNeumann;
     lallNeumann = allNeumann[fld] ? 0 : 1;
-    MPI_Allreduce(&lallNeumann, &gallNeumann, 1, MPI_INT, MPI_SUM, platform->comm.mpiComm);
+    MPI_Allreduce(&lallNeumann,
+                  &gallNeumann,
+                  1,
+                  MPI_INT,
+                  MPI_SUM,
+                  platform->comm.mpiComm);
     allBlockNeumann[fld] = (gallNeumann > 0) ? 0 : 1;
     // even if there is a single allNeumann activate Null space correction
     if (allBlockNeumann[fld])
@@ -169,7 +193,11 @@ void ellipticSolveSetup(elliptic_t *elliptic)
 
   int verbose = options.compareArgs("VERBOSE", "TRUE") ? 1 : 0;
   if (mesh->ogs == NULL)
-    meshParallelGatherScatterSetup(mesh, Nlocal, mesh->globalIds, platform->comm.mpiComm, verbose);
+    meshParallelGatherScatterSetup(mesh,
+                                   Nlocal,
+                                   mesh->globalIds,
+                                   platform->comm.mpiComm,
+                                   verbose);
 
   { // setup an unmasked gs handle
     ogs_t *ogs = NULL;
@@ -205,9 +233,11 @@ void ellipticSolveSetup(elliptic_t *elliptic)
   }
 
   {
-    const std::string sectionIdentifier = std::to_string(elliptic->Nfields) + "-";
+    const std::string sectionIdentifier =
+        std::to_string(elliptic->Nfields) + "-";
     kernelName = "ellipticBlockBuildDiagonal" + suffix;
-    elliptic->updateDiagonalKernel = platform->kernels.get(sectionIdentifier + kernelName);
+    elliptic->updateDiagonalKernel =
+        platform->kernels.get(sectionIdentifier + kernelName);
     elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
     elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");
 
@@ -227,9 +257,11 @@ void ellipticSolveSetup(elliptic_t *elliptic)
     if (elliptic->blockSolver && !elliptic->stressForm)
       kernelName += "_N" + std::to_string(elliptic->Nfields);
 
-    elliptic->AxKernel = platform->kernels.get(kernelNamePrefix + "Partial" + kernelName);
+    elliptic->AxKernel =
+        platform->kernels.get(kernelNamePrefix + "Partial" + kernelName);
 
-    elliptic->updatePCGKernel = platform->kernels.get(sectionIdentifier + "ellipticBlockUpdatePCG");
+    elliptic->updatePCGKernel =
+        platform->kernels.get(sectionIdentifier + "ellipticBlockUpdatePCG");
   }
 
   MPI_Barrier(platform->comm.mpiComm);
@@ -247,14 +279,24 @@ void ellipticSolveSetup(elliptic_t *elliptic)
                elliptic->o_Ap,
                dfloatString);
   };
-  elliptic->oogs = oogs::setup(elliptic->ogs, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, NULL, oogsMode);
-  elliptic->oogsAx =
-      oogs::setup(elliptic->ogs, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, callback, oogsMode);
+  elliptic->oogs = oogs::setup(elliptic->ogs,
+                               elliptic->Nfields,
+                               elliptic->Ntotal,
+                               ogsDfloat,
+                               NULL,
+                               oogsMode);
+  elliptic->oogsAx = oogs::setup(elliptic->ogs,
+                                 elliptic->Nfields,
+                                 elliptic->Ntotal,
+                                 ogsDfloat,
+                                 callback,
+                                 oogsMode);
 
   long long int pre = platform->device.occaDevice().memoryAllocated();
   ellipticPreconditionerSetup(elliptic, elliptic->ogs);
 
-  long long int usedBytes = platform->device.occaDevice().memoryAllocated() - pre;
+  long long int usedBytes =
+      platform->device.occaDevice().memoryAllocated() - pre;
 
   elliptic->precon->preconBytes = usedBytes;
 
@@ -266,13 +308,15 @@ void ellipticSolveSetup(elliptic_t *elliptic)
     dlong nStepsStart = 5;
     options.getArgs("RESIDUAL PROJECTION START", nStepsStart);
 
-    SolutionProjection::ProjectionType type = SolutionProjection::ProjectionType::CLASSIC;
+    SolutionProjection::ProjectionType type =
+        SolutionProjection::ProjectionType::CLASSIC;
     if (options.compareArgs("INITIAL GUESS", "PROJECTION-ACONJ"))
       type = SolutionProjection::ProjectionType::ACONJ;
     else if (options.compareArgs("INITIAL GUESS", "PROJECTION"))
       type = SolutionProjection::ProjectionType::CLASSIC;
 
-    elliptic->solutionProjection = new SolutionProjection(*elliptic, type, nVecsProject, nStepsStart);
+    elliptic->solutionProjection =
+        new SolutionProjection(*elliptic, type, nVecsProject, nStepsStart);
   }
 
   MPI_Barrier(platform->comm.mpiComm);

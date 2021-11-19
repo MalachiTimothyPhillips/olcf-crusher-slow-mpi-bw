@@ -20,7 +20,8 @@ occa::memory cdsSolve(const int is, cds_t *cds, dfloat time, int stage)
   platform->o_mempool.slice0.copyFrom(cds->o_S,
                                       cds->fieldOffset[is] * sizeof(dfloat),
                                       0,
-                                      cds->fieldOffsetScan[is] * sizeof(dfloat));
+                                      cds->fieldOffsetScan[is] *
+                                          sizeof(dfloat));
 
   // enforce Dirichlet BCs
   platform->linAlg->fill(cds->fieldOffset[is],
@@ -43,9 +44,19 @@ occa::memory cdsSolve(const int is, cds_t *cds, dfloat time, int stage)
 
     // take care of Neumann-Dirichlet shared edges across elements
     if (sweep == 0)
-      oogs::startFinish(platform->o_mempool.slice2, 1, cds->fieldOffset[is], ogsDfloat, ogsMax, gsh);
+      oogs::startFinish(platform->o_mempool.slice2,
+                        1,
+                        cds->fieldOffset[is],
+                        ogsDfloat,
+                        ogsMax,
+                        gsh);
     if (sweep == 1)
-      oogs::startFinish(platform->o_mempool.slice2, 1, cds->fieldOffset[is], ogsDfloat, ogsMin, gsh);
+      oogs::startFinish(platform->o_mempool.slice2,
+                        1,
+                        cds->fieldOffset[is],
+                        ogsDfloat,
+                        ogsMin,
+                        gsh);
   }
   if (solver->Nmasked)
     cds->maskCopyKernel(solver->Nmasked,
@@ -58,7 +69,8 @@ occa::memory cdsSolve(const int is, cds_t *cds, dfloat time, int stage)
   platform->o_mempool.slice1.copyFrom(cds->o_BF,
                                       cds->fieldOffset[is] * sizeof(dfloat),
                                       0,
-                                      cds->fieldOffsetScan[is] * sizeof(dfloat));
+                                      cds->fieldOffsetScan[is] *
+                                          sizeof(dfloat));
   cds->helmholtzRhsBCKernel(mesh->Nelements,
                             mesh->o_sgeo,
                             mesh->o_vmapM,

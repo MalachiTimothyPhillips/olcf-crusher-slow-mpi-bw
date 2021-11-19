@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -58,7 +59,11 @@ void CSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y)
   }
 }
 
-void CSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z)
+void CSR::SpMV(const dfloat alpha,
+               dfloat *x,
+               const dfloat beta,
+               const dfloat *y,
+               dfloat *z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // #pragma omp parallel for
@@ -71,7 +76,10 @@ void CSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y
   }
 }
 
-void CSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void CSR::SpMV(const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y)
 {
   // y[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // occaTimerTic(device,"SpMV CSR");
@@ -80,12 +88,24 @@ void CSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::me
   // occaTimerToc(device,"SpMV CSR");
 }
 
-void CSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z)
+void CSR::SpMV(const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y,
+               occa::memory o_z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // occaTimerTic(device,"SpMV CSR");
   if (Nrows)
-    SpMVcsrKernel2(Nrows, alpha, beta, o_rowStarts, o_cols, o_vals, o_x, o_y, o_z);
+    SpMVcsrKernel2(Nrows,
+                   alpha,
+                   beta,
+                   o_rowStarts,
+                   o_cols,
+                   o_vals,
+                   o_x,
+                   o_y,
+                   o_z);
   // occaTimerToc(device,"SpMV CSR");
 }
 
@@ -125,7 +145,11 @@ void ELL::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y)
   }
 }
 
-void ELL::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z)
+void ELL::SpMV(const dfloat alpha,
+               dfloat *x,
+               const dfloat beta,
+               const dfloat *y,
+               dfloat *z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // #pragma omp parallel for
@@ -141,7 +165,10 @@ void ELL::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y
   }
 }
 
-void ELL::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void ELL::SpMV(const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y)
 {
   // y[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   if (nnzPerRow) {
@@ -151,12 +178,24 @@ void ELL::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::me
   }
 }
 
-void ELL::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z)
+void ELL::SpMV(const dfloat alpha,
+               occa::memory o_x,
+               const dfloat beta,
+               occa::memory o_y,
+               occa::memory o_z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   if (nnzPerRow) {
     // occaTimerTic(device,"SpMV ELL");
-    SpMVellKernel2(Nrows, nnzPerRow, alpha, beta, o_cols, o_vals, o_x, o_y, o_z);
+    SpMVellKernel2(Nrows,
+                   nnzPerRow,
+                   alpha,
+                   beta,
+                   o_cols,
+                   o_vals,
+                   o_x,
+                   o_y,
+                   o_z);
     // occaTimerToc(device,"SpMV ELL");
   }
 }
@@ -193,7 +232,11 @@ void MCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y)
   }
 }
 
-void MCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z)
+void MCSR::SpMV(const dfloat alpha,
+                dfloat *x,
+                const dfloat beta,
+                const dfloat *y,
+                dfloat *z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // #pragma omp parallel for
@@ -207,21 +250,45 @@ void MCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *
   }
 }
 
-void MCSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void MCSR::SpMV(const dfloat alpha,
+                occa::memory o_x,
+                const dfloat beta,
+                occa::memory o_y)
 {
   // y[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // occaTimerTic(device,"SpMV MCSR");
   if (actualRows)
-    SpMVmcsrKernel1(actualRows, alpha, beta, o_rowStarts, o_rows, o_cols, o_vals, o_x, o_y);
+    SpMVmcsrKernel1(actualRows,
+                    alpha,
+                    beta,
+                    o_rowStarts,
+                    o_rows,
+                    o_cols,
+                    o_vals,
+                    o_x,
+                    o_y);
   // occaTimerToc(device,"SpMV MCSR");
 }
 
-void MCSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z)
+void MCSR::SpMV(const dfloat alpha,
+                occa::memory o_x,
+                const dfloat beta,
+                occa::memory o_y,
+                occa::memory o_z)
 {
   // z[i] = beta*y[i] + alpha* (sum_{ij} Aij*x[j])
   // occaTimerTic(device,"SpMV MCSR");
   if (actualRows)
-    SpMVmcsrKernel2(actualRows, alpha, beta, o_rowStarts, o_rows, o_cols, o_vals, o_x, o_y, o_z);
+    SpMVmcsrKernel2(actualRows,
+                    alpha,
+                    beta,
+                    o_rowStarts,
+                    o_rows,
+                    o_cols,
+                    o_vals,
+                    o_x,
+                    o_y,
+                    o_z);
   // occaTimerToc(device,"SpMV MCSR");
 }
 
@@ -249,7 +316,11 @@ void parCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y)
   }
 }
 
-void parCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z)
+void parCSR::SpMV(const dfloat alpha,
+                  dfloat *x,
+                  const dfloat beta,
+                  const dfloat *y,
+                  dfloat *z)
 {
 
   this->haloExchangeStart(x);
@@ -268,7 +339,10 @@ void parCSR::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat
   }
 }
 
-void parCSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void parCSR::SpMV(const dfloat alpha,
+                  occa::memory o_x,
+                  const dfloat beta,
+                  occa::memory o_y)
 {
 
   this->haloExchangeStart(o_x);
@@ -287,7 +361,11 @@ void parCSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa:
   }
 }
 
-void parCSR::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z)
+void parCSR::SpMV(const dfloat alpha,
+                  occa::memory o_x,
+                  const dfloat beta,
+                  occa::memory o_y,
+                  occa::memory o_z)
 {
 
   this->haloExchangeStart(o_x);
@@ -330,7 +408,11 @@ void parHYB::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y)
   }
 }
 
-void parHYB::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z)
+void parHYB::SpMV(const dfloat alpha,
+                  dfloat *x,
+                  const dfloat beta,
+                  const dfloat *y,
+                  dfloat *z)
 {
 
   this->haloExchangeStart(x);
@@ -349,7 +431,10 @@ void parHYB::SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat
   }
 }
 
-void parHYB::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y)
+void parHYB::SpMV(const dfloat alpha,
+                  occa::memory o_x,
+                  const dfloat beta,
+                  occa::memory o_y)
 {
 
   this->haloExchangeStart(o_x);
@@ -368,7 +453,11 @@ void parHYB::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa:
   }
 }
 
-void parHYB::SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z)
+void parHYB::SpMV(const dfloat alpha,
+                  occa::memory o_x,
+                  const dfloat beta,
+                  occa::memory o_y,
+                  occa::memory o_z)
 {
 
   this->haloExchangeStart(o_x);

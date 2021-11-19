@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -74,9 +74,12 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
   fflush(stdout);
 
   /* note that we have volume geometric factors for each node */
-  mesh->vgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->Np, sizeof(dfloat));
-  mesh->cubvgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp, sizeof(dfloat));
-  mesh->ggeo = (dfloat *)calloc(mesh->Nelements * mesh->Nggeo * mesh->Np, sizeof(dfloat));
+  mesh->vgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->Np,
+                                sizeof(dfloat));
+  mesh->cubvgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp,
+                                   sizeof(dfloat));
+  mesh->ggeo = (dfloat *)calloc(mesh->Nelements * mesh->Nggeo * mesh->Np,
+                                sizeof(dfloat));
 
   dfloat minJ = 1e9, maxJ = -1e9, maxSkew = 0;
 
@@ -147,7 +150,8 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
           dfloat zr = zre[n], zs = zse[n], zt = zte[n];
 
           /* compute geometric factors for affine coordinate transform*/
-          dfloat J = xr * (ys * zt - zs * yt) - yr * (xs * zt - zs * xt) + zr * (xs * yt - ys * xt);
+          dfloat J = xr * (ys * zt - zs * yt) - yr * (xs * zt - zs * xt) +
+                     zr * (xs * yt - ys * xt);
 
           dfloat hr = sqrt(xr * xr + yr * yr + zr * zr);
           dfloat hs = sqrt(xs * xs + ys * ys + zs * zs);
@@ -163,9 +167,12 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
 
           // if(J<1e-12) printf("J = %g !!!!!!!!!!!!!\n", J);
 
-          dfloat rx = (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J, rz = (xs * yt - ys * xt) / J;
-          dfloat sx = -(yr * zt - zr * yt) / J, sy = (xr * zt - zr * xt) / J, sz = -(xr * yt - yr * xt) / J;
-          dfloat tx = (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J, tz = (xr * ys - yr * xs) / J;
+          dfloat rx = (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J,
+                 rz = (xs * yt - ys * xt) / J;
+          dfloat sx = -(yr * zt - zr * yt) / J, sy = (xr * zt - zr * xt) / J,
+                 sz = -(xr * yt - yr * xt) / J;
+          dfloat tx = (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J,
+                 tz = (xr * ys - yr * xs) / J;
 
           dfloat JW = J * mesh->gllw[i] * mesh->gllw[j] * mesh->gllw[k];
           mesh->volume += JW;
@@ -185,15 +192,22 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
 
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * JID] = J;
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * JWID] = JW;
-          mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * IJWID] = 1. / JW;
+          mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * IJWID] =
+              1. / JW;
 
           /* store second order geometric factors */
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G00ID] = JW * (rx * rx + ry * ry + rz * rz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G01ID] = JW * (rx * sx + ry * sy + rz * sz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G02ID] = JW * (rx * tx + ry * ty + rz * tz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G11ID] = JW * (sx * sx + sy * sy + sz * sz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G12ID] = JW * (sx * tx + sy * ty + sz * tz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G22ID] = JW * (tx * tx + ty * ty + tz * tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G00ID] =
+              JW * (rx * rx + ry * ry + rz * rz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G01ID] =
+              JW * (rx * sx + ry * sy + rz * sz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G02ID] =
+              JW * (rx * tx + ry * ty + rz * tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G11ID] =
+              JW * (sx * sx + sy * sy + sz * sz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G12ID] =
+              JW * (sx * tx + sy * ty + sz * tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G22ID] =
+              JW * (tx * tx + ty * ty + tz * tz);
           mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * GWJID] = JW;
         }
 
@@ -263,17 +277,34 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
   {
     dfloat globalMinJ = 0, globalMaxJ = 0, globalMaxSkew = 0;
 
-    MPI_Allreduce(&minJ, &globalMinJ, 1, MPI_DFLOAT, MPI_MIN, platform->comm.mpiComm);
-    MPI_Allreduce(&maxJ, &globalMaxJ, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
-    MPI_Allreduce(&maxSkew, &globalMaxSkew, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
+    MPI_Allreduce(&minJ,
+                  &globalMinJ,
+                  1,
+                  MPI_DFLOAT,
+                  MPI_MIN,
+                  platform->comm.mpiComm);
+    MPI_Allreduce(&maxJ,
+                  &globalMaxJ,
+                  1,
+                  MPI_DFLOAT,
+                  MPI_MAX,
+                  platform->comm.mpiComm);
+    MPI_Allreduce(&maxSkew,
+                  &globalMaxSkew,
+                  1,
+                  MPI_DFLOAT,
+                  MPI_MAX,
+                  platform->comm.mpiComm);
 
     if (platform->comm.mpiRank == 0)
       printf("J [%g,%g] ", globalMinJ, globalMaxJ);
-    // printf("J [%g,%g] and max Skew = %g\n", globalMinJ, globalMaxJ, globalMaxSkew);
+    // printf("J [%g,%g] and max Skew = %g\n", globalMinJ, globalMaxJ,
+    // globalMaxSkew);
 
     if (globalMinJ < 0 || globalMaxJ < 0) {
       if (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "FALSE") ||
-          (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") && mesh->N > 1)) {
+          (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") &&
+           mesh->N > 1)) {
         if (platform->comm.mpiRank == 0)
           printf("Jacobian < 0!");
         printf("here!\n");
@@ -282,7 +313,12 @@ void meshGeometricFactorsHex3D(mesh3D *mesh)
     }
 
     dfloat globalVolume;
-    MPI_Allreduce(&mesh->volume, &globalVolume, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+    MPI_Allreduce(&mesh->volume,
+                  &globalVolume,
+                  1,
+                  MPI_DFLOAT,
+                  MPI_SUM,
+                  platform->comm.mpiComm);
     mesh->volume = globalVolume;
   }
 

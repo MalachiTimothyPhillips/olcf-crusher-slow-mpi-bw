@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -90,7 +90,8 @@ void meshParallelConnect(mesh_t *mesh)
 
   // MPI_Barrier(platform->comm.mpiComm);
   // const double tStart = MPI_Wtime();
-  // if(platform->comm.mpiRank == 0) printf("Building parallel face connectivity ... ");
+  // if(platform->comm.mpiRank == 0) printf("Building parallel face connectivity
+  // ... ");
 
   // serial connectivity on each process
   meshConnect(mesh);
@@ -102,7 +103,8 @@ void meshParallelConnect(mesh_t *mesh)
   int *sendOffsets = (int *)calloc(size, sizeof(int));
   int *recvOffsets = (int *)calloc(size, sizeof(int));
 
-  // WARNING: In some corner cases, the number of faces to send may overrun int storage
+  // WARNING: In some corner cases, the number of faces to send may overrun int
+  // storage
   int allNsend = 0;
   for (dlong e = 0; e < mesh->Nelements; ++e)
     for (int f = 0; f < mesh->Nfaces; ++f)
@@ -130,11 +132,19 @@ void meshParallelConnect(mesh_t *mesh)
     Nsend[r] = 0;
 
   // buffer for outgoing data
-  parallelFace_t *sendFaces = (parallelFace_t *)calloc(allNsend, sizeof(parallelFace_t));
+  parallelFace_t *sendFaces =
+      (parallelFace_t *)calloc(allNsend, sizeof(parallelFace_t));
 
   // Make the MPI_PARALLELFACE_T data type
   MPI_Datatype MPI_PARALLELFACE_T;
-  MPI_Datatype dtype[8] = {MPI_HLONG, MPI_DLONG, MPI_DLONG, MPI_INT, MPI_INT, MPI_INT, MPI_INT, MPI_INT};
+  MPI_Datatype dtype[8] = {MPI_HLONG,
+                           MPI_DLONG,
+                           MPI_DLONG,
+                           MPI_INT,
+                           MPI_INT,
+                           MPI_INT,
+                           MPI_INT,
+                           MPI_INT};
   int blength[8] = {4, 1, 1, 1, 1, 1, 1, 1};
   MPI_Aint addr[8], displ[8];
   MPI_Get_address(&(sendFaces[0]), addr + 0);
@@ -204,7 +214,8 @@ void meshParallelConnect(mesh_t *mesh)
     recvOffsets[r] = recvOffsets[r - 1] + Nrecv[r - 1]; // byte offsets
 
   // buffer for incoming face data
-  parallelFace_t *recvFaces = (parallelFace_t *)calloc(allNrecv, sizeof(parallelFace_t));
+  parallelFace_t *recvFaces =
+      (parallelFace_t *)calloc(allNrecv, sizeof(parallelFace_t));
 
   // exchange parallel faces
   MPI_Alltoallv(sendFaces,
@@ -272,5 +283,6 @@ void meshParallelConnect(mesh_t *mesh)
   free(recvFaces);
 
   // MPI_Barrier(platform->comm.mpiComm);
-  // if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
+  // if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() -
+  // tStart);
 }

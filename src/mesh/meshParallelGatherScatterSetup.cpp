@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -31,14 +31,19 @@
 #include "mesh.h"
 #include "platform.hpp"
 
-void meshParallelGatherScatterSetup(mesh_t *mesh, dlong N, hlong *globalIds, MPI_Comm &comm, int verbose)
+void meshParallelGatherScatterSetup(mesh_t *mesh,
+                                    dlong N,
+                                    hlong *globalIds,
+                                    MPI_Comm &comm,
+                                    int verbose)
 {
 
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  mesh->ogs = ogsSetup(N, globalIds, comm, verbose, platform->device.occaDevice());
+  mesh->ogs =
+      ogsSetup(N, globalIds, comm, verbose, platform->device.occaDevice());
 
   // use the gs to find what nodes are local to this rank
   int *minRank = (int *)calloc(N, sizeof(int));
@@ -51,11 +56,13 @@ void meshParallelGatherScatterSetup(mesh_t *mesh, dlong N, hlong *globalIds, MPI
   ogsGatherScatter(minRank,
                    ogsInt,
                    ogsMin,
-                   mesh->ogs); // minRank[n] contains the smallest rank taking part in the gather of node n
+                   mesh->ogs); // minRank[n] contains the smallest rank taking
+                               // part in the gather of node n
   ogsGatherScatter(maxRank,
                    ogsInt,
                    ogsMax,
-                   mesh->ogs); // maxRank[n] contains the largest rank taking part in the gather of node n
+                   mesh->ogs); // maxRank[n] contains the largest rank taking
+                               // part in the gather of node n
 
   int overlap = 0;
   platform->options.compareArgs("ENABLE OVERLAP", "TRUE");
@@ -110,9 +117,11 @@ void meshParallelGatherScatterSetup(mesh_t *mesh, dlong N, hlong *globalIds, MPI
 
   if (globalCount)
     mesh->o_globalGatherElementList =
-        platform->device.malloc(globalCount * sizeof(dlong), mesh->globalGatherElementList);
+        platform->device.malloc(globalCount * sizeof(dlong),
+                                mesh->globalGatherElementList);
 
   if (localCount)
     mesh->o_localGatherElementList =
-        platform->device.malloc(localCount * sizeof(dlong), mesh->localGatherElementList);
+        platform->device.malloc(localCount * sizeof(dlong),
+                                mesh->localGatherElementList);
 }

@@ -12,18 +12,37 @@ class platform_t;
 class kernelRequestManager_t {
 
   struct kernelRequest_t {
-    inline bool operator==(const kernelRequest_t &other) const { return requestName == other.requestName; }
-    inline bool operator<(const kernelRequest_t &other) const { return requestName < other.requestName; }
-    inline bool operator>(const kernelRequest_t &other) const { return *this < other; }
-    inline bool operator<=(const kernelRequest_t &other) const { return !(*this > other); }
-    inline bool operator>=(const kernelRequest_t &other) const { return !(*this < other); }
-    inline bool operator!=(const kernelRequest_t &other) const { return !(*this == other); }
+    inline bool operator==(const kernelRequest_t &other) const
+    {
+      return requestName == other.requestName;
+    }
+    inline bool operator<(const kernelRequest_t &other) const
+    {
+      return requestName < other.requestName;
+    }
+    inline bool operator>(const kernelRequest_t &other) const
+    {
+      return *this < other;
+    }
+    inline bool operator<=(const kernelRequest_t &other) const
+    {
+      return !(*this > other);
+    }
+    inline bool operator>=(const kernelRequest_t &other) const
+    {
+      return !(*this < other);
+    }
+    inline bool operator!=(const kernelRequest_t &other) const
+    {
+      return !(*this == other);
+    }
 
     kernelRequest_t(const std::string &m_requestName,
                     const std::string &m_fileName,
                     const occa::properties &m_props,
                     std::string m_suffix = std::string())
-        : requestName(m_requestName), fileName(m_fileName), suffix(m_suffix), props(m_props)
+        : requestName(m_requestName), fileName(m_fileName), suffix(m_suffix),
+          props(m_props)
     {
     }
     std::string requestName;

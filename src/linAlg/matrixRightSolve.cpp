@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -31,12 +31,25 @@
 #include "mesh.h"
 
 extern "C" {
-void dgesv_(int *N, int *NRHS, double *A, int *LDA, int *IPIV, double *B, int *LDB, int *INFO);
+void dgesv_(int *N,
+            int *NRHS,
+            double *A,
+            int *LDA,
+            int *IPIV,
+            double *B,
+            int *LDB,
+            int *INFO);
 }
 
 // C = A/B  = trans(trans(B)\trans(A))
 // assume row major
-void matrixRightSolve(int NrowsA, int NcolsA, dfloat *A, int NrowsB, int NcolsB, dfloat *B, dfloat *C)
+void matrixRightSolve(int NrowsA,
+                      int NcolsA,
+                      dfloat *A,
+                      int NrowsB,
+                      int NcolsB,
+                      dfloat *B,
+                      dfloat *C)
 {
   int info;
 
@@ -67,7 +80,8 @@ void matrixRightSolve(int NrowsA, int NcolsA, dfloat *A, int NrowsB, int NcolsB,
     C[n] = tmpY[n];
 
   if (info)
-    printf("matrixRightSolve: dgesv reports info = %d when inverting matrix\n", info);
+    printf("matrixRightSolve: dgesv reports info = %d when inverting matrix\n",
+           info);
 
   free(work);
   free(ipiv);

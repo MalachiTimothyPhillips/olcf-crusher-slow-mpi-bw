@@ -20,8 +20,14 @@ typedef void (*udfsetup)(nrs_t *nrs);
 typedef void (*udfloadKernels)(occa::properties &kernelInfo);
 typedef void (*udfexecuteStep)(nrs_t *nrs, dfloat time, int tstep);
 
-typedef void (*udfuEqnSource)(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU);
-typedef void (*udfsEqnSource)(nrs_t *nrs, dfloat time, occa::memory o_S, occa::memory o_SU);
+typedef void (*udfuEqnSource)(nrs_t *nrs,
+                              dfloat time,
+                              occa::memory o_U,
+                              occa::memory o_FU);
+typedef void (*udfsEqnSource)(nrs_t *nrs,
+                              dfloat time,
+                              occa::memory o_S,
+                              occa::memory o_SU);
 typedef void (*udfproperties)(nrs_t *nrs,
                               dfloat time,
                               occa::memory o_U,

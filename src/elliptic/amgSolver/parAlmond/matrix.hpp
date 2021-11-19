@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,11 +38,22 @@ public:
 
   matrix_t(dlong N = 0, dlong M = 0);
 
-  virtual void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y) = 0;
-  virtual void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z) = 0;
-  virtual void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y) = 0;
   virtual void
-  SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z) = 0;
+  SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y) = 0;
+  virtual void SpMV(const dfloat alpha,
+                    dfloat *x,
+                    const dfloat beta,
+                    const dfloat *y,
+                    dfloat *z) = 0;
+  virtual void SpMV(const dfloat alpha,
+                    occa::memory o_x,
+                    const dfloat beta,
+                    const occa::memory o_y) = 0;
+  virtual void SpMV(const dfloat alpha,
+                    occa::memory o_x,
+                    const dfloat beta,
+                    occa::memory o_y,
+                    occa::memory o_z) = 0;
 };
 
 class CSR : public matrix_t {
@@ -60,9 +72,20 @@ public:
   ~CSR();
 
   void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y);
-  void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z);
+  void SpMV(const dfloat alpha,
+            dfloat *x,
+            const dfloat beta,
+            const dfloat *y,
+            dfloat *z);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            const occa::memory o_y);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            occa::memory o_y,
+            occa::memory o_z);
 };
 
 class ELL : public matrix_t {
@@ -83,9 +106,20 @@ public:
   void syncToDevice(occa::device device);
 
   void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y);
-  void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z);
+  void SpMV(const dfloat alpha,
+            dfloat *x,
+            const dfloat beta,
+            const dfloat *y,
+            dfloat *z);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            const occa::memory o_y);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            occa::memory o_y,
+            occa::memory o_z);
 };
 
 class MCSR : public matrix_t {
@@ -109,9 +143,20 @@ public:
   void syncToDevice(occa::device device);
 
   void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y);
-  void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z);
+  void SpMV(const dfloat alpha,
+            dfloat *x,
+            const dfloat beta,
+            const dfloat *y,
+            dfloat *z);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            const occa::memory o_y);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            occa::memory o_y,
+            occa::memory o_z);
 };
 
 class parCSR : public matrix_t {
@@ -178,9 +223,20 @@ public:
   dfloat rhoDinvA();
 
   void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y);
-  void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z);
+  void SpMV(const dfloat alpha,
+            dfloat *x,
+            const dfloat beta,
+            const dfloat *y,
+            dfloat *z);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            const occa::memory o_y);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            occa::memory o_y,
+            occa::memory o_z);
 };
 
 class parHYB : public matrix_t {
@@ -230,9 +286,20 @@ public:
   void syncToDevice();
 
   void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, dfloat *y);
-  void SpMV(const dfloat alpha, dfloat *x, const dfloat beta, const dfloat *y, dfloat *z);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, const occa::memory o_y);
-  void SpMV(const dfloat alpha, occa::memory o_x, const dfloat beta, occa::memory o_y, occa::memory o_z);
+  void SpMV(const dfloat alpha,
+            dfloat *x,
+            const dfloat beta,
+            const dfloat *y,
+            dfloat *z);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            const occa::memory o_y);
+  void SpMV(const dfloat alpha,
+            occa::memory o_x,
+            const dfloat beta,
+            occa::memory o_y,
+            occa::memory o_z);
 };
 
 } // namespace parAlmond

@@ -19,15 +19,21 @@ void registerGMRESKernels(const std::string &section, int Nfields)
 
   std::string kernelName = "gramSchmidtOrthogonalization";
   fileName = oklpath + kernelName + fileNameExtension;
-  platform->kernels.add(sectionIdentifier + kernelName, fileName, gmresKernelInfo);
+  platform->kernels.add(sectionIdentifier + kernelName,
+                        fileName,
+                        gmresKernelInfo);
 
   kernelName = "updatePGMRESSolution";
   fileName = oklpath + kernelName + fileNameExtension;
-  platform->kernels.add(sectionIdentifier + kernelName, fileName, gmresKernelInfo);
+  platform->kernels.add(sectionIdentifier + kernelName,
+                        fileName,
+                        gmresKernelInfo);
 
   kernelName = "fusedResidualAndNorm";
   fileName = oklpath + kernelName + fileNameExtension;
-  platform->kernels.add(sectionIdentifier + kernelName, fileName, gmresKernelInfo);
+  platform->kernels.add(sectionIdentifier + kernelName,
+                        fileName,
+                        gmresKernelInfo);
 }
 
 } // namespace
@@ -72,7 +78,8 @@ void registerEllipticKernels(std::string section, int poissonEquation)
 
   const std::string sectionIdentifier = std::to_string(Nfields) + "-";
 
-  if (platform->options.compareArgs(optionsPrefix + "KRYLOV SOLVER", "PGMRES")) {
+  if (platform->options.compareArgs(optionsPrefix + "KRYLOV SOLVER",
+                                    "PGMRES")) {
     registerGMRESKernels(section, Nfields);
   }
 
@@ -88,10 +95,14 @@ void registerEllipticKernels(std::string section, int poissonEquation)
 
       kernelName = "multiScaledAddwOffset";
       fileName = oklpath + kernelName + extension;
-      platform->kernels.add(sectionIdentifier + kernelName, fileName, properties);
+      platform->kernels.add(sectionIdentifier + kernelName,
+                            fileName,
+                            properties);
       kernelName = "accumulate";
       fileName = oklpath + kernelName + extension;
-      platform->kernels.add(sectionIdentifier + kernelName, fileName, properties);
+      platform->kernels.add(sectionIdentifier + kernelName,
+                            fileName,
+                            properties);
     }
   }
 
@@ -123,7 +134,9 @@ void registerEllipticKernels(std::string section, int poissonEquation)
   fileName = oklpath + kernelName + ".okl";
   dfloatKernelInfo["defines/dfloat"] = dfloatString;
   dfloatKernelInfo["defines/pfloat"] = pfloatString;
-  platform->kernels.add(sectionIdentifier + kernelName, fileName, dfloatKernelInfo);
+  platform->kernels.add(sectionIdentifier + kernelName,
+                        fileName,
+                        dfloatKernelInfo);
 
   if (poissonEquation) {
     AxKernelInfo["defines/p_poisson"] = 1;
@@ -153,10 +166,14 @@ void registerEllipticKernels(std::string section, int poissonEquation)
   fileName = oklpath + kernelName + ".okl";
   dfloatKernelInfo["defines/dfloat"] = dfloatString;
   dfloatKernelInfo["defines/pfloat"] = pfloatString;
-  platform->kernels.add(sectionIdentifier + kernelName, fileName, dfloatKernelInfo);
+  platform->kernels.add(sectionIdentifier + kernelName,
+                        fileName,
+                        dfloatKernelInfo);
   dfloatKernelInfo["defines/pfloat"] = dfloatString;
 
   // PCG update
   fileName = oklpath + "ellipticBlockUpdatePCG" + fileNameExtension;
-  platform->kernels.add(sectionIdentifier + "ellipticBlockUpdatePCG", fileName, kernelInfo);
+  platform->kernels.add(sectionIdentifier + "ellipticBlockUpdatePCG",
+                        fileName,
+                        kernelInfo);
 }

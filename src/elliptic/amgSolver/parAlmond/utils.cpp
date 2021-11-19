@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -125,7 +126,11 @@ void allocatePinnedScratchSpace(size_t requiredBytes, occa::device device)
     }
     //    o_pinnedScratch = device.mappedAlloc(requiredBytes);
     //    pinnedScratch = o_pinnedScratch.getMappedPointer();
-    pinnedScratch = parAlmondHostMallocPinned(device, requiredBytes, NULL, o_pinnedScratch, h_pinnedScratch);
+    pinnedScratch = parAlmondHostMallocPinned(device,
+                                              requiredBytes,
+                                              NULL,
+                                              o_pinnedScratch,
+                                              h_pinnedScratch);
     pinnedScratchSpaceBytes = requiredBytes;
   }
 }
@@ -281,7 +286,8 @@ void matrixInverse(int N, dfloat *A)
   dgetri_(&N, tmpInvA, &N, ipiv, work, &lwork, &info);
 
   if (info)
-    printf("inv: dgetrf/dgetri reports info = %d when inverting matrix\n", info);
+    printf("inv: dgetrf/dgetri reports info = %d when inverting matrix\n",
+           info);
 
   for (int n = 0; n < N * N; ++n)
     A[n] = tmpInvA[n];
@@ -308,7 +314,20 @@ void eig(const int Nrows, double *A, double *WR, double *WI)
 
     int INFO = -999;
 
-    dgeev_(&JOBVL, &JOBVR, &N, A, &LDA, WR, WI, VL, &LDA, VR, &LDA, WORK, &LWORK, &INFO);
+    dgeev_(&JOBVL,
+           &JOBVR,
+           &N,
+           A,
+           &LDA,
+           WR,
+           WI,
+           VL,
+           &LDA,
+           VR,
+           &LDA,
+           WORK,
+           &LWORK,
+           &INFO);
 
     // assert(INFO == 0);
 

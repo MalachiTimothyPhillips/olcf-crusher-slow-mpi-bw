@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,7 +40,9 @@ void solver_t::AMGSetup(parCSR *A)
   agmgLevel *L = new agmgLevel(A, ktype);
   levels[numLevels] = L;
 
-  setupAgmgSmoother((agmgLevel *)(levels[numLevels]), stype, ChebyshevIterations);
+  setupAgmgSmoother((agmgLevel *)(levels[numLevels]),
+                    stype,
+                    ChebyshevIterations);
 
   hlong globalSize = L->A->globalRowStarts[size];
 
@@ -87,7 +90,8 @@ void solver_t::AMGSetup(parCSR *A)
 }
 
 // create coarsened problem
-agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options)
+agmgLevel *
+coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options)
 {
 
   int rank, size;
@@ -104,7 +108,10 @@ agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide option
   // adjustPartition(FineToCoarse, options);
 
   dfloat *nullCoarseA;
-  parCSR *P = constructProlongation(level->A, FineToCoarse, globalAggStarts, &nullCoarseA);
+  parCSR *P = constructProlongation(level->A,
+                                    FineToCoarse,
+                                    globalAggStarts,
+                                    &nullCoarseA);
   parCSR *R = transpose(P);
   parCSR *A = galerkinProd(level->A, P);
 
@@ -138,7 +145,10 @@ void setupAgmgSmoother(agmgLevel *level, SmoothType s, int ChebIterations)
   }
 }
 
-void allocateAgmgVectors(agmgLevel *level, int k, int AMGstartLev, CycleType ctype)
+void allocateAgmgVectors(agmgLevel *level,
+                         int k,
+                         int AMGstartLev,
+                         CycleType ctype)
 {
 
   if (k)

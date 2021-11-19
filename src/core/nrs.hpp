@@ -193,7 +193,8 @@ static std::string to_string_f(double a)
   return s.str();
 }
 
-static std::vector<std::string> serializeString(const std::string sin, char dlim)
+static std::vector<std::string> serializeString(const std::string sin,
+                                                char dlim)
 {
   std::vector<std::string> slist;
   std::string s(sin);

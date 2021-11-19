@@ -84,14 +84,15 @@ int main(int argc, char **argv)
   size_t wordSize = 8;
 
   while (1) {
-    static struct option long_options[] = {{"p-order", required_argument, 0, 'p'},
-                                           {"elements", required_argument, 0, 'e'},
-                                           {"backend", required_argument, 0, 'b'},
-                                           {"arch", required_argument, 0, 'a'},
-                                           {"fp32", no_argument, 0, 'f'},
-                                           {"help", required_argument, 0, 'h'},
-                                           {"iterations", required_argument, 0, 'i'},
-                                           {0, 0, 0, 0}};
+    static struct option long_options[] = {
+        {"p-order", required_argument, 0, 'p'},
+        {"elements", required_argument, 0, 'e'},
+        {"backend", required_argument, 0, 'b'},
+        {"arch", required_argument, 0, 'a'},
+        {"fp32", no_argument, 0, 'f'},
+        {"help", required_argument, 0, 'h'},
+        {"iterations", required_argument, 0, 'i'},
+        {0, 0, 0, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "", long_options, &option_index);
 
@@ -128,7 +129,8 @@ int main(int argc, char **argv)
 
   if (err || cmdCheck != 3) {
     if (rank == 0)
-      printf("Usage: ./nekrs-fdm  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
+      printf("Usage: ./nekrs-fdm  --p-order <n> --elements <n> --backend "
+             "<CPU|CUDA|HIP|OPENCL>\n"
              "                    [--fp32] [--iterations <n>]\n");
     exit(1);
   }
@@ -196,7 +198,8 @@ int main(int argc, char **argv)
   // *****
 
   // print statistics
-  const dfloat GDOFPerSecond = (size * Nelements * (N * N * N) / elapsed) / 1.e9;
+  const dfloat GDOFPerSecond =
+      (size * Nelements * (N * N * N) / elapsed) / 1.e9;
 
   size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
   const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
@@ -205,9 +208,11 @@ int main(int argc, char **argv)
   const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
 
   if (rank == 0)
-    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests << " N=" << N
-              << " Nelements=" << size * Nelements << " elapsed time=" << elapsed
-              << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads
+              << " NRepetitions=" << Ntests << " N=" << N
+              << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize
+              << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
               << " GFLOPS/s=" << gflops << "\n";
 
   MPI_Finalize();

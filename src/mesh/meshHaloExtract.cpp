@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -28,12 +28,17 @@
 #include <cstring>
 #include "mesh.h"
 
-void meshHaloExtract(mesh_t *mesh, size_t Nbytes, void *sourceBuffer, void *haloBuffer)
+void meshHaloExtract(mesh_t *mesh,
+                     size_t Nbytes,
+                     void *sourceBuffer,
+                     void *haloBuffer)
 {
   // copy data from outgoing elements into temporary send buffer
   for (int i = 0; i < mesh->totalHaloPairs; ++i) {
     // outgoing element
     int e = mesh->haloElementList[i];
-    memcpy(((char *)haloBuffer) + i * Nbytes, ((char *)sourceBuffer) + e * Nbytes, Nbytes);
+    memcpy(((char *)haloBuffer) + i * Nbytes,
+           ((char *)sourceBuffer) + e * Nbytes,
+           Nbytes);
   }
 }

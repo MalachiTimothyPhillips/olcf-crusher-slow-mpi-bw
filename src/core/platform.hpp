@@ -15,9 +15,11 @@ class linAlg_t;
 
 class deviceVector_t {
 public:
-  // allow implicit conversion between this and the underlying occa::memory object
+  // allow implicit conversion between this and the underlying occa::memory
+  // object
   operator occa::memory &() { return o_vector; }
-  // allow implicit conversion between this and kernelArg (for passing to kernels)
+  // allow implicit conversion between this and kernelArg (for passing to
+  // kernels)
   operator occa::kernelArg() { return o_vector; }
   deviceVector_t(const size_t _offset,
                  const size_t _nVectors,
@@ -97,7 +99,8 @@ public:
   void create_mempool(const dlong offset, const dlong fields);
   platform_t(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm);
 
-  static platform_t *getInstance(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm)
+  static platform_t *
+  getInstance(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm)
   {
     if (!singleton)
       singleton = new platform_t(_options, _commg, _comm);

@@ -10,8 +10,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -40,7 +40,11 @@
 
 namespace inipp {
 
-typedef enum { boolean_false, boolean_true, boolean_invalid } string_to_boolean_t;
+typedef enum {
+  boolean_false,
+  boolean_true,
+  boolean_invalid
+} string_to_boolean_t;
 
 namespace {
 string_to_boolean_t string_to_boolean(const std::string s, bool strict = false)
@@ -57,7 +61,10 @@ string_to_boolean_t string_to_boolean(const std::string s, bool strict = false)
 
   // Get a lowercase version of 's'
   std::string s2(s);
-  std::transform(s2.begin(), s2.end(), s2.begin(), std::ptr_fun<int, int>(std::tolower));
+  std::transform(s2.begin(),
+                 s2.end(),
+                 s2.begin(),
+                 std::ptr_fun<int, int>(std::tolower));
 
   // Does the string represent a FALSE?
   for (unsigned n = 0; n < num_falses; n++)
@@ -103,7 +110,8 @@ public:
 
   static const int max_interpolation_depth = 10;
 
-  template <typename TT> bool extract(const String &key, const String &value, TT &dst)
+  template <typename TT>
+  bool extract(const String &key, const String &value, TT &dst)
   {
     if (sections[key].count(value)) {
       if (std::is_same<TT, bool>::value) {

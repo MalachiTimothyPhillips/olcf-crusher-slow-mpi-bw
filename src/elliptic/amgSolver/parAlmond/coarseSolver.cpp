@@ -3,7 +3,8 @@
 The MIT License (MIT)
 
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -63,8 +64,9 @@ int coarseSolver::getTargetSize()
 void coarseSolver::setup(dlong Nrows,
                          hlong *globalRowStarts, // global partition
                          dlong nnz,              //--
-                         hlong *Ai,     //-- Local A matrix data (globally indexed, COO storage, row sorted)
-                         hlong *Aj,     //--
+                         hlong *Ai, //-- Local A matrix data (globally indexed,
+                                    //COO storage, row sorted)
+                         hlong *Aj, //--
                          dfloat *Avals, //--
                          bool nullSpace)
 {
@@ -236,7 +238,13 @@ void coarseSolver::setup(parCSR *A)
       }
     }
 
-    setup(A->Nrows, A->globalRowStarts, totalNNZ, rows, cols, vals, (int)A->nullSpace);
+    setup(A->Nrows,
+          A->globalRowStarts,
+          totalNNZ,
+          rows,
+          cols,
+          vals,
+          (int)A->nullSpace);
 
     if (totalNNZ) {
       free(rows);
@@ -337,7 +345,14 @@ void coarseSolver::setup(parCSR *A)
   for (int r = 0; r < size; r++)
     coarseCounts[r] = coarseOffsets[r + 1] - coarseOffsets[r];
 
-  MPI_Allgatherv(A->null, N, MPI_DFLOAT, nullTotal, coarseCounts, coarseOffsets, MPI_DFLOAT, comm);
+  MPI_Allgatherv(A->null,
+                 N,
+                 MPI_DFLOAT,
+                 nullTotal,
+                 coarseCounts,
+                 coarseOffsets,
+                 MPI_DFLOAT,
+                 comm);
 
   // clean up
   MPI_Barrier(comm);
@@ -357,7 +372,8 @@ void coarseSolver::setup(parCSR *A)
   if (A->nullSpace) { // A is dense due to nullspace augmentation
     for (int n = 0; n < coarseTotal; n++) {
       for (int m = 0; m < coarseTotal; m++) {
-        coarseA[n * coarseTotal + m] += A->nullSpacePenalty * nullTotal[n] * nullTotal[m];
+        coarseA[n * coarseTotal + m] +=
+            A->nullSpacePenalty * nullTotal[n] * nullTotal[m];
       }
     }
   }
@@ -371,7 +387,8 @@ void coarseSolver::setup(parCSR *A)
   invCoarseA = (dfloat *)calloc(N * coarseTotal, sizeof(dfloat));
   for (int n = 0; n < N; n++) {
     for (int m = 0; m < coarseTotal; m++) {
-      invCoarseA[n * coarseTotal + m] = coarseA[(n + coarseOffset) * coarseTotal + m];
+      invCoarseA[n * coarseTotal + m] =
+          coarseA[(n + coarseOffset) * coarseTotal + m];
     }
   }
 
@@ -460,7 +477,14 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x)
     }
     else {
       // gather the full vector
-      MPI_Allgatherv(rhsLocal, N, MPI_DFLOAT, rhsCoarse, coarseCounts, coarseOffsets, MPI_DFLOAT, comm);
+      MPI_Allgatherv(rhsLocal,
+                     N,
+                     MPI_DFLOAT,
+                     rhsCoarse,
+                     coarseCounts,
+                     coarseOffsets,
+                     MPI_DFLOAT,
+                     comm);
 
       // multiply by local part of the exact matrix inverse
       //  #pragma omp parallel for

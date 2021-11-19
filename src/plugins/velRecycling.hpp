@@ -12,5 +12,9 @@
 namespace velRecycling {
 void buildKernel(occa::properties kernelInfo);
 void copy();
-void setup(nrs_t *nrs_, occa::memory o_wrk_, const hlong eOffset, const int bID_, const dfloat wbar_);
+void setup(nrs_t *nrs_,
+           occa::memory o_wrk_,
+           const hlong eOffset,
+           const int bID_,
+           const dfloat wbar_);
 } // namespace velRecycling

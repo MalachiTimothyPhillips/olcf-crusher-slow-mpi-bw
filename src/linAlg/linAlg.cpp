@@ -38,7 +38,8 @@ linAlg_t *linAlg_t::getInstance()
 linAlg_t::linAlg_t()
 {
   blocksize = BLOCKSIZE;
-  serial = platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP";
+  serial = platform->device.mode() == "Serial" ||
+           platform->device.mode() == "OpenMP";
   comm = platform->comm.mpiComm;
   setup();
 }
@@ -157,19 +158,28 @@ linAlg_t::~linAlg_t()
 /*********************/
 
 // o_a[n] = alpha
-void linAlg_t::fill(const dlong N, const dfloat alpha, occa::memory &o_a) { fillKernel(N, alpha, o_a); }
+void linAlg_t::fill(const dlong N, const dfloat alpha, occa::memory &o_a)
+{
+  fillKernel(N, alpha, o_a);
+}
 
 // o_a[n] = abs(o_a[n])
 void linAlg_t::abs(const dlong N, occa::memory &o_a) { absKernel(N, o_a); }
 
 // o_a[n] += alpha
-void linAlg_t::add(const dlong N, const dfloat alpha, occa::memory &o_a, const dlong offset)
+void linAlg_t::add(const dlong N,
+                   const dfloat alpha,
+                   occa::memory &o_a,
+                   const dlong offset)
 {
   addKernel(N, offset, alpha, o_a);
 }
 
 // o_a[n] *= alpha
-void linAlg_t::scale(const dlong N, const dfloat alpha, occa::memory &o_a) { scaleKernel(N, alpha, o_a); }
+void linAlg_t::scale(const dlong N, const dfloat alpha, occa::memory &o_a)
+{
+  scaleKernel(N, alpha, o_a);
+}
 void linAlg_t::scaleMany(const dlong N,
                          const dlong Nfields,
                          const dlong fieldOffset,
@@ -225,7 +235,10 @@ void linAlg_t::axpbyzMany(const dlong N,
 }
 
 // o_y[n] = alpha*o_x[n]*o_y[n]
-void linAlg_t::axmy(const dlong N, const dfloat alpha, occa::memory &o_x, occa::memory &o_y)
+void linAlg_t::axmy(const dlong N,
+                    const dfloat alpha,
+                    occa::memory &o_x,
+                    occa::memory &o_y)
 {
   axmyKernel(N, alpha, o_x, o_y);
 }
@@ -270,11 +283,17 @@ void linAlg_t::axmyzMany(const dlong N,
 }
 
 // o_y[n] = alpha*o_x[n]/o_y[n]
-void linAlg_t::axdy(const dlong N, const dfloat alpha, occa::memory &o_x, occa::memory &o_y)
+void linAlg_t::axdy(const dlong N,
+                    const dfloat alpha,
+                    occa::memory &o_x,
+                    occa::memory &o_y)
 {
   axdyKernel(N, alpha, o_x, o_y);
 }
-void linAlg_t::aydx(const dlong N, const dfloat alpha, occa::memory &o_x, occa::memory &o_y)
+void linAlg_t::aydx(const dlong N,
+                    const dfloat alpha,
+                    occa::memory &o_x,
+                    occa::memory &o_y)
 {
   aydxKernel(N, alpha, o_x, o_y);
 }
@@ -289,7 +308,10 @@ void linAlg_t::aydxMany(const dlong N,
   aydxManyKernel(N, Nfields, fieldOffset, mode, alpha, o_x, o_y);
 }
 // o_y[n] = alpha/o_y[n]
-void linAlg_t::ady(const dlong N, const dfloat alpha, occa::memory &o_y) { adyKernel(N, alpha, o_y); }
+void linAlg_t::ady(const dlong N, const dfloat alpha, occa::memory &o_y)
+{
+  adyKernel(N, alpha, o_y);
+}
 void linAlg_t::adyMany(const dlong N,
                        const dlong Nfields,
                        const dlong offset,
@@ -310,7 +332,10 @@ void linAlg_t::axdyz(const dlong N,
 }
 
 // \sum o_a
-dfloat linAlg_t::sum(const dlong N, occa::memory &o_a, MPI_Comm _comm, const dlong offset)
+dfloat linAlg_t::sum(const dlong N,
+                     occa::memory &o_a,
+                     MPI_Comm _comm,
+                     const dlong offset)
 {
   int Nblock = (N + blocksize - 1) / blocksize;
   const size_t Nbytes = Nblock * sizeof(dfloat);
@@ -536,8 +561,11 @@ dfloat linAlg_t::norm1Many(const dlong N,
 }
 
 // o_x.o_y
-dfloat
-linAlg_t::innerProd(const dlong N, occa::memory &o_x, occa::memory &o_y, MPI_Comm _comm, const dlong offset)
+dfloat linAlg_t::innerProd(const dlong N,
+                           occa::memory &o_x,
+                           occa::memory &o_y,
+                           MPI_Comm _comm,
+                           const dlong offset)
 {
 #ifdef ENABLE_TIMER
   platform->timer.tic("dotp", 1);
@@ -621,7 +649,16 @@ void linAlg_t::weightedInnerProdMulti(const dlong N,
   if (o_scratch.size() < Nbytes)
     reallocScratch(Nbytes);
 
-  weightedInnerProdMultiKernel(Nblock, N, Nfields, fieldOffset, NVec, offset, o_w, o_x, o_y, o_scratch);
+  weightedInnerProdMultiKernel(Nblock,
+                               N,
+                               Nfields,
+                               fieldOffset,
+                               NVec,
+                               offset,
+                               o_w,
+                               o_x,
+                               o_y,
+                               o_scratch);
 
   o_scratch.copyTo(scratch, Nbytes);
 
@@ -655,7 +692,14 @@ dfloat linAlg_t::weightedInnerProdMany(const dlong N,
   if (o_scratch.size() < Nbytes)
     reallocScratch(Nbytes);
 
-  weightedInnerProdManyKernel(Nblock, N, Nfields, fieldOffset, o_w, o_x, o_y, o_scratch);
+  weightedInnerProdManyKernel(Nblock,
+                              N,
+                              Nfields,
+                              fieldOffset,
+                              o_w,
+                              o_x,
+                              o_y,
+                              o_scratch);
 
   dfloat dot = 0;
 
@@ -679,7 +723,10 @@ dfloat linAlg_t::weightedInnerProdMany(const dlong N,
 }
 
 // ||o_a||_w2
-dfloat linAlg_t::weightedNorm2(const dlong N, occa::memory &o_w, occa::memory &o_a, MPI_Comm _comm)
+dfloat linAlg_t::weightedNorm2(const dlong N,
+                               occa::memory &o_w,
+                               occa::memory &o_a,
+                               MPI_Comm _comm)
 {
 #ifdef ENABLE_TIMER
   platform->timer.tic("dotp", 1);
@@ -748,7 +795,10 @@ dfloat linAlg_t::weightedNorm2Many(const dlong N,
 }
 
 // ||o_a||_w1
-dfloat linAlg_t::weightedNorm1(const dlong N, occa::memory &o_w, occa::memory &o_a, MPI_Comm _comm)
+dfloat linAlg_t::weightedNorm1(const dlong N,
+                               occa::memory &o_w,
+                               occa::memory &o_a,
+                               MPI_Comm _comm)
 {
 #ifdef ENABLE_TIMER
   platform->timer.tic("dotp", 1);

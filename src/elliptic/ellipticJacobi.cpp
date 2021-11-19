@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -45,8 +45,17 @@ void ellipticUpdateJacobi(elliptic_t *elliptic, occa::memory &o_invDiagA)
                                  elliptic->o_lambda,
                                  o_invDiagA);
 
-  oogs::startFinish(o_invDiagA, elliptic->Nfields, elliptic->Ntotal, ogsPfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_invDiagA,
+                    elliptic->Nfields,
+                    elliptic->Ntotal,
+                    ogsPfloat,
+                    ogsAdd,
+                    elliptic->oogs);
 
   const pfloat one = 1.0;
-  elliptic->adyManyPfloatKernel(Nlocal, elliptic->Nfields, elliptic->Ntotal, one, o_invDiagA);
+  elliptic->adyManyPfloatKernel(Nlocal,
+                                elliptic->Nfields,
+                                elliptic->Ntotal,
+                                one,
+                                o_invDiagA);
 }

@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -100,7 +101,8 @@ parCSR *transpose(parCSR *A)
   MPI_Type_create_struct(3, blength, displ, dtype, &MPI_NONZERO_T);
   MPI_Type_commit(&MPI_NONZERO_T);
 
-  nonzero_t *sendNonZeros = (nonzero_t *)calloc(A->offd->nnz, sizeof(nonzero_t));
+  nonzero_t *sendNonZeros =
+      (nonzero_t *)calloc(A->offd->nnz, sizeof(nonzero_t));
 
   // copy data from nonlocal entries into send buffer
   for (dlong i = 0; i < A->Nrows; ++i) {
@@ -137,7 +139,8 @@ parCSR *transpose(parCSR *A)
   }
   At->offd->nnz = recvOffsets[size]; // total nonzeros
 
-  nonzero_t *recvNonZeros = (nonzero_t *)calloc(At->offd->nnz, sizeof(nonzero_t));
+  nonzero_t *recvNonZeros =
+      (nonzero_t *)calloc(At->offd->nnz, sizeof(nonzero_t));
 
   MPI_Alltoallv(sendNonZeros,
                 sendCounts,

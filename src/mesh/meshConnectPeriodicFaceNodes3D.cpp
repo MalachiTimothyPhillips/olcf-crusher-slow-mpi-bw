@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -53,7 +53,8 @@ int findBestPeriodicMatch(dfloat xper,
       for (int yp = 0; yp < 2; ++yp)
         for (int xp = 0; xp < 2; ++xp) {
           /* distance between target and next node */
-          const dfloat dist2 = pow(fabs(x1 - x2[i2]) - xp * xper, 2) + pow(fabs(y1 - y2[i2]) - yp * yper, 2) +
+          const dfloat dist2 = pow(fabs(x1 - x2[i2]) - xp * xper, 2) +
+                               pow(fabs(y1 - y2[i2]) - yp * yper, 2) +
                                pow(fabs(z1 - z2[i2]) - zp * zper, 2);
 
           /* if next node is closer to target update match */
@@ -79,12 +80,18 @@ int findBestPeriodicMatch(dfloat xper,
 }
 
 // serial face-node to face-node connection
-void meshConnectPeriodicFaceNodes3D(mesh3D *mesh, dfloat xper, dfloat yper, dfloat zper)
+void meshConnectPeriodicFaceNodes3D(mesh3D *mesh,
+                                    dfloat xper,
+                                    dfloat yper,
+                                    dfloat zper)
 {
   /* volume indices of the interior and exterior face nodes for each element */
-  mesh->vmapM = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements, sizeof(dlong));
-  mesh->vmapP = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements, sizeof(dlong));
-  mesh->mapP = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements, sizeof(dlong));
+  mesh->vmapM = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements,
+                                sizeof(dlong));
+  mesh->vmapP = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements,
+                                sizeof(dlong));
+  mesh->mapP = (dlong *)calloc(mesh->Nfp * mesh->Nfaces * mesh->Nelements,
+                               sizeof(dlong));
 
   /* assume elements already connected */
   for (dlong e = 0; e < mesh->Nelements; ++e)

@@ -11,14 +11,20 @@ void kernelRequestManager_t::add(const std::string &m_requestName,
                                  std::string m_suffix,
                                  bool checkUnique)
 {
-  this->add(kernelRequest_t{m_requestName, m_fileName, m_props, m_suffix}, checkUnique);
+  this->add(kernelRequest_t{m_requestName, m_fileName, m_props, m_suffix},
+            checkUnique);
 }
 void kernelRequestManager_t::add(kernelRequest_t request, bool checkUnique)
 {
   auto iterAndBoolPair = kernels.insert(request);
   if (checkUnique) {
     int unique = (iterAndBoolPair.second) ? 1 : 0;
-    MPI_Allreduce(MPI_IN_PLACE, &unique, 1, MPI_INT, MPI_MIN, platformRef.comm.mpiComm);
+    MPI_Allreduce(MPI_IN_PLACE,
+                  &unique,
+                  1,
+                  MPI_INT,
+                  MPI_MIN,
+                  platformRef.comm.mpiComm);
     if (!unique) {
       if (platformRef.comm.mpiRank == 0) {
         std::cout << "Error in kernelRequestManager_t::add\n";
@@ -32,7 +38,8 @@ void kernelRequestManager_t::add(kernelRequest_t request, bool checkUnique)
   const std::string fileName = request.fileName;
   fileNameToRequestMap[fileName].insert(request);
 }
-occa::kernel kernelRequestManager_t::get(const std::string &request, bool checkValid) const
+occa::kernel kernelRequestManager_t::get(const std::string &request,
+                                         bool checkValid) const
 {
   if (checkValid) {
     bool issueError = 0;
@@ -40,7 +47,12 @@ occa::kernel kernelRequestManager_t::get(const std::string &request, bool checkV
     issueError = (requestToKernelMap.count(request) == 0);
 
     int errorFlag = issueError ? 1 : 0;
-    MPI_Allreduce(MPI_IN_PLACE, &errorFlag, 1, MPI_INT, MPI_MAX, platformRef.comm.mpiComm);
+    MPI_Allreduce(MPI_IN_PLACE,
+                  &errorFlag,
+                  1,
+                  MPI_INT,
+                  MPI_MAX,
+                  platformRef.comm.mpiComm);
 
     if (errorFlag) {
       if (platformRef.comm.mpiRank == 0) {
@@ -52,7 +64,8 @@ occa::kernel kernelRequestManager_t::get(const std::string &request, bool checkV
         for (auto &&keyAndValue : requestToKernelMap) {
           std::cout << "\t" << keyAndValue.first << "\n";
         }
-        std::cout << "===========================================================\n";
+        std::cout
+            << "===========================================================\n";
       }
       ABORT(1);
     }
@@ -72,10 +85,12 @@ void kernelRequestManager_t::compile()
 
   const bool buildNodeLocal = useNodeLocalCache();
 
-  const int rank = buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
+  const int rank =
+      buildNodeLocal ? platformRef.comm.localRank : platformRef.comm.mpiRank;
   const int ranksCompiling =
       std::min(maxCompilingRanks,
-               buildNodeLocal ? platformRef.comm.mpiCommLocalSize : platformRef.comm.mpiCommSize);
+               buildNodeLocal ? platformRef.comm.mpiCommLocalSize
+                              : platformRef.comm.mpiCommSize);
 
   std::vector<std::string> kernelFiles(fileNameToRequestMap.size());
 
@@ -88,27 +103,31 @@ void kernelRequestManager_t::compile()
   const auto &device = platformRef.device;
   auto &requestToKernel = requestToKernelMap;
   auto &fileNameToRequest = fileNameToRequestMap;
-  auto compileKernels =
-      [&kernelFiles, &requestToKernel, &fileNameToRequest, &device, rank, ranksCompiling]() {
-        if (rank >= ranksCompiling)
-          return;
-        const unsigned nFiles = kernelFiles.size();
-        for (unsigned fileId = 0; fileId < nFiles; ++fileId) {
-          if (fileId % ranksCompiling == rank) {
-            const std::string fileName = kernelFiles[fileId];
-            for (auto &&kernelRequest : fileNameToRequest[fileName]) {
-              const std::string requestName = kernelRequest.requestName;
-              const std::string fileName = kernelRequest.fileName;
-              const std::string suffix = kernelRequest.suffix;
-              const occa::properties props = kernelRequest.props;
+  auto compileKernels = [&kernelFiles,
+                         &requestToKernel,
+                         &fileNameToRequest,
+                         &device,
+                         rank,
+                         ranksCompiling]() {
+    if (rank >= ranksCompiling)
+      return;
+    const unsigned nFiles = kernelFiles.size();
+    for (unsigned fileId = 0; fileId < nFiles; ++fileId) {
+      if (fileId % ranksCompiling == rank) {
+        const std::string fileName = kernelFiles[fileId];
+        for (auto &&kernelRequest : fileNameToRequest[fileName]) {
+          const std::string requestName = kernelRequest.requestName;
+          const std::string fileName = kernelRequest.fileName;
+          const std::string suffix = kernelRequest.suffix;
+          const occa::properties props = kernelRequest.props;
 
-              // MPI staging already handled
-              auto kernel = device.buildKernel(fileName, props, suffix, false);
-              requestToKernel[requestName] = kernel;
-            }
-          }
+          // MPI staging already handled
+          auto kernel = device.buildKernel(fileName, props, suffix, false);
+          requestToKernel[requestName] = kernel;
         }
-      };
+      }
+    }
+  };
 
   const auto &kernelRequests = this->kernels;
   auto loadKernels = [&requestToKernel, &kernelRequests, &device]() {

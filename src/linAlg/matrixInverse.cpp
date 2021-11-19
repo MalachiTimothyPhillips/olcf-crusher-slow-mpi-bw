@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -44,7 +44,8 @@ void matrixInverse(int N, dfloat *A)
   dgetri_(&N, tmpInvA, &N, ipiv, work, &lwork, &info);
 
   if (info)
-    printf("inv: dgetrf/dgetri reports info = %d when inverting matrix\n", info);
+    printf("inv: dgetrf/dgetri reports info = %d when inverting matrix\n",
+           info);
 
   for (int n = 0; n < N * N; ++n)
     A[n] = tmpInvA[n];

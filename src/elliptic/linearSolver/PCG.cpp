@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -58,7 +58,10 @@ int pcg(elliptic_t *elliptic,
       printf("PFCG ");
     else
       printf("PCG ");
-    printf("%s: initial res norm %.15e WE NEED TO GET TO %e \n", elliptic->name.c_str(), rdotr, tol);
+    printf("%s: initial res norm %.15e WE NEED TO GET TO %e \n",
+           elliptic->name.c_str(),
+           rdotr,
+           tol);
   }
 
   int iter = 0;
@@ -81,28 +84,36 @@ int pcg(elliptic_t *elliptic,
     if (iter > 1) {
       beta = rdotz1 / rdotz2;
       if (flexible) {
-        const dfloat zdotAp = platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
-                                                                      elliptic->Nfields,
-                                                                      elliptic->Ntotal,
-                                                                      o_weight,
-                                                                      o_z,
-                                                                      o_Ap,
-                                                                      platform->comm.mpiComm);
+        const dfloat zdotAp =
+            platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
+                                                    elliptic->Nfields,
+                                                    elliptic->Ntotal,
+                                                    o_weight,
+                                                    o_z,
+                                                    o_Ap,
+                                                    platform->comm.mpiComm);
         beta = -alpha * zdotAp / rdotz2;
         // printf("norm zdotAp: %.15e\n", zdotAp);
       }
     }
 
-    platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, beta, o_p);
+    platform->linAlg->axpbyMany(mesh->Nlocal,
+                                elliptic->Nfields,
+                                elliptic->Ntotal,
+                                1.0,
+                                o_z,
+                                beta,
+                                o_p);
 
     ellipticOperator(elliptic, o_p, o_Ap, dfloatString);
-    const dfloat pAp = platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
-                                                               elliptic->Nfields,
-                                                               elliptic->Ntotal,
-                                                               o_weight,
-                                                               o_p,
-                                                               o_Ap,
-                                                               platform->comm.mpiComm);
+    const dfloat pAp =
+        platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
+                                                elliptic->Nfields,
+                                                elliptic->Ntotal,
+                                                o_weight,
+                                                o_p,
+                                                o_Ap,
+                                                platform->comm.mpiComm);
     alpha = rdotz1 / (pAp + 1e-300);
 
     // printf("norm pAp: %.15e\n", pAp);
@@ -110,7 +121,8 @@ int pcg(elliptic_t *elliptic,
     //  x <= x + alpha*p
     //  r <= r - alpha*A*p
     //  dot(r,r)
-    rdotr = sqrt(ellipticUpdatePCG(elliptic, o_p, o_Ap, alpha, o_x, o_r) * elliptic->resNormFactor);
+    rdotr = sqrt(ellipticUpdatePCG(elliptic, o_p, o_Ap, alpha, o_x, o_r) *
+                 elliptic->resNormFactor);
 
     if (verbose && (platform->comm.mpiRank == 0))
       printf("it %d r norm %.15e\n", iter, rdotr);

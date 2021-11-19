@@ -13,12 +13,15 @@ static void compileDummyKernel(const platform_t &plat)
   const bool buildNodeLocal = useNodeLocalCache();
   auto rank = buildNodeLocal ? plat.comm.localRank : plat.comm.mpiRank;
   const std::string dummyKernelName = "myDummyKernelName";
-  const std::string dummyKernelStr = std::string("@kernel void myDummyKernelName(int N) {"
-                                                 "  for (int i = 0; i < N; ++i; @tile(64, @outer, @inner)) {}"
-                                                 "}");
+  const std::string dummyKernelStr =
+      std::string("@kernel void myDummyKernelName(int N) {"
+                  "  for (int i = 0; i < N; ++i; @tile(64, @outer, @inner)) {}"
+                  "}");
 
   if (rank == 0) {
-    plat.device.occaDevice().buildKernelFromString(dummyKernelStr, dummyKernelName, plat.kernelInfo);
+    plat.device.occaDevice().buildKernelFromString(dummyKernelStr,
+                                                   dummyKernelName,
+                                                   plat.kernelInfo);
   }
 }
 
@@ -32,7 +35,11 @@ comm_t::comm_t(MPI_Comm _commg, MPI_Comm _comm)
   MPI_Comm_rank(_comm, &mpiRank);
   MPI_Comm_size(_comm, &mpiCommSize);
 
-  MPI_Comm_split_type(_comm, MPI_COMM_TYPE_SHARED, mpiRank, MPI_INFO_NULL, &mpiCommLocal);
+  MPI_Comm_split_type(_comm,
+                      MPI_COMM_TYPE_SHARED,
+                      mpiRank,
+                      MPI_INFO_NULL,
+                      &mpiCommLocal);
   MPI_Comm_rank(mpiCommLocal, &localRank);
   MPI_Comm_size(mpiCommLocal, &mpiCommLocalSize);
 }
@@ -41,7 +48,8 @@ deviceVector_t::deviceVector_t(const size_t _offset,
                                const size_t _nVectors,
                                const size_t _wordSize,
                                const std::string _vectorName)
-    : nVectors(_nVectors), wordSize(_wordSize), vectorName(_vectorName), offset(_offset)
+    : nVectors(_nVectors), wordSize(_wordSize), vectorName(_vectorName),
+      offset(_offset)
 {
   if (offset <= 0 || nVectors <= 0 || wordSize <= 0) {
     if (platform->comm.mpiRank == 0)
@@ -59,7 +67,8 @@ occa::memory &deviceVector_t::at(const int i)
 {
   if (i >= nVectors) {
     if (platform->comm.mpiRank == 0) {
-      printf("ERROR: deviceVector_t(%s) has %d size, but an attempt to access entry %i was made!\n",
+      printf("ERROR: deviceVector_t(%s) has %d size, but an attempt to access "
+             "entry %i was made!\n",
              vectorName.c_str(),
              nVectors,
              i);
@@ -72,8 +81,9 @@ occa::memory &deviceVector_t::at(const int i)
 
 platform_t *platform_t::singleton = nullptr;
 platform_t::platform_t(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm)
-    : options(_options), warpSize(32), comm(_commg, _comm), device(options, comm),
-      timer(_comm, device.occaDevice(), 0), kernels(*this)
+    : options(_options), warpSize(32), comm(_commg, _comm),
+      device(options, comm), timer(_comm, device.occaDevice(), 0),
+      kernels(*this)
 {
 
   kernelInfo["defines/"
@@ -166,10 +176,13 @@ void memPool_t::allocate(const dlong offset, const dlong fields)
   if (fields > 19)
     slice19 = ptr + 19 * offset;
 }
-void deviceMemPool_t::allocate(memPool_t &hostMemory, const dlong offset, const dlong fields)
+void deviceMemPool_t::allocate(memPool_t &hostMemory,
+                               const dlong offset,
+                               const dlong fields)
 {
   bytesAllocated = fields * offset * sizeof(dfloat);
-  o_ptr = platform->device.malloc(offset * fields * sizeof(dfloat), hostMemory.slice0);
+  o_ptr = platform->device.malloc(offset * fields * sizeof(dfloat),
+                                  hostMemory.slice0);
   if (fields > 0)
     slice0 = o_ptr.slice(0 * offset * sizeof(dfloat));
   if (fields > 1)

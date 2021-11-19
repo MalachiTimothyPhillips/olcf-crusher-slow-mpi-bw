@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,7 +68,8 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_, setupAide options_)
       additive = true;
       overlapCrsGridSolve = false;
       if (options.compareArgs("PARALMOND CYCLE", "OVERLAPCRS")) {
-        if (platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP") {
+        if (platform->device.mode() == "Serial" ||
+            platform->device.mode() == "OpenMP") {
           overlapCrsGridSolve = false;
         }
         else {
@@ -77,7 +79,8 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_, setupAide options_)
           if (provided != MPI_THREAD_MULTIPLE) {
             overlapCrsGridSolve = false;
             if (rank == 0)
-              printf("overlapCrsGridSolve disabled (MPI_THREAD_MULTIPLE not supported)!\n");
+              printf("overlapCrsGridSolve disabled (MPI_THREAD_MULTIPLE not "
+                     "supported)!\n");
           }
         }
         if (rank == 0)
@@ -89,7 +92,8 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_, setupAide options_)
           options.compareArgs("PARALMOND SMOOTHER", "ASM")) {
         if (!options.compareArgs("PARALMOND SMOOTHER", "CHEBYSHEV")) {
           if (rank == 0)
-            printf("Multiplicative vcycle is not supported for RAS/ASM smoother!\n");
+            printf("Multiplicative vcycle is not supported for RAS/ASM "
+                   "smoother!\n");
           exit(-1);
         }
       }
@@ -123,11 +127,16 @@ void solver_t::Report()
 {
 
   if (rank == 0) {
-    printf("------------------Multigrid Report----------------------------------------\n");
-    printf("--------------------------------------------------------------------------\n");
-    printf("level|    Type    |    dimension   |   nnz per row   |   Smoother        |\n");
-    printf("     |            |  (min,max,avg) |  (min,max,avg)  |                   |\n");
-    printf("--------------------------------------------------------------------------\n");
+    printf("------------------Multigrid "
+           "Report----------------------------------------\n");
+    printf("-------------------------------------------------------------------"
+           "-------\n");
+    printf("level|    Type    |    dimension   |   nnz per row   |   Smoother  "
+           "      |\n");
+    printf("     |            |  (min,max,avg) |  (min,max,avg)  |             "
+           "      |\n");
+    printf("-------------------------------------------------------------------"
+           "-------\n");
   }
 
   for (int lev = 0; lev < numLevels; lev++) {
@@ -139,7 +148,8 @@ void solver_t::Report()
   }
 
   if (rank == 0)
-    printf("--------------------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------"
+           "-------\n");
 }
 
 } // namespace parAlmond

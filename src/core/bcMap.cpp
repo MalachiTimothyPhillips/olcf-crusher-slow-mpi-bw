@@ -18,21 +18,23 @@
 static std::map<std::pair<std::string, int>, int> bToBc;
 static int nbid[] = {0, 0};
 
-static std::map<std::string, int> vBcTextToID = {{"periodic", 0},
-                                                 {"zerovalue", 1},
-                                                 {"fixedvalue", 2},
-                                                 {"zerogradient", 3},
-                                                 {"zeroxvalue/zerogradient", 4},
-                                                 {"zeroyvalue/zerogradient", 5},
-                                                 {"zerozvalue/zerogradient", 6}};
+static std::map<std::string, int> vBcTextToID = {
+    {"periodic", 0},
+    {"zerovalue", 1},
+    {"fixedvalue", 2},
+    {"zerogradient", 3},
+    {"zeroxvalue/zerogradient", 4},
+    {"zeroyvalue/zerogradient", 5},
+    {"zerozvalue/zerogradient", 6}};
 
-static std::map<int, std::string> vBcIDToText = {{0, "periodic"},
-                                                 {1, "zeroValue"},
-                                                 {2, "fixedValue"},
-                                                 {3, "zeroGradient"},
-                                                 {4, "zeroXValue/zeroGradient"},
-                                                 {5, "zeroYValue/zeroGradient"},
-                                                 {6, "zeroZValue/zeroGradient"}};
+static std::map<int, std::string> vBcIDToText = {
+    {0, "periodic"},
+    {1, "zeroValue"},
+    {2, "fixedValue"},
+    {3, "zeroGradient"},
+    {4, "zeroXValue/zeroGradient"},
+    {5, "zeroYValue/zeroGradient"},
+    {6, "zeroZValue/zeroGradient"}};
 
 static std::map<std::string, int> sBcTextToID = {{"periodic", 0},
                                                  {"fixedvalue", 1},
@@ -401,7 +403,12 @@ void check(mesh_t *mesh)
         break;
       }
     }
-    MPI_Allreduce(MPI_IN_PLACE, &found, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+    MPI_Allreduce(MPI_IN_PLACE,
+                  &found,
+                  1,
+                  MPI_INT,
+                  MPI_MAX,
+                  platform->comm.mpiComm);
     err += (found ? 0 : 1);
     if (err && platform->comm.mpiRank == 0)
       printf("Cannot find boundary ID %d in mesh!\n", id);
@@ -413,7 +420,12 @@ void check(mesh_t *mesh)
   for (int f = 0; f < mesh->Nelements * mesh->Nfaces; f++)
     if (mesh->EToB[f] < -1 || mesh->EToB[f] == 0 || mesh->EToB[f] > nid)
       found = 1;
-  MPI_Allreduce(MPI_IN_PLACE, &found, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+  MPI_Allreduce(MPI_IN_PLACE,
+                &found,
+                1,
+                MPI_INT,
+                MPI_MAX,
+                platform->comm.mpiComm);
   if (found) {
     if (platform->comm.mpiRank == 0)
       printf("Mesh has unmapped boundary IDs!\n");

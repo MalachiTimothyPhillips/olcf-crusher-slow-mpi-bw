@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -32,7 +32,8 @@ std::string gen_suffix(const elliptic_t *elliptic, const char *floatString)
 {
   const std::string precision = std::string(floatString);
   if (precision.find(pfloatString) != std::string::npos) {
-    return std::string("_") + std::to_string(elliptic->mesh->N) + std::string("pfloat");
+    return std::string("_") + std::to_string(elliptic->mesh->N) +
+           std::string("pfloat");
   }
   else {
     return std::string("_") + std::to_string(elliptic->mesh->N);
@@ -53,15 +54,23 @@ elliptic_t *ellipticBuildMultigridLevelFine(elliptic_t *baseElliptic)
   elliptic->coeffFieldPreco = baseElliptic->coeffFieldPreco;
 
   if (!strstr(pfloatString, dfloatString)) {
-    mesh->o_ggeoPfloat = platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo, sizeof(pfloat));
-    mesh->o_DPfloat = platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
-    mesh->o_DTPfloat = platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
+    mesh->o_ggeoPfloat =
+        platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo,
+                                sizeof(pfloat));
+    mesh->o_DPfloat =
+        platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
+    mesh->o_DTPfloat =
+        platform->device.malloc(mesh->Nq * mesh->Nq, sizeof(pfloat));
 
     elliptic->copyDfloatToPfloatKernel(mesh->Nelements * mesh->Np * mesh->Nggeo,
                                        mesh->o_ggeo,
                                        elliptic->mesh->o_ggeoPfloat);
-    elliptic->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq, mesh->o_D, elliptic->mesh->o_DPfloat);
-    elliptic->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq, mesh->o_DT, elliptic->mesh->o_DTPfloat);
+    elliptic->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq,
+                                       mesh->o_D,
+                                       elliptic->mesh->o_DPfloat);
+    elliptic->copyDfloatToPfloatKernel(mesh->Nq * mesh->Nq,
+                                       mesh->o_DT,
+                                       elliptic->mesh->o_DTPfloat);
   }
 
   std::string suffix = elliptic->coeffFieldPreco ? "CoeffHex3D" : "Hex3D";
@@ -78,11 +87,13 @@ elliptic_t *ellipticBuildMultigridLevelFine(elliptic_t *baseElliptic)
 
     {
       const std::string kernelSuffix = gen_suffix(elliptic, dfloatString);
-      elliptic->AxKernel = platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
+      elliptic->AxKernel =
+          platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
     }
     {
       const std::string kernelSuffix = gen_suffix(elliptic, pfloatString);
-      elliptic->AxPfloatKernel = platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
+      elliptic->AxPfloatKernel =
+          platform->kernels.get(poissonPrefix + kernelName + kernelSuffix);
     }
   }
 

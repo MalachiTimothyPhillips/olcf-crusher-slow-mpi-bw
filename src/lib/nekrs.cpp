@@ -96,7 +96,9 @@ void setup(MPI_Comm commg_in,
     cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
     std::cout << "using NEKRS_CACHE_DIR: " << cache_dir << std::endl;
 
-    std::cout << "using OCCA_CACHE_DIR: " << occa::env::OCCA_CACHE_DIR << std::endl << std::endl;
+    std::cout << "using OCCA_CACHE_DIR: " << occa::env::OCCA_CACHE_DIR
+              << std::endl
+              << std::endl;
   }
 
   options.setArgs("BUILD ONLY", "FALSE");
@@ -104,7 +106,9 @@ void setup(MPI_Comm commg_in,
     options.setArgs("BUILD ONLY", "TRUE");
     options.setArgs("NP TARGET", std::to_string(commSizeTarget));
     if (rank == 0) {
-      std::cout << "jit-compiling for >=" << commSizeTarget << " MPI tasks ...\n" << std::endl;
+      std::cout << "jit-compiling for >=" << commSizeTarget
+                << " MPI tasks ...\n"
+                << std::endl;
     }
     fflush(stdout);
   }
@@ -183,7 +187,8 @@ void setup(MPI_Comm commg_in,
   const double setupTime = platform->timer.query("setup", "DEVICE:MAX");
   if (rank == 0) {
     std::cout << "\nsettings:\n" << std::endl << options << std::endl;
-    std::cout << "occa memory usage: " << platform->device.occaDevice().memoryAllocated() / 1e9 << " GB"
+    std::cout << "occa memory usage: "
+              << platform->device.occaDevice().memoryAllocated() / 1e9 << " GB"
               << std::endl;
     std::cout << "initialization took " << setupTime << " s" << std::endl;
   }
@@ -192,7 +197,10 @@ void setup(MPI_Comm commg_in,
   platform->timer.set("setup", setupTime);
 }
 
-void runStep(double time, double dt, int tstep) { timeStepper::step(nrs, time, dt, tstep); }
+void runStep(double time, double dt, int tstep)
+{
+  timeStepper::step(nrs, time, dt, tstep);
+}
 
 void copyFromNek(double time, int tstep) { nek::ocopyToNek(time, tstep); }
 
@@ -252,7 +260,10 @@ double writeInterval(void)
   return val;
 }
 
-int writeControlRunTime(void) { return platform->options.compareArgs("SOLUTION OUTPUT CONTROL", "RUNTIME"); }
+int writeControlRunTime(void)
+{
+  return platform->options.compareArgs("SOLUTION OUTPUT CONTROL", "RUNTIME");
+}
 
 int outputStep(double time, int tStep)
 {
@@ -322,7 +333,8 @@ int lastStep(double time, int tstep, double elapsedTime)
   }
   else if (endTime() > 0) {
     const double eps = 1e-12;
-    nrs->lastStep = fabs((time + nrs->dt[0]) - endTime()) < eps || (time + nrs->dt[0]) > endTime();
+    nrs->lastStep = fabs((time + nrs->dt[0]) - endTime()) < eps ||
+                    (time + nrs->dt[0]) > endTime();
   }
   else {
     nrs->lastStep = tstep == numSteps();

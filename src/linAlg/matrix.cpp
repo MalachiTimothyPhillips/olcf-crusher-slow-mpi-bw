@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -40,7 +40,8 @@ template <> void matrix<float>::symeig(matrix<float> &W, matrix<float> &V)
 
   int INFO = -999;
 
-  //  ssyev_ (&JOBZ, &UPLO, &N, V.c_array(), &LDA, W.c_array(), WORK.c_array(), &LWORK, &INFO );
+  //  ssyev_ (&JOBZ, &UPLO, &N, V.c_array(), &LDA, W.c_array(), WORK.c_array(),
+  //  &LWORK, &INFO );
 
   //  cout << "INFO: " << INFO << std::endl;
 }
@@ -59,13 +60,17 @@ template <> void matrix<double>::symeig(matrix<double> &W, matrix<double> &V)
 
   int INFO = -999;
 
-  //  dsyev_ (&JOBZ, &UPLO, &N, V.c_array(), &LDA, W.c_array(), WORK.c_array(), &LWORK, &INFO );
+  //  dsyev_ (&JOBZ, &UPLO, &N, V.c_array(), &LDA, W.c_array(), WORK.c_array(),
+  //  &LWORK, &INFO );
 
   //  cout << "INFO: " << INFO << std::endl;
 }
 
 template <>
-void matrix<float>::eig(matrix<float> &WR, matrix<float> &WI, matrix<float> &VL, matrix<float> &VR)
+void matrix<float>::eig(matrix<float> &WR,
+                        matrix<float> &WI,
+                        matrix<float> &VL,
+                        matrix<float> &VR)
 {
   matrix<float> A = *this;
   VL = *this;
@@ -82,14 +87,17 @@ void matrix<float>::eig(matrix<float> &WR, matrix<float> &WI, matrix<float> &VL,
 
   int INFO = -999;
 
-  //  sgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA,
-  //  VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
+  //  sgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(),
+  //  VL.c_array(), &LDA, VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
 
   //  cout << "INFO: " << INFO << std::endl;
 }
 
 template <>
-void matrix<double>::eig(matrix<double> &WR, matrix<double> &WI, matrix<double> &VL, matrix<double> &VR)
+void matrix<double>::eig(matrix<double> &WR,
+                         matrix<double> &WI,
+                         matrix<double> &VL,
+                         matrix<double> &VR)
 {
   matrix<double> A = *this;
   VL = *this;
@@ -106,14 +114,15 @@ void matrix<double>::eig(matrix<double> &WR, matrix<double> &WI, matrix<double> 
 
   int INFO = -999;
 
-  //  dgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA,
-  //  VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
+  //  dgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(),
+  //  VL.c_array(), &LDA, VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
 
   //  cout << "INFO: " << INFO << std::endl;
 }
 
 // general left matrix inverse not implemented
-template <> matrix<double> operator|(const matrix<double> &A, const matrix<double> &B)
+template <>
+matrix<double> operator|(const matrix<double> &A, const matrix<double> &B)
 {
   matrix<double> C = B;
   matrix<double> Acopy = A;
@@ -144,7 +153,8 @@ template <> matrix<double> operator|(const matrix<double> &A, const matrix<doubl
 }
 
 // general left matrix inverse not implemented
-template <> matrix<float> operator|(const matrix<float> &A, const matrix<float> &B)
+template <>
+matrix<float> operator|(const matrix<float> &A, const matrix<float> &B)
 {
   matrix<float> C = B;
   matrix<float> Acopy = A;

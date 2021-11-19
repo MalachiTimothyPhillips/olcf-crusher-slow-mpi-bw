@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -52,7 +52,8 @@ void meshFree(mesh_t *mesh)
 
   // MPI halo exchange info
   if (mesh->haloElementList)
-    free(mesh->haloElementList); // sorted list of elements to be sent in halo exchange
+    free(mesh->haloElementList); // sorted list of elements to be sent in halo
+                                 // exchange
   if (mesh->NhaloPairs)
     free(mesh->NhaloPairs); // number of elements worth of data to send/recv
 
@@ -115,13 +116,15 @@ void meshFree(mesh_t *mesh)
 
   // face node info
   if (mesh->faceNodes)
-    free(mesh->faceNodes); // list of element reference interpolation nodes on element faces
+    free(mesh->faceNodes); // list of element reference interpolation nodes on
+                           // element faces
   if (mesh->vmapM)
     free(mesh->vmapM); // list of volume nodes that are face nodes
   if (mesh->vmapP)
     free(mesh->vmapP); // list of volume nodes that are paired with face nodes
   if (mesh->mapP)
-    free(mesh->mapP); // list of surface nodes that are paired with -ve surface  nodes
+    free(mesh->mapP); // list of surface nodes that are paired with -ve surface
+                      // nodes
   if (mesh->faceVertices)
     free(mesh->faceVertices); // list of mesh vertices on each face
 
@@ -145,7 +148,8 @@ void meshFree(mesh_t *mesh)
   if (mesh->cubInterp)
     free(mesh->cubInterp); // interpolate from W&B to cubature nodes
   if (mesh->cubProject)
-    free(mesh->cubProject); // projection matrix from cubature nodes to W&B nodes
+    free(
+        mesh->cubProject); // projection matrix from cubature nodes to W&B nodes
   if (mesh->cubD)
     free(mesh->cubD); // 1D differentiation matrix
   if (mesh->cubDiffInterp)

@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +29,10 @@ SOFTWARE.
 
 namespace parAlmond {
 
-parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse, hlong *globalAggStarts, dfloat **nullCoarseA)
+parCSR *constructProlongation(parCSR *A,
+                              hlong *FineToCoarse,
+                              hlong *globalAggStarts,
+                              dfloat **nullCoarseA)
 {
   // MPI info
   int rank, size;
@@ -38,7 +42,8 @@ parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse, hlong *globalAggSt
   const dlong N = A->Nrows;
 
   const hlong globalAggOffset = globalAggStarts[rank];
-  const dlong NCoarse = (dlong)(globalAggStarts[rank + 1] - globalAggStarts[rank]); // local num agg
+  const dlong NCoarse = (dlong)(globalAggStarts[rank + 1] -
+                                globalAggStarts[rank]); // local num agg
 
   parCSR *P = new parCSR(N, NCoarse, A->comm, A->device);
 
@@ -84,7 +89,8 @@ parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse, hlong *globalAggSt
   dlong offdCnt = 0;
   for (dlong i = 0; i < N; i++) {
     hlong col = FineToCoarse[i];
-    if ((col > globalAggStarts[rank] - 1) && (col < globalAggStarts[rank + 1])) {
+    if ((col > globalAggStarts[rank] - 1) &&
+        (col < globalAggStarts[rank + 1])) {
       P->diag->cols[diagCnt] = (dlong)(col - globalAggOffset); // local index
       P->diag->vals[diagCnt++] = A->null[i];
     }

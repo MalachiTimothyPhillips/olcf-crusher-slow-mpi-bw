@@ -128,16 +128,17 @@ int main(int argc, char **argv)
   static constexpr size_t wordSize = 8;
 
   while (1) {
-    static struct option long_options[] = {{"p-order", required_argument, 0, 'p'},
-                                           {"ext-order", required_argument, 0, 'x'},
-                                           {"c-order", required_argument, 0, 'c'},
-                                           {"no-cubature", no_argument, 0, 'd'},
-                                           {"elements", required_argument, 0, 'e'},
-                                           {"backend", required_argument, 0, 'b'},
-                                           {"arch", required_argument, 0, 'a'},
-                                           {"help", required_argument, 0, 'h'},
-                                           {"iterations", required_argument, 0, 'i'},
-                                           {0, 0, 0, 0}};
+    static struct option long_options[] = {
+        {"p-order", required_argument, 0, 'p'},
+        {"ext-order", required_argument, 0, 'x'},
+        {"c-order", required_argument, 0, 'c'},
+        {"no-cubature", no_argument, 0, 'd'},
+        {"elements", required_argument, 0, 'e'},
+        {"backend", required_argument, 0, 'b'},
+        {"arch", required_argument, 0, 'a'},
+        {"help", required_argument, 0, 'h'},
+        {"iterations", required_argument, 0, 'i'},
+        {0, 0, 0, 0}};
     int option_index = 0;
     int c = getopt_long(argc, argv, "", long_options, &option_index);
 
@@ -185,8 +186,10 @@ int main(int argc, char **argv)
 
   if (err || cmdCheck != 3) {
     if (rank == 0)
-      printf("Usage: ./nekrs-bench-advsub  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
-             "                    [--c-order <n>] [--no-cubature] [--ext-order <n>] [--iterations <n>]\n");
+      printf("Usage: ./nekrs-bench-advsub  --p-order <n> --elements <n> "
+             "--backend <CPU|CUDA|HIP|OPENCL>\n"
+             "                    [--c-order <n>] [--no-cubature] [--ext-order "
+             "<n>] [--iterations <n>]\n");
     exit(1);
   }
 
@@ -198,7 +201,8 @@ int main(int argc, char **argv)
   }
   if (cubN < N) {
     if (rank == 0)
-      printf("Error: cubature order (%d) must be larger than or equal to the quadrature order (%d)!\n",
+      printf("Error: cubature order (%d) must be larger than or equal to the "
+             "quadrature order (%d)!\n",
              cubN,
              N);
     exit(1);
@@ -249,7 +253,8 @@ int main(int argc, char **argv)
   for (int e = 0; e < Nelements; ++e) {
     elementList[e] = e;
   }
-  o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList);
+  o_elementList =
+      platform->device.malloc(Nelements * sizeof(dlong), elementList);
   free(elementList);
 
   randAlloc = &rand64Alloc;
@@ -267,7 +272,8 @@ int main(int argc, char **argv)
   free(cubD);
   o_NU = platform->device.malloc(nFields * fieldOffset * wordSize, NU);
   free(NU);
-  o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv);
+  o_conv =
+      platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv);
   free(conv);
   o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT);
   free(cubInterpT);
@@ -285,7 +291,8 @@ int main(int argc, char **argv)
   // *****
 
   // print statistics
-  const dfloat GDOFPerSecond = nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
+  const dfloat GDOFPerSecond =
+      nFields * (size * Nelements * (N * N * N) / elapsed) / 1.e9;
 
   size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
   bytesPerElem += Np;                     // inv mass matrix
@@ -297,14 +304,17 @@ int main(int argc, char **argv)
   }
   otherBytes *= wordSize;
   bytesPerElem *= wordSize;
-  const double bw = (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
+  const double bw =
+      (size * (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
 
   double flopCount = 0.0; // per elem basis
   if (cubNq > Nq) {
     flopCount += 6. * cubNp * nEXT;   // extrapolate U(r,s,t) to current time
     flopCount += 18. * cubNp * cubNq; // apply Dcub
     flopCount += 9. * Np;             // compute NU
-    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    flopCount +=
+        12. * Nq *
+        (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
   }
   else {
     flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
@@ -312,9 +322,11 @@ int main(int argc, char **argv)
   const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
 
   if (rank == 0)
-    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests << " N=" << N
-              << " cubN=" << cubN << " Nelements=" << size * Nelements << " elapsed time=" << elapsed
-              << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads
+              << " NRepetitions=" << Ntests << " N=" << N << " cubN=" << cubN
+              << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize
+              << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
               << " GFLOPS/s=" << gflops << "\n";
 
   MPI_Finalize();

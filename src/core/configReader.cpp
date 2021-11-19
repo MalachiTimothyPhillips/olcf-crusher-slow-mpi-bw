@@ -11,13 +11,19 @@
 #include "inipp.hpp"
 #include "nrs.hpp"
 
-#define UPPER(a)                                                                                             \
-  {                                                                                                          \
-    transform(a.begin(), a.end(), a.begin(), std::ptr_fun<int, int>(std::toupper));                          \
+#define UPPER(a)                                                               \
+  {                                                                            \
+    transform(a.begin(),                                                       \
+              a.end(),                                                         \
+              a.begin(),                                                       \
+              std::ptr_fun<int, int>(std::toupper));                           \
   }
-#define LOWER(a)                                                                                             \
-  {                                                                                                          \
-    transform(a.begin(), a.end(), a.begin(), std::ptr_fun<int, int>(std::tolower));                          \
+#define LOWER(a)                                                               \
+  {                                                                            \
+    transform(a.begin(),                                                       \
+              a.end(),                                                         \
+              a.begin(),                                                       \
+              std::ptr_fun<int, int>(std::tolower));                           \
   }
 
 void configRead(MPI_Comm comm)
@@ -28,7 +34,8 @@ void configRead(MPI_Comm comm)
   char *nekrs_home = getenv("NEKRS_HOME");
   if (nekrs_home == nullptr) {
     if (rank == 0)
-      std::cout << "\nERROR: The environment variable NEKRS_HOME is not defined!\n";
+      std::cout
+          << "\nERROR: The environment variable NEKRS_HOME is not defined!\n";
     EXIT_AND_FINALIZE(1);
   }
   std::string installDir{nekrs_home};

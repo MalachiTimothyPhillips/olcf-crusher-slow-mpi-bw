@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,12 +29,22 @@ SOFTWARE.
 
 namespace parAlmond {
 
-static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts);
+static void formAggregatesDefault(parCSR *A,
+                                  parCSR *C,
+                                  hlong *FineToCoarse,
+                                  hlong *globalAggStarts);
 
-static void
-formAggregatesLPSCN(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts, setupAide options);
+static void formAggregatesLPSCN(parCSR *A,
+                                parCSR *C,
+                                hlong *FineToCoarse,
+                                hlong *globalAggStarts,
+                                setupAide options);
 
-void formAggregates(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts, setupAide options)
+void formAggregates(parCSR *A,
+                    parCSR *C,
+                    hlong *FineToCoarse,
+                    hlong *globalAggStarts,
+                    setupAide options)
 {
 
   if (options.compareArgs("PARALMOND AGGREGATION STRATEGY", "DEFAULT")) {
@@ -43,7 +54,8 @@ void formAggregates(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggS
     formAggregatesLPSCN(A, C, FineToCoarse, globalAggStarts, options);
   }
   else {
-    printf("WARNING:  Missing or bad value for option PARALMOND AGGREGATION STRATEGY.  Using default.\n");
+    printf("WARNING:  Missing or bad value for option PARALMOND AGGREGATION "
+           "STRATEGY.  Using default.\n");
     formAggregatesDefault(A, C, FineToCoarse, globalAggStarts);
   }
 }
@@ -55,7 +67,10 @@ void formAggregates(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggS
 //
 /*****************************************************************************/
 
-static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts)
+static void formAggregatesDefault(parCSR *A,
+                                  parCSR *C,
+                                  hlong *FineToCoarse,
+                                  hlong *globalAggStarts)
 {
 
   int rank, size;
@@ -110,20 +125,32 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
 
       if (smax != 1) {
         // local entries
-        for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1]; jj++) {
+        for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1];
+             jj++) {
           const dlong col = C->diag->cols[jj];
           if (col == i)
             continue;
-          if (customLess(smax, rmax, imax, states[col], rands[col], col + globalRowStarts[rank])) {
+          if (customLess(smax,
+                         rmax,
+                         imax,
+                         states[col],
+                         rands[col],
+                         col + globalRowStarts[rank])) {
             smax = states[col];
             rmax = rands[col];
             imax = col + globalRowStarts[rank];
           }
         }
         // nonlocal entries
-        for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1]; jj++) {
+        for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1];
+             jj++) {
           const dlong col = C->offd->cols[jj];
-          if (customLess(smax, rmax, imax, states[col], rands[col], A->colMap[col])) {
+          if (customLess(smax,
+                         rmax,
+                         imax,
+                         states[col],
+                         rands[col],
+                         A->colMap[col])) {
             smax = states[col];
             rmax = rands[col];
             imax = A->colMap[col];
@@ -153,7 +180,8 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
       hlong imax = Ti[i];
 
       // local entries
-      for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1]; jj++) {
+      for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1];
+           jj++) {
         const dlong col = C->diag->cols[jj];
         if (col == i)
           continue;
@@ -164,7 +192,8 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
         }
       }
       // nonlocal entries
-      for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1]; jj++) {
+      for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1];
+           jj++) {
         const dlong col = C->offd->cols[jj];
         if (customLess(smax, rmax, imax, Ts[col], Tr[col], Ti[col])) {
           smax = Ts[col];
@@ -234,11 +263,17 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
 
     if (smax != 1) {
       // local entries
-      for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1]; jj++) {
+      for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1];
+           jj++) {
         const dlong col = C->diag->cols[jj];
         if (col == i)
           continue;
-        if (customLess(smax, rmax, imax, states[col], rands[col], col + globalRowStarts[rank])) {
+        if (customLess(smax,
+                       rmax,
+                       imax,
+                       states[col],
+                       rands[col],
+                       col + globalRowStarts[rank])) {
           smax = states[col];
           rmax = rands[col];
           imax = col + globalRowStarts[rank];
@@ -246,9 +281,15 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
         }
       }
       // nonlocal entries
-      for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1]; jj++) {
+      for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1];
+           jj++) {
         const dlong col = C->offd->cols[jj];
-        if (customLess(smax, rmax, imax, states[col], rands[col], A->colMap[col])) {
+        if (customLess(smax,
+                       rmax,
+                       imax,
+                       states[col],
+                       rands[col],
+                       A->colMap[col])) {
           smax = states[col];
           rmax = rands[col];
           imax = A->colMap[col];
@@ -288,7 +329,8 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
     hlong cmax = Tc[i];
 
     // local entries
-    for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1]; jj++) {
+    for (dlong jj = C->diag->rowStarts[i]; jj < C->diag->rowStarts[i + 1];
+         jj++) {
       const dlong col = C->diag->cols[jj];
       if (col == i)
         continue;
@@ -300,7 +342,8 @@ static void formAggregatesDefault(parCSR *A, parCSR *C, hlong *FineToCoarse, hlo
       }
     }
     // nonlocal entries
-    for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1]; jj++) {
+    for (dlong jj = C->offd->rowStarts[i]; jj < C->offd->rowStarts[i + 1];
+         jj++) {
       const dlong col = C->offd->cols[jj];
       if (customLess(smax, rmax, imax, Ts[col], Tr[col], Ti[col])) {
         smax = Ts[col];
@@ -375,8 +418,11 @@ int compareNBSminLPSCN(const void *a, const void *b)
   return 0;
 }
 
-static void
-formAggregatesLPSCN(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts, setupAide options)
+static void formAggregatesLPSCN(parCSR *A,
+                                parCSR *C,
+                                hlong *FineToCoarse,
+                                hlong *globalAggStarts,
+                                setupAide options)
 {
   int rank, size;
   MPI_Comm_rank(A->comm, &rank);
@@ -398,7 +444,8 @@ formAggregatesLPSCN(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggS
   for (dlong i = 0; i < N; i++) {
     V[i].index = i;
     V[i].Nnbs = C->diag->rowStarts[i + 1] - C->diag->rowStarts[i];
-    dlong dist = C->diag->cols[C->diag->rowStarts[i + 1] - 1] - C->diag->cols[C->diag->rowStarts[i]];
+    dlong dist = C->diag->cols[C->diag->rowStarts[i + 1] - 1] -
+                 C->diag->cols[C->diag->rowStarts[i]];
 
     if (dist > 0)
       V[i].LNN = V[i].Nnbs / dist;
@@ -483,8 +530,8 @@ formAggregatesLPSCN(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggS
 
         int Nactive = Nneighbors;
 
-        // there must be at least one neighbor that has been aggregated, else this node would have been
-        // aggregated already
+        // there must be at least one neighbor that has been aggregated, else
+        // this node would have been aggregated already
         for (int j = start; j < end; j++) {
           if (states[C->diag->cols[j]] == -1) {
             neighborAgg[j - start] = -1; // ignore unaggregated neighbors
@@ -503,9 +550,11 @@ formAggregatesLPSCN(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggS
           while (neighborAgg[pos] == -1)
             pos++;
 
-          dlong curAgg = neighborAgg[pos]; // current aggregate under consideration
+          dlong curAgg =
+              neighborAgg[pos]; // current aggregate under consideration
 
-          // count the number of neighbours aggregating to this aggregate (unflag them as we go)
+          // count the number of neighbours aggregating to this aggregate
+          // (unflag them as we go)
           int cnt = 0;
           for (int j = pos; j < Nneighbors; j++) {
             if (neighborAgg[j] == curAgg) {

@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -37,9 +38,10 @@ solver_t *Init(occa::device device, MPI_Comm comm, setupAide options)
 void AMGSetup(solver_t *MM,
               hlong *globalRowStarts, // global partition
               dlong nnz,              //--
-              hlong *Ai,              //-- Local A matrix data (globally indexed, COO storage, row sorted)
-              hlong *Aj,              //--
-              dfloat *Avals,          //--
+              hlong *Ai,     //-- Local A matrix data (globally indexed, COO
+                             //storage, row sorted)
+              hlong *Aj,     //--
+              dfloat *Avals, //--
               bool nullSpace,
               dfloat nullSpacePenalty)
 {
@@ -51,7 +53,8 @@ void AMGSetup(solver_t *MM,
   MPI_Comm_size(M->comm, &size);
 
   hlong TotalRows = globalRowStarts[M->size];
-  dlong numLocalRows = (dlong)(globalRowStarts[M->rank + 1] - globalRowStarts[M->rank]);
+  dlong numLocalRows =
+      (dlong)(globalRowStarts[M->rank + 1] - globalRowStarts[M->rank]);
 
   MPI_Barrier(M->comm);
   double startTime = MPI_Wtime();
@@ -60,7 +63,8 @@ void AMGSetup(solver_t *MM,
   fflush(stdout);
 
   M->coarseLevel = new coarseSolver(M->options, M->comm);
-  M->coarseLevel->setup(numLocalRows, globalRowStarts, nnz, Ai, Aj, Avals, nullSpace);
+  M->coarseLevel
+      ->setup(numLocalRows, globalRowStarts, nnz, Ai, Aj, Avals, nullSpace);
   M->baseLevel = M->numLevels;
   M->numLevels++;
 

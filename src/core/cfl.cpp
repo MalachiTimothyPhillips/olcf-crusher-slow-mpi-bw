@@ -47,7 +47,8 @@ dfloat computeCFL(nrs_t *nrs)
                  platform->o_mempool.slice0);
 
   // find the local maximum of CFL number
-  platform->o_mempool.slice0.copyTo(platform->mempool.slice0, mesh->Nelements * sizeof(dfloat));
+  platform->o_mempool.slice0.copyTo(platform->mempool.slice0,
+                                    mesh->Nelements * sizeof(dfloat));
 
   // finish reduction
   dfloat cfl = 0.f;

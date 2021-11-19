@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +29,8 @@ SOFTWARE.
 
 namespace parAlmond {
 
-agmgLevel::agmgLevel(parCSR *A_, KrylovType ktype_) : multigridLevel(A_->Nrows, A_->Ncols, ktype_, A_->comm)
+agmgLevel::agmgLevel(parCSR *A_, KrylovType ktype_)
+    : multigridLevel(A_->Nrows, A_->Ncols, ktype_, A_->comm)
 {
 
   weighted = false;
@@ -89,9 +91,15 @@ void agmgLevel::prolongate(dfloat *x, dfloat *Px)
   }
 }
 
-void agmgLevel::residual(dfloat *rhs, dfloat *x, dfloat *res) { A->SpMV(-1.0, x, 1.0, rhs, res); }
+void agmgLevel::residual(dfloat *rhs, dfloat *x, dfloat *res)
+{
+  A->SpMV(-1.0, x, 1.0, rhs, res);
+}
 
-void agmgLevel::Ax(occa::memory o_x, occa::memory o_Ax) { o_A->SpMV(1.0, o_x, 0.0, o_Ax); }
+void agmgLevel::Ax(occa::memory o_x, occa::memory o_Ax)
+{
+  o_A->SpMV(1.0, o_x, 0.0, o_Ax);
+}
 
 void agmgLevel::coarsen(occa::memory o_r, occa::memory o_Rr)
 {
@@ -117,7 +125,9 @@ void agmgLevel::prolongate(occa::memory o_x, occa::memory o_Px)
   }
 }
 
-void agmgLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
+void agmgLevel::residual(occa::memory o_rhs,
+                         occa::memory o_x,
+                         occa::memory o_res)
 {
   o_A->SpMV(-1.0, o_x, 1.0, o_rhs, o_res);
 }
@@ -202,9 +212,16 @@ void agmgLevel::Report()
     strcpy(smootherString, "Chebyshev       ");
 
   if (rank == 0) {
-    printf("|  parAlmond |  %12d  | %13d   |   %s|\n", minNrows, (int)minNnzPerRow, smootherString);
-    printf("     |            |  %12d  | %13d   |                   |\n", maxNrows, (int)maxNnzPerRow);
-    printf("     |            |  %12d  | %13d   |                   |\n", (int)avgNrows, (int)avgNnzPerRow);
+    printf("|  parAlmond |  %12d  | %13d   |   %s|\n",
+           minNrows,
+           (int)minNnzPerRow,
+           smootherString);
+    printf("     |            |  %12d  | %13d   |                   |\n",
+           maxNrows,
+           (int)maxNnzPerRow);
+    printf("     |            |  %12d  | %13d   |                   |\n",
+           (int)avgNrows,
+           (int)avgNnzPerRow);
   }
 }
 

@@ -10,8 +10,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -40,15 +40,22 @@ namespace detail {
 
 inline void ltrim(std::string &s)
 {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) { return !std::isspace(ch); }));
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](int ch) {
+            return !std::isspace(ch);
+          }));
 }
 
 inline void rtrim(std::string &s)
 {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) { return !std::isspace(ch); }).base(), s.end());
+  s.erase(std::find_if(s.rbegin(),
+                       s.rend(),
+                       [](int ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
 }
 
-inline bool replace(std::string &str, const std::string &from, const std::string &to)
+inline bool
+replace(std::string &str, const std::string &from, const std::string &to)
 {
   auto changed = false;
   size_t start_pos = 0;
@@ -61,7 +68,9 @@ inline bool replace(std::string &str, const std::string &from, const std::string
 }
 } // namespace detail
 
-bool Ini::extract(const std::string &key, const std::string &value, std::string &dst)
+bool Ini::extract(const std::string &key,
+                  const std::string &value,
+                  std::string &dst)
 {
   if (sections[key].count(value)) {
     dst = sections[key][value];
@@ -87,7 +96,9 @@ void Ini::parse(std::stringstream &is, bool lowerValue)
   std::string section;
   while (!is.eof()) {
     std::getline(is, line);
-    auto it = std::find_if(line.rbegin(), line.rend(), [](int ch) { return ch == char_comment; });
+    auto it = std::find_if(line.rbegin(), line.rend(), [](int ch) {
+      return ch == char_comment;
+    });
     if (it != line.rend())
       line.erase((++it).base(), line.end());
     detail::ltrim(line);
@@ -103,7 +114,10 @@ void Ini::parse(std::stringstream &is, bool lowerValue)
       else if (front == char_section_start) {
         if (line.back() == char_section_end) {
           section = line.substr(1, length - 2);
-          transform(section.begin(), section.end(), section.begin(), std::ptr_fun<int, int>(std::tolower));
+          transform(section.begin(),
+                    section.end(),
+                    section.begin(),
+                    std::ptr_fun<int, int>(std::tolower));
         }
         else {
           errors.push_back(line);
@@ -112,13 +126,20 @@ void Ini::parse(std::stringstream &is, bool lowerValue)
       else if (pos != 0 && pos != std::string::npos) {
         std::string variable(line.substr(0, pos));
         std::string value(line.substr(pos + 1, length));
-        transform(variable.begin(), variable.end(), variable.begin(), std::ptr_fun<int, int>(std::tolower));
+        transform(variable.begin(),
+                  variable.end(),
+                  variable.begin(),
+                  std::ptr_fun<int, int>(std::tolower));
         detail::rtrim(variable);
         detail::ltrim(value);
 
-        bool inquotes = lowerValue && value.front() == '"' && lowerValue && value.back() == '"';
+        bool inquotes = lowerValue && value.front() == '"' && lowerValue &&
+                        value.back() == '"';
         if (lowerValue && !inquotes)
-          transform(value.begin(), value.end(), value.begin(), std::ptr_fun<int, int>(std::tolower));
+          transform(value.begin(),
+                    value.end(),
+                    value.begin(),
+                    std::ptr_fun<int, int>(std::tolower));
         value.erase(std::remove(value.begin(), value.end(), '"'), value.end());
 
         auto &sec = sections[section];
@@ -168,16 +189,19 @@ std::string Ini::local_symbol(const std::string &name) const
   return char_interpol + (char_interpol_start + name + char_interpol_end);
 }
 
-std::string Ini::global_symbol(const std::string &sec_name, const std::string &name) const
+std::string Ini::global_symbol(const std::string &sec_name,
+                               const std::string &name) const
 {
   return local_symbol(sec_name + char_interpol_sep + name);
 }
 
-Ini::Symbols Ini::local_symbols(const std::string &sec_name, const Ini::Section &sec) const
+Ini::Symbols Ini::local_symbols(const std::string &sec_name,
+                                const Ini::Section &sec) const
 {
   Ini::Symbols result;
   for (const auto &val : sec)
-    result.push_back(std::make_pair(local_symbol(val.first), global_symbol(sec_name, val.first)));
+    result.push_back(std::make_pair(local_symbol(val.first),
+                                    global_symbol(sec_name, val.first)));
   return result;
 }
 
@@ -186,7 +210,8 @@ Ini::Symbols Ini::global_symbols() const
   Ini::Symbols result;
   for (const auto &sec : sections)
     for (const auto &val : sec.second)
-      result.push_back(std::make_pair(global_symbol(sec.first, val.first), val.second));
+      result.push_back(
+          std::make_pair(global_symbol(sec.first, val.first), val.second));
   return result;
 }
 

@@ -74,16 +74,16 @@ extern platform_t *platform;
 
 bool useNodeLocalCache();
 
-#define EXIT_AND_FINALIZE(a)                                                                                 \
-  {                                                                                                          \
-    fflush(stdout);                                                                                          \
-    MPI_Finalize();                                                                                          \
-    exit(a);                                                                                                 \
+#define EXIT_AND_FINALIZE(a)                                                   \
+  {                                                                            \
+    fflush(stdout);                                                            \
+    MPI_Finalize();                                                            \
+    exit(a);                                                                   \
   }
-#define ABORT(a)                                                                                             \
-  {                                                                                                          \
-    fflush(stdout);                                                                                          \
-    MPI_Abort(MPI_COMM_WORLD, a);                                                                            \
+#define ABORT(a)                                                               \
+  {                                                                            \
+    fflush(stdout);                                                            \
+    MPI_Abort(MPI_COMM_WORLD, a);                                              \
   }
 
 #endif

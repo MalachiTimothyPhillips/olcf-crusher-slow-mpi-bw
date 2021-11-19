@@ -11,8 +11,8 @@
    copies of the Software, and to permit persons to whom the Software is
    furnished to do so, subject to the following conditions:
 
-   The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -29,7 +29,12 @@
 #include <stdlib.h>
 #include "mesh3D.h"
 
-void interpolateFaceHex3D(int *faceNodes, dfloat *I, dfloat *x, int N, dfloat *Ix, int M)
+void interpolateFaceHex3D(int *faceNodes,
+                          dfloat *I,
+                          dfloat *x,
+                          int N,
+                          dfloat *Ix,
+                          int M)
 {
   dfloat *Ix0 = (dfloat *)calloc(N * N, sizeof(dfloat));
   dfloat *Ix1 = (dfloat *)calloc(N * M, sizeof(dfloat));
@@ -58,13 +63,14 @@ void interpolateFaceHex3D(int *faceNodes, dfloat *I, dfloat *x, int N, dfloat *I
   free(Ix1);
 }
 
-/* compute outwards facing normals, surface Jacobian, and volume Jacobian for all face nodes */
+/* compute outwards facing normals, surface Jacobian, and volume Jacobian for
+ * all face nodes */
 void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
 {
   /* unified storage array for geometric factors */
-  mesh->sgeo =
-      (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) * mesh->Nsgeo * mesh->Nfp * mesh->Nfaces,
-                       sizeof(dfloat));
+  mesh->sgeo = (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) *
+                                    mesh->Nsgeo * mesh->Nfp * mesh->Nfaces,
+                                sizeof(dfloat));
 
   dfloat *xre = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
   dfloat *xse = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
@@ -86,7 +92,8 @@ void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
   dfloat *cubzse = (dfloat *)calloc(mesh->cubNq * mesh->cubNq, sizeof(dfloat));
   dfloat *cubzte = (dfloat *)calloc(mesh->cubNq * mesh->cubNq, sizeof(dfloat));
 
-  for (dlong e = 0; e < mesh->Nelements + mesh->totalHaloPairs; ++e) { /* for each element */
+  for (dlong e = 0; e < mesh->Nelements + mesh->totalHaloPairs;
+       ++e) { /* for each element */
     /* find vertex indices and physical coordinates */
     dlong id = e * mesh->Nverts;
 
@@ -143,11 +150,15 @@ void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
         dfloat zr = zre[n], zs = zse[n], zt = zte[n];
 
         /* determinant of Jacobian matrix */
-        dfloat J = xr * (ys * zt - zs * yt) - yr * (xs * zt - zs * xt) + zr * (xs * yt - ys * xt);
+        dfloat J = xr * (ys * zt - zs * yt) - yr * (xs * zt - zs * xt) +
+                   zr * (xs * yt - ys * xt);
 
-        dfloat rx = (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J, rz = (xs * yt - ys * xt) / J;
-        dfloat sx = -(yr * zt - zr * yt) / J, sy = (xr * zt - zr * xt) / J, sz = -(xr * yt - yr * xt) / J;
-        dfloat tx = (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J, tz = (xr * ys - yr * xs) / J;
+        dfloat rx = (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J,
+               rz = (xs * yt - ys * xt) / J;
+        dfloat sx = -(yr * zt - zr * yt) / J, sy = (xr * zt - zr * xt) / J,
+               sz = -(xr * yt - yr * xt) / J;
+        dfloat tx = (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J,
+               tz = (xr * ys - yr * xs) / J;
 
         /* face f normal and length */
         dfloat nx, ny, nz, d;
@@ -191,7 +202,8 @@ void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
         sJ *= J;
 
         /* output index */
-        dlong base = mesh->Nsgeo * (mesh->Nfaces * mesh->Nfp * e + mesh->Nfp * f + i);
+        dlong base =
+            mesh->Nsgeo * (mesh->Nfaces * mesh->Nfp * e + mesh->Nfp * f + i);
 
         /* store normal, surface Jacobian, and reciprocal of volume Jacobian */
         mesh->sgeo[base + NXID] = nx;
@@ -201,7 +213,8 @@ void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
         mesh->sgeo[base + IJID] = 1. / J;
 
         mesh->sgeo[base + WIJID] = 1. / (J * mesh->gllw[0]);
-        mesh->sgeo[base + WSJID] = sJ * mesh->gllw[i % mesh->Nq] * mesh->gllw[i / mesh->Nq];
+        mesh->sgeo[base + WSJID] =
+            sJ * mesh->gllw[i % mesh->Nq] * mesh->gllw[i / mesh->Nq];
       }
     }
   }
@@ -210,9 +223,12 @@ void meshSurfaceGeometricFactorsHex3D(mesh3D *mesh)
     for (int n = 0; n < mesh->Nfp * mesh->Nfaces; ++n) {
       dlong baseM = e * mesh->Nfp * mesh->Nfaces + n;
       dlong baseP = mesh->mapP[baseM];
-      // rescaling - missing factor of 2 ? (only impacts penalty and thus stiffness)
-      dfloat hinvM = mesh->sgeo[baseM * mesh->Nsgeo + SJID] * mesh->sgeo[baseM * mesh->Nsgeo + IJID];
-      dfloat hinvP = mesh->sgeo[baseP * mesh->Nsgeo + SJID] * mesh->sgeo[baseP * mesh->Nsgeo + IJID];
+      // rescaling - missing factor of 2 ? (only impacts penalty and thus
+      // stiffness)
+      dfloat hinvM = mesh->sgeo[baseM * mesh->Nsgeo + SJID] *
+                     mesh->sgeo[baseM * mesh->Nsgeo + IJID];
+      dfloat hinvP = mesh->sgeo[baseP * mesh->Nsgeo + SJID] *
+                     mesh->sgeo[baseP * mesh->Nsgeo + IJID];
       mesh->sgeo[baseM * mesh->Nsgeo + IHID] = mymax(hinvM, hinvP);
       mesh->sgeo[baseP * mesh->Nsgeo + IHID] = mymax(hinvM, hinvP);
     }

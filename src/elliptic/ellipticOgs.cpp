@@ -26,7 +26,8 @@ void ellipticOgs(mesh_t *mesh,
           int BCFlag = BCType[bc + BCTypeOffset * fld];
           for (int n = 0; n < mesh->Nfp; n++) {
             int fid = mesh->faceNodes[n + f * mesh->Nfp];
-            mapB[fid + e * mesh->Np + fld * offset] = mymin(BCFlag, mapB[fid + e * mesh->Np + fld * offset]);
+            mapB[fid + e * mesh->Np + fld * offset] =
+                mymin(BCFlag, mapB[fid + e * mesh->Np + fld * offset]);
           }
         }
       }
@@ -62,7 +63,8 @@ void ellipticOgs(mesh_t *mesh,
   if (!*ogs) {
     if (nFields > 1) {
       if (platform->comm.mpiRank == 0)
-        printf("Creating a masked gs handle for nFields > 1 is currently not supported!\n");
+        printf("Creating a masked gs handle for nFields > 1 is currently not "
+               "supported!\n");
       ABORT(EXIT_FAILURE);
     }
 
@@ -70,7 +72,11 @@ void ellipticOgs(mesh_t *mesh,
     memcpy(maskedGlobalIds, mesh->globalIds, mesh->Nlocal * sizeof(hlong));
     for (dlong n = 0; n < Nmasked; n++)
       maskedGlobalIds[maskIds[n]] = 0;
-    *ogs = ogsSetup(mesh->Nlocal, maskedGlobalIds, platform->comm.mpiComm, 1, platform->device.occaDevice());
+    *ogs = ogsSetup(mesh->Nlocal,
+                    maskedGlobalIds,
+                    platform->comm.mpiComm,
+                    1,
+                    platform->device.occaDevice());
     free(maskedGlobalIds);
   }
   free(maskIds);

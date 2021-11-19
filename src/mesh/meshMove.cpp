@@ -10,7 +10,14 @@ void mesh_t::computeInvLMM()
 void mesh_t::move()
 {
   // update o_x, o_y and o_z based on mesh->o_U using AB formula
-  nStagesSumVectorKernel(Nelements * Np, fieldOffset, nAB, o_coeffAB, o_U, o_x, o_y, o_z);
+  nStagesSumVectorKernel(Nelements * Np,
+                         fieldOffset,
+                         nAB,
+                         o_coeffAB,
+                         o_U,
+                         o_x,
+                         o_y,
+                         o_z);
   update();
 }
 void mesh_t::update()
@@ -27,14 +34,17 @@ void mesh_t::update()
                          platform->o_mempool.slice0);
 
   // do add check if negative
-  const dfloat minJ =
-      platform->linAlg->min(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
-  const dfloat maxJ =
-      platform->linAlg->max(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
+  const dfloat minJ = platform->linAlg->min(Nelements * Np,
+                                            platform->o_mempool.slice0,
+                                            platform->comm.mpiComm);
+  const dfloat maxJ = platform->linAlg->max(Nelements * Np,
+                                            platform->o_mempool.slice0,
+                                            platform->comm.mpiComm);
 
   if (minJ < 0 || maxJ < 0) {
     if (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "FALSE") ||
-        (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") && N > 1)) {
+        (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") &&
+         N > 1)) {
       if (platform->comm.mpiRank == 0)
         printf("Jacobian < 0!");
       ABORT(EXIT_FAILURE);

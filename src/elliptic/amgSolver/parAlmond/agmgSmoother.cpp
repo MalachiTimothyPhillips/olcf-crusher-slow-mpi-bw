@@ -2,7 +2,8 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh Gandham
+Copyright (c) 2017 Tim Warburton, Noel Chalmers, Jesse Chan, Ali Karakus, Rajesh
+Gandham
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -126,7 +127,9 @@ void agmgLevel::smoothJacobi(occa::memory o_r, occa::memory o_x, bool x_is_zero)
   // occaTimerToc(parAlmond->device,"hyb smoothJacobi");
 }
 
-void agmgLevel::smoothDampedJacobi(occa::memory o_r, occa::memory o_x, bool x_is_zero)
+void agmgLevel::smoothDampedJacobi(occa::memory o_r,
+                                   occa::memory o_x,
+                                   bool x_is_zero)
 {
 
   // occaTimerTic(parAlmond->device,"device smoothDampedJacobi");
@@ -146,7 +149,9 @@ void agmgLevel::smoothDampedJacobi(occa::memory o_r, occa::memory o_x, bool x_is
   // occaTimerToc(parAlmond->device,"device smoothDampedJacobi");
 }
 
-void agmgLevel::smoothChebyshev(occa::memory o_r, occa::memory o_x, bool x_is_zero)
+void agmgLevel::smoothChebyshev(occa::memory o_r,
+                                occa::memory o_x,
+                                bool x_is_zero)
 {
 
   const dfloat theta = 0.5 * (lambda1 + lambda0);
