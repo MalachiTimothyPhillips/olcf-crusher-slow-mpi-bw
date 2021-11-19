@@ -55,14 +55,15 @@ occa::kernel kcycleWeightedCombinedOp2Kernel;
 occa::kernel vectorAddInnerProdKernel;
 occa::kernel vectorAddWeightedInnerProdKernel;
 
-void buildParAlmondKernels(MPI_Comm comm, occa::device device){
+void buildParAlmondKernels(MPI_Comm comm, occa::device device)
+{
   // TODO: cleanup
 }
 
-void freeParAlmondKernels() {
+void freeParAlmondKernels()
+{
   vectorDotStarKernel1.free();
   vectorDotStarKernel2.free();
 }
 
-
-} //namespace parAlmond
+} // namespace parAlmond

@@ -26,36 +26,38 @@
 
 #include "mesh.h"
 
-void meshApplyElementMatrix(mesh_t* mesh, dfloat* A, dfloat* q, dfloat* Aq)
+void meshApplyElementMatrix(mesh_t *mesh, dfloat *A, dfloat *q, dfloat *Aq)
 {
-  dfloat* Aqn = (dfloat*) calloc(mesh->Np,sizeof(dfloat));
+  dfloat *Aqn = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
   for (dlong e = 0; e < mesh->Nelements; e++) {
     for (int n = 0; n < mesh->Np; n++) {
       Aqn[n] = 0;
       for (int k = 0; k < mesh->Np; k++)
         Aqn[n] += A[k + n * mesh->Np] * q[k + e * mesh->Np];
     }
-    for (int n = 0; n < mesh->Np; n++) Aq[n + e * mesh->Np] = Aqn[n];
+    for (int n = 0; n < mesh->Np; n++)
+      Aq[n + e * mesh->Np] = Aqn[n];
   }
   free(Aqn);
 }
 
-void meshApplyVectorElementMatrix(mesh_t* mesh,
+void meshApplyVectorElementMatrix(mesh_t *mesh,
                                   int Nfield,
                                   const dlong offset,
-                                  dfloat* A,
-                                  dfloat* q,
-                                  dfloat* Aq)
+                                  dfloat *A,
+                                  dfloat *q,
+                                  dfloat *Aq)
 {
-  dfloat* Aqn = (dfloat*) calloc(mesh->Np,sizeof(dfloat));
-  for(int fld = 0; fld < Nfield; fld++)
+  dfloat *Aqn = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  for (int fld = 0; fld < Nfield; fld++)
     for (dlong e = 0; e < mesh->Nelements; e++) {
       for (int n = 0; n < mesh->Np; n++) {
         Aqn[n] = 0;
         for (int k = 0; k < mesh->Np; k++)
           Aqn[n] += A[k + n * mesh->Np] * q[k + e * mesh->Np + fld * offset];
       }
-      for (int n = 0; n < mesh->Np; n++) Aq[n + e * mesh->Np + fld * offset] = Aqn[n];
+      for (int n = 0; n < mesh->Np; n++)
+        Aq[n + e * mesh->Np + fld * offset] = Aqn[n];
     }
   free(Aqn);
 }

@@ -12,19 +12,18 @@
 
 #define NSCALAR_MAX 100
 
-struct cds_t
-{
+struct cds_t {
   int dim, elementType;
 
-  mesh_t* mesh[NSCALAR_MAX];
+  mesh_t *mesh[NSCALAR_MAX];
   dlong fieldOffset[NSCALAR_MAX];
   dlong fieldOffsetScan[NSCALAR_MAX];
   dlong fieldOffsetSum;
-  mesh_t* meshV;
-  elliptic_t* solver[NSCALAR_MAX];
+  mesh_t *meshV;
+  elliptic_t *solver[NSCALAR_MAX];
 
-  int NVfields;            // Number of velocity fields
-  int NSfields;            // Number of scalar fields
+  int NVfields; // Number of velocity fields
+  int NSfields; // Number of scalar fields
 
   setupAide options[NSCALAR_MAX];
 
@@ -42,47 +41,47 @@ struct cds_t
 
   int compute[NSCALAR_MAX];
 
-  dfloat* U, * S;
-  dfloat* rkNS;
+  dfloat *U, *S;
+  dfloat *rkNS;
   //  dfloat *rhsS;
-  dfloat* rkS;
+  dfloat *rkS;
 
   // filter
   int filterNc;
   dfloat filterS[NSCALAR_MAX];
-  dfloat* filterM;
+  dfloat *filterM;
   occa::memory o_filterMT;
 
-  //RK Subcycle Data
+  // RK Subcycle Data
   int nRK;
-  dfloat* coeffsfRK, * weightsRK, * nodesRK;
+  dfloat *coeffsfRK, *weightsRK, *nodesRK;
   occa::memory o_coeffsfRK, o_weightsRK;
 
   occa::memory o_relUrst;
   occa::memory o_Urst;
 
-  //EXTBDF data
-  dfloat* coeffEXT, * coeffBDF, * coeffSubEXT;
+  // EXTBDF data
+  dfloat *coeffEXT, *coeffBDF, *coeffSubEXT;
 
-  int* EToB[NSCALAR_MAX];
+  int *EToB[NSCALAR_MAX];
   occa::memory o_EToB[NSCALAR_MAX];
 
-  occa::memory* o_usrwrk;
+  occa::memory *o_usrwrk;
 
   int Nsubsteps;
   dfloat sdt;
-  dfloat* Ue;
+  dfloat *Ue;
   occa::memory o_Ue;
 
-  dfloat* prop;
+  dfloat *prop;
   occa::memory o_prop, o_ellipticCoeff;
   occa::memory o_rho, o_diff;
 
-  dfloat* cU, * cSd, * cS, * FS, * BF;
+  dfloat *cU, *cSd, *cS, *FS, *BF;
   occa::memory o_cU, o_cSd, o_cS, o_FS, o_BF, o_BFDiag;
 
   occa::kernel sumMakefKernel;
-  occa::kernel subCycleVolumeKernel,  subCycleCubatureVolumeKernel;
+  occa::kernel subCycleVolumeKernel, subCycleCubatureVolumeKernel;
   occa::kernel subCycleSurfaceKernel, subCycleCubatureSurfaceKernel;
   occa::kernel subCycleRKUpdateKernel;
   occa::kernel subCycleStrongCubatureVolumeKernel;
@@ -98,7 +97,7 @@ struct cds_t
   occa::memory o_U;
   occa::memory o_S, o_Se;
 
-  //EXTBDF data
+  // EXTBDF data
   occa::memory o_coeffEXT, o_coeffBDF, o_coeffSubEXT;
 
   occa::kernel advectionVolumeKernel;
@@ -116,9 +115,9 @@ struct cds_t
 
   occa::kernel maskCopyKernel;
 
-  occa::properties* kernelInfo;
+  occa::properties *kernelInfo;
 };
 
-occa::memory cdsSolve(int i, cds_t* cds, dfloat time, int stage);
+occa::memory cdsSolve(int i, cds_t *cds, dfloat time, int stage);
 
 #endif

@@ -2,7 +2,8 @@
 #include <compileKernels.hpp>
 #include "mesh.h"
 
-void registerMeshKernels(occa::properties kernelInfoBC) {
+void registerMeshKernels(occa::properties kernelInfoBC)
+{
   int N, cubN;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   platform->options.getArgs("CUBATURE POLYNOMIAL DEGREE", cubN);
@@ -32,18 +33,15 @@ void registerMeshKernels(occa::properties kernelInfoBC) {
 
     kernelName = "geometricFactorsHex3D";
     fileName = oklpath + "mesh/" + kernelName + ".okl";
-    platform->kernels.add(
-        meshPrefix + kernelName, fileName, meshKernelInfo);
+    platform->kernels.add(meshPrefix + kernelName, fileName, meshKernelInfo);
     kernelName = "surfaceGeometricFactorsHex3D";
     fileName = oklpath + "mesh/" + kernelName + ".okl";
-    platform->kernels.add(
-        meshPrefix + kernelName, fileName, meshKernelInfo);
+    platform->kernels.add(meshPrefix + kernelName, fileName, meshKernelInfo);
 
     meshKernelInfo = kernelInfo;
     meshKernelInfo["defines/p_nAB"] = nAB;
     kernelName = "nStagesSumVector";
     fileName = oklpath + "core/" + kernelName + ".okl";
-    platform->kernels.add(
-        meshPrefix + kernelName, fileName, meshKernelInfo);
+    platform->kernels.add(meshPrefix + kernelName, fileName, meshKernelInfo);
   }
 }

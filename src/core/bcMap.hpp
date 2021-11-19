@@ -5,15 +5,14 @@
 #include <vector>
 #include "nekInterfaceAdapter.hpp"
 
-namespace bcMap
-{
+namespace bcMap {
 void setup(std::vector<std::string> slist, std::string field);
 int id(int bid, std::string field);
 int type(int bid, std::string field);
 std::string text(int bid, std::string field);
 int size(int isTmesh);
-void check(mesh_t* mesh);
-void setBcMap(std::string field, int* map, int nbid);
-}
+void check(mesh_t *mesh);
+void setBcMap(std::string field, int *map, int nbid);
+} // namespace bcMap
 
 #endif

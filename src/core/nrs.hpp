@@ -18,23 +18,22 @@
 #include "timer.hpp"
 #include "platform.hpp"
 
-struct nrs_t
-{
+struct nrs_t {
   int dim, elementType;
 
-  mesh_t* _mesh;
-  mesh_t* meshV;
+  mesh_t *_mesh;
+  mesh_t *meshV;
 
-  elliptic_t* uSolver;
-  elliptic_t* vSolver;
-  elliptic_t* wSolver;
-  elliptic_t* uvwSolver;
-  elliptic_t* pSolver;
-  elliptic_t* meshSolver;
+  elliptic_t *uSolver;
+  elliptic_t *vSolver;
+  elliptic_t *wSolver;
+  elliptic_t *uvwSolver;
+  elliptic_t *pSolver;
+  elliptic_t *meshSolver;
 
-  cds_t* cds;
+  cds_t *cds;
 
-  oogs_t* gsh;
+  oogs_t *gsh;
 
   dlong ellipticWrkOffset;
 
@@ -65,8 +64,8 @@ struct nrs_t
   int isOutputStep;
   int outputForceStep;
 
-  dfloat* U, * P;
-  dfloat* BF, * FU;
+  dfloat *U, *P;
+  dfloat *BF, *FU;
 
   // unit normal flow direction for constant flow rate
   dfloat flowDirection[3];
@@ -74,44 +73,44 @@ struct nrs_t
   int toBID;
   dfloat flowRate;
 
-  //RK Subcycle Data
+  // RK Subcycle Data
   int nRK;
-  dfloat* coeffsfRK, * weightsRK, * nodesRK;
+  dfloat *coeffsfRK, *weightsRK, *nodesRK;
   occa::memory o_coeffsfRK, o_weightsRK;
 
-  //ARK data
+  // ARK data
   int Nrk;
-  dfloat* rkC;
+  dfloat *rkC;
 
-  //EXTBDF data
-  dfloat* coeffEXT, * coeffBDF, * coeffSubEXT;
+  // EXTBDF data
+  dfloat *coeffEXT, *coeffBDF, *coeffSubEXT;
 
   int Nsubsteps;
-  dfloat* Ue, sdt;
+  dfloat *Ue, sdt;
   occa::memory o_Ue;
 
-  dfloat* div;
+  dfloat *div;
   occa::memory o_div;
 
   dfloat rho, mue;
   occa::memory o_rho, o_mue;
   occa::memory o_meshRho, o_meshMue;
 
-  dfloat* usrwrk;
+  dfloat *usrwrk;
   occa::memory o_usrwrk;
 
   occa::memory o_idH; // i.e. inverse of 1D Gll Spacing for quad and Hex
 
   int filterNc; // filter cut modes i.e. below is not touched
-  dfloat* filterM, filterS;
-  occa::memory o_filterMT; // transpose of filter matrix
+  dfloat *filterM, filterS;
+  occa::memory o_filterMT;     // transpose of filter matrix
   occa::kernel filterRTKernel; // Relaxation-Term based filtering
   occa::kernel advectMeshVelocityKernel;
 
   occa::kernel pressureAddQtlKernel;
   occa::kernel pressureStressKernel;
 
-  occa::kernel subCycleVolumeKernel,  subCycleCubatureVolumeKernel;
+  occa::kernel subCycleVolumeKernel, subCycleCubatureVolumeKernel;
   occa::kernel subCycleSurfaceKernel, subCycleCubatureSurfaceKernel;
   occa::kernel subCycleRKUpdateKernel;
   occa::kernel extrapolateKernel;
@@ -140,10 +139,10 @@ struct nrs_t
   occa::memory o_BF;
   occa::memory o_FU;
 
-  dfloat* prop;
+  dfloat *prop;
   occa::memory o_prop, o_ellipticCoeff;
 
-  //EXTBDF data
+  // EXTBDF data
   occa::memory o_coeffEXT, o_coeffBDF, o_coeffSubEXT;
 
   occa::kernel advectionVolumeKernel;
@@ -176,14 +175,13 @@ struct nrs_t
   occa::kernel maskCopyKernel;
   occa::kernel maskKernel;
 
-  int* EToB;
-  int* EToBMesh;
+  int *EToB;
+  int *EToBMesh;
   occa::memory o_EToB;
   occa::memory o_EToBMesh;
 
-  occa::properties* kernelInfo;
+  occa::properties *kernelInfo;
 };
-
 
 #include "io.hpp"
 
@@ -202,7 +200,7 @@ static std::vector<std::string> serializeString(const std::string sin, char dlim
   s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
   std::stringstream ss;
   ss.str(s);
-  while( ss.good() ) {
+  while (ss.good()) {
     std::string substr;
     std::getline(ss, substr, dlim);
     slist.push_back(substr);
@@ -210,13 +208,12 @@ static std::vector<std::string> serializeString(const std::string sin, char dlim
   return slist;
 }
 
-void evaluateProperties(nrs_t* nrs, const double timeNew);
+void evaluateProperties(nrs_t *nrs, const double timeNew);
 
 void compileKernels();
 
-std::vector<int>
-determineMGLevels(std::string section);
+std::vector<int> determineMGLevels(std::string section);
 
-int numberActiveFields(nrs_t* nrs);
+int numberActiveFields(nrs_t *nrs);
 
 #endif

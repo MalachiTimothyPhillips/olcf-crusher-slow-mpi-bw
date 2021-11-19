@@ -39,21 +39,20 @@ public:
   setupAide options;
 
   bool exact;
-  CycleType    ctype;
-  KrylovType   ktype;
+  CycleType ctype;
+  KrylovType ktype;
   SmoothType stype;
 
   int numLevels;
   int AMGstartLev, baseLevel;
-  multigridLevel **levels=NULL;
+  multigridLevel **levels = NULL;
 
   coarseSolver *coarseLevel;
 
   int ChebyshevIterations;
   bool additive, overlapCrsGridSolve;
 
-  solver_t(occa::device otherdevice, MPI_Comm othercomm,
-                         setupAide otheroptions);
+  solver_t(occa::device otherdevice, MPI_Comm othercomm, setupAide otheroptions);
 
   ~solver_t();
 
@@ -73,6 +72,6 @@ public:
   void device_pgmres(const int maxIt, const dfloat tol);
 };
 
-} //namespace parAlmond
+} // namespace parAlmond
 
 #endif

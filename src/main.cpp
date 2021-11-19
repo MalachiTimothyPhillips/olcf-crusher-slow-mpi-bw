@@ -89,16 +89,16 @@ std::vector<std::string> serializeString(const std::string sin, char dlim)
   s.erase(std::remove_if(s.begin(), s.end(), ::isspace), s.end());
   std::stringstream ss;
   ss.str(s);
-  while( ss.good() ) {
+  while (ss.good()) {
     std::string substr;
     std::getline(ss, substr, dlim);
-    if(!substr.empty()) slist.push_back(substr);
+    if (!substr.empty())
+      slist.push_back(substr);
   }
   return slist;
 }
 
-struct cmdOptions
-{
+struct cmdOptions {
   int buildOnly = 0;
   int ciMode = 0;
   int debug = 0;
@@ -109,44 +109,40 @@ struct cmdOptions
   std::string backend;
 };
 
-struct session
-{
+struct session {
   int size;
   std::string setupFile;
 };
 
-cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
+cmdOptions *processCmdLineOptions(int argc, char **argv, const MPI_Comm &comm)
 {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-  cmdOptions* cmdOpt = new cmdOptions();
+  cmdOptions *cmdOpt = new cmdOptions();
 
   int err = 0;
   int printHelp = 0;
   std::string helpCat;
 
   if (rank == 0) {
-    while(1) {
-      static struct option long_options[] =
-      {
-        {"setup", required_argument, 0, 's'},
-        {"cimode", required_argument, 0, 'c'},
-        {"build-only", optional_argument, 0, 'b'},
-        {"debug", no_argument, 0, 'd'},
-        {"backend", required_argument, 0, 't'},
-        {"device-id", required_argument, 0, 'i'},
-        {"help", optional_argument, 0, 'h'},
-        {0, 0, 0, 0}
-      };
+    while (1) {
+      static struct option long_options[] = {{"setup", required_argument, 0, 's'},
+                                             {"cimode", required_argument, 0, 'c'},
+                                             {"build-only", optional_argument, 0, 'b'},
+                                             {"debug", no_argument, 0, 'd'},
+                                             {"backend", required_argument, 0, 't'},
+                                             {"device-id", required_argument, 0, 'i'},
+                                             {"help", optional_argument, 0, 'h'},
+                                             {0, 0, 0, 0}};
       int option_index = 0;
-      int c = getopt_long (argc, argv, "", long_options, &option_index);
+      int c = getopt_long(argc, argv, "", long_options, &option_index);
 
       if (c == -1)
         break;
 
-      switch(c) {
+      switch (c) {
       case 's':
         cmdOpt->setupFile.assign(optarg);
         if (cmdOpt->setupFile.find(".par") != std::string::npos)
@@ -159,7 +155,7 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
       case 'b':
         cmdOpt->buildOnly = 1;
         cmdOpt->sizeTarget = size;
-        if(!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+        if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
           cmdOpt->sizeTarget = std::stoi(argv[optind++]);
         break;
       case 'c':
@@ -179,7 +175,7 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
         cmdOpt->backend.assign(optarg);
         break;
       case 'h':
-        if(!optarg && argv[optind] != NULL && argv[optind][0] != '-')
+        if (!optarg && argv[optind] != NULL && argv[optind][0] != '-')
           helpCat.assign(argv[optind++]);
         break;
       default:
@@ -210,7 +206,7 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
   MPI_Bcast(&cmdOpt->ciMode, sizeof(cmdOpt->ciMode), MPI_BYTE, 0, comm);
   MPI_Bcast(&cmdOpt->debug, sizeof(cmdOpt->debug), MPI_BYTE, 0, comm);
 
-  if(cmdOpt->setupFile.empty() && cmdOpt->multiSessionFile.empty())
+  if (cmdOpt->setupFile.empty() && cmdOpt->multiSessionFile.empty())
     printHelp++;
 
   MPI_Bcast(&printHelp, sizeof(printHelp), MPI_BYTE, 0, comm);
@@ -221,9 +217,11 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
         std::string installDir;
         installDir.assign(getenv("NEKRS_HOME"));
         std::ifstream f(installDir + "/include/parHelp.txt");
-        if (f.is_open()) std::cout << f.rdbuf();
+        if (f.is_open())
+          std::cout << f.rdbuf();
         f.close();
-      } else {
+      }
+      else {
         std::cout << "usage: ./nekrs [--help <par>] "
                   << "--setup <par|sess file> "
                   << "[ --build-only <#procs> ] [ --cimode <id> ] [ --debug ] "
@@ -238,32 +236,32 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
   return cmdOpt;
 }
 
-MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm)
+MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm)
 {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   MPI_Comm newComm = comm;
 
-  if(cmdOpt->multiSessionFile.size()) {
+  if (cmdOpt->multiSessionFile.size()) {
     std::string multiSessionFileContent;
 
-    if(rank == 0) {
+    if (rank == 0) {
       std::ifstream f(cmdOpt->multiSessionFile);
       if (!f) {
-        std::cout << "FATAL ERROR: Cannot find sess file "
-                  << cmdOpt->multiSessionFile << "!\n";
+        std::cout << "FATAL ERROR: Cannot find sess file " << cmdOpt->multiSessionFile << "!\n";
         fflush(stdout);
         MPI_Abort(comm, EXIT_FAILURE);
       }
       std::ostringstream ss;
-      if (f.is_open()) ss << f.rdbuf();
+      if (f.is_open())
+        ss << f.rdbuf();
       f.close();
       multiSessionFileContent = ss.str();
     }
     int bufSize = multiSessionFileContent.size() + 1;
     MPI_Bcast(&bufSize, sizeof(bufSize), MPI_BYTE, 0, comm);
-    char* buf = (char*) malloc(bufSize * sizeof(char));
+    char *buf = (char *)malloc(bufSize * sizeof(char));
     strcpy(buf, multiSessionFileContent.c_str());
     MPI_Bcast(buf, bufSize * sizeof(char), MPI_BYTE, 0, comm);
     multiSessionFileContent = std::string(buf);
@@ -274,10 +272,11 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm)
 
     int nSessions = 0;
     int rankSum = 0;
-    for(std::string s : list) {
-      auto items = serializeString(s,':');
-      if(items.size() != 2) {
-        if(rank == 0) std::cout << "FATAL ERROR: invalid sess file entry!\n";
+    for (std::string s : list) {
+      auto items = serializeString(s, ':');
+      if (items.size() != 2) {
+        if (rank == 0)
+          std::cout << "FATAL ERROR: invalid sess file entry!\n";
         fflush(stdout);
         MPI_Abort(comm, EXIT_FAILURE);
       }
@@ -288,18 +287,20 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm)
     }
 
     int err = 0;
-    if(rankSum != size) err = 1;
+    if (rankSum != size)
+      err = 1;
     MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, comm);
-    if(err) {
-      if(rank == 0) std::cout << "FATAL ERROR: size of sub-communicators does not match parent!\n";
+    if (err) {
+      if (rank == 0)
+        std::cout << "FATAL ERROR: size of sub-communicators does not match parent!\n";
       fflush(stdout);
       MPI_Abort(comm, EXIT_FAILURE);
     }
 
     int color = MPI_UNDEFINED;
     int rankOffsetSession = 0;
-    for(int i = 0; i < nSessions; i++) {
-      if(rank - rankOffsetSession < sessionList[i].size) {
+    for (int i = 0; i < nSessions; i++) {
+      if (rank - rankOffsetSession < sessionList[i].size) {
         color = i;
         break;
       }
@@ -318,20 +319,17 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm)
     cmdOpt->setupFile = sessionList[color].setupFile;
     cmdOpt->sizeTarget = size;
 
-    if(cmdOpt->debug) {
-      std::cout << "globalRank:" << rankGlobal
-                << " localRank: " << rank
-                << " commSize: " << size
-                << " setupFile:" << cmdOpt->setupFile
-                << "\n";
+    if (cmdOpt->debug) {
+      std::cout << "globalRank:" << rankGlobal << " localRank: " << rank << " commSize: " << size
+                << " setupFile:" << cmdOpt->setupFile << "\n";
     }
     fflush(stdout);
     MPI_Barrier(comm);
 
-    if(rank == 0) {
+    if (rank == 0) {
       const std::string outputFile = cmdOpt->setupFile + ".log";
       std::cout << "redirecting output to " << outputFile << " ...\n";
-      const int fd = open(outputFile.c_str(), O_WRONLY|O_CREAT|O_APPEND, S_IWUSR|S_IRUSR);
+      const int fd = open(outputFile.c_str(), O_WRONLY | O_CREAT | O_APPEND, S_IWUSR | S_IRUSR);
       dup2(fd, fileno(stderr));
       dup2(fd, fileno(stdout));
     }
@@ -339,21 +337,22 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm)
   return newComm;
 }
 
-}
+} // namespace
 
-
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   {
     int request = MPI_THREAD_SINGLE;
-    const char* env_val = std::getenv ("NEKRS_MPI_THREAD_MULTIPLE");
+    const char *env_val = std::getenv("NEKRS_MPI_THREAD_MULTIPLE");
     if (env_val)
-      if (std::stoi(env_val)) request = MPI_THREAD_MULTIPLE;
+      if (std::stoi(env_val))
+        request = MPI_THREAD_MULTIPLE;
 
     int provided;
-    int retval =  MPI_Init_thread(&argc, &argv, request, &provided);
+    int retval = MPI_Init_thread(&argc, &argv, request, &provided);
     if (retval != MPI_SUCCESS) {
-      std::cout << "FATAL ERROR: Cannot initialize MPI!" << "\n";
+      std::cout << "FATAL ERROR: Cannot initialize MPI!"
+                << "\n";
       exit(EXIT_FAILURE);
     }
   }
@@ -362,23 +361,24 @@ int main(int argc, char** argv)
   MPI_Comm_dup(MPI_COMM_WORLD, &commGlobal);
 
   {
-    if(!getenv("NEKRS_HOME")) {
-      std::cout << "FATAL ERROR: Cannot find env variable NEKRS_HOME!" << "\n";
+    if (!getenv("NEKRS_HOME")) {
+      std::cout << "FATAL ERROR: Cannot find env variable NEKRS_HOME!"
+                << "\n";
       fflush(stdout);
       MPI_Abort(commGlobal, EXIT_FAILURE);
     }
 
     std::string bin(getenv("NEKRS_HOME"));
     bin += "/bin/nekrs";
-    const char* ptr = realpath(bin.c_str(), NULL);
-    if(!ptr) {
+    const char *ptr = realpath(bin.c_str(), NULL);
+    if (!ptr) {
       std::cout << "FATAL ERROR: Cannot find " << bin << "!\n";
       fflush(stdout);
       MPI_Abort(commGlobal, EXIT_FAILURE);
     }
   }
 
-  cmdOptions* cmdOpt = processCmdLineOptions(argc, argv, commGlobal);
+  cmdOptions *cmdOpt = processCmdLineOptions(argc, argv, commGlobal);
   MPI_Comm comm = setupSession(cmdOpt, commGlobal);
 
   int rank, size;
@@ -386,33 +386,43 @@ int main(int argc, char** argv)
   MPI_Comm_size(comm, &size);
 
   if (cmdOpt->debug) {
-    for(int currRank = 0; currRank < size; ++currRank)
-      if(rank == currRank) printf("rank %d: pid<%d>\n", rank, ::getpid());
+    for (int currRank = 0; currRank < size; ++currRank)
+      if (rank == currRank)
+        printf("rank %d: pid<%d>\n", rank, ::getpid());
     fflush(stdout);
     MPI_Barrier(comm);
-    if (rank == 0) std::cout << "Attach debugger, then press enter to continue\n";
-    if (rank == 0) std::cin.get();
+    if (rank == 0)
+      std::cout << "Attach debugger, then press enter to continue\n";
+    if (rank == 0)
+      std::cin.get();
     MPI_Barrier(comm);
   }
 
-  if (cmdOpt->debug) feraiseexcept(FE_ALL_EXCEPT);
+  if (cmdOpt->debug)
+    feraiseexcept(FE_ALL_EXCEPT);
 
   { // change working dir
     const size_t last_slash = cmdOpt->setupFile.rfind('/') + 1;
-    const std::string casepath = cmdOpt->setupFile.substr(0,last_slash);
+    const std::string casepath = cmdOpt->setupFile.substr(0, last_slash);
     chdir(casepath.c_str());
-    const std::string casename = cmdOpt->setupFile.substr(last_slash, cmdOpt->setupFile.length() - last_slash);
-    if(casepath.length() > 0) chdir(casepath.c_str());
+    const std::string casename =
+        cmdOpt->setupFile.substr(last_slash, cmdOpt->setupFile.length() - last_slash);
+    if (casepath.length() > 0)
+      chdir(casepath.c_str());
     cmdOpt->setupFile.assign(casename);
   }
 
   MPI_Barrier(comm);
   const double time0 = MPI_Wtime();
 
-  nekrs::setup(commGlobal, comm, 
-	       cmdOpt->buildOnly, cmdOpt->sizeTarget,
-               cmdOpt->ciMode, cmdOpt->setupFile,
-               cmdOpt->backend, cmdOpt->deviceID);
+  nekrs::setup(commGlobal,
+               comm,
+               cmdOpt->buildOnly,
+               cmdOpt->sizeTarget,
+               cmdOpt->ciMode,
+               cmdOpt->setupFile,
+               cmdOpt->backend,
+               cmdOpt->deviceID);
 
   if (cmdOpt->buildOnly) {
     nekrs::finalize();
@@ -453,22 +463,28 @@ int main(int argc, char** argv)
       dt = nekrs::dt(tStep);
 
     int outputStep = nekrs::outputStep(time + dt, tStep);
-    if (nekrs::writeInterval() == 0) outputStep = 0;
-    if (lastStep) outputStep = 1;
-    if (nekrs::writeInterval() < 0) outputStep = 0;
+    if (nekrs::writeInterval() == 0)
+      outputStep = 0;
+    if (lastStep)
+      outputStep = 1;
+    if (nekrs::writeInterval() < 0)
+      outputStep = 0;
     nekrs::outputStep(outputStep);
 
     nekrs::runStep(time, dt, tStep);
     time += dt;
 
-    if (outputStep) nekrs::outfld(time);
+    if (outputStep)
+      nekrs::outfld(time);
 
-    if (tStep % runTimeStatFreq == 0 || lastStep) nekrs::printRuntimeStatistics(tStep);
+    if (tStep % runTimeStatFreq == 0 || lastStep)
+      nekrs::printRuntimeStatistics(tStep);
 
     MPI_Barrier(comm);
     elapsedTime += (MPI_Wtime() - timeStart);
 
-    if(tStep % updCheckFreq) nekrs::processUpdFile();
+    if (tStep % updCheckFreq)
+      nekrs::processUpdFile();
   }
   MPI_Pcontrol(0);
 

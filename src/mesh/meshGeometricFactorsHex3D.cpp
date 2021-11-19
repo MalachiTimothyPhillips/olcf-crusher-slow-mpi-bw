@@ -30,34 +30,34 @@
 #include "platform.hpp"
 #include "linAlg.hpp"
 
-void interpolateHex3D(dfloat* I, dfloat* x, int N, dfloat* Ix, int M)
+void interpolateHex3D(dfloat *I, dfloat *x, int N, dfloat *Ix, int M)
 {
-  dfloat* Ix1 = (dfloat*) calloc(N * N * M, sizeof(dfloat));
-  dfloat* Ix2 = (dfloat*) calloc(N * M * M, sizeof(dfloat));
+  dfloat *Ix1 = (dfloat *)calloc(N * N * M, sizeof(dfloat));
+  dfloat *Ix2 = (dfloat *)calloc(N * M * M, sizeof(dfloat));
 
-  for(int k = 0; k < N; ++k)
-    for(int j = 0; j < N; ++j)
-      for(int i = 0; i < M; ++i) {
+  for (int k = 0; k < N; ++k)
+    for (int j = 0; j < N; ++j)
+      for (int i = 0; i < M; ++i) {
         dfloat tmp = 0;
-        for(int n = 0; n < N; ++n)
+        for (int n = 0; n < N; ++n)
           tmp += I[i * N + n] * x[k * N * N + j * N + n];
         Ix1[k * N * M + j * M + i] = tmp;
       }
 
-  for(int k = 0; k < N; ++k)
-    for(int j = 0; j < M; ++j)
-      for(int i = 0; i < M; ++i) {
+  for (int k = 0; k < N; ++k)
+    for (int j = 0; j < M; ++j)
+      for (int i = 0; i < M; ++i) {
         dfloat tmp = 0;
-        for(int n = 0; n < N; ++n)
+        for (int n = 0; n < N; ++n)
           tmp += I[j * N + n] * Ix1[k * N * M + n * M + i];
         Ix2[k * M * M + j * M + i] = tmp;
       }
 
-  for(int k = 0; k < M; ++k)
-    for(int j = 0; j < M; ++j)
-      for(int i = 0; i < M; ++i) {
+  for (int k = 0; k < M; ++k)
+    for (int j = 0; j < M; ++j)
+      for (int i = 0; i < M; ++i) {
         dfloat tmp = 0;
-        for(int n = 0; n < N; ++n)
+        for (int n = 0; n < N; ++n)
           tmp += I[k * N + n] * Ix2[n * M * M + j * M + i];
         Ix[k * M * M + j * M + i] = tmp;
       }
@@ -66,44 +66,46 @@ void interpolateHex3D(dfloat* I, dfloat* x, int N, dfloat* Ix, int M)
   free(Ix2);
 }
 
-void meshGeometricFactorsHex3D(mesh3D* mesh)
+void meshGeometricFactorsHex3D(mesh3D *mesh)
 {
   double tStart = MPI_Wtime();
-  if(platform->comm.mpiRank == 0)  printf("computing geometric factors ... "); fflush(stdout);
+  if (platform->comm.mpiRank == 0)
+    printf("computing geometric factors ... ");
+  fflush(stdout);
 
   /* note that we have volume geometric factors for each node */
-  mesh->vgeo    = (dfloat*) calloc(mesh->Nelements * mesh->Nvgeo * mesh->Np, sizeof(dfloat));
-  mesh->cubvgeo = (dfloat*) calloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp, sizeof(dfloat));
-  mesh->ggeo    = (dfloat*) calloc(mesh->Nelements * mesh->Nggeo * mesh->Np,    sizeof(dfloat));
+  mesh->vgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->Np, sizeof(dfloat));
+  mesh->cubvgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp, sizeof(dfloat));
+  mesh->ggeo = (dfloat *)calloc(mesh->Nelements * mesh->Nggeo * mesh->Np, sizeof(dfloat));
 
   dfloat minJ = 1e9, maxJ = -1e9, maxSkew = 0;
 
-  dfloat* xre = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* xse = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* xte = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* yre = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* yse = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* yte = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* zre = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* zse = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
-  dfloat* zte = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
+  dfloat *xre = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *xse = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *xte = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *yre = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *yse = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *yte = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *zre = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *zse = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
+  dfloat *zte = (dfloat *)calloc(mesh->Np, sizeof(dfloat));
 
-  dfloat* cubxre = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubxse = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubxte = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubyre = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubyse = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubyte = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubzre = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubzse = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
-  dfloat* cubzte = (dfloat*) calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubxre = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubxse = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubxte = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubyre = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubyse = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubyte = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubzre = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubzse = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
+  dfloat *cubzte = (dfloat *)calloc(mesh->cubNp, sizeof(dfloat));
 
   mesh->volume = 0;
 
-  for(dlong e = 0; e < mesh->Nelements; ++e) {
+  for (dlong e = 0; e < mesh->Nelements; ++e) {
     dlong id = e * mesh->Nverts;
 
-    for(int n = 0; n < mesh->Np; ++n) {
+    for (int n = 0; n < mesh->Np; ++n) {
       xre[n] = 0;
       xse[n] = 0;
       xte[n] = 0;
@@ -115,9 +117,9 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
       zte[n] = 0;
     }
 
-    for(int k = 0; k < mesh->Nq; ++k)
-      for(int j = 0; j < mesh->Nq; ++j)
-        for(int i = 0; i < mesh->Nq; ++i) {
+    for (int k = 0; k < mesh->Nq; ++k)
+      for (int j = 0; j < mesh->Nq; ++j)
+        for (int i = 0; i < mesh->Nq; ++i) {
           int n = i + j * mesh->Nq + k * mesh->Nq * mesh->Nq;
 
           /* local node coordinates */
@@ -125,7 +127,7 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
           dfloat sn = mesh->s[n];
           dfloat tn = mesh->t[n];
 
-          for(int m = 0; m < mesh->Nq; ++m) {
+          for (int m = 0; m < mesh->Nq; ++m) {
             int idr = e * mesh->Np + k * mesh->Nq * mesh->Nq + j * mesh->Nq + m;
             int ids = e * mesh->Np + k * mesh->Nq * mesh->Nq + m * mesh->Nq + i;
             int idt = e * mesh->Np + m * mesh->Nq * mesh->Nq + j * mesh->Nq + i;
@@ -159,14 +161,11 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
           maxSkew = mymax(maxSkew, ht / hr);
           maxSkew = mymax(maxSkew, ht / hs);
 
-          //if(J<1e-12) printf("J = %g !!!!!!!!!!!!!\n", J);
+          // if(J<1e-12) printf("J = %g !!!!!!!!!!!!!\n", J);
 
-          dfloat rx =  (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J,
-                 rz =  (xs * yt - ys * xt) / J;
-          dfloat sx = -(yr * zt - zr * yt) / J, sy =  (xr * zt - zr * xt) / J,
-                 sz = -(xr * yt - yr * xt) / J;
-          dfloat tx =  (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J,
-                 tz =  (xr * ys - yr * xs) / J;
+          dfloat rx = (ys * zt - zs * yt) / J, ry = -(xs * zt - zs * xt) / J, rz = (xs * yt - ys * xt) / J;
+          dfloat sx = -(yr * zt - zr * yt) / J, sy = (xr * zt - zr * xt) / J, sz = -(xr * yt - yr * xt) / J;
+          dfloat tx = (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J, tz = (xr * ys - yr * xs) / J;
 
           dfloat JW = J * mesh->gllw[i] * mesh->gllw[j] * mesh->gllw[k];
           mesh->volume += JW;
@@ -184,29 +183,17 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * TYID] = ty;
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * TZID] = tz;
 
-          mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * JID]  = J;
+          mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * JID] = J;
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * JWID] = JW;
           mesh->vgeo[mesh->Nvgeo * mesh->Np * e + n + mesh->Np * IJWID] = 1. / JW;
 
           /* store second order geometric factors */
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G00ID] = JW *
-                                                                          (rx * rx + ry * ry + rz *
-                                                                           rz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G01ID] = JW *
-                                                                          (rx * sx + ry * sy + rz *
-                                                                           sz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G02ID] = JW *
-                                                                          (rx * tx + ry * ty + rz *
-                                                                           tz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G11ID] = JW *
-                                                                          (sx * sx + sy * sy + sz *
-                                                                           sz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G12ID] = JW *
-                                                                          (sx * tx + sy * ty + sz *
-                                                                           tz);
-          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G22ID] = JW *
-                                                                          (tx * tx + ty * ty + tz *
-                                                                           tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G00ID] = JW * (rx * rx + ry * ry + rz * rz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G01ID] = JW * (rx * sx + ry * sy + rz * sz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G02ID] = JW * (rx * tx + ry * ty + rz * tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G11ID] = JW * (sx * sx + sy * sy + sz * sz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G12ID] = JW * (sx * tx + sy * ty + sz * tz);
+          mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * G22ID] = JW * (tx * tx + ty * ty + tz * tz);
           mesh->ggeo[mesh->Nggeo * mesh->Np * e + n + mesh->Np * GWJID] = JW;
         }
 
@@ -280,18 +267,19 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
     MPI_Allreduce(&maxJ, &globalMaxJ, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
     MPI_Allreduce(&maxSkew, &globalMaxSkew, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
 
-    if(platform->comm.mpiRank == 0)
+    if (platform->comm.mpiRank == 0)
       printf("J [%g,%g] ", globalMinJ, globalMaxJ);
-      //printf("J [%g,%g] and max Skew = %g\n", globalMinJ, globalMaxJ, globalMaxSkew);
+    // printf("J [%g,%g] and max Skew = %g\n", globalMinJ, globalMaxJ, globalMaxSkew);
 
-    if(globalMinJ < 0 || globalMaxJ < 0) {
-      if(platform->options.compareArgs("GALERKIN COARSE OPERATOR","FALSE") ||
-	    (platform->options.compareArgs("GALERKIN COARSE OPERATOR","TRUE") && mesh->N > 1)) { 
-        if(platform->comm.mpiRank == 0) printf("Jacobian < 0!");
+    if (globalMinJ < 0 || globalMaxJ < 0) {
+      if (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "FALSE") ||
+          (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") && mesh->N > 1)) {
+        if (platform->comm.mpiRank == 0)
+          printf("Jacobian < 0!");
         printf("here!\n");
         EXIT_AND_FINALIZE(EXIT_FAILURE);
       }
-    }  
+    }
 
     dfloat globalVolume;
     MPI_Allreduce(&mesh->volume, &globalVolume, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
@@ -319,5 +307,7 @@ void meshGeometricFactorsHex3D(mesh3D* mesh)
   free(cubzte);
 
   MPI_Barrier(platform->comm.mpiComm);
-  if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
+  if (platform->comm.mpiRank == 0)
+    printf("done (%gs)\n", MPI_Wtime() - tStart);
+  fflush(stdout);
 }

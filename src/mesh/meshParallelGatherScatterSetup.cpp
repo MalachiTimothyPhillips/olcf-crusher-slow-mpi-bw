@@ -31,41 +31,44 @@
 #include "mesh.h"
 #include "platform.hpp"
 
-void meshParallelGatherScatterSetup(mesh_t* mesh,
-                                    dlong N,
-                                    hlong* globalIds,
-                                    MPI_Comm &comm,
-                                    int verbose)
+void meshParallelGatherScatterSetup(mesh_t *mesh, dlong N, hlong *globalIds, MPI_Comm &comm, int verbose)
 {
-  
+
   int rank, size;
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
   mesh->ogs = ogsSetup(N, globalIds, comm, verbose, platform->device.occaDevice());
 
-  //use the gs to find what nodes are local to this rank
-  int* minRank = (int*) calloc(N,sizeof(int));
-  int* maxRank = (int*) calloc(N,sizeof(int));
+  // use the gs to find what nodes are local to this rank
+  int *minRank = (int *)calloc(N, sizeof(int));
+  int *maxRank = (int *)calloc(N, sizeof(int));
   for (dlong i = 0; i < N; i++) {
     minRank[i] = rank;
     maxRank[i] = rank;
   }
 
-  ogsGatherScatter(minRank, ogsInt, ogsMin, mesh->ogs); //minRank[n] contains the smallest rank taking part in the gather of node n
-  ogsGatherScatter(maxRank, ogsInt, ogsMax, mesh->ogs); //maxRank[n] contains the largest rank taking part in the gather of node n
+  ogsGatherScatter(minRank,
+                   ogsInt,
+                   ogsMin,
+                   mesh->ogs); // minRank[n] contains the smallest rank taking part in the gather of node n
+  ogsGatherScatter(maxRank,
+                   ogsInt,
+                   ogsMax,
+                   mesh->ogs); // maxRank[n] contains the largest rank taking part in the gather of node n
 
   int overlap = 0;
-  platform->options.compareArgs("ENABLE OVERLAP", "TRUE"); overlap = 1;
+  platform->options.compareArgs("ENABLE OVERLAP", "TRUE");
+  overlap = 1;
 
   // count elements that contribute to global C0 gather-scatter
   dlong globalCount = 0;
   dlong localCount = 0;
-  for(dlong e = 0; e < mesh->Nelements; ++e) {
+  for (dlong e = 0; e < mesh->Nelements; ++e) {
     int isHalo = 1;
-    if(overlap) {	  
+    if (overlap) {
       isHalo = 0;
-      for(int n = 0; n < mesh->Np; ++n) {
+      for (int n = 0; n < mesh->Np; ++n) {
         dlong id = e * mesh->Np + n;
         if ((minRank[id] != rank) || (maxRank[id] != rank)) {
           isHalo = 1;
@@ -77,17 +80,17 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
     localCount += 1 - isHalo;
   }
 
-  mesh->globalGatherElementList = (dlong*) calloc(globalCount, sizeof(dlong));
-  mesh->localGatherElementList  = (dlong*) calloc(localCount, sizeof(dlong));
+  mesh->globalGatherElementList = (dlong *)calloc(globalCount, sizeof(dlong));
+  mesh->localGatherElementList = (dlong *)calloc(localCount, sizeof(dlong));
 
   globalCount = 0;
   localCount = 0;
 
-  for(dlong e = 0; e < mesh->Nelements; ++e) {
-      int isHalo = 1;
-      if(overlap) {	  
+  for (dlong e = 0; e < mesh->Nelements; ++e) {
+    int isHalo = 1;
+    if (overlap) {
       isHalo = 0;
-      for(int n = 0; n < mesh->Np; ++n) {
+      for (int n = 0; n < mesh->Np; ++n) {
         dlong id = e * mesh->Np + n;
         if ((minRank[id] != rank) || (maxRank[id] != rank)) {
           isHalo = 1;
@@ -95,21 +98,21 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
         }
       }
     }
-    if(isHalo)
+    if (isHalo)
       mesh->globalGatherElementList[globalCount++] = e;
     else
       mesh->localGatherElementList[localCount++] = e;
   }
-  //printf("local = %d, global = %d\n", localCount, globalCount);
+  // printf("local = %d, global = %d\n", localCount, globalCount);
 
   mesh->NglobalGatherElements = globalCount;
   mesh->NlocalGatherElements = localCount;
 
-  if(globalCount)
+  if (globalCount)
     mesh->o_globalGatherElementList =
-      platform->device.malloc(globalCount * sizeof(dlong), mesh->globalGatherElementList);
+        platform->device.malloc(globalCount * sizeof(dlong), mesh->globalGatherElementList);
 
-  if(localCount)
+  if (localCount)
     mesh->o_localGatherElementList =
-      platform->device.malloc(localCount * sizeof(dlong), mesh->localGatherElementList);
+        platform->device.malloc(localCount * sizeof(dlong), mesh->localGatherElementList);
 }

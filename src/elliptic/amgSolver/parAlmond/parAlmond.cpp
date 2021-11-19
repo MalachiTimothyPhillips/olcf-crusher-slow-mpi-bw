@@ -28,33 +28,36 @@ SOFTWARE.
 
 namespace parAlmond {
 
-
-solver_t *Init(occa::device device, MPI_Comm comm, setupAide options) {
+solver_t *Init(occa::device device, MPI_Comm comm, setupAide options)
+{
   solver_t *M = new solver_t(device, comm, options);
   return M;
 }
 
 void AMGSetup(solver_t *MM,
-               hlong* globalRowStarts,       //global partition
-               dlong nnz,                    //--
-               hlong* Ai,                    //-- Local A matrix data (globally indexed, COO storage, row sorted)
-               hlong* Aj,                    //--
-               dfloat* Avals,                //--
-               bool nullSpace,
-               dfloat nullSpacePenalty){
+              hlong *globalRowStarts, // global partition
+              dlong nnz,              //--
+              hlong *Ai,              //-- Local A matrix data (globally indexed, COO storage, row sorted)
+              hlong *Aj,              //--
+              dfloat *Avals,          //--
+              bool nullSpace,
+              dfloat nullSpacePenalty)
+{
 
-  solver_t *M = (solver_t *) MM;
+  solver_t *M = (solver_t *)MM;
 
   int rank, size;
   MPI_Comm_rank(M->comm, &rank);
   MPI_Comm_size(M->comm, &size);
 
   hlong TotalRows = globalRowStarts[M->size];
-  dlong numLocalRows = (dlong) (globalRowStarts[M->rank+1]-globalRowStarts[M->rank]);
+  dlong numLocalRows = (dlong)(globalRowStarts[M->rank + 1] - globalRowStarts[M->rank]);
 
   MPI_Barrier(M->comm);
   double startTime = MPI_Wtime();
-  if(rank==0) printf("Setting up AMG...");fflush(stdout);
+  if (rank == 0)
+    printf("Setting up AMG...");
+  fflush(stdout);
 
   M->coarseLevel = new coarseSolver(M->options, M->comm);
   M->coarseLevel->setup(numLocalRows, globalRowStarts, nnz, Ai, Aj, Avals, nullSpace);
@@ -62,37 +65,42 @@ void AMGSetup(solver_t *MM,
   M->numLevels++;
 
   MPI_Barrier(M->comm);
-  if(rank==0) printf("done (%gs)\n", MPI_Wtime()-startTime);
+  if (rank == 0)
+    printf("done (%gs)\n", MPI_Wtime() - startTime);
 }
 
-void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs) {
+void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs)
+{
 
-  M->levels[0]->o_x   = o_x;
+  M->levels[0]->o_x = o_x;
   M->levels[0]->o_rhs = o_rhs;
 
-  if       ((M->exact)&&(M->ktype==PCG)){
-    M->device_pcg(1000,1e-8);
-  } else if((M->exact)&&(M->ktype==GMRES)){
-    M->device_pgmres(1000,1e-8);
-  } else if(M->ctype==KCYCLE) {
+  if ((M->exact) && (M->ktype == PCG)) {
+    M->device_pcg(1000, 1e-8);
+  }
+  else if ((M->exact) && (M->ktype == GMRES)) {
+    M->device_pgmres(1000, 1e-8);
+  }
+  else if (M->ctype == KCYCLE) {
     M->device_kcycle(0);
-  } else if(M->ctype==VCYCLE) {
-    //if(M->additive){
-    if(0){
+  }
+  else if (M->ctype == VCYCLE) {
+    // if(M->additive){
+    if (0) {
       M->additiveVcycle();
-    } else {
+    }
+    else {
       M->device_vcycle(0);
     }
   }
 }
 
-void Report(solver_t *M) {
-  M->Report();
-}
+void Report(solver_t *M) { M->Report(); }
 
-void Free(solver_t* M) {
+void Free(solver_t *M)
+{
   Nrefs--;
-  if (Nrefs==0) {
+  if (Nrefs == 0) {
     freeParAlmondKernels();
     freeScratchSpace();
     freePinnedScratchSpace();
@@ -101,4 +109,4 @@ void Free(solver_t* M) {
   delete M;
 }
 
-} //namespace parAlmond
+} // namespace parAlmond

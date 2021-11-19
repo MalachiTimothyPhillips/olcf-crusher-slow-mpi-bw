@@ -27,11 +27,14 @@
 #include "elliptic.h"
 #include "platform.hpp"
 
-dfloat ellipticUpdatePCG(elliptic_t* elliptic,
-                         occa::memory &o_p, occa::memory &o_Ap, const dfloat alpha,
-                         occa::memory &o_x, occa::memory &o_r)
+dfloat ellipticUpdatePCG(elliptic_t *elliptic,
+                         occa::memory &o_p,
+                         occa::memory &o_Ap,
+                         const dfloat alpha,
+                         occa::memory &o_x,
+                         occa::memory &o_r)
 {
-  mesh_t* mesh = elliptic->mesh;
+  mesh_t *mesh = elliptic->mesh;
 
   const bool serial = platform->serial;
 
@@ -50,19 +53,20 @@ dfloat ellipticUpdatePCG(elliptic_t* elliptic,
 
   dfloat rdotr1 = 0;
 #ifdef ELLIPTIC_ENABLE_TIMER
-    //platform->timer.tic("dotp",1);
+  // platform->timer.tic("dotp",1);
 #endif
-  if(serial) {
-    rdotr1 = *((dfloat *) elliptic->o_tmpNormr.ptr());
-  } else {
+  if (serial) {
+    rdotr1 = *((dfloat *)elliptic->o_tmpNormr.ptr());
+  }
+  else {
     const dlong Nblock = (mesh->Nlocal + BLOCKSIZE - 1) / BLOCKSIZE;
-    elliptic->o_tmpNormr.copyTo(elliptic->tmpNormr, Nblock*sizeof(dfloat));
-    for(int n = 0; n < Nblock; ++n)
+    elliptic->o_tmpNormr.copyTo(elliptic->tmpNormr, Nblock * sizeof(dfloat));
+    for (int n = 0; n < Nblock; ++n)
       rdotr1 += elliptic->tmpNormr[n];
   }
   MPI_Allreduce(MPI_IN_PLACE, &rdotr1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
 #ifdef ELLIPTIC_ENABLE_TIMER
-    //platform->timer.toc("dotp");
+  // platform->timer.toc("dotp");
 #endif
 
   return rdotr1;

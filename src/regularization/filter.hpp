@@ -2,6 +2,6 @@
 #define nekrs_filtersetup_hpp_
 
 #include "nrs.hpp"
-dfloat* filterSetup(mesh_t* mesh, const dlong filterNc);
+dfloat *filterSetup(mesh_t *mesh, const dlong filterNc);
 
 #endif

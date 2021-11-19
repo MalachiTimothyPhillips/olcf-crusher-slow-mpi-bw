@@ -29,14 +29,14 @@ SOFTWARE.
 
 namespace parAlmond {
 
-class agmgLevel: public multigridLevel {
+class agmgLevel : public multigridLevel {
 
 public:
-  parCSR   *A,   *P,   *R;
+  parCSR *A, *P, *R;
   parHYB *o_A, *o_P, *o_R;
 
   SmoothType stype;
-  dfloat lambda, lambda1, lambda0; //smoothing params
+  dfloat lambda, lambda1, lambda0; // smoothing params
 
   int ChebyshevIterations;
 
@@ -49,19 +49,19 @@ public:
   agmgLevel(parCSR *AA, parCSR *PP, parCSR *RR, KrylovType Ktype);
   ~agmgLevel();
 
-  void Ax(dfloat        *x, dfloat        *Ax);
+  void Ax(dfloat *x, dfloat *Ax);
   void Ax(occa::memory o_x, occa::memory o_Ax);
 
-  void smooth(dfloat        *rhs, dfloat        *x, bool x_is_zero);
+  void smooth(dfloat *rhs, dfloat *x, bool x_is_zero);
   void smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero);
 
-  void residual(dfloat        *rhs, dfloat        *x, dfloat        *res);
+  void residual(dfloat *rhs, dfloat *x, dfloat *res);
   void residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res);
 
-  void coarsen(dfloat        *x, dfloat        *Cx);
+  void coarsen(dfloat *x, dfloat *Cx);
   void coarsen(occa::memory o_x, occa::memory o_Cx);
 
-  void prolongate(dfloat        *x, dfloat        *Px);
+  void prolongate(dfloat *x, dfloat *Px);
   void prolongate(occa::memory o_x, occa::memory o_Px);
 
   void smoothJacobi(dfloat *r, dfloat *x, const bool x_is_zero);
@@ -75,24 +75,17 @@ public:
   void Report();
 };
 
-
 agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options);
 
-parCSR* strongGraph(parCSR *A);
+parCSR *strongGraph(parCSR *A);
 
-void formAggregates(parCSR *A, parCSR *C,
-                     hlong* FineToCoarse,
-                     hlong* globalAggStarts,
-                     setupAide options);
+void formAggregates(parCSR *A, parCSR *C, hlong *FineToCoarse, hlong *globalAggStarts, setupAide options);
 
-parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse,
-                            hlong *globalAggStarts, dfloat **nullCoarseA);
+parCSR *constructProlongation(parCSR *A, hlong *FineToCoarse, hlong *globalAggStarts, dfloat **nullCoarseA);
 
 parCSR *transpose(parCSR *A);
 
 parCSR *galerkinProd(parCSR *A, parCSR *P);
-
-
 
 void setupAgmgSmoother(agmgLevel *level, SmoothType s, int ChebIterations);
 
@@ -100,6 +93,6 @@ void allocateAgmgVectors(agmgLevel *level, int k, int numLevels, CycleType ctype
 
 void syncAgmgToDevice(agmgLevel *level, int k, int numLevels, CycleType ctype);
 
-}
+} // namespace parAlmond
 
 #endif

@@ -4,6 +4,6 @@
 #include "nrs.hpp"
 #include "inipp.hpp"
 
-setupAide parRead(void* par, std::string setupFile, MPI_Comm comm);
+setupAide parRead(void *par, std::string setupFile, MPI_Comm comm);
 
 #endif

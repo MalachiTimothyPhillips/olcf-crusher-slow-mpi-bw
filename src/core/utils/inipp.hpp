@@ -38,128 +38,110 @@
 #include <sstream>
 #include <vector>
 
-namespace inipp
-{
+namespace inipp {
 
-typedef enum
-{
-  boolean_false,
-  boolean_true,
-  boolean_invalid
-}
-string_to_boolean_t;
+typedef enum { boolean_false, boolean_true, boolean_invalid } string_to_boolean_t;
 
-namespace{
-string_to_boolean_t string_to_boolean( const std::string s, bool strict = false )
+namespace {
+string_to_boolean_t string_to_boolean(const std::string s, bool strict = false)
 {
-  const char* falses[] = { "false", "no",  "0" };
-  const char* trues [] = { "true",  "yes", "1" };
+  const char *falses[] = {"false", "no", "0"};
+  const char *trues[] = {"true", "yes", "1"};
 
-  unsigned num_falses = sizeof( falses ) / sizeof( falses[ 0 ] );
-  unsigned num_trues  = sizeof( trues  ) / sizeof( trues [ 0 ] );
+  unsigned num_falses = sizeof(falses) / sizeof(falses[0]);
+  unsigned num_trues = sizeof(trues) / sizeof(trues[0]);
 
   // Special case
-  if (s.empty()) return boolean_invalid;
+  if (s.empty())
+    return boolean_invalid;
 
   // Get a lowercase version of 's'
-  std::string s2( s );
-  std::transform(
-    s2.begin(),
-    s2.end(),
-    s2.begin(),
-    std::ptr_fun <int, int> ( std::tolower )
-    );
+  std::string s2(s);
+  std::transform(s2.begin(), s2.end(), s2.begin(), std::ptr_fun<int, int>(std::tolower));
 
   // Does the string represent a FALSE?
   for (unsigned n = 0; n < num_falses; n++)
-    if (std::string( falses[ n ] ).find( s2 ) == 0)
+    if (std::string(falses[n]).find(s2) == 0)
       return boolean_false;
 
   // Does the string represent a TRUE?
   for (unsigned n = 0; n < num_trues; n++)
-    if (std::string( trues[ n ] ).find( s2 ) == 0)
+    if (std::string(trues[n]).find(s2) == 0)
       return boolean_true;
 
   // Check for non-zero numbers here
   if (!strict) {
-    std::istringstream ss( s2 );
+    std::istringstream ss(s2);
     double d;
     if (ss >> d)
-      return (d == 0.0)
-           ? boolean_false
-           : boolean_true;
+      return (d == 0.0) ? boolean_false : boolean_true;
   }
 
   // The string was not recognized
   return boolean_invalid;
 }
-}
+} // namespace
 
-class Ini
-{
+class Ini {
 public:
   using String = std::string;
   using Section = std::map<String, String>;
   using Sections = std::map<String, Section>;
-  using Symbols = std::list<std::pair<String, String> >;
+  using Symbols = std::list<std::pair<String, String>>;
 
   Sections sections;
   std::list<String> errors;
 
-  static const char char_section_start  = '[';
-  static const char char_section_end    = ']';
-  static const char char_assign         = '=';
-  static const char char_comment        = '#';
-  static const char char_interpol       = '$';
+  static const char char_section_start = '[';
+  static const char char_section_end = ']';
+  static const char char_assign = '=';
+  static const char char_comment = '#';
+  static const char char_interpol = '$';
   static const char char_interpol_start = '{';
-  static const char char_interpol_sep   = ':';
-  static const char char_interpol_end   = '}';
+  static const char char_interpol_sep = ':';
+  static const char char_interpol_end = '}';
 
   static const int max_interpolation_depth = 10;
 
-  template <typename TT>
-  bool extract(const String & key,
-               const String & value,
-               TT & dst)
+  template <typename TT> bool extract(const String &key, const String &value, TT &dst)
   {
     if (sections[key].count(value)) {
       if (std::is_same<TT, bool>::value) {
         dst = string_to_boolean(sections[key][value]);
-      } else {
-        std::istringstream is {sections[key][value]};
+      }
+      else {
+        std::istringstream is{sections[key][value]};
         is >> dst;
       }
       return true;
-    }else {
+    }
+    else {
       return false;
     }
   }
 
-  bool extract(const String & key,
-               const String & value,
-               String & dst) ;
+  bool extract(const String &key, const String &value, String &dst);
 
-  void generate(std::ostringstream & os) const;
+  void generate(std::ostringstream &os) const;
 
-  void parse(std::stringstream & is, bool lowerValue = true);
+  void parse(std::stringstream &is, bool lowerValue = true);
 
   void interpolate();
 
-  void default_section(const Section & sec);
+  void default_section(const Section &sec);
 
   void clear();
 
 private:
+  String local_symbol(const String &name) const;
 
-  String local_symbol(const String & name) const;
+  String global_symbol(const String &sec_name, const String &name) const;
 
-  String global_symbol(const String & sec_name, const String & name) const;
-
-  Symbols local_symbols(const String & sec_name, const Section & sec) const;
+  Symbols local_symbols(const String &sec_name, const Section &sec) const;
 
   Symbols global_symbols() const;
 
-  bool replace_symbols(const Symbols & syms, Section & sec) const;
+  bool replace_symbols(const Symbols &syms, Section &sec) const;
 };
 } // namespace inipp
 

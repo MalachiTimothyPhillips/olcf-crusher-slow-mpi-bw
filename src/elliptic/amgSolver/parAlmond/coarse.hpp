@@ -36,19 +36,19 @@ class coarseSolver {
 public:
   int coarseTotal;
   int coarseOffset;
-  int *coarseOffsets=NULL;
-  int *coarseCounts=NULL;
+  int *coarseOffsets = NULL;
+  int *coarseCounts = NULL;
 
   int N;
-  dfloat *invCoarseA=NULL;
+  dfloat *invCoarseA = NULL;
 
   occa::memory h_xLocal;
   occa::memory h_rhsLocal;
-  dfloat *xLocal=NULL;
-  dfloat *rhsLocal=NULL;
+  dfloat *xLocal = NULL;
+  dfloat *rhsLocal = NULL;
 
-  dfloat *xCoarse=NULL;
-  dfloat *rhsCoarse=NULL;
+  dfloat *xCoarse = NULL;
+  dfloat *rhsCoarse = NULL;
 
   bool gatherLevel;
   ogs_t *ogs;
@@ -60,7 +60,7 @@ public:
 
   setupAide options;
   bool useSEMFEM = false;
-  std::function<void(occa::memory,occa::memory)> semfemSolver = nullptr;
+  std::function<void(occa::memory, occa::memory)> semfemSolver = nullptr;
 
   coarseSolver(setupAide options, MPI_Comm comm);
   ~coarseSolver();
@@ -68,7 +68,8 @@ public:
   int getTargetSize();
 
   void setup(parCSR *A);
-  void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
+  void
+  setup(dlong Nrows, hlong *globalRowStarts, dlong nnz, hlong *Ai, hlong *Aj, dfloat *Avals, bool nullSpace);
 
   void syncToDevice();
 
@@ -80,6 +81,6 @@ public:
   void AmgXSolve(occa::memory o_rhs, occa::memory o_x);
 };
 
-}
+} // namespace parAlmond
 
 #endif

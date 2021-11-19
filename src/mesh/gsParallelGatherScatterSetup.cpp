@@ -32,10 +32,8 @@
 #include "gslib.h"
 #include "nrssys.h"
 
-void* gsParallelGatherScatterSetup(MPI_Comm meshComm,
-                                   dlong NuniqueBases,
-                                   hlong* gatherGlobalNodes,
-                                   int verbose)
+void *
+gsParallelGatherScatterSetup(MPI_Comm meshComm, dlong NuniqueBases, hlong *gatherGlobalNodes, int verbose)
 {
   /* gslib stuff */
   comm_ext world;
@@ -46,20 +44,17 @@ void* gsParallelGatherScatterSetup(MPI_Comm meshComm,
   comm_init(&com, world);
 
   /* for the moment borrow gslib array */
-  slong* id = tmalloc(slong, NuniqueBases);
+  slong *id = tmalloc(slong, NuniqueBases);
 
   dlong n;
-  for(n = 0; n < NuniqueBases; ++n) /* at some point need to choose int */
-    id[n] = (slong) gatherGlobalNodes[n];
+  for (n = 0; n < NuniqueBases; ++n) /* at some point need to choose int */
+    id[n] = (slong)gatherGlobalNodes[n];
 
-  struct gs_data* gsh = gs_setup(id, NuniqueBases, &com, 0, gs_auto, verbose);
+  struct gs_data *gsh = gs_setup(id, NuniqueBases, &com, 0, gs_auto, verbose);
 
   free(id);
 
   return gsh;
 }
 
-void gsParallelGatherScatterDestroy(void* gsh)
-{
-  gs_free(gsh);
-}
+void gsParallelGatherScatterDestroy(void *gsh) { gs_free(gsh); }

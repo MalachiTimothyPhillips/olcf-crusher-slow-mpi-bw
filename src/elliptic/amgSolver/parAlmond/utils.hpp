@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace parAlmond {
 
-//scratch space
+// scratch space
 extern size_t scratchSpaceBytes;
 extern void *scratch;
 extern occa::memory o_scratch;
@@ -53,9 +53,7 @@ struct parallelId_t {
   hlong globalId;
 
   dlong newId;
-
 };
-
 
 struct parallelAggregate_t {
 
@@ -65,18 +63,14 @@ struct parallelAggregate_t {
 
   int originRank;
   int ownerRank;
-
 };
-
 
 struct nonzero_t {
 
   hlong row;
   hlong col;
   dfloat val;
-
 };
-
 
 int CompareGlobalId(const void *a, const void *b);
 int CompareLocalId(const void *a, const void *b);
@@ -89,17 +83,29 @@ int compareNonZeroByRow(const void *a, const void *b);
 
 bool customLess(int smax, dfloat rmax, hlong imax, int s, dfloat r, hlong i);
 
-extern "C"{
-  void dgetrf_(int* M, int *N, double* A, int* lda, int* IPIV, int* INFO);
-  void dgetri_(int* N, double* A, int* lda, int* IPIV, double* WORK, int* lwork, int* INFO);
-  void dgeev_(char *JOBVL, char *JOBVR, int *N, double *A, int *LDA, double *WR, double *WI,
-  double *VL, int *LDVL, double *VR, int *LDVR, double *WORK, int *LWORK, int *INFO );
+extern "C" {
+void dgetrf_(int *M, int *N, double *A, int *lda, int *IPIV, int *INFO);
+void dgetri_(int *N, double *A, int *lda, int *IPIV, double *WORK, int *lwork, int *INFO);
+void dgeev_(char *JOBVL,
+            char *JOBVR,
+            int *N,
+            double *A,
+            int *LDA,
+            double *WR,
+            double *WI,
+            double *VL,
+            int *LDVL,
+            double *VR,
+            int *LDVR,
+            double *WORK,
+            int *LWORK,
+            int *INFO);
 }
 
 void eig(const int Nrows, double *A, double *WR, double *WI);
 
 void matrixInverse(int N, dfloat *A);
 
-} //namespace parAlmond
+} // namespace parAlmond
 
 #endif

@@ -3,11 +3,11 @@
 
 #include "nrs.hpp"
 
-namespace ConstantFlowRate{
+namespace ConstantFlowRate {
 bool apply(nrs_t *nrs, int tstep, dfloat time);
 void compute(nrs_t *nrs, dfloat lengthScale, dfloat time);
-bool checkIfRecompute(nrs_t* nrs, int tstep);
+bool checkIfRecompute(nrs_t *nrs, int tstep);
 dfloat scaleFactor();
-}
+} // namespace ConstantFlowRate
 
 #endif

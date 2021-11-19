@@ -28,56 +28,62 @@
 #include "platform.hpp"
 
 // compare on global indices
-int parallelCompareRowColumn(const void* a, const void* b)
+int parallelCompareRowColumn(const void *a, const void *b)
 {
-  nonZero_t* fa = (nonZero_t*) a;
-  nonZero_t* fb = (nonZero_t*) b;
+  nonZero_t *fa = (nonZero_t *)a;
+  nonZero_t *fb = (nonZero_t *)b;
 
-  if(fa->row < fb->row) return -1;
-  if(fa->row > fb->row) return +1;
+  if (fa->row < fb->row)
+    return -1;
+  if (fa->row > fb->row)
+    return +1;
 
-  if(fa->col < fb->col) return -1;
-  if(fa->col > fb->col) return +1;
+  if (fa->col < fb->col)
+    return -1;
+  if (fa->col > fb->col)
+    return +1;
 
   return 0;
 }
 
-void ellipticBuildContinuousHex3D (elliptic_t* elliptic,
-                                   nonZero_t** A,
-                                   dlong* nnz,
-                                   ogs_t** ogs,
-                                   hlong* globalStarts);
+void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
+                                  nonZero_t **A,
+                                  dlong *nnz,
+                                  ogs_t **ogs,
+                                  hlong *globalStarts);
 
-void ellipticBuildContinuous(elliptic_t* elliptic,
-                             nonZero_t** A,
-                             dlong* nnz,
-                             ogs_t** ogs,
-                             hlong* globalStarts)
+void ellipticBuildContinuous(elliptic_t *elliptic,
+                             nonZero_t **A,
+                             dlong *nnz,
+                             ogs_t **ogs,
+                             hlong *globalStarts)
 {
   mesh_t *mesh = elliptic->mesh;
   MPI_Barrier(platform->comm.mpiComm);
   const double tStart = MPI_Wtime();
-  if(platform->comm.mpiRank == 0) printf("building full FEM matrix ... ");
+  if (platform->comm.mpiRank == 0)
+    printf("building full FEM matrix ... ");
   fflush(stdout);
 
-  switch(elliptic->elementType) {
+  switch (elliptic->elementType) {
   case HEXAHEDRA:
     ellipticBuildContinuousHex3D(elliptic, A, nnz, ogs, globalStarts);
     break;
   }
 
   MPI_Barrier(platform->comm.mpiComm);
-  if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
+  if (platform->comm.mpiRank == 0)
+    printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 
-void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
-                                  nonZero_t** A,
-                                  dlong* nnz,
-                                  ogs_t** ogs,
-                                  hlong* globalStarts)
+void ellipticBuildContinuousHex3D(elliptic_t *elliptic,
+                                  nonZero_t **A,
+                                  dlong *nnz,
+                                  ogs_t **ogs,
+                                  hlong *globalStarts)
 {
-  
-  mesh_t* mesh = elliptic->mesh;
+
+  mesh_t *mesh = elliptic->mesh;
   setupAide options = elliptic->options;
 
   // Poisson only
@@ -85,31 +91,32 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
 
   int rank = platform->comm.mpiRank;
 
-  //use the masked gs handle to define a global ordering
+  // use the masked gs handle to define a global ordering
 
   // number of degrees of freedom on this rank (after gathering)
   hlong Ngather = elliptic->ogs->Ngather;
-  dlong Ntotal  = mesh->Np * mesh->Nelements;
+  dlong Ntotal = mesh->Np * mesh->Nelements;
 
   // create a global numbering system
-  hlong* globalIds = (hlong*) calloc(Ngather,sizeof(hlong));
-  int* owner     = (int*) calloc(Ngather,sizeof(int));
+  hlong *globalIds = (hlong *)calloc(Ngather, sizeof(hlong));
+  int *owner = (int *)calloc(Ngather, sizeof(int));
 
   // every gathered degree of freedom has its own global id
   MPI_Allgather(&Ngather, 1, MPI_HLONG, globalStarts + 1, 1, MPI_HLONG, platform->comm.mpiComm);
-  for(int r = 0; r < platform->comm.mpiCommSize; ++r)
+  for (int r = 0; r < platform->comm.mpiCommSize; ++r)
     globalStarts[r + 1] = globalStarts[r] + globalStarts[r + 1];
 
-  //use the offsets to set a consecutive global numbering
+  // use the offsets to set a consecutive global numbering
   for (dlong n = 0; n < elliptic->ogs->Ngather; n++) {
     globalIds[n] = n + globalStarts[rank];
     owner[n] = rank;
   }
 
-  //scatter this numbering to the original nodes
-  hlong* globalNumbering = (hlong*) calloc(Ntotal,sizeof(hlong));
-  int* globalOwners = (int*) calloc(Ntotal,sizeof(int));
-  for (dlong n = 0; n < Ntotal; n++) globalNumbering[n] = -1;
+  // scatter this numbering to the original nodes
+  hlong *globalNumbering = (hlong *)calloc(Ntotal, sizeof(hlong));
+  int *globalOwners = (int *)calloc(Ntotal, sizeof(int));
+  for (dlong n = 0; n < Ntotal; n++)
+    globalNumbering[n] = -1;
   ogsScatter(globalNumbering, globalIds, ogsHlong, ogsAdd, elliptic->ogs);
   ogsScatter(globalOwners, owner, ogsInt, ogsAdd, elliptic->ogs);
 
@@ -118,17 +125,18 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
 
   // 2. Build non-zeros of stiffness matrix (unassembled)
   dlong nnzLocal = mesh->Np * mesh->Np * mesh->Nelements;
-  nonZero_t* sendNonZeros = (nonZero_t*) calloc(nnzLocal, sizeof(nonZero_t));
-  int* AsendCounts  = (int*) calloc(platform->comm.mpiCommSize, sizeof(int));
-  int* ArecvCounts  = (int*) calloc(platform->comm.mpiCommSize, sizeof(int));
-  int* AsendOffsets = (int*) calloc(platform->comm.mpiCommSize + 1, sizeof(int));
-  int* ArecvOffsets = (int*) calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  nonZero_t *sendNonZeros = (nonZero_t *)calloc(nnzLocal, sizeof(nonZero_t));
+  int *AsendCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
+  int *ArecvCounts = (int *)calloc(platform->comm.mpiCommSize, sizeof(int));
+  int *AsendOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
+  int *ArecvOffsets = (int *)calloc(platform->comm.mpiCommSize + 1, sizeof(int));
 
-  int* mask = (int*) calloc(mesh->Np * mesh->Nelements,sizeof(int));
-  if(elliptic->Nmasked > 0){
-    dlong* maskIds = (dlong*) calloc(elliptic->Nmasked, sizeof(dlong));
+  int *mask = (int *)calloc(mesh->Np * mesh->Nelements, sizeof(int));
+  if (elliptic->Nmasked > 0) {
+    dlong *maskIds = (dlong *)calloc(elliptic->Nmasked, sizeof(dlong));
     elliptic->o_maskIds.copyTo(maskIds, elliptic->Nmasked * sizeof(dlong));
-    for (dlong i = 0; i < elliptic->Nmasked; i++) mask[maskIds[i]] = 1.;
+    for (dlong i = 0; i < elliptic->Nmasked; i++)
+      mask[maskIds[i]] = 1.;
     free(maskIds);
   }
 
@@ -138,13 +146,15 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
       for (int ny = 0; ny < mesh->Nq; ny++)
         for (int nx = 0; nx < mesh->Nq; nx++) {
           int idn = nx + ny * mesh->Nq + nz * mesh->Nq * mesh->Nq;
-          if (mask[e * mesh->Np + idn]) continue; //skip masked nodes
+          if (mask[e * mesh->Np + idn])
+            continue; // skip masked nodes
 
           for (int mz = 0; mz < mesh->Nq; mz++)
             for (int my = 0; my < mesh->Nq; my++)
               for (int mx = 0; mx < mesh->Nq; mx++) {
                 int idm = mx + my * mesh->Nq + mz * mesh->Nq * mesh->Nq;
-                if (mask[e * mesh->Np + idm]) continue; //skip masked nodes
+                if (mask[e * mesh->Np + idm])
+                  continue; // skip masked nodes
 
                 int id;
                 dfloat val = 0.;
@@ -229,19 +239,19 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
   MPI_Datatype dtype[4] = {MPI_HLONG, MPI_HLONG, MPI_INT, MPI_DFLOAT};
   int blength[4] = {1, 1, 1, 1};
   MPI_Aint addr[4], displ[4];
-  MPI_Get_address ( &(sendNonZeros[0]          ), addr + 0);
-  MPI_Get_address ( &(sendNonZeros[0].col      ), addr + 1);
-  MPI_Get_address ( &(sendNonZeros[0].ownerRank), addr + 2);
-  MPI_Get_address ( &(sendNonZeros[0].val      ), addr + 3);
+  MPI_Get_address(&(sendNonZeros[0]), addr + 0);
+  MPI_Get_address(&(sendNonZeros[0].col), addr + 1);
+  MPI_Get_address(&(sendNonZeros[0].ownerRank), addr + 2);
+  MPI_Get_address(&(sendNonZeros[0].val), addr + 3);
   displ[0] = 0;
   displ[1] = addr[1] - addr[0];
   displ[2] = addr[2] - addr[0];
   displ[3] = addr[3] - addr[0];
-  MPI_Type_create_struct (4, blength, displ, dtype, &MPI_NONZERO_T);
-  MPI_Type_commit (&MPI_NONZERO_T);
+  MPI_Type_create_struct(4, blength, displ, dtype, &MPI_NONZERO_T);
+  MPI_Type_commit(&MPI_NONZERO_T);
 
   // count how many non-zeros to send to each process
-  for(dlong n = 0; n < cnt; ++n)
+  for (dlong n = 0; n < cnt; ++n)
     AsendCounts[sendNonZeros[n].ownerRank]++;
 
   // sort by row ordering
@@ -252,17 +262,23 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
 
   // find send and recv offsets for gather
   *nnz = 0;
-  for(int r = 0; r < platform->comm.mpiCommSize; ++r) {
+  for (int r = 0; r < platform->comm.mpiCommSize; ++r) {
     AsendOffsets[r + 1] = AsendOffsets[r] + AsendCounts[r];
     ArecvOffsets[r + 1] = ArecvOffsets[r] + ArecvCounts[r];
     *nnz += ArecvCounts[r];
   }
 
-  *A = (nonZero_t*) calloc(*nnz, sizeof(nonZero_t));
+  *A = (nonZero_t *)calloc(*nnz, sizeof(nonZero_t));
 
   // determine number to receive
-  MPI_Alltoallv(sendNonZeros, AsendCounts, AsendOffsets, MPI_NONZERO_T,
-                (*A), ArecvCounts, ArecvOffsets, MPI_NONZERO_T,
+  MPI_Alltoallv(sendNonZeros,
+                AsendCounts,
+                AsendOffsets,
+                MPI_NONZERO_T,
+                (*A),
+                ArecvCounts,
+                ArecvOffsets,
+                MPI_NONZERO_T,
                 platform->comm.mpiComm);
 
   // sort received non-zero entries by row block (may need to switch compareRowColumn tests)
@@ -270,19 +286,21 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
 
   // compress duplicates
   cnt = 0;
-  for(dlong n = 1; n < *nnz; ++n) {
-    if((*A)[n].row == (*A)[cnt].row &&
-       (*A)[n].col == (*A)[cnt].col) {
+  for (dlong n = 1; n < *nnz; ++n) {
+    if ((*A)[n].row == (*A)[cnt].row && (*A)[n].col == (*A)[cnt].col) {
       (*A)[cnt].val += (*A)[n].val;
-    }else {
+    }
+    else {
       ++cnt;
       (*A)[cnt] = (*A)[n];
     }
   }
-  if (*nnz) cnt++;
+  if (*nnz)
+    cnt++;
   *nnz = cnt;
 
-  if(platform->comm.mpiRank == 0) printf("done.\n");
+  if (platform->comm.mpiRank == 0)
+    printf("done.\n");
 
   MPI_Barrier(platform->comm.mpiComm);
   MPI_Type_free(&MPI_NONZERO_T);

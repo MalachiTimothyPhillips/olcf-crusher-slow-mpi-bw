@@ -29,41 +29,42 @@
 #include "platform.hpp"
 #include "linAlg.hpp"
 
-
-void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_z)
+void ellipticPreconditioner(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_z)
 {
-  
-  
-  mesh_t* mesh = elliptic->mesh;
-  precon_t* precon = elliptic->precon;
+
+  mesh_t *mesh = elliptic->mesh;
+  precon_t *precon = elliptic->precon;
   setupAide options = elliptic->options;
 
   const dlong Nlocal = mesh->Np * mesh->Nelements;
 
   platform->timer.tic(elliptic->name + " preconditioner", 1);
-  if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
+  if (options.compareArgs("PRECONDITIONER", "JACOBI")) {
     const dfloat one = 1.0;
-    elliptic->axmyzManyPfloatKernel(
-      Nlocal,
-      elliptic->Nfields,
-      elliptic->Ntotal,
-      one,
-      o_r,
-      precon->o_invDiagA,
-      o_z
-      );
-  }else if (options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
+    elliptic->axmyzManyPfloatKernel(Nlocal,
+                                    elliptic->Nfields,
+                                    elliptic->Ntotal,
+                                    one,
+                                    o_r,
+                                    precon->o_invDiagA,
+                                    o_z);
+  }
+  else if (options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
     parAlmond::Precon(precon->parAlmond, o_z, o_r);
-  }else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
+  }
+  else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
     ellipticSEMFEMSolve(elliptic, o_r, o_z);
-  }else if (options.compareArgs("PRECONDITIONER", "NONE")) {
-    o_z.copyFrom(o_r, elliptic->Ntotal*elliptic->Nfields*sizeof(dfloat));
-  }else {
-    if(platform->comm.mpiRank == 0) printf("ERRROR: Unknown preconditioner\n");
+  }
+  else if (options.compareArgs("PRECONDITIONER", "NONE")) {
+    o_z.copyFrom(o_r, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+  }
+  else {
+    if (platform->comm.mpiRank == 0)
+      printf("ERRROR: Unknown preconditioner\n");
     MPI_Abort(platform->comm.mpiComm, 1);
   }
   platform->timer.toc(elliptic->name + " preconditioner");
 
-  if(elliptic->allNeumann) // zero mean of RHS
+  if (elliptic->allNeumann) // zero mean of RHS
     ellipticZeroMean(elliptic, o_z);
 }

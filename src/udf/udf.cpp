@@ -16,45 +16,49 @@ static int pressureDirichletConditions = 0;
 static int scalarDirichletConditions = 0;
 static int scalarNeumannConditions = 0;
 
-uint32_t fchecksum(std::ifstream& file) 
+uint32_t fchecksum(std::ifstream &file)
 {
-    uint32_t checksum = 0;
-    unsigned shift = 0;
-    for (uint32_t ch = file.get(); file; ch = file.get()) {
-        checksum += (ch << shift);
-        shift += 8;
-        if (shift == 32) {
-            shift = 0;
-        }
+  uint32_t checksum = 0;
+  unsigned shift = 0;
+  for (uint32_t ch = file.get(); file; ch = file.get()) {
+    checksum += (ch << shift);
+    shift += 8;
+    if (shift == 32) {
+      shift = 0;
     }
-    return checksum;
+  }
+  return checksum;
 }
 
 void oudfFindDirichlet(std::string &field)
 {
   if (field.find("velocity") != std::string::npos && !velocityDirichletConditions) {
-    if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: velocityDirichletConditions!\n";
+    if (platform->comm.mpiRank == 0)
+      std::cout << "Cannot find oudf function: velocityDirichletConditions!\n";
     ABORT(EXIT_FAILURE);
   }
   if (field.find("scalar") != std::string::npos && !scalarDirichletConditions) {
-    if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: scalarDirichletConditions!\n";
+    if (platform->comm.mpiRank == 0)
+      std::cout << "Cannot find oudf function: scalarDirichletConditions!\n";
     ABORT(EXIT_FAILURE);
   }
-  if(field == "pressure" && !pressureDirichletConditions) {
-    if (platform->comm.mpiRank == 0) 
-     std::cout << "WARNING: Cannot find oudf function: pressureDirichletConditions!\n";
-    // ABORT(EXIT_FAILURE); this bc is optional 
+  if (field == "pressure" && !pressureDirichletConditions) {
+    if (platform->comm.mpiRank == 0)
+      std::cout << "WARNING: Cannot find oudf function: pressureDirichletConditions!\n";
+    // ABORT(EXIT_FAILURE); this bc is optional
   }
 }
 
 void oudfFindNeumann(std::string &field)
 {
   if (field.find("velocity") != std::string::npos && !velocityNeumannConditions) {
-    if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: velocityNeumannConditions!\n";
+    if (platform->comm.mpiRank == 0)
+      std::cout << "Cannot find oudf function: velocityNeumannConditions!\n";
     ABORT(EXIT_FAILURE);
   }
   if (field.find("scalar") != std::string::npos && !scalarNeumannConditions) {
-    if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: scalarNeumannConditions!\n";
+    if (platform->comm.mpiRank == 0)
+      std::cout << "Cannot find oudf function: scalarNeumannConditions!\n";
     ABORT(EXIT_FAILURE);
   }
 }
@@ -62,12 +66,14 @@ void oudfFindNeumann(std::string &field)
 void oudfInit(setupAide &options)
 {
   std::string oklFile;
-  options.getArgs("UDF OKL FILE",oklFile);
+  options.getArgs("UDF OKL FILE", oklFile);
 
-  char* ptr = realpath(oklFile.c_str(), NULL);
-  if(!ptr) {
-    if (platform->comm.mpiRank == 0) std::cout << "ERROR: Cannot find " << oklFile << "!\n";
-    ABORT(EXIT_FAILURE);;
+  char *ptr = realpath(oklFile.c_str(), NULL);
+  if (!ptr) {
+    if (platform->comm.mpiRank == 0)
+      std::cout << "ERROR: Cannot find " << oklFile << "!\n";
+    ABORT(EXIT_FAILURE);
+    ;
   }
   free(ptr);
 
@@ -81,7 +87,7 @@ void oudfInit(setupAide &options)
   int buildRank = platform->comm.mpiRank;
   MPI_Comm comm = platform->comm.mpiComm;
   const bool buildNodeLocal = useNodeLocalCache();
-  if(buildNodeLocal) {
+  if (buildNodeLocal) {
     MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);
     comm = platform->comm.mpiCommLocal;
   }
@@ -100,27 +106,27 @@ void oudfInit(setupAide &options)
 
     bool found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+velocityDirichletConditions)"));
     velocityDirichletConditions = found;
-    if(!found)
+    if (!found)
       out << "void velocityDirichletConditions(bcData *bc){}\n";
 
     found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+velocityNeumannConditions)"));
     velocityNeumannConditions = found;
-    if(!found)
+    if (!found)
       out << "void velocityNeumannConditions(bcData *bc){}\n";
 
     found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+pressureDirichletConditions)"));
     pressureDirichletConditions = found;
-    if(!found)
+    if (!found)
       out << "void pressureDirichletConditions(bcData *bc){}\n";
 
     found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+scalarNeumannConditions)"));
     scalarNeumannConditions = found;
-    if(!found)
+    if (!found)
       out << "void scalarNeumannConditions(bcData *bc){}\n";
 
     found = std::regex_search(buffer.str(), std::regex(R"(\s*void\s+scalarDirichletConditions)"));
     scalarDirichletConditions = found;
-    if(!found)
+    if (!found)
       out << "void scalarDirichletConditions(bcData *bc){}\n";
 
     out.close();
@@ -135,16 +141,15 @@ void oudfInit(setupAide &options)
   options.setArgs("DATA FILE", dataFile);
 }
 
-
-void udfBuild(const char* udfFile, setupAide& options)
+void udfBuild(const char *udfFile, setupAide &options)
 {
   int buildRank = platform->comm.mpiRank;
   const bool buildNodeLocal = useNodeLocalCache();
-  if(buildNodeLocal)
-    MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
-  
-  int err = [&](){
-    if(buildRank == 0){
+  if (buildNodeLocal)
+    MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);
+
+  int err = [&]() {
+    if (buildRank == 0) {
       double tStart = MPI_Wtime();
 
       std::string installDir;
@@ -158,42 +163,49 @@ void udfBuild(const char* udfFile, setupAide& options)
       std::string udfLib = cache_dir + "/udf/libUDF.so";
 
       char buf[FILENAME_MAX];
-      char * ret = getcwd(buf, sizeof(buf));
-      if(!ret) ABORT(EXIT_FAILURE);
+      char *ret = getcwd(buf, sizeof(buf));
+      if (!ret)
+        ABORT(EXIT_FAILURE);
       std::string case_dir;
       case_dir.assign(buf);
 
-      const int verbose = options.compareArgs("VERBOSE","TRUE") ? 1:0;
+      const int verbose = options.compareArgs("VERBOSE", "TRUE") ? 1 : 0;
 
-      if(!fileExists(udfFile)) {
-        if(platform->comm.mpiRank == 0) printf("\nERROR: Cannot find %s!\n", udfFile);
+      if (!fileExists(udfFile)) {
+        if (platform->comm.mpiRank == 0)
+          printf("\nERROR: Cannot find %s!\n", udfFile);
         return EXIT_FAILURE;
       }
 
-      char cmd[10*BUFSIZ];
-      if(platform->comm.mpiRank == 0) printf("building udf ... \n"); fflush(stdout);
-      std::string pipeToNull = (platform->comm.mpiRank == 0) ?
-        std::string("") :
-        std::string("> /dev/null 2>&1");
-      if(isFileNewer(udfFile, udfFileCache.c_str()) || !fileExists(udfLib.c_str())) {
+      char cmd[10 * BUFSIZ];
+      if (platform->comm.mpiRank == 0)
+        printf("building udf ... \n");
+      fflush(stdout);
+      std::string pipeToNull =
+          (platform->comm.mpiRank == 0) ? std::string("") : std::string("> /dev/null 2>&1");
+      if (isFileNewer(udfFile, udfFileCache.c_str()) || !fileExists(udfLib.c_str())) {
         char udfFileResolved[BUFSIZ];
         realpath(udfFile, udfFileResolved);
         sprintf(cmd,
                 "cd %s/udf && cp -f %s udf.cpp && cp -f %s/CMakeLists.txt . && "
                 "rm -f *.so && cmake -Wno-dev -DCASE_DIR=\"%s\" -DCMAKE_CXX_COMPILER=\"$NEKRS_CXX\" "
-	            "-DCMAKE_CXX_FLAGS=\"$NEKRS_CXXFLAGS\" . %s",
-                 cache_dir.c_str(),
-                 udfFileResolved,
-                 udf_dir.c_str(),
-                 case_dir.c_str(),
-                 pipeToNull.c_str());
-        if(verbose && platform->comm.mpiRank == 0) printf("%s\n", cmd);
-        if(system(cmd)) return EXIT_FAILURE; 
+                "-DCMAKE_CXX_FLAGS=\"$NEKRS_CXXFLAGS\" . %s",
+                cache_dir.c_str(),
+                udfFileResolved,
+                udf_dir.c_str(),
+                case_dir.c_str(),
+                pipeToNull.c_str());
+        if (verbose && platform->comm.mpiRank == 0)
+          printf("%s\n", cmd);
+        if (system(cmd))
+          return EXIT_FAILURE;
       }
       sprintf(cmd, "cd %s/udf && make %s", cache_dir.c_str(), pipeToNull.c_str());
-      if(system(cmd)) return EXIT_FAILURE; 
+      if (system(cmd))
+        return EXIT_FAILURE;
       fileSync(udfLib.c_str());
-      if(platform->comm.mpiRank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
+      if (platform->comm.mpiRank == 0)
+        printf("done (%gs)\n", MPI_Wtime() - tStart);
       fflush(stdout);
     }
 
@@ -201,24 +213,28 @@ void udfBuild(const char* udfFile, setupAide& options)
   }();
 
   MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_SUM, platform->comm.mpiComm);
-  if(err) ABORT(EXIT_FAILURE);
+  if (err)
+    ABORT(EXIT_FAILURE);
 }
 
-void* udfLoadFunction(const char* fname, int errchk)
+void *udfLoadFunction(const char *fname, int errchk)
 {
   char udfLib[BUFSIZ];
 
-  const char* cache_dir = getenv("NEKRS_CACHE_DIR");
+  const char *cache_dir = getenv("NEKRS_CACHE_DIR");
   sprintf(udfLib, "%s/udf/libUDF.so", cache_dir);
 
-  void* h, * fptr;
+  void *h, *fptr;
   h = dlopen(udfLib, RTLD_LAZY | RTLD_GLOBAL);
-  if (!h) goto errOpen;
+  if (!h)
+    goto errOpen;
 
-  fptr = dlsym(h,fname);
+  fptr = dlsym(h, fname);
   if (!fptr) {
-    if(platform->comm.mpiRank == 0 && errchk) printf("Cannot find udf function: %s!\n", fname);
-    if(errchk) goto err;
+    if (platform->comm.mpiRank == 0 && errchk)
+      printf("Cannot find udf function: %s!\n", fname);
+    if (errchk)
+      goto err;
   }
 
   return fptr;
@@ -232,13 +248,13 @@ err:
 
 void udfLoad(void)
 {
-  *(void**)(&udf.setup0) = udfLoadFunction("UDF_Setup0",0);
-  *(void**)(&udf.setup) = udfLoadFunction("UDF_Setup",0);
-  *(void**)(&udf.loadKernels) = udfLoadFunction("UDF_LoadKernels",1);
-  *(void**)(&udf.executeStep) = udfLoadFunction("UDF_ExecuteStep",0);
+  *(void **)(&udf.setup0) = udfLoadFunction("UDF_Setup0", 0);
+  *(void **)(&udf.setup) = udfLoadFunction("UDF_Setup", 0);
+  *(void **)(&udf.loadKernels) = udfLoadFunction("UDF_LoadKernels", 1);
+  *(void **)(&udf.executeStep) = udfLoadFunction("UDF_ExecuteStep", 0);
 }
 
-occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
+occa::kernel udfBuildKernel(occa::properties kernelInfo, const char *function)
 {
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -248,7 +264,7 @@ occa::kernel udfBuildKernel(occa::properties kernelInfo, const char* function)
   // provide some common kernel args
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
-  const int Nq = N+1;
+  const int Nq = N + 1;
   const int Np = Nq * Nq * Nq;
   kernelInfo["defines/p_Nq"] = Nq;
   kernelInfo["defines/p_Np"] = Np;

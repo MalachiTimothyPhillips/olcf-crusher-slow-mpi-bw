@@ -28,8 +28,9 @@ SOFTWARE.
 
 namespace parAlmond {
 
-void solver_t::AMGSetup(parCSR *A){
-  // approximate Nrows at coarsest level  
+void solver_t::AMGSetup(parCSR *A)
+{
+  // approximate Nrows at coarsest level
   coarseLevel = new coarseSolver(options, A->comm);
   const int gCoarseSize = coarseLevel->getTargetSize();
 
@@ -38,55 +39,56 @@ void solver_t::AMGSetup(parCSR *A){
   agmgLevel *L = new agmgLevel(A, ktype);
   levels[numLevels] = L;
 
-  setupAgmgSmoother((agmgLevel*)(levels[numLevels]), stype, ChebyshevIterations);
+  setupAgmgSmoother((agmgLevel *)(levels[numLevels]), stype, ChebyshevIterations);
 
   hlong globalSize = L->A->globalRowStarts[size];
 
-  //if the system if already small, dont create MG levels
+  // if the system if already small, dont create MG levels
   bool done = false;
-  if(globalSize <= gCoarseSize){
+  if (globalSize <= gCoarseSize) {
     coarseLevel->setup(A);
     baseLevel = numLevels;
     done = true;
   }
   numLevels++;
 
-  while(!done){
-    L = coarsenAgmgLevel((agmgLevel*)(levels[numLevels-1]), ktype, options);
+  while (!done) {
+    L = coarsenAgmgLevel((agmgLevel *)(levels[numLevels - 1]), ktype, options);
     levels[numLevels] = L;
     hlong globalCoarseSize = L->A->globalRowStarts[size];
     numLevels++;
 
-    if(globalCoarseSize <= gCoarseSize || globalSize < 2*globalCoarseSize){
+    if (globalCoarseSize <= gCoarseSize || globalSize < 2 * globalCoarseSize) {
       coarseLevel->setup(L->A);
-      baseLevel = numLevels-1;
+      baseLevel = numLevels - 1;
       break;
     }
     globalSize = globalCoarseSize;
   }
 
-  size_t requiredBytes = 3*levels[AMGstartLev]->Ncols*sizeof(dfloat);
+  size_t requiredBytes = 3 * levels[AMGstartLev]->Ncols * sizeof(dfloat);
   allocateScratchSpace(requiredBytes, device);
 
-  for (int n=AMGstartLev;n<numLevels;n++) {
+  for (int n = AMGstartLev; n < numLevels; n++) {
 
     int chebyIts = ChebyshevIterations;
 
-    if(n==numLevels-1){
-      chebyIts =ChebyshevIterations;
-      //printf("setting: chebyshev iterations\n");
-      if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
-	options.getArgs("PARALMOND SMOOTH COARSEST DEGREE", chebyIts);
+    if (n == numLevels - 1) {
+      chebyIts = ChebyshevIterations;
+      // printf("setting: chebyshev iterations\n");
+      if (options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
+        options.getArgs("PARALMOND SMOOTH COARSEST DEGREE", chebyIts);
     }
-    setupAgmgSmoother((agmgLevel*)(levels[n]), stype, chebyIts);
-    allocateAgmgVectors((agmgLevel*)(levels[n]), n, AMGstartLev, ctype);
-    syncAgmgToDevice((agmgLevel*)(levels[n]), n, AMGstartLev, ctype);
+    setupAgmgSmoother((agmgLevel *)(levels[n]), stype, chebyIts);
+    allocateAgmgVectors((agmgLevel *)(levels[n]), n, AMGstartLev, ctype);
+    syncAgmgToDevice((agmgLevel *)(levels[n]), n, AMGstartLev, ctype);
   }
   coarseLevel->syncToDevice();
 }
 
-//create coarsened problem
-agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options){
+// create coarsened problem
+agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide options)
+{
 
   int rank, size;
   MPI_Comm_rank(level->comm, &rank);
@@ -94,8 +96,8 @@ agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide option
 
   parCSR *C = strongGraph(level->A);
 
-  hlong *FineToCoarse = (hlong *) malloc(level->A->Ncols*sizeof(hlong));
-  hlong *globalAggStarts = (hlong *) calloc(size+1,sizeof(hlong));
+  hlong *FineToCoarse = (hlong *)malloc(level->A->Ncols * sizeof(hlong));
+  hlong *globalAggStarts = (hlong *)calloc(size + 1, sizeof(hlong));
 
   formAggregates(level->A, C, FineToCoarse, globalAggStarts, options);
 
@@ -108,73 +110,82 @@ agmgLevel *coarsenAgmgLevel(agmgLevel *level, KrylovType ktype, setupAide option
 
   A->null = nullCoarseA;
 
-  agmgLevel *coarseLevel = new agmgLevel(A,P,R, ktype);
+  agmgLevel *coarseLevel = new agmgLevel(A, P, R, ktype);
 
-  //update the number of columns required for this level (from R)
+  // update the number of columns required for this level (from R)
   level->Ncols = (level->Ncols > R->Ncols) ? level->Ncols : R->Ncols;
 
   return coarseLevel;
 }
 
-void setupAgmgSmoother(agmgLevel *level, SmoothType s, int ChebIterations){
-  
+void setupAgmgSmoother(agmgLevel *level, SmoothType s, int ChebIterations)
+{
+
   level->stype = s;
   level->ChebyshevIterations = ChebIterations;
 
-  if((s == DAMPED_JACOBI)||(s == CHEBYSHEV)){
+  if ((s == DAMPED_JACOBI) || (s == CHEBYSHEV)) {
     // estimate rho(invD * A)
     dfloat rho = level->A->rhoDinvA();
 
     if (s == DAMPED_JACOBI) {
-      level->lambda = (4./3.)/rho;
-    } else if (s == CHEBYSHEV) {
-      level->lambda1 = 1.1*rho;
-      level->lambda0 = rho/10.;
+      level->lambda = (4. / 3.) / rho;
+    }
+    else if (s == CHEBYSHEV) {
+      level->lambda1 = 1.1 * rho;
+      level->lambda0 = rho / 10.;
     }
   }
 }
 
-void allocateAgmgVectors(agmgLevel *level, int k, int AMGstartLev, CycleType ctype) {
+void allocateAgmgVectors(agmgLevel *level, int k, int AMGstartLev, CycleType ctype)
+{
 
-  if (k) level->x    = (dfloat *) calloc(level->Ncols,sizeof(dfloat));
-  if (k) level->rhs  = (dfloat *) calloc(level->Nrows,sizeof(dfloat));
+  if (k)
+    level->x = (dfloat *)calloc(level->Ncols, sizeof(dfloat));
+  if (k)
+    level->rhs = (dfloat *)calloc(level->Nrows, sizeof(dfloat));
 
-  level->res  = (dfloat *) calloc(level->Ncols,sizeof(dfloat));
+  level->res = (dfloat *)calloc(level->Ncols, sizeof(dfloat));
 
-  //kcycle vectors
-  if (ctype==KCYCLE) {
-    if ((k>0) && (k<NUMKCYCLES+1)) {
-      level->ck = (dfloat *) calloc(level->Ncols,sizeof(dfloat));
-      level->vk = (dfloat *) calloc(level->Nrows,sizeof(dfloat));
-      level->wk = (dfloat *) calloc(level->Nrows,sizeof(dfloat));
+  // kcycle vectors
+  if (ctype == KCYCLE) {
+    if ((k > 0) && (k < NUMKCYCLES + 1)) {
+      level->ck = (dfloat *)calloc(level->Ncols, sizeof(dfloat));
+      level->vk = (dfloat *)calloc(level->Nrows, sizeof(dfloat));
+      level->wk = (dfloat *)calloc(level->Nrows, sizeof(dfloat));
     }
   }
 }
 
-void syncAgmgToDevice(agmgLevel *level, int k, int AMGstartLev, CycleType ctype) {
+void syncAgmgToDevice(agmgLevel *level, int k, int AMGstartLev, CycleType ctype)
+{
 
   occa::device device = level->A->device;
 
   level->o_A = new parHYB(level->A);
   level->o_A->syncToDevice();
-  if (k>AMGstartLev) {
+  if (k > AMGstartLev) {
     level->o_R = new parHYB(level->R);
     level->o_P = new parHYB(level->P);
     level->o_R->syncToDevice();
     level->o_P->syncToDevice();
   }
 
-  if (level->x  ) level->o_x   = device.malloc(level->Ncols*sizeof(dfloat),level->x);
-  if (level->rhs) level->o_rhs = device.malloc(level->Nrows*sizeof(dfloat),level->rhs);
-  if (level->res) level->o_res = device.malloc(level->Ncols*sizeof(dfloat),level->res);
+  if (level->x)
+    level->o_x = device.malloc(level->Ncols * sizeof(dfloat), level->x);
+  if (level->rhs)
+    level->o_rhs = device.malloc(level->Nrows * sizeof(dfloat), level->rhs);
+  if (level->res)
+    level->o_res = device.malloc(level->Ncols * sizeof(dfloat), level->res);
 
-  if (ctype==KCYCLE) {
-    if ((k>0) && (k<NUMKCYCLES+1)) {
-      level->o_ck = device.malloc(level->Ncols*sizeof(dfloat),level->ck);
-      level->o_vk = device.malloc(level->Nrows*sizeof(dfloat),level->vk);
-      level->o_wk = device.malloc(level->Nrows*sizeof(dfloat),level->wk);
+  if (ctype == KCYCLE) {
+    if ((k > 0) && (k < NUMKCYCLES + 1)) {
+      level->o_ck = device.malloc(level->Ncols * sizeof(dfloat), level->ck);
+      level->o_vk = device.malloc(level->Nrows * sizeof(dfloat), level->vk);
+      level->o_wk = device.malloc(level->Nrows * sizeof(dfloat), level->wk);
     }
   }
 }
 
-} //namespace parAlmond
+} // namespace parAlmond

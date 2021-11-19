@@ -29,7 +29,7 @@
 
 std::string setupAide::getArgs(std::string key) const
 {
-  if(keyWordToDataMap.count(key) == 0){
+  if (keyWordToDataMap.count(key) == 0) {
     return "";
   }
   return keyWordToDataMap.at(key);
@@ -38,20 +38,17 @@ std::string setupAide::getArgs(std::string key) const
 void setupAide::removeArgs(std::string key)
 {
   auto iter = keyWordToDataMap.find(key);
-  if(iter != keyWordToDataMap.end()){
+  if (iter != keyWordToDataMap.end()) {
     keyWordToDataMap.erase(iter);
   }
 }
 
-void setupAide::setArgs(std::string key, std::string value)
-{
-  keyWordToDataMap[key] = value;
-}
+void setupAide::setArgs(std::string key, std::string value) { keyWordToDataMap[key] = value; }
 
-int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::string delimeter) const
+int setupAide::getArgs(std::string key, std::vector<std::string> &m, std::string delimeter) const
 {
   std::string args, current;
-  std::vector < std::string > argv;
+  std::vector<std::string> argv;
   int argc, size;
 
   args = getArgs(key);
@@ -60,11 +57,11 @@ int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::str
 
   current = "";
 
-  for(int i = 0; i < size; i++) { // TW
-    while( i < size && delimeter.find(args[i]) == std::string::npos )
+  for (int i = 0; i < size; i++) { // TW
+    while (i < size && delimeter.find(args[i]) == std::string::npos)
       current += args[i++];
 
-    if(current.length())
+    if (current.length())
       argv.push_back(current);
 
     current = "";
@@ -72,12 +69,12 @@ int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::str
 
   argc = argv.size();
 
-  if(!argc)
+  if (!argc)
     return 0;
 
   m.resize(argc);
 
-  for(int i = 0; i < argc; i++) // TW
+  for (int i = 0; i < argc; i++) // TW
     m[i] = argv[i];
 
   return 1;
@@ -86,38 +83,37 @@ int setupAide::getArgs(std::string key, std::vector < std::string >& m, std::str
 int setupAide::compareArgs(std::string key, std::string token) const
 {
   std::string foundToken;
-  if(getArgs(key,foundToken)) {
-    if(foundToken == token)
+  if (getArgs(key, foundToken)) {
+    if (foundToken == token)
       return 1;
-    if(foundToken.find(token) != std::string::npos)
+    if (foundToken.find(token) != std::string::npos)
       return 2;
   }
 
   return 0;
 }
 
-std::ostream & operator << (std::ostream &os, const setupAide &aide){
+std::ostream &operator<<(std::ostream &os, const setupAide &aide)
+{
   int maxLength = 0;
-  for(auto&& keyAndValuePair : aide.keyWordToDataMap)
-  {
+  for (auto &&keyAndValuePair : aide.keyWordToDataMap) {
     const std::string key = keyAndValuePair.first;
     int L = key.length();
-    if(L > maxLength)
+    if (L > maxLength)
       maxLength = L;
   }
 
   std::string key, value;
 
-  for(auto&& keyAndValuePair : aide.keyWordToDataMap)
-  {
+  for (auto &&keyAndValuePair : aide.keyWordToDataMap) {
     std::tie(key, value) = keyAndValuePair;
     os << "key: " << key << ",";
 
-    for(int j = key.length(); j < maxLength; ++j)
+    for (int j = key.length(); j < maxLength; ++j)
       os << " ";
 
     os << "value: " << value << std::endl;
   }
 
   return os;
-  }
+}

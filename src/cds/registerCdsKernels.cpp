@@ -1,7 +1,8 @@
 #include <nrs.hpp>
 #include <compileKernels.hpp>
 
-void registerCdsKernels(occa::properties kernelInfoBC) {
+void registerCdsKernels(occa::properties kernelInfoBC)
+{
   const bool serial = platform->serial;
   const std::string extension = serial ? ".c" : ".okl";
   std::string installDir;
@@ -32,15 +33,16 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
   if (platform->options.compareArgs("TIME INTEGRATOR", "TOMBO1")) {
     nBDF = 1;
-  } else if (platform->options.compareArgs("TIME INTEGRATOR", "TOMBO2")) {
+  }
+  else if (platform->options.compareArgs("TIME INTEGRATOR", "TOMBO2")) {
     nBDF = 2;
-  } else if (platform->options.compareArgs("TIME INTEGRATOR", "TOMBO3")) {
+  }
+  else if (platform->options.compareArgs("TIME INTEGRATOR", "TOMBO3")) {
     nBDF = 3;
   }
   nEXT = 3;
   if (Nsubsteps)
     nEXT = nBDF;
-
 
   std::string fileName, kernelName;
   const std::string suffix = "Hex3D";
@@ -68,29 +70,24 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
       kernelName = "strongAdvectionVolume" + suffix;
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
 
       kernelName = "strongAdvectionCubatureVolume" + suffix;
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
     }
 
     kernelName = "advectMeshVelocityHex3D";
     fileName = oklpath + "cds/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, meshProps);
+    platform->kernels.add(section + kernelName, fileName, meshProps);
 
     kernelName = "maskCopy";
     fileName = oklpath + "core/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, meshProps);
+    platform->kernels.add(section + kernelName, fileName, meshProps);
 
     {
       occa::properties prop = kernelInfo;
-      const int movingMesh =
-          platform->options.compareArgs("MOVING MESH", "TRUE");
+      const int movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
       prop["defines/p_MovingMesh"] = movingMesh;
       prop["defines/p_nEXT"] = nEXT;
       prop["defines/p_nBDF"] = nBDF;
@@ -101,38 +98,31 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
       kernelName = "sumMakef";
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
     }
 
     kernelName = "helmholtzBC" + suffix;
     fileName = oklpath + "cds/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, kernelInfoBC);
+    platform->kernels.add(section + kernelName, fileName, kernelInfoBC);
     kernelName = "dirichletBC";
     fileName = oklpath + "cds/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, kernelInfoBC);
+    platform->kernels.add(section + kernelName, fileName, kernelInfoBC);
 
     kernelName = "setEllipticCoeff";
     fileName = oklpath + "core/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, kernelInfo);
+    platform->kernels.add(section + kernelName, fileName, kernelInfo);
 
     kernelName = "filterRT" + suffix;
     fileName = oklpath + "cds/regularization/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, meshProps);
+    platform->kernels.add(section + kernelName, fileName, meshProps);
 
     kernelName = "nStagesSum3";
     fileName = oklpath + "core/" + kernelName + ".okl";
-    platform->kernels.add(
-        section + kernelName, fileName, platform->kernelInfo);
+    platform->kernels.add(section + kernelName, fileName, platform->kernelInfo);
 
     {
       occa::properties prop = meshProps;
-      const int movingMesh =
-          platform->options.compareArgs("MOVING MESH", "TRUE");
+      const int movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
       prop["defines/p_MovingMesh"] = movingMesh;
       prop["defines/p_nEXT"] = nEXT;
       prop["defines/p_nBDF"] = nBDF;
@@ -143,28 +133,22 @@ void registerCdsKernels(occa::properties kernelInfoBC) {
 
       kernelName = "subCycleStrongCubatureVolume" + suffix;
       fileName = oklpath + "cds/" + kernelName + extension;
-      platform->kernels.add(section + kernelName,
-          fileName,
-          subCycleStrongCubatureProps);
+      platform->kernels.add(section + kernelName, fileName, subCycleStrongCubatureProps);
 
       kernelName = "subCycleStrongVolume" + suffix;
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
 
       kernelName = "subCycleERKUpdate";
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
       kernelName = "subCycleRK";
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
 
       kernelName = "subCycleInitU0";
       fileName = oklpath + "cds/" + kernelName + ".okl";
-      platform->kernels.add(
-          section + kernelName, fileName, prop);
+      platform->kernels.add(section + kernelName, fileName, prop);
     }
   }
 }

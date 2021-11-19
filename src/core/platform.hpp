@@ -13,15 +13,19 @@
 class setupAide;
 class linAlg_t;
 
-class deviceVector_t{
+class deviceVector_t {
 public:
-// allow implicit conversion between this and the underlying occa::memory object
-  operator occa::memory&(){ return o_vector; }
-// allow implicit conversion between this and kernelArg (for passing to kernels)
-  operator occa::kernelArg(){ return o_vector; }
-  deviceVector_t(const size_t _offset, const size_t _nVectors, const size_t _wordSize, std::string _vectorName = "");
-  occa::memory& at(const int);
+  // allow implicit conversion between this and the underlying occa::memory object
+  operator occa::memory &() { return o_vector; }
+  // allow implicit conversion between this and kernelArg (for passing to kernels)
+  operator occa::kernelArg() { return o_vector; }
+  deviceVector_t(const size_t _offset,
+                 const size_t _nVectors,
+                 const size_t _wordSize,
+                 std::string _vectorName = "");
+  occa::memory &at(const int);
   const size_t offset;
+
 private:
   occa::memory o_vector;
   std::vector<occa::memory> slices;
@@ -30,44 +34,43 @@ private:
   const std::string vectorName;
 };
 
-struct memPool_t{
+struct memPool_t {
   void allocate(const dlong offset, const dlong fields);
   dfloat *slice0 = nullptr;
-  dfloat *slice1 = nullptr; 
-  dfloat *slice2 = nullptr; 
-  dfloat *slice3 = nullptr; 
-  dfloat *slice4 = nullptr; 
-  dfloat *slice5 = nullptr; 
-  dfloat *slice6 = nullptr; 
+  dfloat *slice1 = nullptr;
+  dfloat *slice2 = nullptr;
+  dfloat *slice3 = nullptr;
+  dfloat *slice4 = nullptr;
+  dfloat *slice5 = nullptr;
+  dfloat *slice6 = nullptr;
   dfloat *slice7 = nullptr;
   dfloat *slice9 = nullptr;
-  dfloat *slice12 = nullptr; 
-  dfloat *slice15 = nullptr; 
-  dfloat *slice18 = nullptr; 
+  dfloat *slice12 = nullptr;
+  dfloat *slice15 = nullptr;
+  dfloat *slice18 = nullptr;
   dfloat *slice19 = nullptr;
   dfloat *ptr = nullptr;
 };
-struct deviceMemPool_t{
-  void allocate(memPool_t& hostMemory, const dlong offset, const dlong fields);
+struct deviceMemPool_t {
+  void allocate(memPool_t &hostMemory, const dlong offset, const dlong fields);
   occa::memory slice0;
-  occa::memory slice1; 
-  occa::memory slice2; 
-  occa::memory slice3; 
-  occa::memory slice4; 
-  occa::memory slice5; 
-  occa::memory slice6; 
+  occa::memory slice1;
+  occa::memory slice2;
+  occa::memory slice3;
+  occa::memory slice4;
+  occa::memory slice5;
+  occa::memory slice6;
   occa::memory slice7;
   occa::memory slice9;
-  occa::memory slice12; 
-  occa::memory slice15; 
-  occa::memory slice18; 
+  occa::memory slice12;
+  occa::memory slice15;
+  occa::memory slice18;
   occa::memory slice19;
   occa::memory o_ptr;
   size_t bytesAllocated;
 };
 
-
-struct comm_t{
+struct comm_t {
   comm_t(MPI_Comm, MPI_Comm);
   MPI_Comm mpiCommParent;
   MPI_Comm mpiComm;
@@ -78,7 +81,8 @@ struct comm_t{
   int mpiCommLocalSize;
   int localRank;
 
-  std::string to_string() const {
+  std::string to_string() const
+  {
     std::ostringstream ss;
     ss << "mpiRank = " << mpiRank << std::endl;
     ss << "mpiCommSize = " << mpiCommSize << std::endl;
@@ -88,24 +92,24 @@ struct comm_t{
   }
 };
 
-struct platform_t{
+struct platform_t {
 public:
   void create_mempool(const dlong offset, const dlong fields);
-  platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm);
+  platform_t(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm);
 
-  static platform_t* getInstance(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm){
-    if(!singleton)
+  static platform_t *getInstance(setupAide &_options, MPI_Comm _commg, MPI_Comm _comm)
+  {
+    if (!singleton)
       singleton = new platform_t(_options, _commg, _comm);
     return singleton;
   }
-  static platform_t* getInstance(){
-    return singleton;
-  }
+  static platform_t *getInstance() { return singleton; }
+
 private:
-  static platform_t * singleton;
+  static platform_t *singleton;
 
 public:
-  setupAide& options;
+  setupAide &options;
   int warpSize;
   comm_t comm;
   device_t device;
@@ -115,7 +119,7 @@ public:
   kernelRequestManager_t kernels;
   inipp::Ini *par;
   bool serial;
-  linAlg_t* linAlg;
+  linAlg_t *linAlg;
   memPool_t mempool;
 
   occa::kernel copyDfloatToPfloatKernel;

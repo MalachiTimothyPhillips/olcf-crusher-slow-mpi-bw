@@ -28,25 +28,30 @@ SOFTWARE.
 
 namespace parAlmond {
 
-//scratch space
-size_t scratchSpaceBytes=0;
-void *scratch=NULL;
+// scratch space
+size_t scratchSpaceBytes = 0;
+void *scratch = NULL;
 occa::memory o_scratch;
 
-size_t pinnedScratchSpaceBytes=0;
-void *pinnedScratch=NULL;
+size_t pinnedScratchSpaceBytes = 0;
+void *pinnedScratch = NULL;
 
 occa::memory h_pinnedScratch;
 occa::memory o_pinnedScratch;
 
-size_t reductionScratchBytes=0;
-void *reductionScratch=NULL;
+size_t reductionScratchBytes = 0;
+void *reductionScratch = NULL;
 
 occa::memory h_reductionScratch;
 occa::memory o_reductionScratch;
 
- void *parAlmondHostMallocPinned(occa::device &device, size_t size, void *source, occa::memory &mem, occa::memory &h_mem){
-   
+void *parAlmondHostMallocPinned(occa::device &device,
+                                size_t size,
+                                void *source,
+                                occa::memory &mem,
+                                occa::memory &h_mem)
+{
+
 #if 0
     
   mem = device.malloc(size, source);
@@ -56,61 +61,66 @@ occa::memory o_reductionScratch;
   void *ptr = h_mem.getMappedPointer();
 
 #endif
-  
-  
+
   occa::properties props;
   props["host"] = true;
-  
-  if(source!=NULL)
-    mem =  device.malloc(size, source);
-  else
-    mem =  device.malloc(size);
 
-  h_mem =  device.malloc(size, props);
-  
+  if (source != NULL)
+    mem = device.malloc(size, source);
+  else
+    mem = device.malloc(size);
+
+  h_mem = device.malloc(size, props);
+
   void *ptr = h_mem.ptr();
 
   return ptr;
-
 }
-  
-void allocateScratchSpace(size_t requiredBytes, occa::device device) {
 
-  if (scratchSpaceBytes<requiredBytes) {
-    if (scratchSpaceBytes!=0) {
+void allocateScratchSpace(size_t requiredBytes, occa::device device)
+{
+
+  if (scratchSpaceBytes < requiredBytes) {
+    if (scratchSpaceBytes != 0) {
       free(scratch);
       o_scratch.free();
     }
-    scratch   = malloc(requiredBytes);
+    scratch = malloc(requiredBytes);
     memset(scratch, 0, requiredBytes);
     o_scratch = device.malloc(requiredBytes, scratch);
     scratchSpaceBytes = requiredBytes;
   }
-  if (reductionScratchBytes==0) {
-    reductionScratchBytes = 3*NBLOCKS*sizeof(dfloat);
+  if (reductionScratchBytes == 0) {
+    reductionScratchBytes = 3 * NBLOCKS * sizeof(dfloat);
     //    o_reductionScratch = device.mappedAlloc(reductionScratchBytes);
     //    reductionScratch = o_reductionScratch.getMappedPointer();
-    reductionScratch = parAlmondHostMallocPinned(device, reductionScratchBytes, NULL, o_reductionScratch, h_reductionScratch);
+    reductionScratch = parAlmondHostMallocPinned(device,
+                                                 reductionScratchBytes,
+                                                 NULL,
+                                                 o_reductionScratch,
+                                                 h_reductionScratch);
   }
 }
 
-void freeScratchSpace() {
-  if (scratchSpaceBytes!=0) {
+void freeScratchSpace()
+{
+  if (scratchSpaceBytes != 0) {
     free(scratch);
     o_scratch.free();
   }
-  scratchSpaceBytes=0;
+  scratchSpaceBytes = 0;
 
-  if (reductionScratchBytes!=0) {
+  if (reductionScratchBytes != 0) {
     reductionScratchBytes = 0;
     o_reductionScratch.free();
   }
 }
 
-void allocatePinnedScratchSpace(size_t requiredBytes, occa::device device) {
+void allocatePinnedScratchSpace(size_t requiredBytes, occa::device device)
+{
 
-  if (pinnedScratchSpaceBytes<requiredBytes) {
-    if (pinnedScratchSpaceBytes!=0) {
+  if (pinnedScratchSpaceBytes < requiredBytes) {
+    if (pinnedScratchSpaceBytes != 0) {
       o_pinnedScratch.free();
     }
     //    o_pinnedScratch = device.mappedAlloc(requiredBytes);
@@ -120,126 +130,160 @@ void allocatePinnedScratchSpace(size_t requiredBytes, occa::device device) {
   }
 }
 
-void freePinnedScratchSpace() {
-  if (pinnedScratchSpaceBytes!=0) {
+void freePinnedScratchSpace()
+{
+  if (pinnedScratchSpaceBytes != 0) {
     free(pinnedScratch);
     o_pinnedScratch.free();
   }
-  pinnedScratchSpaceBytes=0;
+  pinnedScratchSpaceBytes = 0;
 }
 
 // compare on global indices
-int CompareGlobalId(const void *a, const void *b){
+int CompareGlobalId(const void *a, const void *b)
+{
 
-  parallelId_t *fa = (parallelId_t*) a;
-  parallelId_t *fb = (parallelId_t*) b;
+  parallelId_t *fa = (parallelId_t *)a;
+  parallelId_t *fb = (parallelId_t *)b;
 
-  if(fa->globalId < fb->globalId) return -1;
-  if(fa->globalId > fb->globalId) return +1;
+  if (fa->globalId < fb->globalId)
+    return -1;
+  if (fa->globalId > fb->globalId)
+    return +1;
 
-  if(fa->localId < fb->localId) return -1;
-  if(fa->localId > fb->localId) return +1;
+  if (fa->localId < fb->localId)
+    return -1;
+  if (fa->localId > fb->localId)
+    return +1;
 
   return 0;
 }
 
 // compare on local indices
-int CompareLocalId(const void *a, const void *b){
+int CompareLocalId(const void *a, const void *b)
+{
 
-  parallelId_t *fa = (parallelId_t*) a;
-  parallelId_t *fb = (parallelId_t*) b;
+  parallelId_t *fa = (parallelId_t *)a;
+  parallelId_t *fb = (parallelId_t *)b;
 
-  if(fa->localId < fb->localId) return -1;
-  if(fa->localId > fb->localId) return +1;
+  if (fa->localId < fb->localId)
+    return -1;
+  if (fa->localId > fb->localId)
+    return +1;
 
-  if(fa->globalId < fb->globalId) return -1;
-  if(fa->globalId > fb->globalId) return +1;
+  if (fa->globalId < fb->globalId)
+    return -1;
+  if (fa->globalId > fb->globalId)
+    return +1;
 
   return 0;
 }
 
-bool customLess(int smax, dfloat rmax, hlong imax, int s, dfloat r, hlong i){
+bool customLess(int smax, dfloat rmax, hlong imax, int s, dfloat r, hlong i)
+{
 
-  if(s > smax) return true;
-  if(smax > s) return false;
+  if (s > smax)
+    return true;
+  if (smax > s)
+    return false;
 
-  if(r > rmax) return true;
-  if(rmax > r) return false;
+  if (r > rmax)
+    return true;
+  if (rmax > r)
+    return false;
 
-  if(i > imax) return true;
-  if(i < imax) return false;
+  if (i > imax)
+    return true;
+  if (i < imax)
+    return false;
 
   return false;
 }
 
-int compareOwner(const void *a, const void *b){
-  parallelAggregate_t *pa = (parallelAggregate_t *) a;
-  parallelAggregate_t *pb = (parallelAggregate_t *) b;
+int compareOwner(const void *a, const void *b)
+{
+  parallelAggregate_t *pa = (parallelAggregate_t *)a;
+  parallelAggregate_t *pb = (parallelAggregate_t *)b;
 
-  if (pa->ownerRank < pb->ownerRank) return -1;
-  if (pa->ownerRank > pb->ownerRank) return +1;
-
-  return 0;
-}
-
-int compareAgg(const void *a, const void *b){
-  parallelAggregate_t *pa = (parallelAggregate_t *) a;
-  parallelAggregate_t *pb = (parallelAggregate_t *) b;
-
-  if (pa->coarseId < pb->coarseId) return -1;
-  if (pa->coarseId > pb->coarseId) return +1;
-
-  if (pa->originRank < pb->originRank) return -1;
-  if (pa->originRank > pb->originRank) return +1;
+  if (pa->ownerRank < pb->ownerRank)
+    return -1;
+  if (pa->ownerRank > pb->ownerRank)
+    return +1;
 
   return 0;
 }
 
-int compareOrigin(const void *a, const void *b){
-  parallelAggregate_t *pa = (parallelAggregate_t *) a;
-  parallelAggregate_t *pb = (parallelAggregate_t *) b;
+int compareAgg(const void *a, const void *b)
+{
+  parallelAggregate_t *pa = (parallelAggregate_t *)a;
+  parallelAggregate_t *pb = (parallelAggregate_t *)b;
 
-  if (pa->originRank < pb->originRank) return -1;
-  if (pa->originRank > pb->originRank) return +1;
+  if (pa->coarseId < pb->coarseId)
+    return -1;
+  if (pa->coarseId > pb->coarseId)
+    return +1;
+
+  if (pa->originRank < pb->originRank)
+    return -1;
+  if (pa->originRank > pb->originRank)
+    return +1;
 
   return 0;
 }
 
-int compareNonZeroByRow(const void *a, const void *b){
-  nonzero_t *pa = (nonzero_t *) a;
-  nonzero_t *pb = (nonzero_t *) b;
+int compareOrigin(const void *a, const void *b)
+{
+  parallelAggregate_t *pa = (parallelAggregate_t *)a;
+  parallelAggregate_t *pb = (parallelAggregate_t *)b;
 
-  if (pa->row < pb->row) return -1;
-  if (pa->row > pb->row) return +1;
+  if (pa->originRank < pb->originRank)
+    return -1;
+  if (pa->originRank > pb->originRank)
+    return +1;
 
-  if (pa->col < pb->col) return -1;
-  if (pa->col > pb->col) return +1;
+  return 0;
+}
+
+int compareNonZeroByRow(const void *a, const void *b)
+{
+  nonzero_t *pa = (nonzero_t *)a;
+  nonzero_t *pb = (nonzero_t *)b;
+
+  if (pa->row < pb->row)
+    return -1;
+  if (pa->row > pb->row)
+    return +1;
+
+  if (pa->col < pb->col)
+    return -1;
+  if (pa->col > pb->col)
+    return +1;
 
   return 0;
 };
 
-
-void matrixInverse(int N, dfloat *A){
-  int lwork = N*N;
+void matrixInverse(int N, dfloat *A)
+{
+  int lwork = N * N;
   int info;
 
   // compute inverse mass matrix
-  double *tmpInvA = (double*) calloc(N*N, sizeof(double));
+  double *tmpInvA = (double *)calloc(N * N, sizeof(double));
 
-  int *ipiv = (int*) calloc(N, sizeof(int));
-  double *work = (double*) calloc(lwork, sizeof(double));
+  int *ipiv = (int *)calloc(N, sizeof(int));
+  double *work = (double *)calloc(lwork, sizeof(double));
 
-  for(int n=0;n<N*N;++n){
+  for (int n = 0; n < N * N; ++n) {
     tmpInvA[n] = A[n];
   }
 
-  dgetrf_ (&N, &N, tmpInvA, &N, ipiv, &info);
-  dgetri_ (&N, tmpInvA, &N, ipiv, work, &lwork, &info);
+  dgetrf_(&N, &N, tmpInvA, &N, ipiv, &info);
+  dgetri_(&N, tmpInvA, &N, ipiv, work, &lwork, &info);
 
-  if(info)
+  if (info)
     printf("inv: dgetrf/dgetri reports info = %d when inverting matrix\n", info);
 
-  for(int n=0;n<N*N;++n)
+  for (int n = 0; n < N * N; ++n)
     A[n] = tmpInvA[n];
 
   free(work);
@@ -247,33 +291,31 @@ void matrixInverse(int N, dfloat *A){
   free(tmpInvA);
 }
 
-void eig(const int Nrows, double *A, double *WR, double *WI){
+void eig(const int Nrows, double *A, double *WR, double *WI)
+{
 
-  if(Nrows){
-    int NB  = 256;
-    char JOBVL  = 'V';
-    char JOBVR  = 'V';
-    int     N = Nrows;
-    int   LDA = Nrows;
-    int  LWORK  = (NB+2)*N;
+  if (Nrows) {
+    int NB = 256;
+    char JOBVL = 'V';
+    char JOBVR = 'V';
+    int N = Nrows;
+    int LDA = Nrows;
+    int LWORK = (NB + 2) * N;
 
-    double *WORK  = new double[LWORK];
-    double *VL  = new double[Nrows*Nrows];
-    double *VR  = new double[Nrows*Nrows];
+    double *WORK = new double[LWORK];
+    double *VL = new double[Nrows * Nrows];
+    double *VR = new double[Nrows * Nrows];
 
     int INFO = -999;
 
-    dgeev_ (&JOBVL, &JOBVR, &N, A, &LDA, WR, WI,
-      VL, &LDA, VR, &LDA, WORK, &LWORK, &INFO);
-
+    dgeev_(&JOBVL, &JOBVR, &N, A, &LDA, WR, WI, VL, &LDA, VR, &LDA, WORK, &LWORK, &INFO);
 
     // assert(INFO == 0);
 
-    delete [] VL;
-    delete [] VR;
-    delete [] WORK;
+    delete[] VL;
+    delete[] VR;
+    delete[] WORK;
   }
 }
 
-
-} //namespace parAlmond
+} // namespace parAlmond

@@ -28,11 +28,15 @@
 #include "timer.hpp"
 #include "linAlg.hpp"
 
-int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
-        const dfloat tol, const int MAXIT, dfloat &rdotr)
+int pcg(elliptic_t *elliptic,
+        occa::memory &o_r,
+        occa::memory &o_x,
+        const dfloat tol,
+        const int MAXIT,
+        dfloat &rdotr)
 {
-  
-  mesh_t* mesh = elliptic->mesh;
+
+  mesh_t *mesh = elliptic->mesh;
   setupAide options = elliptic->options;
 
   const int flexible = options.compareArgs("KRYLOV SOLVER", "FLEXIBLE");
@@ -43,17 +47,17 @@ int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
   dfloat alpha;
 
   /*aux variables */
-  occa::memory &o_p  = elliptic->o_p;
-  occa::memory &o_z  = elliptic->o_z;
+  occa::memory &o_p = elliptic->o_p;
+  occa::memory &o_z = elliptic->o_z;
   occa::memory &o_Ap = elliptic->o_Ap;
   occa::memory &o_weight = elliptic->o_invDegree;
   platform->linAlg->fill(elliptic->Nfields * elliptic->Ntotal, 0.0, o_p);
 
-  if(platform->comm.mpiRank == 0 && verbose) {
-    if(flexible) 
-      printf("PFCG ");	  
+  if (platform->comm.mpiRank == 0 && verbose) {
+    if (flexible)
+      printf("PFCG ");
     else
-      printf("PCG ");	  
+      printf("PCG ");
     printf("%s: initial res norm %.15e WE NEED TO GET TO %e \n", elliptic->name.c_str(), rdotr, tol);
   }
 
@@ -63,65 +67,54 @@ int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
     ellipticPreconditioner(elliptic, o_r, o_z);
 
     const dfloat rdotz2 = rdotz1;
-    rdotz1 = platform->linAlg->weightedInnerProdMany(
-      mesh->Nlocal,
-      elliptic->Nfields,
-      elliptic->Ntotal,
-      o_weight,
-      o_r,
-      o_z,
-      platform->comm.mpiComm);
+    rdotz1 = platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
+                                                     elliptic->Nfields,
+                                                     elliptic->Ntotal,
+                                                     o_weight,
+                                                     o_r,
+                                                     o_z,
+                                                     platform->comm.mpiComm);
 
-    //printf("norm rdotz1: %.15e\n", rdotz1);
+    // printf("norm rdotz1: %.15e\n", rdotz1);
 
     dfloat beta = 0;
-    if(iter > 1) {
-      beta = rdotz1/rdotz2;
-      if(flexible) {
-        const dfloat zdotAp = platform->linAlg->weightedInnerProdMany(
-          mesh->Nlocal,
-          elliptic->Nfields,
-          elliptic->Ntotal,
-          o_weight,
-          o_z,
-          o_Ap,
-          platform->comm.mpiComm);
-        beta = -alpha * zdotAp/rdotz2;
-        //printf("norm zdotAp: %.15e\n", zdotAp);
+    if (iter > 1) {
+      beta = rdotz1 / rdotz2;
+      if (flexible) {
+        const dfloat zdotAp = platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
+                                                                      elliptic->Nfields,
+                                                                      elliptic->Ntotal,
+                                                                      o_weight,
+                                                                      o_z,
+                                                                      o_Ap,
+                                                                      platform->comm.mpiComm);
+        beta = -alpha * zdotAp / rdotz2;
+        // printf("norm zdotAp: %.15e\n", zdotAp);
       }
     }
 
-    platform->linAlg->axpbyMany(
-      mesh->Nlocal,
-      elliptic->Nfields,
-      elliptic->Ntotal,
-      1.0,
-      o_z,
-      beta,
-      o_p);
+    platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, beta, o_p);
 
     ellipticOperator(elliptic, o_p, o_Ap, dfloatString);
-    const dfloat pAp = platform->linAlg->weightedInnerProdMany(
-      mesh->Nlocal,
-      elliptic->Nfields,
-      elliptic->Ntotal,
-      o_weight,
-      o_p,
-      o_Ap,
-      platform->comm.mpiComm);
+    const dfloat pAp = platform->linAlg->weightedInnerProdMany(mesh->Nlocal,
+                                                               elliptic->Nfields,
+                                                               elliptic->Ntotal,
+                                                               o_weight,
+                                                               o_p,
+                                                               o_Ap,
+                                                               platform->comm.mpiComm);
     alpha = rdotz1 / (pAp + 1e-300);
 
-    //printf("norm pAp: %.15e\n", pAp);
+    // printf("norm pAp: %.15e\n", pAp);
 
     //  x <= x + alpha*p
     //  r <= r - alpha*A*p
     //  dot(r,r)
     rdotr = sqrt(ellipticUpdatePCG(elliptic, o_p, o_Ap, alpha, o_x, o_r) * elliptic->resNormFactor);
-      
+
     if (verbose && (platform->comm.mpiRank == 0))
       printf("it %d r norm %.15e\n", iter, rdotr);
-  }
-  while (rdotr > tol && iter < MAXIT);
+  } while (rdotr > tol && iter < MAXIT);
 
   return iter;
 }

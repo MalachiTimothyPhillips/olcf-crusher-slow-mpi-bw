@@ -26,18 +26,17 @@
 
 #include "matrix.hpp"
 
-template < >
-void matrix < float > ::symeig(matrix < float > &W, matrix < float > &V)
+template <> void matrix<float>::symeig(matrix<float> &W, matrix<float> &V)
 {
   V = *this;
-  W.resize(Nrows,1);
+  W.resize(Nrows, 1);
 
   char JOBZ = 'V';
   char UPLO = 'U';
   int N = Nrows;
   int LDA = Nrows;
   int LWORK = N * N;
-  matrix < float > WORK(LWORK,1);
+  matrix<float> WORK(LWORK, 1);
 
   int INFO = -999;
 
@@ -46,18 +45,17 @@ void matrix < float > ::symeig(matrix < float > &W, matrix < float > &V)
   //  cout << "INFO: " << INFO << std::endl;
 }
 
-template < >
-void matrix < double > ::symeig(matrix < double > &W, matrix < double > &V)
+template <> void matrix<double>::symeig(matrix<double> &W, matrix<double> &V)
 {
   V = *this;
-  W.resize(Nrows,1);
+  W.resize(Nrows, 1);
 
   char JOBZ = 'V';
   char UPLO = 'U';
   int N = Nrows;
   int LDA = Nrows;
   int LWORK = N * N;
-  matrix < double > WORK(LWORK,1);
+  matrix<double> WORK(LWORK, 1);
 
   int INFO = -999;
 
@@ -66,68 +64,67 @@ void matrix < double > ::symeig(matrix < double > &W, matrix < double > &V)
   //  cout << "INFO: " << INFO << std::endl;
 }
 
-template < >
-void matrix < float > ::eig(matrix < float > &WR, matrix < float > &WI,
-                            matrix < float > &VL, matrix < float > &VR)
+template <>
+void matrix<float>::eig(matrix<float> &WR, matrix<float> &WI, matrix<float> &VL, matrix<float> &VR)
 {
-  matrix < float > A = *this;
+  matrix<float> A = *this;
   VL = *this;
   VR = *this;
-  WR.resize(Nrows,1);
-  WI.resize(Nrows,1);
+  WR.resize(Nrows, 1);
+  WI.resize(Nrows, 1);
 
   char JOBVL = 'V';
   char JOBVR = 'V';
   int N = Nrows;
   int LDA = Nrows;
   int LWORK = N * N;
-  matrix < float > WORK(LWORK,1);
+  matrix<float> WORK(LWORK, 1);
 
   int INFO = -999;
 
-  //  sgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA, VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
+  //  sgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA,
+  //  VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
 
   //  cout << "INFO: " << INFO << std::endl;
 }
 
-template < >
-void matrix < double > ::eig(matrix < double > &WR, matrix < double > &WI,
-                             matrix < double > &VL, matrix < double > &VR)
+template <>
+void matrix<double>::eig(matrix<double> &WR, matrix<double> &WI, matrix<double> &VL, matrix<double> &VR)
 {
-  matrix < double > A = *this;
+  matrix<double> A = *this;
   VL = *this;
   VR = *this;
-  WR.resize(Nrows,1);
-  WI.resize(Nrows,1);
+  WR.resize(Nrows, 1);
+  WI.resize(Nrows, 1);
 
   char JOBVL = 'V';
   char JOBVR = 'V';
   int N = Nrows;
   int LDA = Nrows;
   int LWORK = N * N;
-  matrix < double > WORK(LWORK,1);
+  matrix<double> WORK(LWORK, 1);
 
   int INFO = -999;
 
-  //  dgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA, VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
+  //  dgeev_ (&JOBVL, &JOBVR, &N, A.c_array(), &LDA, WR.c_array(), WI.c_array(), VL.c_array(), &LDA,
+  //  VR.c_array(), &LDA, WORK.c_array(), &LWORK, &INFO);
 
   //  cout << "INFO: " << INFO << std::endl;
 }
 
 // general left matrix inverse not implemented
-template < >
-matrix < double > operator | (const matrix < double > &A, const matrix < double > &B)
+template <> matrix<double> operator|(const matrix<double> &A, const matrix<double> &B)
 {
-  matrix < double > C = B;
-  matrix < double > Acopy = A;
+  matrix<double> C = B;
+  matrix<double> Acopy = A;
 
-  int N    = A.nrows();
+  int N = A.nrows();
   int NRHS = B.ncolumns();
-  int LDA  = N;
-  int LDB  = B.nrows();
+  int LDA = N;
+  int LDB = B.nrows();
   int INFO;
 
-  matrix < int > IPIV(N,1);
+  matrix<int> IPIV(N, 1);
 
   //  cout << "NRHS: " << NRHS << std::endl;
 
@@ -147,19 +144,18 @@ matrix < double > operator | (const matrix < double > &A, const matrix < double 
 }
 
 // general left matrix inverse not implemented
-template < >
-matrix < float > operator | (const matrix < float > &A, const matrix < float > &B)
+template <> matrix<float> operator|(const matrix<float> &A, const matrix<float> &B)
 {
-  matrix < float > C = B;
-  matrix < float > Acopy = A;
+  matrix<float> C = B;
+  matrix<float> Acopy = A;
 
-  int N    = A.nrows();
+  int N = A.nrows();
   int NRHS = B.ncolumns();
-  int LDA  = N;
-  int LDB  = B.nrows();
+  int LDA = N;
+  int LDB = B.nrows();
   int INFO;
 
-  matrix < int > IPIV(N,1);
+  matrix<int> IPIV(N, 1);
 
   //  cout << "NRHS: " << NRHS << std::endl;
   //  cout << "Acopy: " << Acopy << std::endl;
@@ -175,7 +171,7 @@ matrix < float > operator | (const matrix < float > &A, const matrix < float > &
           &LDB,
           &INFO );
 #endif
-  if(INFO)
+  if (INFO)
     std::cout << "sgesv: INFO=" << INFO << std::endl;
 
   return C;

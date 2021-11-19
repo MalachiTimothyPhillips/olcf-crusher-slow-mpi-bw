@@ -4,7 +4,7 @@
 #define BLOCKSIZE 256
 #define ALIGN_SIZE 4096
 
-//float data type
+// float data type
 #if 0
 #define DFLOAT_SINGLE
 #define dfloat float
@@ -19,7 +19,7 @@
 #define dfloatString "double"
 #endif
 
-//smoother float data type
+// smoother float data type
 #if 1
 #define pfloat float
 #define MPI_PFLOAT MPI_FLOAT
@@ -32,7 +32,7 @@
 #define pfloatString "double"
 #endif
 
-//host index data type
+// host index data type
 #if 0
 #define hlong int
 #define MPI_HLONG MPI_INT
@@ -45,7 +45,7 @@
 #define hlongString "long long int"
 #endif
 
-//device index data type
+// device index data type
 #if 1
 #define dlong int
 #define MPI_DLONG MPI_INT
@@ -70,11 +70,20 @@
 static occa::memory o_NULL;
 
 struct platform_t;
-extern platform_t* platform;
+extern platform_t *platform;
 
 bool useNodeLocalCache();
 
-#define EXIT_AND_FINALIZE(a)  { fflush(stdout); MPI_Finalize(); exit(a); }
-#define ABORT(a)  { fflush(stdout); MPI_Abort(MPI_COMM_WORLD, a); }
+#define EXIT_AND_FINALIZE(a)                                                                                 \
+  {                                                                                                          \
+    fflush(stdout);                                                                                          \
+    MPI_Finalize();                                                                                          \
+    exit(a);                                                                                                 \
+  }
+#define ABORT(a)                                                                                             \
+  {                                                                                                          \
+    fflush(stdout);                                                                                          \
+    MPI_Abort(MPI_COMM_WORLD, a);                                                                            \
+  }
 
 #endif

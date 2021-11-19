@@ -27,32 +27,42 @@
 #include "elliptic.h"
 #include "platform.hpp"
 
-void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs)
+void ellipticPreconditionerSetup(elliptic_t *elliptic, ogs_t *ogs)
 {
-  
-  mesh_t* mesh = elliptic->mesh;
-  precon_t* precon = elliptic->precon;
+
+  mesh_t *mesh = elliptic->mesh;
+  precon_t *precon = elliptic->precon;
   setupAide options = elliptic->options;
 
   MPI_Barrier(platform->comm.mpiComm);
   const double tStart = MPI_Wtime();
 
-  if(options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
-    if(platform->comm.mpiRank == 0) printf("building MG preconditioner ... \n"); fflush(stdout);
-    ellipticMultiGridSetup(elliptic,precon);
-  } else if(options.compareArgs("PRECONDITIONER", "SEMFEM")) {
+  if (options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
+    if (platform->comm.mpiRank == 0)
+      printf("building MG preconditioner ... \n");
+    fflush(stdout);
+    ellipticMultiGridSetup(elliptic, precon);
+  }
+  else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
     ellipticSEMFEMSetup(elliptic);
-  } else if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
-    if(platform->comm.mpiRank == 0) printf("building Jacobi preconditioner ... "); fflush(stdout);
-    precon->o_invDiagA = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal ,  sizeof(pfloat));
+  }
+  else if (options.compareArgs("PRECONDITIONER", "JACOBI")) {
+    if (platform->comm.mpiRank == 0)
+      printf("building Jacobi preconditioner ... ");
+    fflush(stdout);
+    precon->o_invDiagA = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal, sizeof(pfloat));
     ellipticUpdateJacobi(elliptic, precon->o_invDiagA);
-  } else if(options.compareArgs("PRECONDITIONER", "NONE")) {
-    // nothing 
-  } else {
+  }
+  else if (options.compareArgs("PRECONDITIONER", "NONE")) {
+    // nothing
+  }
+  else {
     printf("ERROR: Unknown preconditioner!\n");
     ABORT(EXIT_FAILURE);
   }
 
   MPI_Barrier(platform->comm.mpiComm);
-  if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
+  if (platform->comm.mpiRank == 0)
+    printf("done (%gs)\n", MPI_Wtime() - tStart);
+  fflush(stdout);
 }

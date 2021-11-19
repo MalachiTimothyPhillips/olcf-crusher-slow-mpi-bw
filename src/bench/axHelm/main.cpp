@@ -15,19 +15,19 @@ namespace {
 
 occa::kernel axKernel;
 
-occa::memory o_D; 
-occa::memory o_S;    
+occa::memory o_D;
+occa::memory o_S;
 occa::memory o_ggeo;
-occa::memory o_q;    
+occa::memory o_q;
 occa::memory o_Aq;
 occa::memory o_lambda;
 occa::memory o_exyz;
 occa::memory o_gllwz;
 occa::memory o_elementList;
 
-int Np; 
+int Np;
 int Ng = -1;
-int Nelements; 
+int Nelements;
 
 double run(int Ntests, int BKmode, int Ndim, int computeGeom)
 {
@@ -38,10 +38,11 @@ double run(int Ntests, int BKmode, int Ndim, int computeGeom)
   MPI_Barrier(MPI_COMM_WORLD);
   const double start = MPI_Wtime();
 
-  for(int test = 0; test < Ntests; ++test) {
-    if(computeGeom){
+  for (int test = 0; test < Ntests; ++test) {
+    if (computeGeom) {
       axKernel(Nelements, offset, loffset, o_elementList, o_exyz, o_gllwz, o_D, o_S, o_lambda, o_q, o_Aq);
-    } else {
+    }
+    else {
       axKernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
     }
   }
@@ -49,25 +50,25 @@ double run(int Ntests, int BKmode, int Ndim, int computeGeom)
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   return (MPI_Wtime() - start) / Ntests;
-} 
+}
 
-void* (*randAlloc)(int);
+void *(*randAlloc)(int);
 
-void* rand32Alloc(int N)
+void *rand32Alloc(int N)
 {
-  float* v = (float*) malloc(N * sizeof(float));
+  float *v = (float *)malloc(N * sizeof(float));
 
-  for(int n = 0; n < N; ++n)
+  for (int n = 0; n < N; ++n)
     v[n] = drand48();
 
   return v;
 }
 
-void* rand64Alloc(int N)
+void *rand64Alloc(int N)
 {
-  double* v = (double*) malloc(N * sizeof(double));
+  double *v = (double *)malloc(N * sizeof(double));
 
-  for(int n = 0; n < N; ++n)
+  for (int n = 0; n < N; ++n)
     v[n] = drand48();
 
   return v;
@@ -75,7 +76,7 @@ void* rand64Alloc(int N)
 
 } // namespace
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
   int rank = 0, size = 1;
   MPI_Init(&argc, &argv);
@@ -84,7 +85,7 @@ int main(int argc, char** argv)
 
   configRead(MPI_COMM_WORLD);
   std::string installDir(getenv("NEKRS_HOME"));
-  setupAide options; 
+  setupAide options;
 
   int err = 0;
   int cmdCheck = 0;
@@ -98,38 +99,35 @@ int main(int argc, char** argv)
   size_t wordSize = 8;
   int computeGeom = 0;
 
-  while(1) {
-    static struct option long_options[] =
-    {
-      {"p-order", required_argument, 0, 'p'},
-      {"g-order", required_argument, 0, 'g'},
-      {"computeGeom", no_argument, 0, 'c'},
-      {"block-dim", required_argument, 0, 'd'},
-      {"elements", required_argument, 0, 'e'},
-      {"backend", required_argument, 0, 'b'},
-      {"arch", required_argument, 0, 'a'},
-      {"bk-mode", no_argument, 0, 'm'},
-      {"fp32", no_argument, 0, 'f'},
-      {"help", required_argument, 0, 'h'},
-      {"iterations", required_argument, 0, 'i'},
-      {0, 0, 0, 0}
-    };
+  while (1) {
+    static struct option long_options[] = {{"p-order", required_argument, 0, 'p'},
+                                           {"g-order", required_argument, 0, 'g'},
+                                           {"computeGeom", no_argument, 0, 'c'},
+                                           {"block-dim", required_argument, 0, 'd'},
+                                           {"elements", required_argument, 0, 'e'},
+                                           {"backend", required_argument, 0, 'b'},
+                                           {"arch", required_argument, 0, 'a'},
+                                           {"bk-mode", no_argument, 0, 'm'},
+                                           {"fp32", no_argument, 0, 'f'},
+                                           {"help", required_argument, 0, 'h'},
+                                           {"iterations", required_argument, 0, 'i'},
+                                           {0, 0, 0, 0}};
     int option_index = 0;
-    int c = getopt_long (argc, argv, "", long_options, &option_index);
+    int c = getopt_long(argc, argv, "", long_options, &option_index);
 
     if (c == -1)
       break;
 
-    switch(c) {
+    switch (c) {
     case 'p':
-      N = atoi(optarg); 
-      cmdCheck++; 
+      N = atoi(optarg);
+      cmdCheck++;
       break;
     case 'g':
-      Ng = atoi(optarg); 
+      Ng = atoi(optarg);
       break;
     case 'c':
-      computeGeom = 1; 
+      computeGeom = 1;
       break;
     case 'd':
       Ndim = atoi(optarg);
@@ -146,7 +144,8 @@ int main(int argc, char** argv)
       BKmode = 1;
       break;
     case 'f':
-      wordSize = 4;;
+      wordSize = 4;
+      ;
       break;
     case 'i':
       Ntests = atoi(optarg);
@@ -159,77 +158,85 @@ int main(int argc, char** argv)
     }
   }
 
-  if(err || cmdCheck != 3) {
-    if(rank == 0)
+  if (err || cmdCheck != 3) {
+    if (rank == 0)
       printf("Usage: ./nekrs-axhelm  --p-order <n> --elements <n> --backend <CPU|CUDA|HIP|OPENCL>\n"
              "                    [--block-dim <n>]\n"
              "                    [--g-order <n>] [--computeGeom]\n"
-             "                    [--bk-mode] [--fp32] [--iterations <n>]\n"); 
-    exit(1); 
+             "                    [--bk-mode] [--fp32] [--iterations <n>]\n");
+    exit(1);
   }
 
-  if(Ng < 0) Ng = N; 
-  Nelements = std::max(1, Nelements/size);
-  constexpr int p_Nggeo {7};
+  if (Ng < 0)
+    Ng = N;
+  Nelements = std::max(1, Nelements / size);
+  constexpr int p_Nggeo{7};
   const int Nq = N + 1;
   const int Np = Nq * Nq * Nq;
   const int Nq_g = Ng + 1;
-  const int Np_g = Nq_g * Nq_g * Nq_g; 
+  const int Np_g = Nq_g * Nq_g * Nq_g;
 
-  platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
-  const int Nthreads =  omp_get_max_threads();
+  platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD);
+  const int Nthreads = omp_get_max_threads();
 
   // build+load kernel
   occa::properties props = platform->kernelInfo + meshKernelProperties(N);
-  if(wordSize == 4) props["defines/dfloat"] = "float";
-  if(Ng != N) {
+  if (wordSize == 4)
+    props["defines/dfloat"] = "float";
+  if (Ng != N) {
     props["defines/p_Nq_g"] = Nq_g;
     props["defines/p_Np_g"] = Np_g;
   }
-  if(BKmode) props["defines/p_poisson"] = 1;
+  if (BKmode)
+    props["defines/p_poisson"] = 1;
 
   std::string kernelName = "elliptic";
-  if(Ndim > 1) kernelName += "Block";
+  if (Ndim > 1)
+    kernelName += "Block";
   kernelName += "PartialAx";
-  if(!BKmode) kernelName += "Coeff";
-  if(Ng != N) {
-    if(computeGeom) {
-      if(Ng == 1) {
+  if (!BKmode)
+    kernelName += "Coeff";
+  if (Ng != N) {
+    if (computeGeom) {
+      if (Ng == 1) {
         kernelName += "Trilinear";
-      } else {
+      }
+      else {
         printf("Unsupported g-order=%d\n", Ng);
         exit(1);
       }
-    } else {
+    }
+    else {
       printf("for now g-order != p-order requires --computeGeom!\n");
       exit(1);
       kernelName += "Ngeom";
-    } 
+    }
   }
   kernelName += "Hex3D";
-  if (Ndim > 1) kernelName += "_N" + std::to_string(Ndim);
-   
+  if (Ndim > 1)
+    kernelName += "_N" + std::to_string(Ndim);
+
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  const std::string fileName = 
-    installDir + "/okl/elliptic/" + kernelName + ext;
+  const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
   axKernel = platform->device.buildKernel(fileName, props, true);
 
   // populate arrays
-  randAlloc = &rand64Alloc; 
-  if(wordSize == 4) randAlloc = &rand32Alloc;
+  randAlloc = &rand64Alloc;
+  if (wordSize == 4)
+    randAlloc = &rand32Alloc;
 
-  dlong* elementList = (dlong*) calloc(Nelements, sizeof(dlong));
-  for(int e = 0; e < Nelements; ++e)
+  dlong *elementList = (dlong *)calloc(Nelements, sizeof(dlong));
+  for (int e = 0; e < Nelements; ++e)
     elementList[e] = e;
   o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList);
   free(elementList);
 
-  void *DrV   = randAlloc(Nq * Nq);
-  void *ggeo  = randAlloc(Np_g * Nelements * p_Nggeo);
-  void *q     = randAlloc((Ndim * Np) * Nelements);
-  void *Aq    = randAlloc((Ndim * Np) * Nelements);
-  void *exyz  = randAlloc((3 * Np_g) * Nelements);
+  void *DrV = randAlloc(Nq * Nq);
+  void *ggeo = randAlloc(Np_g * Nelements * p_Nggeo);
+  void *q = randAlloc((Ndim * Np) * Nelements);
+  void *Aq = randAlloc((Ndim * Np) * Nelements);
+  void *exyz = randAlloc((3 * Np_g) * Nelements);
   void *gllwz = randAlloc(2 * Nq_g);
 
   o_D = platform->device.malloc(Nq * Nq * wordSize, DrV);
@@ -253,39 +260,32 @@ int main(int argc, char** argv)
   // warm-up
   double elapsed = run(10, BKmode, Ndim, computeGeom);
   const int elapsedTarget = 10;
-  if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+  if (Ntests < 0)
+    Ntests = elapsedTarget / elapsed;
 
-  // ***** 
+  // *****
   elapsed = run(Ntests, BKmode, Ndim, computeGeom);
-  // ***** 
- 
+  // *****
+
   // print statistics
   const dfloat GDOFPerSecond = (size * Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
 
   size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
-  bytesMoved += 6 * Np_g * wordSize; // geo
-  if(!BKmode) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
+  bytesMoved += 6 * Np_g * wordSize;            // geo
+  if (!BKmode)
+    bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
   const double bw = (size * Nelements * bytesMoved / elapsed) / 1.e9;
 
   double flopCount = Np * 12 * Nq + 15 * Np;
-  if(!BKmode) flopCount += 5 * Np;
+  if (!BKmode)
+    flopCount += 5 * Np;
   const double gflops = Ndim * (size * flopCount * Nelements / elapsed) / 1.e9;
 
-  if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " Ndim=" << Ndim
-              << " N=" << N
-              << " Ng=" << Ng
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " bkMode=" << BKmode
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
+  if (rank == 0)
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests
+              << " Ndim=" << Ndim << " N=" << N << " Ng=" << Ng << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " bkMode=" << BKmode << " wordSize=" << 8 * wordSize
+              << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
 
   MPI_Finalize();
   exit(0);

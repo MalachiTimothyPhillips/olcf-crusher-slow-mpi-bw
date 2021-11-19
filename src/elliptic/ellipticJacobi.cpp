@@ -27,10 +27,10 @@
 #include "elliptic.h"
 #include "linAlg.hpp"
 
-void ellipticUpdateJacobi(elliptic_t* elliptic, occa::memory& o_invDiagA)
+void ellipticUpdateJacobi(elliptic_t *elliptic, occa::memory &o_invDiagA)
 {
-  mesh_t* mesh       = elliptic->mesh;
-  setupAide options  = elliptic->options;
+  mesh_t *mesh = elliptic->mesh;
+  setupAide options = elliptic->options;
 
   const dlong Nlocal = mesh->Np * mesh->Nelements;
 

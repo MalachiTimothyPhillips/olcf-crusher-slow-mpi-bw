@@ -28,19 +28,20 @@
 #include "platform.hpp"
 #include "linAlg.hpp"
 
-void ellipticZeroMean(elliptic_t* elliptic, occa::memory &o_q)
+void ellipticZeroMean(elliptic_t *elliptic, occa::memory &o_q)
 {
-  mesh_t* mesh = elliptic->mesh;
-  const hlong Ntotal = elliptic->NelementsGlobal * mesh->Np; 
+  mesh_t *mesh = elliptic->mesh;
+  const hlong Ntotal = elliptic->NelementsGlobal * mesh->Np;
 
-  if(elliptic->blockSolver) {
-    if(platform->comm.mpiRank == 0)
+  if (elliptic->blockSolver) {
+    if (platform->comm.mpiRank == 0)
       printf("ERROR: NULL space handling for Block solver current not supported!\n");
     ABORT(EXIT_FAILURE);
-  } else {
+  }
+  else {
     dfloat qmeanGlobal = platform->linAlg->sum(mesh->Nlocal, o_q, platform->comm.mpiComm);
-    qmeanGlobal /= (dfloat) Ntotal;
+    qmeanGlobal /= (dfloat)Ntotal;
     platform->linAlg->add(mesh->Nlocal, -qmeanGlobal, o_q);
-    //printf("qmeanGlobal %.15e %d\n", qmeanGlobal, Ntotal);
+    // printf("qmeanGlobal %.15e %d\n", qmeanGlobal, Ntotal);
   }
 }

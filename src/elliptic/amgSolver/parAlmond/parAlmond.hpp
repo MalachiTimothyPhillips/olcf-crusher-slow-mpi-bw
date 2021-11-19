@@ -43,26 +43,25 @@ SOFTWARE.
 #include "coarse.hpp"
 #include "solver.hpp"
 
-
 namespace parAlmond {
 
 solver_t *Init(occa::device device, MPI_Comm comm, setupAide options);
 
-void AMGSetup(solver_t* M,
-             hlong* rowStarts,
-             dlong nnz,
-             hlong* Ai,
-             hlong* Aj,
-             dfloat* Avals,
-             bool nullSpace,
-             dfloat nullSpacePenalty);
+void AMGSetup(solver_t *M,
+              hlong *rowStarts,
+              dlong nnz,
+              hlong *Ai,
+              hlong *Aj,
+              dfloat *Avals,
+              bool nullSpace,
+              dfloat nullSpacePenalty);
 
-void Precon(solver_t* M, occa::memory o_x, occa::memory o_rhs);
+void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs);
 
 void Report(solver_t *M);
 
-void Free(solver_t* M);
+void Free(solver_t *M);
 
-} //namespace parAlmond
+} // namespace parAlmond
 
 #endif

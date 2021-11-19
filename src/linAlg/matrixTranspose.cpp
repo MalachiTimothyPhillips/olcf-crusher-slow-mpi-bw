@@ -30,26 +30,25 @@
 #include <stdio.h>
 #include <mesh.h>
 
-void matrixTranspose(const int M, const int N,
-                     const dfloat* A, const int LDA,
-                     dfloat* AT, const int LDAT)
+void matrixTranspose(const int M, const int N, const dfloat *A, const int LDA, dfloat *AT, const int LDAT)
 {
-  //A & A^T - Row major ordering
-  //M = number of rows of A, columns of A^T
-  //N = number of columns of A, rows of A^T
-  //LDA  - leading dimension of A (>=M)
-  //LDAT - leading dimension of A^T (>=N)
+  // A & A^T - Row major ordering
+  // M = number of rows of A, columns of A^T
+  // N = number of columns of A, rows of A^T
+  // LDA  - leading dimension of A (>=M)
+  // LDAT - leading dimension of A^T (>=N)
 
-  //quick return
-  if (N < 1 || M < 1) return;
+  // quick return
+  if (N < 1 || M < 1)
+    return;
 
-  //check for weird input
+  // check for weird input
   if (LDA < N || LDAT < M) {
     printf("Bad input to matrixTranspose\n");
     return;
   }
 
-  for (int n = 0; n < N; n++) //for all cols of A^T
-    for (int m = 0; m < M; m++) //for all rows of A^T
+  for (int n = 0; n < N; n++)   // for all cols of A^T
+    for (int m = 0; m < M; m++) // for all rows of A^T
       AT[n * LDAT + m] = A[m * LDA + n];
 }

@@ -15,11 +15,11 @@
 #include "amgx.h"
 
 // extern variable from nrssys.hpp
-platform_t* platform;
+platform_t *platform;
 
 static int rank, size;
 static MPI_Comm commg, comm;
-static nrs_t* nrs;
+static nrs_t *nrs;
 static setupAide options;
 static dfloat lastOutputTime = 0;
 static int firstOutfld = 1;
@@ -28,15 +28,15 @@ static int enforceOutputStep = 0;
 
 static void setOccaVars();
 
-bool useNodeLocalCache(){
+bool useNodeLocalCache()
+{
   int buildNodeLocal = 0;
   if (getenv("NEKRS_CACHE_LOCAL"))
     buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
   return (buildNodeLocal > 0);
 }
 
-namespace nekrs
-{
+namespace nekrs {
 double startTime(void)
 {
   double val = 0;
@@ -44,10 +44,14 @@ double startTime(void)
   return val;
 }
 
-void setup(MPI_Comm commg_in, MPI_Comm comm_in, 
-    	   int buildOnly, int commSizeTarget,
-           int ciMode, std::string _setupFile,
-           std::string _backend, std::string _deviceID)
+void setup(MPI_Comm commg_in,
+           MPI_Comm comm_in,
+           int buildOnly,
+           int commSizeTarget,
+           int ciMode,
+           std::string _setupFile,
+           std::string _backend,
+           std::string _deviceID)
 {
   MPI_Comm_dup(commg_in, &commg);
   MPI_Comm_dup(comm_in, &comm);
@@ -59,22 +63,24 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
     std::cout << "MPI tasks: " << size << std::endl << std::endl;
   }
 
-  srand48((long int) rank);
+  srand48((long int)rank);
 
   configRead(comm);
 
   oogs::gpu_mpi(std::stoi(getenv("NEKRS_GPU_MPI")));
 
-  if (rank == 0) std::cout << "reading par file ...\n"; 
-  auto par = new inipp::Ini();	  
+  if (rank == 0)
+    std::cout << "reading par file ...\n";
+  auto par = new inipp::Ini();
   std::string setupFile = _setupFile + ".par";
-  options = parRead((void*) par, setupFile, comm);
+  options = parRead((void *)par, setupFile, comm);
 
   {
     char buf[FILENAME_MAX];
-    char * ret = getcwd(buf, sizeof(buf));
+    char *ret = getcwd(buf, sizeof(buf));
     std::string dir = std::string(buf) + "/.cache";
-    if(getenv("NEKRS_CACHE_DIR")) dir.assign(getenv("NEKRS_CACHE_DIR"));
+    if (getenv("NEKRS_CACHE_DIR"))
+      dir.assign(getenv("NEKRS_CACHE_DIR"));
     setenv("NEKRS_CACHE_DIR", dir.c_str(), 1);
   }
 
@@ -86,7 +92,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
     std::cout << std::endl;
     std::cout << "using NEKRS_HOME: " << installDir << std::endl;
 
-    std:: string cache_dir;
+    std::string cache_dir;
     cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
     std::cout << "using NEKRS_CACHE_DIR: " << cache_dir << std::endl;
 
@@ -94,24 +100,24 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   }
 
   options.setArgs("BUILD ONLY", "FALSE");
-  if(buildOnly) {
+  if (buildOnly) {
     options.setArgs("BUILD ONLY", "TRUE");
     options.setArgs("NP TARGET", std::to_string(commSizeTarget));
-    if(rank == 0){
-      std::cout << "jit-compiling for >="
-                << commSizeTarget 
-                << " MPI tasks ...\n" << std::endl;
+    if (rank == 0) {
+      std::cout << "jit-compiling for >=" << commSizeTarget << " MPI tasks ...\n" << std::endl;
     }
-    fflush(stdout);	
+    fflush(stdout);
   }
 
-  if (options.getArgs("THREAD MODEL").length() == 0) 
+  if (options.getArgs("THREAD MODEL").length() == 0)
     options.setArgs("THREAD MODEL", getenv("NEKRS_OCCA_MODE_DEFAULT"));
-  if(!_backend.empty()) options.setArgs("THREAD MODEL", _backend);
-  if(!_deviceID.empty()) options.setArgs("DEVICE NUMBER", _deviceID);
+  if (!_backend.empty())
+    options.setArgs("THREAD MODEL", _backend);
+  if (!_deviceID.empty())
+    options.setArgs("DEVICE NUMBER", _deviceID);
 
   // setup device
-  platform_t* _platform = platform_t::getInstance(options, commg, comm);
+  platform_t *_platform = platform_t::getInstance(options, commg, comm);
   platform = _platform;
   platform->par = par;
 
@@ -119,10 +125,10 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   int buildRank = rank;
   const bool buildNodeLocal = useNodeLocalCache();
-  if(buildNodeLocal)
-    MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
+  if (buildNodeLocal)
+    MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);
 
-  if(buildRank == 0) {
+  if (buildRank == 0) {
     std::string cache_dir;
     cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
     mkdir(cache_dir.c_str(), S_IRWXU);
@@ -141,18 +147,19 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   }
 
   options.setArgs("CI-MODE", std::to_string(ciMode));
-  if(rank == 0 && ciMode)
+  if (rank == 0 && ciMode)
     std::cout << "enabling continous integration mode " << ciMode << "\n";
 
   nek::bootstrap();
 
-  if(udf.setup0) udf.setup0(comm, options);
+  if (udf.setup0)
+    udf.setup0(comm, options);
 
   compileKernels();
 
-  if(buildOnly) {
+  if (buildOnly) {
     MPI_Barrier(platform->comm.mpiComm);
-    if(buildRank == 0) {
+    if (buildRank == 0) {
       std::string cache_dir;
       cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
       std::string file = cache_dir + "/build-only.timestamp";
@@ -160,7 +167,8 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
       std::ofstream ofs;
       ofs.open(file, std::ofstream::out);
       ofs.close();
-      if(rank == 0) std::cout << "\nBuild successful." << std::endl;
+      if (rank == 0)
+        std::cout << "\nBuild successful." << std::endl;
     }
     return;
   }
@@ -173,9 +181,10 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   platform->timer.toc("setup");
   const double setupTime = platform->timer.query("setup", "DEVICE:MAX");
-  if(rank == 0) {
+  if (rank == 0) {
     std::cout << "\nsettings:\n" << std::endl << options << std::endl;
-    std::cout << "occa memory usage: " << platform->device.occaDevice().memoryAllocated()/1e9 << " GB" << std::endl;
+    std::cout << "occa memory usage: " << platform->device.occaDevice().memoryAllocated() / 1e9 << " GB"
+              << std::endl;
     std::cout << "initialization took " << setupTime << " s" << std::endl;
   }
   fflush(stdout);
@@ -183,15 +192,9 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   platform->timer.set("setup", setupTime);
 }
 
-void runStep(double time, double dt, int tstep)
-{
-  timeStepper::step(nrs, time, dt, tstep);
-}
+void runStep(double time, double dt, int tstep) { timeStepper::step(nrs, time, dt, tstep); }
 
-void copyFromNek(double time, int tstep)
-{
-  nek::ocopyToNek(time, tstep);
-}
+void copyFromNek(double time, int tstep) { nek::ocopyToNek(time, tstep); }
 
 void udfExecuteStep(double time, int tstep, int isOutputStep)
 {
@@ -201,25 +204,23 @@ void udfExecuteStep(double time, int tstep, int isOutputStep)
     nrs->isOutputStep = 1;
   }
 
-  if (udf.executeStep) udf.executeStep(nrs, time, tstep);
+  if (udf.executeStep)
+    udf.executeStep(nrs, time, tstep);
 
   nek::ifoutfld(0);
   nrs->isOutputStep = 0;
   platform->timer.toc("udfExecuteStep");
 }
 
-void nekUserchk(void)
-{
-  nek::userchk();
-}
+void nekUserchk(void) { nek::userchk(); }
 
 double dt(int tstep)
 {
-  if(platform->options.compareArgs("VARIABLE DT", "TRUE")){
-    if(tstep == 1) {
+  if (platform->options.compareArgs("VARIABLE DT", "TRUE")) {
+    if (tstep == 1) {
       double initialDt = 0.0;
       platform->options.getArgs("DT", initialDt);
-      if(initialDt > 0.0){
+      if (initialDt > 0.0) {
         nrs->dt[0] = initialDt;
         return nrs->dt[0];
       }
@@ -227,15 +228,17 @@ double dt(int tstep)
     const double dtOld = nrs->dt[0];
     timeStepper::adjustDt(nrs, tstep);
     // limit relative change to control introduced error
-    if(tstep > 1) nrs->dt[0] = (nrs->dt[0] < 1.25*dtOld) ? nrs->dt[0] : 1.25*dtOld;
+    if (tstep > 1)
+      nrs->dt[0] = (nrs->dt[0] < 1.25 * dtOld) ? nrs->dt[0] : 1.25 * dtOld;
   }
-  
+
   double maxDt = std::numeric_limits<double>::max();
   platform->options.getArgs("MAX DT", maxDt);
   nrs->dt[0] = (nrs->dt[0] < maxDt) ? nrs->dt[0] : maxDt;
 
-  if(nrs->dt[0] < 1e-10 || std::isnan(nrs->dt[0]) || std::isinf(nrs->dt[0])) {
-    if(platform->comm.mpiRank == 0) std::cout << "Invalid time step size!\n";
+  if (nrs->dt[0] < 1e-10 || std::isnan(nrs->dt[0]) || std::isinf(nrs->dt[0])) {
+    if (platform->comm.mpiRank == 0)
+      std::cout << "Invalid time step size!\n";
     ABORT(EXIT_FAILURE);
   }
 
@@ -249,10 +252,7 @@ double writeInterval(void)
   return val;
 }
 
-int writeControlRunTime(void)
-{
-  return platform->options.compareArgs("SOLUTION OUTPUT CONTROL", "RUNTIME");
-}
+int writeControlRunTime(void) { return platform->options.compareArgs("SOLUTION OUTPUT CONTROL", "RUNTIME"); }
 
 int outputStep(double time, int tStep)
 {
@@ -260,10 +260,13 @@ int outputStep(double time, int tStep)
   if (writeControlRunTime()) {
     double val;
     platform->options.getArgs("START TIME", val);
-    if(lastOutputTime == 0 && val > 0) lastOutputTime = val;
+    if (lastOutputTime == 0 && val > 0)
+      lastOutputTime = val;
     outputStep = ((time - lastOutputTime) + 1e-10) > nekrs::writeInterval();
-  } else {
-    if (writeInterval() > 0) outputStep = (tStep%(int)writeInterval() == 0);
+  }
+  else {
+    if (writeInterval() > 0)
+      outputStep = (tStep % (int)writeInterval() == 0);
   }
 
   if (enforceOutputStep) {
@@ -273,20 +276,17 @@ int outputStep(double time, int tStep)
   return outputStep;
 }
 
-void outputStep(int val)
-{
-  nrs->isOutputStep = val;
-}
+void outputStep(int val) { nrs->isOutputStep = val; }
 
 void outfld(double time, std::string suffix)
 {
   std::string oldValue;
   platform->options.getArgs("CHECKPOINT OUTPUT MESH", oldValue);
 
-  if(firstOutfld)
+  if (firstOutfld)
     platform->options.setArgs("CHECKPOINT OUTPUT MESH", "TRUE");
 
-  if(platform->options.compareArgs("MOVING MESH", "TRUE"))
+  if (platform->options.compareArgs("MOVING MESH", "TRUE"))
     platform->options.setArgs("CHECKPOINT OUTPUT MESH", "TRUE");
 
   writeFld(nrs, time, suffix);
@@ -296,10 +296,7 @@ void outfld(double time, std::string suffix)
   platform->options.setArgs("CHECKPOINT OUTPUT MESH", oldValue);
 }
 
-void outfld(double time)
-{
-  outfld(time, "");
-}
+void outfld(double time) { outfld(time, ""); }
 
 double endTime(void)
 {
@@ -317,52 +314,45 @@ int numSteps(void)
 
 int lastStep(double time, int tstep, double elapsedTime)
 {
-  if(!platform->options.getArgs("STOP AT ELAPSED TIME").empty()) {
+  if (!platform->options.getArgs("STOP AT ELAPSED TIME").empty()) {
     double maxElaspedTime;
     platform->options.getArgs("STOP AT ELAPSED TIME", maxElaspedTime);
-    if(elapsedTime > 60.0*maxElaspedTime) nrs->lastStep = 1; 
-  } else if (endTime() > 0) { 
-     const double eps = 1e-12;
-     nrs->lastStep = fabs((time+nrs->dt[0]) - endTime()) < eps || (time+nrs->dt[0]) > endTime();
-  } else {
+    if (elapsedTime > 60.0 * maxElaspedTime)
+      nrs->lastStep = 1;
+  }
+  else if (endTime() > 0) {
+    const double eps = 1e-12;
+    nrs->lastStep = fabs((time + nrs->dt[0]) - endTime()) < eps || (time + nrs->dt[0]) > endTime();
+  }
+  else {
     nrs->lastStep = tstep == numSteps();
   }
- 
-  if(enforceLastStep) return 1;
+
+  if (enforceLastStep)
+    return 1;
   return nrs->lastStep;
 }
 
-void* nekPtr(const char* id)
-{
-  return nek::ptr(id);
-}
+void *nekPtr(const char *id) { return nek::ptr(id); }
 
-void* nrsPtr(void)
-{
-  return nrs;
-}
+void *nrsPtr(void) { return nrs; }
 
-void finalize(void)
-{
-  AMGXfree();
-}
+void finalize(void) { AMGXfree(); }
 
-void printRuntimeStatistics(int step)
-{
-  platform->timer.printRunStat(step);
-}
+void printRuntimeStatistics(int step) { platform->timer.printRunStat(step); }
 
 void processUpdFile()
 {
-  char* rbuf = nullptr;
+  char *rbuf = nullptr;
   long fsize = 0;
 
   if (rank == 0) {
     const std::string cmdFile = "nekrs.upd";
-    const char* ptr = realpath(cmdFile.c_str(), NULL);
+    const char *ptr = realpath(cmdFile.c_str(), NULL);
     if (ptr) {
-      if(rank == 0) std::cout << "processing " << cmdFile << " ...\n";
-      FILE* f = fopen(cmdFile.c_str(), "rb");
+      if (rank == 0)
+        std::cout << "processing " << cmdFile << " ...\n";
+      FILE *f = fopen(cmdFile.c_str(), "rb");
       fseek(f, 0, SEEK_END);
       fsize = ftell(f);
       fseek(f, 0, SEEK_SET);
@@ -375,7 +365,8 @@ void processUpdFile()
   MPI_Bcast(&fsize, sizeof(fsize), MPI_BYTE, 0, comm);
 
   if (fsize) {
-    if(rank != 0) rbuf = new char[fsize];
+    if (rank != 0)
+      rbuf = new char[fsize];
     MPI_Bcast(rbuf, fsize, MPI_CHAR, 0, comm);
     std::stringstream is;
     is.write(rbuf, fsize);
@@ -385,32 +376,36 @@ void processUpdFile()
     std::string end;
     ini.extract("", "end", end);
     if (end == "true") {
-      enforceLastStep = 1; 
+      enforceLastStep = 1;
       platform->options.setArgs("END TIME", "-1");
     }
 
     std::string checkpoint;
     ini.extract("", "checkpoint", checkpoint);
-    if (checkpoint == "true") enforceOutputStep = 1; 
+    if (checkpoint == "true")
+      enforceOutputStep = 1;
 
     std::string endTime;
     ini.extract("general", "endtime", endTime);
     if (!endTime.empty()) {
-      if (rank == 0) std::cout << "  set endTime = " << endTime << "\n";
+      if (rank == 0)
+        std::cout << "  set endTime = " << endTime << "\n";
       platform->options.setArgs("END TIME", endTime);
     }
 
     std::string numSteps;
     ini.extract("general", "numsteps", numSteps);
     if (!numSteps.empty()) {
-      if (rank == 0) std::cout << "  set numSteps = " << numSteps << "\n";
+      if (rank == 0)
+        std::cout << "  set numSteps = " << numSteps << "\n";
       platform->options.setArgs("NUMBER TIMESTEPS", numSteps);
     }
 
     std::string writeInterval;
     ini.extract("general", "writeinterval", writeInterval);
-    if(!writeInterval.empty()) {
-      if(rank == 0) std::cout << "  set writeInterval = " << writeInterval << "\n";
+    if (!writeInterval.empty()) {
+      if (rank == 0)
+        std::cout << "  set writeInterval = " << writeInterval << "\n";
       platform->options.setArgs("SOLUTION OUTPUT INTERVAL", writeInterval);
     }
 
@@ -418,7 +413,7 @@ void processUpdFile()
   }
 }
 
-} // namespace
+} // namespace nekrs
 
 static void setOccaVars()
 {

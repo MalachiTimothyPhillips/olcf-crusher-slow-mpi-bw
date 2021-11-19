@@ -35,35 +35,32 @@
 
 static int clarrayrequest = 0;
 
-template <class T>
-class matrix
-{
+template <class T> class matrix {
 private:
   int Nrows;
   int Ncolumns;
-  T* data;
+  T *data;
 
   void allocate();
 
 public:
-
   matrix();
 
   matrix(int nr, int nc);
 
   // copy constructor
-  matrix(const matrix <T> &A);
+  matrix(const matrix<T> &A);
 
   // assignment operator
-  matrix <T> operator= (const matrix <T> &A);
+  matrix<T> operator=(const matrix<T> &A);
 
-  void operator += (const matrix <T> &A);
+  void operator+=(const matrix<T> &A);
 
   // assignment operator from double **array (assumes initialized)
-  matrix <T> operator= (const T* A);
+  matrix<T> operator=(const T *A);
 
   // assignment operator (all values set to d)
-  matrix <T> operator= (const double &d);
+  matrix<T> operator=(const double &d);
 
   ~matrix();
 
@@ -71,30 +68,30 @@ public:
 
   int ncolumns() const;
 
-  T* c_array();
+  T *c_array();
 
   void resize(int nr, int nc);
 
   void resize(int nr);
 
-  matrix <T> transpose();
+  matrix<T> transpose();
 
   // column major serial access - 1-indexed
-  T operator[] (int r) const;
+  T operator[](int r) const;
 
   // column major serial access - 1-indexed
-  T & operator[] (int r);
+  T &operator[](int r);
 
-  T operator() (int r, int c) const;
+  T operator()(int r, int c) const;
 
-  T & operator() (int r, int c);
+  T &operator()(int r, int c);
 
-  T operator() (int r) const;
+  T operator()(int r) const;
 
-  T & operator() (int r);
+  T &operator()(int r);
 
   // permute
-  matrix <T> operator[] (const matrix <int> &ind);
+  matrix<T> operator[](const matrix<int> &ind);
 
   // in-place sort in ascending order
   void slow_sort(int index);
@@ -103,11 +100,11 @@ public:
   void randomize();
 
   // sort columns using user supplied comparison function
-  void sort( int (* compare)(const void*, const void*) );
+  void sort(int (*compare)(const void *, const void *));
 
-  void symeig(matrix <T> &d, matrix <T> &v);
+  void symeig(matrix<T> &d, matrix<T> &v);
 
-  void eig(matrix <T> &WR, matrix <T> &WI, matrix <T> &VL, matrix <T> &VR);
+  void eig(matrix<T> &WR, matrix<T> &WI, matrix<T> &VL, matrix<T> &VR);
 
   int byteCount() const;
 
@@ -123,24 +120,19 @@ public:
 
   T minentry() const;
 
-  matrix <T> inverse();
+  matrix<T> inverse();
 };
 
-template <class T>
-std::ostream & operator << (std::ostream &os, matrix <T> & A);
+template <class T> std::ostream &operator<<(std::ostream &os, matrix<T> &A);
 
-template <class T>
-matrix <T> operator* (const matrix <T> & A, const matrix <T> &B);
+template <class T> matrix<T> operator*(const matrix<T> &A, const matrix<T> &B);
 
-template <class T>
-matrix <T> operator+ (const matrix <T> & A, const matrix <T> &B);
+template <class T> matrix<T> operator+(const matrix<T> &A, const matrix<T> &B);
 
-template <class T>
-matrix <T> operator- (const matrix <T> & A, const matrix <T> &B);
+template <class T> matrix<T> operator-(const matrix<T> &A, const matrix<T> &B);
 
 // general left matrix inverse not implemented
-template <class T>
-matrix <T> operator| (const matrix <T> & A, const matrix <T> &B);
+template <class T> matrix<T> operator|(const matrix<T> &A, const matrix<T> &B);
 
 // use #define to create a "compiler substitution rule"
 #define imatrix matrix<int>
