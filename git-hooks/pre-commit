@@ -1,0 +1,8 @@
+#!/bin/bash
+[ -d git-hooks ] && cp git-hooks/* .git/hooks
+[ -d ../git-hooks ] && cp ../git-hooks/* .git/hooks
+# Now search for hooks starting with commit-msg and execute those
+for hook in $(find .git/hooks/ -name 'pre-commit-*')
+do
+  ${hook}
+done
