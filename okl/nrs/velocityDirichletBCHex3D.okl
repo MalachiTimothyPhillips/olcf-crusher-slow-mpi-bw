@@ -23,46 +23,16 @@
    SOFTWARE.
 
  */
-
-#define surfaceTerms(sk,face,i, j)                                      \
-  {                                                                     \
-    const dfloat WsJ = sgeo[sk * p_Nsgeo + p_WSJID];                    \
-    struct bcData bc;                                                   \
-    bc.idM = vmapM[sk];   bc.time = time;                               \
-    bc.nx = sgeo[sk * p_Nsgeo + p_NXID];                                \
-    bc.ny = sgeo[sk * p_Nsgeo + p_NYID];                                \
-    bc.nz = sgeo[sk * p_Nsgeo + p_NZID];                                \
-    bc.x   = x[bc.idM];                                                 \
-    bc.y   = y[bc.idM];                                                 \
-    bc.z   = z[bc.idM];                                                 \
-    bc.fieldOffset = offset;                                            \
-    bc.id  = EToBM[face + p_Nfaces * e];                                \
-    bc.u  = U[bc.idM + 0 * offset];                                     \
-    bc.v  = U[bc.idM + 1 * offset];                                     \
-    bc.w  = U[bc.idM + 2 * offset];                                     \
-    bc.wrk = W;                                                         \
-    dfloat TRx = 0.f;                                                   \
-    dfloat TRy = 0.f;                                                   \
-    dfloat TRz = 0.f;                                                   \
-    const dlong bcType = EToB[face + p_Nfaces * e];                     \
-    if(bcType == 3) {                                                   \
-        bc.p = 0.f;                                                     \
-        pressureDirichletConditions(&bc);                               \
-        TRx = -bc.p*bc.nx;                                              \
-        TRy = -bc.p*bc.ny;                                              \
-        TRz = -bc.p*bc.nz;                                              \
-    }                                                                   \
-    s_ndU[j][i] = WsJ*TRx;                                              \
-    s_ndV[j][i] = WsJ*TRy;                                              \
-    s_ndW[j][i] = WsJ*TRz;                                              \
-  }
-
 //RHS contributions for continuous solver
 
 @kernel void velocityDirichletBCHex3D(const dlong Nelements,
                                          const dlong offset,
                                          const dfloat time,
                                          @restrict const dfloat*  sgeo,
+                                         @restrict const dfloat*  Vn,
+                                         @restrict const dfloat*  V1,
+                                         @restrict const dfloat*  V2,
+                                         @restrict const dfloat*  Vmask,
                                          @restrict const dfloat*  x,
                                          @restrict const dfloat*  y,
                                          @restrict const dfloat*  z,
@@ -106,6 +76,50 @@
           UH[idM + 0 * offset] = bc.u;
           UH[idM + 1 * offset] = bc.v;
           UH[idM + 2 * offset] = bc.w;
+        }
+      }
+      @barrier("global");
+    }
+
+    for(int f = 0; f < p_Nfaces; f++) {
+      for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
+        const int n = m + f * p_Nfp;
+        const int sk = e * p_Nfp * p_Nfaces + n;
+        const dlong sid  = e * p_Nfaces * p_Nfp + n;
+        const dlong idM = vmapM[sk];
+        const dlong bcType = EToB[f + p_Nfaces * e];
+
+        if(bcType > 0) {
+          if(bcType == 7) {
+
+            const dfloat vnx = Vn[idM + 0 * offset];
+            const dfloat vny = Vn[idM + 1 * offset];
+            const dfloat vnz = Vn[idM + 2 * offset];
+
+            const dfloat v1x = V1[idM + 0 * offset];
+            const dfloat v1y = V1[idM + 1 * offset];
+            const dfloat v1z = V1[idM + 2 * offset];
+
+            const dfloat v2x = V2[idM + 0 * offset];
+            const dfloat v2y = V2[idM + 1 * offset];
+            const dfloat v2z = V2[idM + 2 * offset];
+
+            const dfloat u = U[idM + 0 * offset];
+            const dfloat v = U[idM + 1 * offset];
+            const dfloat w = U[idM + 2 * offset];
+
+            const dfloat r1mask = Vmask[idM + 0 * offset];
+            const dfloat r2mask = Vmask[idM + 1 * offset];
+            const dfloat r3mask = Vmask[idM + 2 * offset];
+
+            const dfloat Rnor = r1mask * (u * vnx + v * vny + w * vnz);
+            const dfloat Rtn1 = r2mask * (u * v1x + v * v1y + w * v1z);
+            const dfloat Rtn2 = r3mask * (u * v2x + v * v2y + w * v2z);
+
+            UH[idM + 0 * offset] = Rnor * vnx + Rtn1 * v1x + Rtn2 * v2x;
+            UH[idM + 1 * offset] = Rnor * vny + Rtn1 * v1y + Rtn2 * v2y;
+            UH[idM + 2 * offset] = Rnor * vnz + Rtn1 * v1z + Rtn2 * v2z;
+          }
         }
       }
       @barrier("global");

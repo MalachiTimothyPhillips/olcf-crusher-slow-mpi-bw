@@ -125,6 +125,24 @@ c-----------------------------------------------------------------------
          ptr = loc(bfz(1,1,1,1))
       elseif (id .eq. 'bq') then
          ptr = loc(bq(1,1,1,1,1))
+      elseif (id .eq. 'vnx') then
+         ptr = loc(vnx(1,1,1,1))
+      elseif (id .eq. 'vny') then
+         ptr = loc(vny(1,1,1,1))
+      elseif (id .eq. 'vnz') then
+         ptr = loc(vnz(1,1,1,1))
+      elseif (id .eq. 'v1x') then
+         ptr = loc(v1x(1,1,1,1))
+      elseif (id .eq. 'v1y') then
+         ptr = loc(v1y(1,1,1,1))
+      elseif (id .eq. 'v1z') then
+         ptr = loc(v1z(1,1,1,1))
+      elseif (id .eq. 'v2x') then
+         ptr = loc(v2x(1,1,1,1))
+      elseif (id .eq. 'v2y') then
+         ptr = loc(v2y(1,1,1,1))
+      elseif (id .eq. 'v2z') then
+         ptr = loc(v2z(1,1,1,1))
       else
          write(6,*) 'ERROR: nek_ptr cannot find ', id
          call exitt 

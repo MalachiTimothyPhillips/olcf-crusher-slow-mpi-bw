@@ -757,6 +757,18 @@ int setup(nrs_t* nrs_in)
   nekData.wy = (double*) ptr("wy");
   nekData.wz = (double*) ptr("wz");
 
+  nekData.vnx = (double *)ptr("vnx");
+  nekData.vny = (double *)ptr("vny");
+  nekData.vnz = (double *)ptr("vnz");
+
+  nekData.v1x = (double *)ptr("v1x");
+  nekData.v1y = (double *)ptr("v1y");
+  nekData.v1z = (double *)ptr("v1z");
+
+  nekData.v2x = (double *)ptr("v2x");
+  nekData.v2y = (double *)ptr("v2y");
+  nekData.v2z = (double *)ptr("v2z");
+
   int cht = 0;
   if (nekData.nelv != nekData.nelt && nscal) cht = 1;
 
@@ -1005,5 +1017,33 @@ void stsmask(double* uMask, double* vMask, double* wMask)
     calledStsMask = true;
   }
   (*nek_stsmask_ptr)(uMask, vMask, wMask);
+
+  mesh_t *mesh = nrs->meshV;
+
+  const dlong Nlocal = mesh->Nelements * mesh->Np;
+
+  dfloat *vnx = nrs->Vn + 0 * nrs->fieldOffset;
+  dfloat *vny = nrs->Vn + 1 * nrs->fieldOffset;
+  dfloat *vnz = nrs->Vn + 2 * nrs->fieldOffset;
+
+  dfloat *v1x = nrs->V1 + 0 * nrs->fieldOffset;
+  dfloat *v1y = nrs->V1 + 1 * nrs->fieldOffset;
+  dfloat *v1z = nrs->V1 + 2 * nrs->fieldOffset;
+
+  dfloat *v2x = nrs->V2 + 0 * nrs->fieldOffset;
+  dfloat *v2y = nrs->V2 + 1 * nrs->fieldOffset;
+  dfloat *v2z = nrs->V2 + 2 * nrs->fieldOffset;
+
+  memcpy(vnx, nekData.vnx, sizeof(dfloat) * Nlocal);
+  memcpy(vny, nekData.vny, sizeof(dfloat) * Nlocal);
+  memcpy(vnz, nekData.vnz, sizeof(dfloat) * Nlocal);
+
+  memcpy(v1x, nekData.v1x, sizeof(dfloat) * Nlocal);
+  memcpy(v1y, nekData.v1y, sizeof(dfloat) * Nlocal);
+  memcpy(v1z, nekData.v1z, sizeof(dfloat) * Nlocal);
+
+  memcpy(v2x, nekData.v2x, sizeof(dfloat) * Nlocal);
+  memcpy(v2y, nekData.v2y, sizeof(dfloat) * Nlocal);
+  memcpy(v2z, nekData.v2z, sizeof(dfloat) * Nlocal);
 }
 }

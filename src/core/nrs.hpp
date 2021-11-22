@@ -182,6 +182,19 @@ struct nrs_t
   occa::memory o_EToBMesh;
 
   occa::properties* kernelInfo;
+
+  occa::memory o_Vn;
+  occa::memory o_V1;
+  occa::memory o_V2;
+
+  occa::memory o_Vmask;
+  occa::memory o_Wmask;
+
+  dfloat *Vn;
+  dfloat *V1;
+  dfloat *V2;
+  dfloat *Vmask;
+  dfloat *Wmask;
 };
 
 

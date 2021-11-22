@@ -695,6 +695,24 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   }
 
   if (nrs->flow) {
+
+    nrs->Vn = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+    nrs->V1 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+    nrs->V2 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+    nrs->Vmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+
+    dfloat *v1mask = nrs->Vmask + 0 * nrs->fieldOffset;
+    dfloat *v2mask = nrs->Vmask + 1 * nrs->fieldOffset;
+    dfloat *v3mask = nrs->Vmask + 2 * nrs->fieldOffset;
+
+    // TODO: what to set ifield to?
+    nek::stsmask(v1mask, v2mask, v3mask);
+
+    nrs->o_Vn = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vn);
+    nrs->o_V1 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V1);
+    nrs->o_V2 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V2);
+    nrs->o_Vmask = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vmask);
+
     if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP VELOCITY ================\n");
 
     nrs->uvwSolver = NULL;
@@ -956,7 +974,20 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   } // flow
   if(nrs->flow){
+
     if(options.compareArgs("MESH SOLVER", "ELASTICITY")){
+
+      nrs->Wmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+
+      dfloat *w1mask = nrs->Wmask + 0 * nrs->fieldOffset;
+      dfloat *w2mask = nrs->Wmask + 1 * nrs->fieldOffset;
+      dfloat *w3mask = nrs->Wmask + 2 * nrs->fieldOffset;
+
+      // TODO: what to set ifield to?
+      nek::stsmask(w1mask, w2mask, w3mask);
+
+      nrs->o_Wmask = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vmask);
+
       if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP MESH ================\n");
       int* uvwMeshBCType = (int*) calloc(3 * NBCType, sizeof(int));
       int* uMeshBCType = uvwMeshBCType + 0 * NBCType;
