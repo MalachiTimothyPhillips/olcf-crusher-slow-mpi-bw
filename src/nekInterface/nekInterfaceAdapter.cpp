@@ -9,6 +9,8 @@ nekdata_private nekData;
 static int rank;
 static setupAide* options;
 static nrs_t* nrs;
+static bool calledStsMask = false;
+static int bcInPar = 0;
 
 static void (* usrdat_ptr)(void);
 static void (* usrdat2_ptr)(void);
@@ -53,6 +55,7 @@ static void (* nek_restoresol_ptr)(void);
 static void (* nek_updggeom_ptr)(void);
 
 static void (* nek_stsmask_ptr)(double*, double*, double*);
+static void (*nekf_set_cbc_ptr)(int *);
 
 void noop_func(void) {}
 
@@ -322,6 +325,9 @@ void set_usr_handles(const char* session_in,int verbose)
   check_error(dlerror());
 
   nek_stsmask_ptr = (void (*)(double*, double*, double*))dlsym(handle, fname("stsmask"));
+  check_error(dlerror());
+
+  nekf_set_cbc_ptr = (void (*)(int *))dlsym(handle, fname("nekf_set_cbc"));
   check_error(dlerror());
 
 #define postfix(x) x ## _ptr
@@ -676,7 +682,7 @@ int setup(nrs_t* nrs_in)
   options->getArgs("MESH CONNECTIVITY TOL", meshConTol);
 
   int nBcRead = 1;
-  int bcInPar = 1;
+  bcInPar = 1;
   if(bcMap::size(0) == 0 && bcMap::size(1) == 0) {
     bcInPar = 0;
     nBcRead = flow + nscal;
@@ -989,8 +995,15 @@ void recomputeGeometry()
   (*nek_updggeom_ptr)();
 }
 
+// precondition:
+// - nrs->EToB has been set
+// On first call, set nek5000 cbc to be the same as nekRS
 void stsmask(double* uMask, double* vMask, double* wMask)
 {
+  if (!calledStsMask && bcInPar) {
+    (*nekf_set_cbc_ptr)(nrs->EToB);
+    calledStsMask = true;
+  }
   (*nek_stsmask_ptr)(uMask, vMask, wMask);
 }
 }
