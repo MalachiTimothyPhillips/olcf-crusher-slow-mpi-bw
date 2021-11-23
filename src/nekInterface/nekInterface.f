@@ -889,6 +889,7 @@ c-----------------------------------------------------------------------
       subroutine nekf_set_cbc(etob)
 
       include 'SIZE'
+      include 'INPUT'
       include 'NEKINTF'
 
       integer etob(nelt*2*ndim)
