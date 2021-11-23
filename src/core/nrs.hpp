@@ -195,6 +195,11 @@ struct nrs_t
   dfloat *V2;
   dfloat *Vmask;
   dfloat *Wmask;
+
+  occa::kernel enforceUnKernel;
+
+  // scratch array for applying unaligned SYM mask
+  occa::memory o_Utmp;
 };
 
 

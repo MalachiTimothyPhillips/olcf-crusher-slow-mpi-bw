@@ -45,5 +45,9 @@ void registerMeshKernels(occa::properties kernelInfoBC) {
     fileName = oklpath + "core/" + kernelName + ".okl";
     platform->kernels.add(
         meshPrefix + kernelName, fileName, meshKernelInfo);
+
+    kernelName = "enforceUnHex3D";
+    fileName = oklpath + "mesh/" + kernelName + ".okl";
+    platform->kernels.add(meshPrefix + kernelName, fileName, meshKernelInfo);
   }
 }

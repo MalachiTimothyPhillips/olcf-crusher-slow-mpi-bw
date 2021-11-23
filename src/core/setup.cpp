@@ -542,6 +542,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->velocityDirichletBCKernel =
         platform->kernels.get( section + kernelName);
 
+      kernelName = "enforceUn" + suffix;
+      nrs->enforceUnKernel = platform->kernels.get(section + kernelName);
+
       kernelName = "velocityNeumannBC" + suffix;
       nrs->velocityNeumannBCKernel =
         platform->kernels.get( section + kernelName);
@@ -724,6 +727,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     int* uBCType = uvwBCType + 0 * NBCType;
     int* vBCType = uvwBCType + 1 * NBCType;
     int* wBCType = uvwBCType + 2 * NBCType;
+
+    bool unalignedSYM = false;
     for (int bID = 1; bID <= nbrBIDs; bID++) {
       std::string bcTypeText(bcMap::text(bID, "velocity"));
       if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -731,6 +736,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       uBCType[bID] = bcMap::type(bID, "x-velocity");
       vBCType[bID] = bcMap::type(bID, "y-velocity");
       wBCType[bID] = bcMap::type(bID, "z-velocity");
+
+      const std::string unalignedSYMString("zeroNValue/zeroGradient");
+      if (bcTypeText == unalignedSYMString)
+        unalignedSYM = true;
     }
 
     nrs->vOptions = options;
@@ -810,6 +819,30 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->poisson = 0;
 
       nrs->uvwSolver->applyMask = applyMask;
+      if (unalignedSYM) {
+        nrs->o_Utmp = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+        nrs->uvwSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+          mesh_t *mesh = nrs->meshV;
+          if (precision != dfloatString) {
+            if (platform->comm.mpiRank == 0)
+              printf("ERROR: unalignedSYM applyMask only supports double precision\n");
+            ABORT(EXIT_FAILURE);
+          }
+
+          nrs->o_Utmp.copyFrom(o_x, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+          applyMask(solver, o_x, precision);
+          nrs->enforceUnKernel(mesh->Nelements,
+                               nrs->fieldOffset,
+                               nrs->o_Vn,
+                               nrs->o_V1,
+                               nrs->o_V2,
+                               nrs->o_Vmask,
+                               nrs->o_vmapM,
+                               nrs->o_EToB,
+                               nrs->o_Utmp,
+                               o_x);
+        };
+      }
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
       nrs->uSolver = new elliptic_t();
@@ -993,6 +1026,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       int* uMeshBCType = uvwMeshBCType + 0 * NBCType;
       int* vMeshBCType = uvwMeshBCType + 1 * NBCType;
       int* wMeshBCType = uvwMeshBCType + 2 * NBCType;
+
+      bool unalignedSYM = false;
       for (int bID = 1; bID <= nbrBIDs; bID++) {
         std::string bcTypeText(bcMap::text(bID, "mesh"));
         if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -1000,6 +1035,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         uMeshBCType[bID] = bcMap::type(bID, "x-mesh");
         vMeshBCType[bID] = bcMap::type(bID, "y-mesh");
         wMeshBCType[bID] = bcMap::type(bID, "z-mesh");
+        const std::string unalignedSYMString("zeroNValue/zeroGradient");
+        if (bcTypeText == unalignedSYMString)
+          unalignedSYM = true;
       }
 
       const int meshCoeffField = platform->options.compareArgs("MESH COEFF FIELD", "TRUE");
@@ -1026,6 +1064,29 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->poisson = 0;
 
       nrs->meshSolver->applyMask = applyMask;
+      if (unalignedSYM) {
+        nrs->meshSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+          mesh_t *mesh = nrs->meshV;
+          if (precision != dfloatString) {
+            if (platform->comm.mpiRank == 0)
+              printf("ERROR: unalignedSYM applyMask only supports double precision\n");
+            ABORT(EXIT_FAILURE);
+          }
+
+          nrs->o_Utmp.copyFrom(o_x, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+          applyMask(solver, o_x, precision);
+          mesh->enforceUnKernel(mesh->Nelements,
+                                nrs->fieldOffset,
+                                nrs->o_Vn,
+                                nrs->o_V1,
+                                nrs->o_V2,
+                                nrs->o_Vmask,
+                                nrs->o_vmapM,
+                                nrs->o_EToB,
+                                nrs->o_Utmp,
+                                o_x);
+        };
+      }
       ellipticSolveSetup(nrs->meshSolver);
     }
   }

@@ -382,6 +382,7 @@ void loadKernels(mesh_t* mesh)
           platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
         mesh->nStagesSumVectorKernel =
           platform->kernels.get(meshPrefix + "nStagesSumVector");
+        mesh->enforceUnKernel = platform->kernels.get(meshPrefix + "enforceUnHex3D");
     }
   }
 }
