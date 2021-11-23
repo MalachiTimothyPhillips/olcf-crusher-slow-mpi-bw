@@ -1,0 +1,42 @@
+//
+// nekRS User Defined File
+//
+#include <math.h>
+#include "udf.hpp"
+
+/* User Functions */
+
+static occa::kernel userfKernel; 
+static dfloat P_ROT;
+
+void userf(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
+{
+  mesh_t* mesh = nrs->meshV;
+  const dfloat DPDX   = 2.0;
+  userfKernel(mesh->Nlocal, nrs->fieldOffset, P_ROT, DPDX, o_FU);
+}
+
+void UDF_LoadKernels(occa::properties& kernelInfo)
+{
+  userfKernel = udfBuildKernel(kernelInfo, "userf");
+}
+
+void UDF_Setup0(nrs_t *nrs){
+  platform->par->extract("casedata", "p_rot", P_ROT);
+  if (platform->options.compareArgs("BUILD ONLY", "FALSE")) {
+    double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");
+    nek_cb_scnrs[0] = P_ROT;
+  }
+}
+
+void UDF_Setup(nrs_t *nrs)
+{
+  mesh_t *mesh = nrs->meshV;
+  cds_t *cds = nrs->cds;
+
+  udf.uEqnSource = &userf;
+}
+
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+}
