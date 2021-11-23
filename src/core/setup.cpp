@@ -837,7 +837,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                nrs->o_V1,
                                nrs->o_V2,
                                nrs->o_Vmask,
-                               nrs->o_vmapM,
+                               mesh->o_vmapM,
                                nrs->o_EToB,
                                nrs->o_Utmp,
                                o_x);
@@ -1075,16 +1075,16 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
           nrs->o_Utmp.copyFrom(o_x, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
           applyMask(solver, o_x, precision);
-          mesh->enforceUnKernel(mesh->Nelements,
-                                nrs->fieldOffset,
-                                nrs->o_Vn,
-                                nrs->o_V1,
-                                nrs->o_V2,
-                                nrs->o_Vmask,
-                                nrs->o_vmapM,
-                                nrs->o_EToB,
-                                nrs->o_Utmp,
-                                o_x);
+          nrs->enforceUnKernel(mesh->Nelements,
+                               nrs->fieldOffset,
+                               nrs->o_Vn,
+                               nrs->o_V1,
+                               nrs->o_V2,
+                               nrs->o_Vmask,
+                               mesh->o_vmapM,
+                               nrs->o_EToB,
+                               nrs->o_Utmp,
+                               o_x);
         };
       }
       ellipticSolveSetup(nrs->meshSolver);
