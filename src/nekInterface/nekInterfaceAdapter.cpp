@@ -385,7 +385,9 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
     }
   }
 
-  const int lx1m = options.compareArgs("MOVING MESH", "TRUE") ? lx1 : 1;
+  const int lx1m =
+      (options.compareArgs("MOVING MESH", "TRUE") || options.compareArgs("STRESS FORMULATION", "TRUE")) ? lx1
+                                                                                                        : 1;
 
   int count = 0;
   while(fgets(line, BUFSIZ, fp) != NULL) {
