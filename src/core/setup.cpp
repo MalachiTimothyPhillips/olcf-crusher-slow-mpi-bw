@@ -820,17 +820,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
       nrs->uvwSolver->applyMask = applyMask;
       if (unalignedSYM) {
-        nrs->o_Utmp = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
         nrs->uvwSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
           mesh_t *mesh = nrs->meshV;
-          if (precision != dfloatString) {
-            if (platform->comm.mpiRank == 0)
-              printf("ERROR: unalignedSYM applyMask only supports double precision\n");
-            ABORT(EXIT_FAILURE);
-          }
 
-          nrs->o_Utmp.copyFrom(o_x, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-          applyMask(solver, o_x, precision);
           nrs->enforceUnKernel(mesh->Nelements,
                                nrs->fieldOffset,
                                nrs->o_Vn,
@@ -839,8 +831,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                nrs->o_Vmask,
                                mesh->o_vmapM,
                                nrs->o_EToB,
-                               nrs->o_Utmp,
                                o_x);
+
+          applyMask(solver, o_x, precision);
         };
       }
       ellipticSolveSetup(nrs->uvwSolver);
@@ -1067,13 +1060,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (unalignedSYM) {
         nrs->meshSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
           mesh_t *mesh = nrs->meshV;
-          if (precision != dfloatString) {
-            if (platform->comm.mpiRank == 0)
-              printf("ERROR: unalignedSYM applyMask only supports double precision\n");
-            ABORT(EXIT_FAILURE);
-          }
 
-          nrs->o_Utmp.copyFrom(o_x, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
           applyMask(solver, o_x, precision);
           nrs->enforceUnKernel(mesh->Nelements,
                                nrs->fieldOffset,
@@ -1083,7 +1070,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                nrs->o_Vmask,
                                mesh->o_vmapM,
                                nrs->o_EToB,
-                               nrs->o_Utmp,
                                o_x);
         };
       }

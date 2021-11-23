@@ -44,6 +44,57 @@
                                          @restrict dfloat*  UH)
 {
   for(dlong e = 0; e < Nelements; e++; @outer(0)) {
+
+    for(int f = 0; f < p_Nfaces; f++) {
+      for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
+        const int n = m + f * p_Nfp;
+        const int sk = e * p_Nfp * p_Nfaces + n;
+        const dlong sid  = e * p_Nfaces * p_Nfp + n;
+        const dlong idM = vmapM[sk];
+        const dlong bcType = EToB[f + p_Nfaces * e];
+
+        if(bcType > 0) {
+          if(bcType == 7) {
+
+            const dfloat vnx = Vn[idM + 0 * offset];
+            const dfloat vny = Vn[idM + 1 * offset];
+            const dfloat vnz = Vn[idM + 2 * offset];
+
+            const dfloat v1x = V1[idM + 0 * offset];
+            const dfloat v1y = V1[idM + 1 * offset];
+            const dfloat v1z = V1[idM + 2 * offset];
+
+            const dfloat v2x = V2[idM + 0 * offset];
+            const dfloat v2y = V2[idM + 1 * offset];
+            const dfloat v2z = V2[idM + 2 * offset];
+
+            const dfloat u = U[idM + 0 * offset];
+            const dfloat v = U[idM + 1 * offset];
+            const dfloat w = U[idM + 2 * offset];
+
+            const dfloat r1mask = Vmask[idM + 0 * offset];
+            const dfloat r2mask = Vmask[idM + 1 * offset];
+            const dfloat r3mask = Vmask[idM + 2 * offset];
+
+            const dfloat Rnor = r1mask * (u * vnx + v * vny + w * vnz);
+            const dfloat Rtn1 = r2mask * (u * v1x + v * v1y + w * v1z);
+            const dfloat Rtn2 = r3mask * (u * v2x + v * v2y + w * v2z);
+
+            UH[idM + 0 * offset] = Rnor * vnx + Rtn1 * v1x + Rtn2 * v2x;
+            UH[idM + 1 * offset] = Rnor * vny + Rtn1 * v1y + Rtn2 * v2y;
+            UH[idM + 2 * offset] = Rnor * vnz + Rtn1 * v1z + Rtn2 * v2z;
+          }else if(bcType == 4) {
+            UH[idM + 0 * offset] = 0.0;
+          }else if(bcType == 5) {
+            UH[idM + 1 * offset] = 0.0;
+          }else if(bcType == 6) {
+            UH[idM + 2 * offset] = 0.0;
+          }
+        }
+      }
+      @barrier("global");
+    }
+
     for(int f = 0; f < p_Nfaces; f++) {
       for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
         struct bcData bc;
@@ -85,50 +136,6 @@
       for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
         const int n = m + f * p_Nfp;
         const int sk = e * p_Nfp * p_Nfaces + n;
-        const dlong sid  = e * p_Nfaces * p_Nfp + n;
-        const dlong idM = vmapM[sk];
-        const dlong bcType = EToB[f + p_Nfaces * e];
-
-        if(bcType > 0) {
-          if(bcType == 7) {
-
-            const dfloat vnx = Vn[idM + 0 * offset];
-            const dfloat vny = Vn[idM + 1 * offset];
-            const dfloat vnz = Vn[idM + 2 * offset];
-
-            const dfloat v1x = V1[idM + 0 * offset];
-            const dfloat v1y = V1[idM + 1 * offset];
-            const dfloat v1z = V1[idM + 2 * offset];
-
-            const dfloat v2x = V2[idM + 0 * offset];
-            const dfloat v2y = V2[idM + 1 * offset];
-            const dfloat v2z = V2[idM + 2 * offset];
-
-            const dfloat u = U[idM + 0 * offset];
-            const dfloat v = U[idM + 1 * offset];
-            const dfloat w = U[idM + 2 * offset];
-
-            const dfloat r1mask = Vmask[idM + 0 * offset];
-            const dfloat r2mask = Vmask[idM + 1 * offset];
-            const dfloat r3mask = Vmask[idM + 2 * offset];
-
-            const dfloat Rnor = r1mask * (u * vnx + v * vny + w * vnz);
-            const dfloat Rtn1 = r2mask * (u * v1x + v * v1y + w * v1z);
-            const dfloat Rtn2 = r3mask * (u * v2x + v * v2y + w * v2z);
-
-            UH[idM + 0 * offset] = Rnor * vnx + Rtn1 * v1x + Rtn2 * v2x;
-            UH[idM + 1 * offset] = Rnor * vny + Rtn1 * v1y + Rtn2 * v2y;
-            UH[idM + 2 * offset] = Rnor * vnz + Rtn1 * v1z + Rtn2 * v2z;
-          }
-        }
-      }
-      @barrier("global");
-    }
-
-    for(int f = 0; f < p_Nfaces; f++) {
-      for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
-        const int n = m + f * p_Nfp;
-        const int sk = e * p_Nfp * p_Nfaces + n;
         const dlong idM = vmapM[sk];
         const dlong bcType = EToB[f + p_Nfaces * e];
 
@@ -136,12 +143,6 @@
           if(bcType == 1) {
             UH[idM + 0 * offset] = 0.0;
             UH[idM + 1 * offset] = 0.0;
-            UH[idM + 2 * offset] = 0.0;
-          }else if(bcType == 4) {
-            UH[idM + 0 * offset] = 0.0;
-          }else if(bcType == 5) {
-            UH[idM + 1 * offset] = 0.0;
-          }else if(bcType == 6) {
             UH[idM + 2 * offset] = 0.0;
           }
         }
