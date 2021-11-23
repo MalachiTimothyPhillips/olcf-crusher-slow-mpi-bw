@@ -173,9 +173,21 @@ void ellipticSolveSetup(elliptic_t* elliptic)
 
   { //setup an unmasked gs handle
     ogs_t *ogs = NULL;
-    if(elliptic->blockSolver) ogs = mesh->ogs; 
-    ellipticOgs(mesh, elliptic->Ntotal, elliptic->Nfields, elliptic->Ntotal, elliptic->BCType, elliptic->NBCType, 
-                elliptic->Nmasked, elliptic->o_mapB, elliptic->o_maskIds, &ogs);
+    if(elliptic->blockSolver) ogs = mesh->ogs;
+    ellipticOgs(mesh,
+                elliptic->Ntotal,
+                elliptic->Nfields,
+                elliptic->Ntotal,
+                elliptic->BCType,
+                elliptic->NBCType,
+                elliptic->Nmasked,
+                elliptic->o_maskIds,
+                elliptic->NmaskedLocal,
+                elliptic->o_maskIdsLocal,
+                elliptic->NmaskedGlobal,
+                elliptic->o_maskIdsGlobal,
+                elliptic->o_mapB,
+                &ogs);
     elliptic->ogs = ogs;
     elliptic->o_invDegree = elliptic->ogs->o_invDegree;
   }

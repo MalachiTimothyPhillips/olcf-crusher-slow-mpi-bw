@@ -90,8 +90,9 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
     o_r
   );
   if(elliptic->allNeumann) ellipticZeroMean(elliptic, o_r);
+  elliptic->applyMask(elliptic, o_r, dfloatString, true);
+  elliptic->applyMask(elliptic, o_r, dfloatString, false);
   oogs::startFinish(o_r, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
-  elliptic->applyMask(elliptic, o_r, dfloatString);
 
   elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);

@@ -708,8 +708,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     dfloat *v2mask = nrs->Vmask + 1 * nrs->fieldOffset;
     dfloat *v3mask = nrs->Vmask + 2 * nrs->fieldOffset;
 
-    // TODO: what to set ifield to?
+    const int ifieldOld = *(nekData.ifield);
+    *(nekData.ifield) = 1;
     nek::stsmask(v1mask, v2mask, v3mask);
+    *(nekData.ifield) = ifieldOld;
 
     nrs->o_Vn = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vn);
     nrs->o_V1 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V1);
@@ -820,21 +822,27 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
       nrs->uvwSolver->applyMask = applyMask;
       if (unalignedSYM) {
-        nrs->uvwSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          mesh_t *mesh = nrs->meshV;
+        nrs->uvwSolver->applyMask =
+            [&](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
+              mesh_t *mesh = nrs->meshV;
 
-          nrs->enforceUnKernel(mesh->Nelements,
-                               nrs->fieldOffset,
-                               nrs->o_Vn,
-                               nrs->o_V1,
-                               nrs->o_V2,
-                               nrs->o_Vmask,
-                               mesh->o_vmapM,
-                               nrs->o_EToB,
-                               o_x);
+              const dlong Nelems = isGlobal ? mesh->NglobalGatherElements : mesh->NlocalGatherElements;
+              occa::memory &o_elemList =
+                  isGlobal ? mesh->o_globalGatherElementList : mesh->o_localGatherElementList;
 
-          applyMask(solver, o_x, precision);
-        };
+              nrs->enforceUnKernel(Nelems,
+                                   nrs->fieldOffset,
+                                   o_elemList,
+                                   nrs->o_Vn,
+                                   nrs->o_V1,
+                                   nrs->o_V2,
+                                   nrs->o_Vmask,
+                                   mesh->o_vmapM,
+                                   nrs->o_EToB,
+                                   o_x);
+
+              applyMask(solver, o_x, precision, isGlobal);
+            };
       }
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
@@ -1009,8 +1017,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       dfloat *w2mask = nrs->Wmask + 1 * nrs->fieldOffset;
       dfloat *w3mask = nrs->Wmask + 2 * nrs->fieldOffset;
 
-      // TODO: what to set ifield to?
+      const int ifieldOld = *(nekData.ifield);
+      *(nekData.ifield) = 0;
       nek::stsmask(w1mask, w2mask, w3mask);
+      *(nekData.ifield) = ifieldOld;
 
       nrs->o_Wmask = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vmask);
 
@@ -1058,20 +1068,27 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
       nrs->meshSolver->applyMask = applyMask;
       if (unalignedSYM) {
-        nrs->meshSolver->applyMask = [&](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          mesh_t *mesh = nrs->meshV;
+        nrs->uvwSolver->applyMask =
+            [&](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
+              mesh_t *mesh = nrs->meshV;
 
-          applyMask(solver, o_x, precision);
-          nrs->enforceUnKernel(mesh->Nelements,
-                               nrs->fieldOffset,
-                               nrs->o_Vn,
-                               nrs->o_V1,
-                               nrs->o_V2,
-                               nrs->o_Vmask,
-                               mesh->o_vmapM,
-                               nrs->o_EToB,
-                               o_x);
-        };
+              const dlong Nelems = isGlobal ? mesh->NglobalGatherElements : mesh->NlocalGatherElements;
+              occa::memory &o_elemList =
+                  isGlobal ? mesh->o_globalGatherElementList : mesh->o_localGatherElementList;
+
+              nrs->enforceUnKernel(Nelems,
+                                   nrs->fieldOffset,
+                                   o_elemList,
+                                   nrs->o_Vn,
+                                   nrs->o_V1,
+                                   nrs->o_V2,
+                                   nrs->o_Wmask,
+                                   mesh->o_vmapM,
+                                   nrs->o_EToB,
+                                   o_x);
+
+              applyMask(solver, o_x, precision, isGlobal);
+            };
       }
       ellipticSolveSetup(nrs->meshSolver);
     }

@@ -110,8 +110,12 @@ struct elliptic_t
   //C0-FEM mask data
   int* mapB;      // boundary flag of face nodes
   dlong Nmasked;
+  dlong NmaskedLocal;
+  dlong NmaskedGlobal;
 
   occa::memory o_maskIds;
+  occa::memory o_maskIdsGlobal;
+  occa::memory o_maskIdsLocal;
   occa::memory o_mapB;
 
   occa::memory o_x;
@@ -168,7 +172,7 @@ struct elliptic_t
   SolutionProjection* solutionProjection;
   GmresData* gmresData;
 
-  std::function<void(elliptic_t* solver, occa::memory& o_x, std::string precision)> applyMask;
+  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal)> applyMask;
 };
 
 #include "ellipticMultiGrid.h"
@@ -243,6 +247,18 @@ dfloat ellipticUpdatePCG(elliptic_t* elliptic, occa::memory &o_p, occa::memory &
 
 void ellipticZeroMean(elliptic_t* elliptic, occa::memory &o_q);
 
-void ellipticOgs(mesh_t *mesh, dlong _Nlocal, int nFields, dlong offset, int *BCType, int BCTypeOffset,
-                 dlong& Nmasked, occa::memory& o_mapB, occa::memory& o_maskIds, ogs_t **ogs);
+void ellipticOgs(mesh_t *mesh,
+                 dlong mNlocal,
+                 int nFields,
+                 dlong offset,
+                 int *BCType,
+                 int BCTypeOffset,
+                 dlong &Nmasked,
+                 occa::memory &o_maskIds,
+                 dlong &NmaskedLocal,
+                 occa::memory &o_maskIdsLocal,
+                 dlong &NmaskedGlobal,
+                 occa::memory &o_maskIdsGlobal,
+                 occa::memory &o_mapB,
+                 ogs_t **ogs);
 #endif

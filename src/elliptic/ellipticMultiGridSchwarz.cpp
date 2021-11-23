@@ -944,5 +944,6 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
 
     oogs::startFinish(o_Su, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) ogs);
   }
-  elliptic->applyMask(elliptic, o_Su, pfloatString);
+  elliptic->applyMask(elliptic, o_Su, pfloatString, true);
+  elliptic->applyMask(elliptic, o_Su, pfloatString, false);
 }
