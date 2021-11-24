@@ -200,7 +200,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       subroutine nekf_setup(ifflow_in,
      $                      npscal_in, p32, mpart, contol,
-     $                      rho, mue, rhoCp, lambda) 
+     $                      rho, mue, rhoCp, lambda, stsform) 
 
       include 'SIZE'
       include 'TOTAL'
@@ -209,6 +209,7 @@ c-----------------------------------------------------------------------
 
       integer iftmsh_in, ifflow_in, mpart, p32
       real rho, mue, rhoCp, lambda, contol
+      integer stsform
 
       common /rdump/ ntdump
 
@@ -238,6 +239,7 @@ c-----------------------------------------------------------------------
       ifheat = .false.
       ifvo   = .true.
       ifpo   = .true.
+      if(stsform.eq.1) ifstrs = .true.
 
       if (npscal_in .gt. 0) then
         ifheat = .true.

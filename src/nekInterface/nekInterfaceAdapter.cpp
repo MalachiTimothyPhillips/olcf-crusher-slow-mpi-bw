@@ -39,7 +39,8 @@ static void (* nek_outpost_ptr)(double* v1, double* v2, double* v3, double* vp,
 static void (* nek_uf_ptr)(double*, double*, double*);
 static int (* nek_lglel_ptr)(int*);
 static void (* nek_bootstrap_ptr)(int*, char*, char*, char*, int, int, int);
-static void (* nek_setup_ptr)(int*, int*, int*, int*, double*, double*, double*, double*, double*);
+static void (
+    *nek_setup_ptr)(int *, int *, int *, int *, double *, double *, double *, double *, double *, int *);
 static void (* nek_ifoutfld_ptr)(int*);
 static void (* nek_setics_ptr)(void);
 static int (* nek_bcmap_ptr)(int*, int*,int*);
@@ -275,7 +276,8 @@ void set_usr_handles(const char* session_in,int verbose)
     (void (*)(int*, char*, char*, char*, int, int, int))dlsym(handle, fname("nekf_bootstrap"));
   check_error(dlerror());
   nek_setup_ptr =
-    (void (*)(int*, int*, int*, int*, double*, double*, double*, double*, double*))dlsym(handle, fname("nekf_setup"));
+      (void (*)(int *, int *, int *, int *, double *, double *, double *, double *, double *, int *))
+          dlsym(handle, fname("nekf_setup"));
   check_error(dlerror());
   nek_uic_ptr = (void (*)(int*))dlsym(handle, fname("nekf_uic"));
   check_error(dlerror());
@@ -386,8 +388,8 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
   }
 
   const int lx1m =
-      (options.compareArgs("MOVING MESH", "TRUE") || options.compareArgs("STRESS FORMULATION", "TRUE")) ? lx1
-                                                                                                        : 1;
+      (options.compareArgs("MOVING MESH", "TRUE") || options.compareArgs("STRESSFORMULATION", "TRUE")) ? lx1
+                                                                                                       : 1;
 
   int count = 0;
   while(fgets(line, BUFSIZ, fp) != NULL) {
@@ -702,8 +704,18 @@ int setup(nrs_t* nrs_in)
   dfloat lambda;
   options->getArgs("SCALAR00 DIFFUSIVITY", lambda);
 
-  (*nek_setup_ptr)(&flow, &nscal, &nBcRead, &meshPartType, &meshConTol,
-		   &rho, &mue, &rhoCp, &lambda); 
+  int stressForm = options->compareArgs("STRESSFORMULATION", "TRUE");
+
+  (*nek_setup_ptr)(&flow,
+                   &nscal,
+                   &nBcRead,
+                   &meshPartType,
+                   &meshConTol,
+                   &rho,
+                   &mue,
+                   &rhoCp,
+                   &lambda,
+                   &stressForm);
 
   nekData.param = (double*) ptr("param");
   nekData.ifield = (int*) ptr("ifield");

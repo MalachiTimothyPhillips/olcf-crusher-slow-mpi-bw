@@ -22,7 +22,5 @@ density = 1.0
 viscosity = -1.0
 
 [CASEDATA]
-
 # \pi/4 radians
-#P_ROT = 0.7853981633974483
-P_ROT = 0.0
+P_ROT = 0.7853981633974483

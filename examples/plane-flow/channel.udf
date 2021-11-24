@@ -21,7 +21,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
   userfKernel = udfBuildKernel(kernelInfo, "userf");
 }
 
-void UDF_Setup0(nrs_t *nrs){
+void UDF_Setup0(MPI_Comm comm, setupAide& options){
   platform->par->extract("casedata", "p_rot", P_ROT);
   if (platform->options.compareArgs("BUILD ONLY", "FALSE")) {
     double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");

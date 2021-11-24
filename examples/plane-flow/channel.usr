@@ -43,7 +43,7 @@ c-----------------------------------------------------------------------
       include 'CASEDATA'
 
       common /scnrs/ sc_nrs(1)
-      real           scn_nrs
+      real           sc_nrs
 
       real xpt, ypt
 
