@@ -1,13 +1,13 @@
 [GENERAL]
 polynomialOrder = 7
-#startFrom = "r.fld"+time=0
 stopAt = endTime
 endTime = 100
 dt = 2e-02
 timeStepper = tombo2
+subcyclingSteps = 2
 
 writeControl = runTime
-writeInterval = 1
+writeInterval = 10
 
 [PROBLEMTYPE]
 stressFormulation = true # required for variable viscosity

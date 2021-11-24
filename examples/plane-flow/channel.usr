@@ -49,9 +49,9 @@ c-----------------------------------------------------------------------
 
       P_ROT = sc_nrs(1)
 
-      call rescale_x(xm1, 0.0,8.0)
-      call rescale_x(ym1,-1.0,0.0)
-      call rescale_x(zm1, 0.0,1.0)
+      call rescale_x(xm1,0.0,8.0)
+      call rescale_x(ym1,0.0,0.5) ! half-channel
+      call rescale_x(zm1,0.0,1.0)
 
       ntot = nx1*ny1*nz1*nelt
 

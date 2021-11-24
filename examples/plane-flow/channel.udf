@@ -8,12 +8,13 @@
 
 static occa::kernel userfKernel; 
 static dfloat P_ROT;
+static dfloat visc;
 
 void userf(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
 {
   mesh_t* mesh = nrs->meshV;
-  const dfloat DPDX   = 2.0;
-  userfKernel(mesh->Nlocal, nrs->fieldOffset, P_ROT, DPDX, o_FU);
+  const dfloat DP   = 8.0 * visc;
+  userfKernel(mesh->Nlocal, nrs->fieldOffset, P_ROT, DP, o_FU);
 }
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
@@ -35,6 +36,8 @@ void UDF_Setup(nrs_t *nrs)
   cds_t *cds = nrs->cds;
 
   udf.uEqnSource = &userf;
+
+  platform->options.getArgs("VISCOSITY", visc);
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)

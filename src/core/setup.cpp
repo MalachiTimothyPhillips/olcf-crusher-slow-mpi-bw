@@ -823,12 +823,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->applyMask = applyMask;
       if (unalignedSYM) {
         nrs->uvwSolver->applyMask =
-            [&](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
-              mesh_t *mesh = nrs->meshV;
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
 
-              const dlong Nelems = isGlobal ? mesh->NglobalGatherElements : mesh->NlocalGatherElements;
+              const dlong Nelems = isGlobal ? solver->mesh->NglobalGatherElements : solver->mesh->NlocalGatherElements;
+              if(Nelems == 0) return;
               occa::memory &o_elemList =
-                  isGlobal ? mesh->o_globalGatherElementList : mesh->o_localGatherElementList;
+                  isGlobal ? solver->mesh->o_globalGatherElementList : solver->mesh->o_localGatherElementList;
 
               nrs->enforceUnKernel(Nelems,
                                    nrs->fieldOffset,
@@ -837,7 +837,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                    nrs->o_V1,
                                    nrs->o_V2,
                                    nrs->o_Vmask,
-                                   mesh->o_vmapM,
+                                   solver->mesh->o_vmapM,
                                    nrs->o_EToB,
                                    o_x);
 
@@ -1069,12 +1069,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->applyMask = applyMask;
       if (unalignedSYM) {
         nrs->uvwSolver->applyMask =
-            [&](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
-              mesh_t *mesh = nrs->meshV;
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
 
-              const dlong Nelems = isGlobal ? mesh->NglobalGatherElements : mesh->NlocalGatherElements;
+              const dlong Nelems = isGlobal ? solver->mesh->NglobalGatherElements : solver->mesh->NlocalGatherElements;
+              if(Nelems == 0) return;
               occa::memory &o_elemList =
-                  isGlobal ? mesh->o_globalGatherElementList : mesh->o_localGatherElementList;
+                  isGlobal ? solver->mesh->o_globalGatherElementList : solver->mesh->o_localGatherElementList;
 
               nrs->enforceUnKernel(Nelems,
                                    nrs->fieldOffset,
@@ -1083,7 +1083,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                    nrs->o_V1,
                                    nrs->o_V2,
                                    nrs->o_Wmask,
-                                   mesh->o_vmapM,
+                                   solver->mesh->o_vmapM,
                                    nrs->o_EToB,
                                    o_x);
 
