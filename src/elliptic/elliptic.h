@@ -172,7 +172,9 @@ struct elliptic_t
   SolutionProjection* solutionProjection;
   GmresData* gmresData;
 
-  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal)> applyMask;
+  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMask;
+  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMaskExterior;
+  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMaskInterior;
 };
 
 #include "ellipticMultiGrid.h"

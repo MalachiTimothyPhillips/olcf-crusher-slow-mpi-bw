@@ -692,7 +692,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       cds->solver[is]->loffset = 0;
  
       cds->solver[is]->options = cds->options[is];
+
       cds->solver[is]->applyMask = applyMask;
+      cds->solver[is]->applyMaskInterior = applyMaskInterior;
+      cds->solver[is]->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(cds->solver[is]);
     }
   }
@@ -821,29 +824,22 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->poisson = 0;
 
       nrs->uvwSolver->applyMask = applyMask;
+      nrs->uvwSolver->applyMaskInterior = applyMaskInterior;
+      nrs->uvwSolver->applyMaskExterior = applyMaskExterior;
       if (unalignedSYM) {
-        nrs->uvwSolver->applyMask =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
-
-              const dlong Nelems = isGlobal ? solver->mesh->NglobalGatherElements : solver->mesh->NlocalGatherElements;
-              if(Nelems == 0) return;
-              occa::memory &o_elemList =
-                  isGlobal ? solver->mesh->o_globalGatherElementList : solver->mesh->o_localGatherElementList;
-
-              nrs->enforceUnKernel(Nelems,
-                                   nrs->fieldOffset,
-                                   o_elemList,
-                                   nrs->o_Vn,
-                                   nrs->o_V1,
-                                   nrs->o_V2,
-                                   nrs->o_Vmask,
-                                   solver->mesh->o_vmapM,
-                                   nrs->o_EToB,
-                                   o_x);
-
-              applyMask(solver, o_x, precision, isGlobal);
+        nrs->uvwSolver->applyMaskInterior =
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+              applyMaskUnalignedInterior(nrs, nrs->o_Vmask, solver, o_x, precision);
             };
+        nrs->uvwSolver->applyMaskExterior =
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+              applyMaskUnalignedExterior(nrs, nrs->o_Vmask, solver, o_x, precision);
+            };
+        nrs->uvwSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+          applyMaskUnaligned(nrs, nrs->o_Vmask, solver, o_x, precision);
+        };
       }
+
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
       nrs->uSolver = new elliptic_t();
@@ -865,6 +861,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uSolver->poisson = 0;
 
       nrs->uSolver->applyMask = applyMask;
+      nrs->uSolver->applyMaskInterior = applyMaskInterior;
+      nrs->uSolver->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(nrs->uSolver);
 
       nrs->vSolver = new elliptic_t();
@@ -886,6 +884,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->poisson = 0;
 
       nrs->vSolver->applyMask = applyMask;
+      nrs->vSolver->applyMaskInterior = applyMaskInterior;
+      nrs->vSolver->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(nrs->vSolver);
 
       if (nrs->dim == 3) {
@@ -908,6 +908,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->poisson = 0;
 
         nrs->wSolver->applyMask = applyMask;
+        nrs->wSolver->applyMaskInterior = applyMaskInterior;
+        nrs->wSolver->applyMaskExterior = applyMaskExterior;
         ellipticSolveSetup(nrs->wSolver);
       }
     }
@@ -1004,6 +1006,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     nrs->pSolver->options = nrs->pOptions;
     nrs->pSolver->applyMask = applyMask;
+    nrs->pSolver->applyMaskInterior = applyMaskInterior;
+    nrs->pSolver->applyMaskExterior = applyMaskExterior;
     ellipticSolveSetup(nrs->pSolver);
 
   } // flow
@@ -1067,28 +1071,20 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->poisson = 0;
 
       nrs->meshSolver->applyMask = applyMask;
+      nrs->meshSolver->applyMaskInterior = applyMaskInterior;
+      nrs->meshSolver->applyMaskExterior = applyMaskExterior;
       if (unalignedSYM) {
-        nrs->uvwSolver->applyMask =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision, bool isGlobal) {
-
-              const dlong Nelems = isGlobal ? solver->mesh->NglobalGatherElements : solver->mesh->NlocalGatherElements;
-              if(Nelems == 0) return;
-              occa::memory &o_elemList =
-                  isGlobal ? solver->mesh->o_globalGatherElementList : solver->mesh->o_localGatherElementList;
-
-              nrs->enforceUnKernel(Nelems,
-                                   nrs->fieldOffset,
-                                   o_elemList,
-                                   nrs->o_Vn,
-                                   nrs->o_V1,
-                                   nrs->o_V2,
-                                   nrs->o_Wmask,
-                                   solver->mesh->o_vmapM,
-                                   nrs->o_EToB,
-                                   o_x);
-
-              applyMask(solver, o_x, precision, isGlobal);
+        nrs->meshSolver->applyMaskInterior =
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+              applyMaskUnalignedInterior(nrs, nrs->o_Wmask, solver, o_x, precision);
             };
+        nrs->meshSolver->applyMaskExterior =
+            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+              applyMaskUnalignedExterior(nrs, nrs->o_Wmask, solver, o_x, precision);
+            };
+        nrs->meshSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
+          applyMaskUnaligned(nrs, nrs->o_Wmask, solver, o_x, precision);
+        };
       }
       ellipticSolveSetup(nrs->meshSolver);
     }
