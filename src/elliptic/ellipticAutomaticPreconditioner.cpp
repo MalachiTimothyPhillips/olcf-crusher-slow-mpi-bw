@@ -20,9 +20,9 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER NUM SAMPLES", NSamples);
 
-  minChebyOrder = 1;
-  maxChebyOrder = 3;
-  
+  minChebyOrder = 2; // should obey input...
+  maxChebyOrder = 2;
+
   std::set<ChebyshevSmootherType> allSmoothers = {
     ChebyshevSmootherType::JACOBI,
     ChebyshevSmootherType::ASM,
@@ -38,17 +38,31 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     schedules.push_back(levels);
   }
 
-  defaultSolver = {ChebyshevSmootherType::ASM, 2, schedules[0]};
+  defaultSolver = {
+      PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules[0]};
 
+  // SEMFEM
+  auto preconditioner = PreconditionerType::SEMFEM;
+  solverDescription_t description = {
+      preconditioner, ChebyshevSmootherType::NONE, 0, {}};
+  allSolvers.insert(description);
+  solverToTime[description] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
+
+  // pMG combinations
+  preconditioner = PreconditionerType::PMG;
   for(auto && schedule : schedules){
     for(auto && smoother : allSmoothers)
     {
       for(unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder)
       {
-        allSolvers.insert({smoother, chebyOrder, schedule});
-        solverToTime[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
-        solverTimePerIter[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
-        solverToIterations[{smoother, chebyOrder, schedule}] = std::vector<unsigned int>(NSamples, 0);
+        description = {preconditioner, smoother, chebyOrder, schedule};
+        allSolvers.insert(description);
+        solverToTime[description] = std::vector<double>(NSamples, -1.0);
+        solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+        solverToIterations[description] =
+            std::vector<unsigned int>(NSamples, 0);
       }
     }
   }
@@ -75,8 +89,9 @@ automaticPreconditioner_t::apply(int tstep)
   //}
 
   // kludge
-  const std::vector<int> evaluationSteps = {250,500,1000};
-  //const std::vector<int> evaluationSteps = {10,20,50};
+  const std::vector<int> evaluationSteps = {1000};
+  // const std::vector<int> evaluationSteps = {250,500,1000};
+  // const std::vector<int> evaluationSteps = {10,20,50};
   bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
     [=](int evaluationStep){
       return evaluationStep == tstep;
@@ -176,9 +191,19 @@ automaticPreconditioner_t::determineFastestSolver()
   return minSolver;
 }
 
-void
-automaticPreconditioner_t::reinitializePreconditioner()
-{
+void automaticPreconditioner_t::reinitializePreconditioner() {
+  if (currentSolver.preconditioner == PreconditionerType::SEMFEM) {
+    reinitializeSEMFEM();
+  } else {
+    reinitializePMG();
+  }
+}
+
+void automaticPreconditioner_t::reinitializeSEMFEM() {
+  elliptic.options.setArgs("PRECONDITIONER", "SEMFEM");
+}
+
+void automaticPreconditioner_t::reinitializePMG() {
   dfloat minMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", minMultiplier);
 
@@ -244,8 +269,6 @@ automaticPreconditioner_t::reinitializePreconditioner()
     kernelName = "ellipticPreconProlongate" + suffix;
     level->elliptic->precon->prolongateKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
   }
-
-
 }
 
 std::string

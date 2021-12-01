@@ -666,8 +666,11 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     }
   }
 }
-void parsePreconditioner(const int rank, setupAide &options,
-                         inipp::Ini *par, std::string parScope) {
+void parsePreconditioner(const int rank,
+    setupAide &options,
+    inipp::Ini *par,
+    std::string parScope,
+    std::string preconditioner = "") {
   const std::vector<std::string> validValues = {
     {"none"},
     {"jac"},
@@ -698,10 +701,12 @@ void parsePreconditioner(const int rank, setupAide &options,
                               : parScope;
   UPPER(parSection);
 
-  std::string p_preconditioner;
-  if(par->extract(parScope, "preconditioner", p_preconditioner)) {}
-  else {
-    return; // unspecified, bail
+  std::string p_preconditioner = preconditioner;
+  if (p_preconditioner.empty()) {
+    if (par->extract(parScope, "preconditioner", p_preconditioner)) {
+    } else {
+      return; // unspecified, bail
+    }
   }
 
   const std::vector<std::string> list = serializeString(p_preconditioner, '+');
@@ -804,6 +809,14 @@ void parsePreconditioner(const int rank, setupAide &options,
                         std::to_string(value));
       }
     }
+
+    // rely on recursive call to properly set up defaults
+    // p_preconditioner = "semfem+amgx"; // <- kludge, choose correct one for
+    // system
+    p_preconditioner = "semfem";
+    parsePreconditioner(rank, options, par, parScope, p_preconditioner);
+    p_preconditioner = "pmg+coarse";
+    parsePreconditioner(rank, options, par, parScope, p_preconditioner);
   }
 
   if (p_preconditioner == "none") {

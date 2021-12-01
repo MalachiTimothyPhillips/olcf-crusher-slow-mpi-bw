@@ -23,11 +23,11 @@ struct solverDescription_t{
       ss << "SEMFEM";
     } else { // pMG
       ss << "Chebyshev+";
-      if (preconditioner == PreconditionerType::CHEB_ASM) {
+      if (smoother == ChebyshevSmootherType::ASM) {
         ss << "ASM";
-      } else if (preconditioner == PreconditionerType::CHEB_RAS) {
+      } else if (smoother == ChebyshevSmootherType::RAS) {
         ss << "RAS";
-      } else if (preconditioner == PreconditionerType::CHEB_JAC) {
+      } else if (smoother == ChebyshevSmootherType::JACOBI) {
         ss << "Jacobi";
       }
       ss << "+Degree=" << chebyOrder;
@@ -45,14 +45,26 @@ struct solverDescription_t{
   }
 
   solverDescription_t(PreconditionerType mPreconditioner,
+      ChebyshevSmootherType mSmoother,
       unsigned mChebyOrder,
       std::set<unsigned> mSchedule)
-      : preconditioner(mPreconditioner), chebyOrder(mChebyOrder),
-        schedule(mSchedule) {}
+      : preconditioner(mPreconditioner), smoother(mSmoother),
+        chebyOrder(mChebyOrder), schedule(mSchedule) {
+    usesSEMFEM = (preconditioner == PreconditionerType::SEMFEM);
+
+    // mark others are noop
+    if (usesSEMFEM) {
+      smoother = ChebyshevSmootherType::NONE;
+      chebyOrder = 0;
+      schedule = {};
+    }
+  }
 
   PreconditionerType preconditioner;
+  ChebyshevSmootherType smoother;
   unsigned chebyOrder;
   std::set<unsigned> schedule;
+  bool usesSEMFEM;
 
   solverDescription_t(const solverDescription_t& rhs) = default;
 
@@ -74,9 +86,8 @@ struct solverDescription_t{
   inline bool operator!=(const solverDescription_t& other) const { return !(*this == other); }
 };
 
-class automaticPreconditioner_t{
-  static constexpr int NSmoothers {3};
-  public:
+class automaticPreconditioner_t {
+public:
   automaticPreconditioner_t(elliptic_t& m_elliptic);
 
   std::string
@@ -89,6 +100,8 @@ class automaticPreconditioner_t{
   void evaluateCurrentSolver();
   bool selectSolver();
   void reinitializePreconditioner();
+  void reinitializeSEMFEM();
+  void reinitializePMG();
   solverDescription_t determineFastestSolver();
   elliptic_t& elliptic;
   bool activeTuner;
@@ -98,7 +111,7 @@ class automaticPreconditioner_t{
   unsigned int maxChebyOrder;
   unsigned int sampleCounter;
   int NSamples;
-  ChebyshevSmootherType fastestSmoother;
+  PreconditionerType fastestSolver;
 
   std::map<int, MGLevel*> multigridLevels;
 

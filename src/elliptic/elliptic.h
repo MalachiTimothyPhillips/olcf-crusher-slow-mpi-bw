@@ -48,7 +48,7 @@ class elliptic_t;
 class automaticPreconditioner_t;
 class MGLevel;
 
-enum class PreconditionerType { CHEB_JAC, CHEB_ASM, CHEB_RAS, SEMFEM };
+enum class PreconditionerType { PMG, SEMFEM };
 
 struct GmresData{
   GmresData(elliptic_t*);

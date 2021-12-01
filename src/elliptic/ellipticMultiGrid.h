@@ -35,8 +35,8 @@ enum class SmootherType
   SCHWARZ,
   JACOBI,
 };
-enum class ChebyshevSmootherType
-{  
+enum class ChebyshevSmootherType {
+  NONE,
   JACOBI,
   ASM,
   RAS,
