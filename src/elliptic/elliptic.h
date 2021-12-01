@@ -48,6 +48,8 @@ class elliptic_t;
 class automaticPreconditioner_t;
 class MGLevel;
 
+enum class PreconditionerType { CHEB_JAC, CHEB_ASM, CHEB_RAS, SEMFEM };
+
 struct GmresData{
   GmresData(elliptic_t*);
   int restart;

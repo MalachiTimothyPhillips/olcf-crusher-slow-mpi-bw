@@ -1,12 +1,13 @@
 #if !defined(ellipticAutomaticPreconditioner_h_)
 #define ellipticAutomaticPreconditioner_h_
-#include <set>
-#include <map>
-#include <tuple>
-#include <string>
-#include <iostream>
 #include <array>
+#include <elliptic.h>
 #include <ellipticMultiGrid.h>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <tuple>
 class elliptic_t;
 
 class MGLevel;
@@ -17,30 +18,39 @@ struct solverDescription_t{
 
   std::string to_string() const {
     std::ostringstream ss;
-    ss << "Chebyshev+";
-    if(smoother == ChebyshevSmootherType::ASM)
-      ss << "ASM";
-    else if(smoother == ChebyshevSmootherType::RAS)
-      ss << "RAS";
-    else if(smoother == ChebyshevSmootherType::JACOBI)
-      ss << "Jacobi";
-    ss << "+Degree=" << chebyOrder;
-    ss << ",(";
-    for (auto&& i = schedule.rbegin(); 
-        i != schedule.rend(); ++i ) { 
-      ss << *i;
-      auto nextIt = i;
-      std::advance(nextIt,1);
-      if(nextIt != schedule.rend()) ss << ",";
-    } 
-    ss << ")";
+
+    if (preconditioner == PreconditionerType::SEMFEM) {
+      ss << "SEMFEM";
+    } else { // pMG
+      ss << "Chebyshev+";
+      if (preconditioner == PreconditionerType::CHEB_ASM) {
+        ss << "ASM";
+      } else if (preconditioner == PreconditionerType::CHEB_RAS) {
+        ss << "RAS";
+      } else if (preconditioner == PreconditionerType::CHEB_JAC) {
+        ss << "Jacobi";
+      }
+      ss << "+Degree=" << chebyOrder;
+      ss << ",(";
+      for (auto &&i = schedule.rbegin(); i != schedule.rend(); ++i) {
+        ss << *i;
+        auto nextIt = i;
+        std::advance(nextIt, 1);
+        if (nextIt != schedule.rend())
+          ss << ",";
+      }
+      ss << ")";
+    }
     return ss.str();
   }
 
-  solverDescription_t(ChebyshevSmootherType mSmoother, unsigned mChebyOrder, std::set<unsigned> mSchedule)
-  : smoother(mSmoother), chebyOrder(mChebyOrder), schedule(mSchedule){}
+  solverDescription_t(PreconditionerType mPreconditioner,
+      unsigned mChebyOrder,
+      std::set<unsigned> mSchedule)
+      : preconditioner(mPreconditioner), chebyOrder(mChebyOrder),
+        schedule(mSchedule) {}
 
-  ChebyshevSmootherType smoother;
+  PreconditionerType preconditioner;
   unsigned chebyOrder;
   std::set<unsigned> schedule;
 
@@ -50,11 +60,13 @@ struct solverDescription_t{
 
   inline bool operator==(const solverDescription_t& other) const
   {
-    return std::tie(smoother, chebyOrder, schedule) == std::tie(other.smoother, other.chebyOrder, other.schedule);
+    return std::tie(preconditioner, chebyOrder, schedule) ==
+           std::tie(other.preconditioner, other.chebyOrder, other.schedule);
   }
   inline bool operator<(const solverDescription_t& other) const
   {
-    return std::tie(smoother, chebyOrder, schedule) < std::tie(other.smoother, other.chebyOrder, other.schedule);
+    return std::tie(preconditioner, chebyOrder, schedule) <
+           std::tie(other.preconditioner, other.chebyOrder, other.schedule);
   }
   inline bool operator> (const solverDescription_t& other) const { return *this < other; }
   inline bool operator<=(const solverDescription_t& other) const { return !(*this > other); }

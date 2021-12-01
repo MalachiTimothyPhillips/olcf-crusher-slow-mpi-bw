@@ -720,8 +720,8 @@ void parsePreconditioner(const int rank, setupAide &options,
     // default params
     constexpr int trialFrequency {500};
     constexpr int autoStart {100};
-    constexpr int maxChebyOrder {3};
-    constexpr int minChebyOrder {1};
+    constexpr int maxChebyOrder{2}; // turn off variation
+    constexpr int minChebyOrder{2};
     constexpr int Nsamples {3};
 
     options.setArgs(parSection + " AUTO PRECONDITIONER", "TRUE");
