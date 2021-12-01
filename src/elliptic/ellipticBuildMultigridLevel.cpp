@@ -94,17 +94,18 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   // global nodes
   meshGlobalIds(mesh);
 
-#if 0
+#if 1
   mesh->o_x = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->x);
   mesh->o_y = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->y);
   mesh->o_z = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->z);
 #endif
 
-  //dont need these once vmap is made
-  free(mesh->x);
-  free(mesh->y);
-  if (elliptic->dim == 3)
-    free(mesh->z);
+  // FALSE: may need them for coarse grid SEMFEM
+  // dont need these once vmap is made
+  // free(mesh->x);
+  // free(mesh->y);
+  // if (elliptic->dim == 3)
+  //  free(mesh->z);
 
   dlong Ntotal = mesh->Np * mesh->Nelements;
 
