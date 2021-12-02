@@ -124,14 +124,18 @@ void registerSchwarzKernels(const std::string &section, int N)
     properties["defines/p_restrict"] = 0;
     const std::string suffix = std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
     properties["defines/p_overlap"] = (int)overlap;
-    if (platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER", "RAS"))
-      properties["defines/p_restrict"] = 1;
+
+    occa::properties RASproperties = properties;
+    RASproperties["defines/p_restrict"] = 1;
 
     fileName = oklpath + "preFDM" + extension;
     platform->kernels.add("preFDM" + suffix, fileName, properties, suffix);
 
     fileName = oklpath + "fusedFDM" + extension;
-    platform->kernels.add("fusedFDM" + suffix, fileName, properties, suffix);
+    platform->kernels.add("fusedASM" + suffix, fileName, properties, suffix);
+
+    fileName = oklpath + "fusedFDM" + extension;
+    platform->kernels.add("fusedRAS" + suffix, fileName, RASproperties, suffix);
 
     fileName = oklpath + "postFDM" + extension;
     platform->kernels.add("postFDM" + suffix, fileName, properties, suffix);
