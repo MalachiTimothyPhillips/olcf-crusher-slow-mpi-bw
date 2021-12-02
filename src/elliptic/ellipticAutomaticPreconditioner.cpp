@@ -45,10 +45,11 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   auto preconditioner = PreconditionerType::SEMFEM;
   solverDescription_t description = {
       preconditioner, ChebyshevSmootherType::NONE, 0, {}};
-  allSolvers.insert(description);
-  solverToTime[description] = std::vector<double>(NSamples, -1.0);
-  solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
-  solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
+  // TODO... enable soon...
+  // allSolvers.insert(description);
+  // solverToTime[description] = std::vector<double>(NSamples, -1.0);
+  // solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+  // solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
 
   // pMG combinations
   preconditioner = PreconditionerType::PMG;
@@ -81,6 +82,9 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 bool
 automaticPreconditioner_t::apply(int tstep)
 {
+  if (platform->comm.mpiRank == 0)
+    std::cout << "Inside automaticPreconditioner_t::apply!\n";
+  fflush(stdout);
   //bool evaluatePreconditioner = true;
   //evaluatePreconditioner &= activeTuner;
   //evaluatePreconditioner &= tstep >= autoStart;
@@ -89,7 +93,7 @@ automaticPreconditioner_t::apply(int tstep)
   //}
 
   // kludge
-  const std::vector<int> evaluationSteps = {100};
+  const std::vector<int> evaluationSteps = {10};
   // const std::vector<int> evaluationSteps = {250,500,1000};
   // const std::vector<int> evaluationSteps = {10,20,50};
   bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
@@ -131,8 +135,13 @@ automaticPreconditioner_t::selectSolver()
   std::set_difference(allSolvers.begin(), allSolvers.end(),
     visitedSolvers.begin(), visitedSolvers.end(),
     std::inserter(remainingSolvers, remainingSolvers.begin()));
+
+  std::cout << "Remaining solvers:\n";
+  for (auto &&solver : remainingSolvers)
+    std::cout << "\t" << solver.to_string() << "\n";
   if(remainingSolvers.empty())
   {
+    std::cout << "sampleCounter = " << sampleCounter << std::endl;
     if(sampleCounter == (NSamples-1)){
       currentSolver = determineFastestSolver();
       if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
@@ -151,7 +160,7 @@ automaticPreconditioner_t::selectSolver()
       return false;
     } else {
       sampleCounter++;
-      return false; // <-
+      return true; // <-
     }
   } else {
 

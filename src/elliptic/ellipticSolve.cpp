@@ -161,7 +161,7 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
      options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
     platform->timer.tic(name + " proj post", 1);
-    elliptic->solutionProjection->post(o_x);
+    elliptic->solutionProjection->post(o_x, autoTunePreconditioner);
     platform->timer.toc(name + " proj post");
   } else {
     elliptic->res00Norm = elliptic->res0Norm;

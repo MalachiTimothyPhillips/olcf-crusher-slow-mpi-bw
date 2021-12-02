@@ -813,10 +813,11 @@ void parsePreconditioner(const int rank,
     // rely on recursive call to properly set up defaults
     // p_preconditioner = "semfem+amgx"; // <- kludge, choose correct one for
     // system
-    p_preconditioner = "semfem";
-    parsePreconditioner(rank, options, par, parScope, p_preconditioner);
+    // p_preconditioner = "semfem";
+    // parsePreconditioner(rank, options, par, parScope, p_preconditioner);
     p_preconditioner = "pmg+coarse";
     parsePreconditioner(rank, options, par, parScope, p_preconditioner);
+    return;
   }
 
   if (p_preconditioner == "none") {

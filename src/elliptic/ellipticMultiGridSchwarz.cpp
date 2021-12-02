@@ -921,34 +921,58 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
 
   if(options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
     if(!overlap){
-      fusedRASKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                     o_Su,o_Sx,o_Sy,o_Sz,o_invL,elliptic->o_invDegree,o_work1);
+      fusedRASKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, elliptic->o_invDegree, o_work1);
     } else if(overlap && mesh->NglobalGatherElements){
-      fusedRASKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                     o_Su,o_Sx,o_Sy,o_Sz,o_invL,elliptic->o_invDegree,o_work1);
+      fusedRASKernel(mesh->NglobalGatherElements,
+                     mesh->o_globalGatherElementList,
+                     o_Su,
+                     o_Sx,
+                     o_Sy,
+                     o_Sz,
+                     o_invL,
+                     elliptic->o_invDegree,
+                     o_work1);
     }
 
     oogs::start(o_Su, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) ogs);
 
     if(overlap && mesh->NlocalGatherElements)
-      fusedRASKernel(Nelements,mesh->NlocalGatherElements,mesh->o_localGatherElementList,
-                     o_Su,o_Sx,o_Sy,o_Sz,o_invL,elliptic->o_invDegree,o_work1);
+      fusedRASKernel(mesh->NlocalGatherElements,
+                     mesh->o_localGatherElementList,
+                     o_Su,
+                     o_Sx,
+                     o_Sy,
+                     o_Sz,
+                     o_invL,
+                     elliptic->o_invDegree,
+                     o_work1);
 
     oogs::finish(o_Su, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) ogs);
   } else {
     if(!overlap){
-      fusedASMKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                     o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
+      fusedASMKernel(Nelements, o_work2, o_Sx, o_Sy, o_Sz, o_invL, o_work1);
     } else if(overlap && mesh->NglobalGatherElements){
-      fusedASMKernel(Nelements,mesh->NglobalGatherElements,mesh->o_globalGatherElementList,
-                     o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
+      fusedASMKernel(mesh->NglobalGatherElements,
+                     mesh->o_globalGatherElementList,
+                     o_work2,
+                     o_Sx,
+                     o_Sy,
+                     o_Sz,
+                     o_invL,
+                     o_work1);
     }
 
     oogs::start(o_work2, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) extendedOgs);
 
     if(overlap && mesh->NlocalGatherElements)
-      fusedASMKernel(Nelements,mesh->NlocalGatherElements,mesh->o_localGatherElementList,
-                     o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
+      fusedASMKernel(mesh->NlocalGatherElements,
+                     mesh->o_localGatherElementList,
+                     o_work2,
+                     o_Sx,
+                     o_Sy,
+                     o_Sz,
+                     o_invL,
+                     o_work1);
 
     oogs::finish(o_work2, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) extendedOgs);
 

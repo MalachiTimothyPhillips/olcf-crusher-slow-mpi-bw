@@ -216,6 +216,10 @@ void constructCoarseningAndProlongationKernels(occa::properties kernelInfo)
   for (int pass = 0; pass < 2; ++pass) {
     auto levels = determineMGLevels("pressure", pass);
 
+    std::cout << "pass = " << pass << "\n";
+    for (auto &&level : levels)
+      std::cout << "level = " << level << "\n";
+
     for (int levelIndex = 1; levelIndex < levels.size(); ++levelIndex) {
 
       const int Nf = levels[levelIndex - 1];
@@ -420,20 +424,7 @@ void registerEllipticPreconditionerKernels(std::string section, int poissonEquat
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
-  if (platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "MULTIGRID")) {
-    registerMultiGridKernels(section, poissonEquation);
-  }
-  else if (platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "SEMFEM")) {
-    registerSEMFEMKernels(section, N, poissonEquation);
-  }
-  else if (platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "JACOBI")) {
-    registerJacobiKernels(section, poissonEquation);
-  }
-  else if (platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "NONE")) {
-    // nothing
-  }
-  else {
-    printf("ERROR: Unknown preconditioner!\n");
-    ABORT(EXIT_FAILURE);
-  }
+  registerMultiGridKernels(section, poissonEquation);
+  registerSEMFEMKernels(section, N, poissonEquation);
+  registerJacobiKernels(section, poissonEquation);
 }
