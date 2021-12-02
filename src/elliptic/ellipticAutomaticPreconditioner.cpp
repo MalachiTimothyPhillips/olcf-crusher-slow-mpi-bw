@@ -265,9 +265,9 @@ void automaticPreconditioner_t::reinitializePMG() {
     level->buildCoarsenerQuadHex(Nf, Nc);
     level->o_invDegree = fineLevel->elliptic->o_invDegree;
     std::string kernelName = "ellipticPreconCoarsen" + suffix;
-    level->elliptic->precon->coarsenKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+    level->elliptic->precon->coarsenKernel = platform->kernels.get(kernelName + kernelSuffix);
     kernelName = "ellipticPreconProlongate" + suffix;
-    level->elliptic->precon->prolongateKernel = platform->kernels.getKernel(kernelName + kernelSuffix);
+    level->elliptic->precon->prolongateKernel = platform->kernels.get(kernelName + kernelSuffix);
   }
 }
 

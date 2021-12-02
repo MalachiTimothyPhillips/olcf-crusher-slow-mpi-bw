@@ -902,10 +902,10 @@ void MGLevel::build(
   const std::string suffix = std::string("_") + std::to_string(Nq_e-1) + std::string("pfloat");
 
   {
-    preFDMKernel = platform->kernels.getKernel("preFDM" + suffix);
-    fusedASMKernel = platform->kernels.getKernel("fusedASM" + suffix);
-    fusedRASKernel = platform->kernels.getKernel("fusedRAS" + suffix);
-    postFDMKernel = platform->kernels.getKernel("postFDM" + suffix);
+    preFDMKernel = platform->kernels.get("preFDM" + suffix);
+    fusedASMKernel = platform->kernels.get("fusedASM" + suffix);
+    fusedRASKernel = platform->kernels.get("fusedRAS" + suffix);
+    postFDMKernel = platform->kernels.get("postFDM" + suffix);
   }
 }
 

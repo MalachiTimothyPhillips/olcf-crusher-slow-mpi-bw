@@ -139,13 +139,8 @@ void MGLevel::computeMaxEigs(elliptic_t* ellipticBase)
   }
   {
     chebyshevSmoother = ChebyshevSmootherType::JACOBI;
-    dfloat* invDiagA;
-    std::vector<pfloat> casted_invDiagA(mesh->Np * mesh->Nelements, 0.0);
-    ellipticBuildJacobi(elliptic,&invDiagA);
-    for(dlong i = 0; i < mesh->Np * mesh->Nelements; ++i)
-      casted_invDiagA[i] = static_cast<pfloat>(invDiagA[i]);
-    o_invDiagA = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat), casted_invDiagA.data());
-    free(invDiagA);
+    o_invDiagA = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(pfloat));
+    ellipticUpdateJacobi(elliptic, o_invDiagA);
     dfloat rho = this->maxEigSmoothAx();
     this->lambdaMax[2] = rho;
   }

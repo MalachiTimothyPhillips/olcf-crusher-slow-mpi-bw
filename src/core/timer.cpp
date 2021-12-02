@@ -302,8 +302,9 @@ void timer_t::printRunStat(int step)
 
   printStatEntry("  checkpointing         ", "checkpointing", "DEVICE:MAX");
 
+  const double tAutoPreconditioner = query("autoPreconditioner", "DEVICE:MAX");
   if (tAutoPreconditioner > 0)
-    std::cout << "  tuner                 " << tAutoPreconditioner << "s " << printPercentage(tAutoPreconditioner,dEtime[9]) << "\n";
+    std::cout << "  tuner                 " << tAutoPreconditioner << "s\n";
 
     std::cout << std::endl;
     printStatEntry("  udfExecuteStep        ", "udfExecuteStep", "DEVICE:MAX");
