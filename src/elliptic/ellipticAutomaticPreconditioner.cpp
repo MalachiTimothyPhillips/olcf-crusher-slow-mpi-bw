@@ -89,7 +89,7 @@ automaticPreconditioner_t::apply(int tstep)
   //}
 
   // kludge
-  const std::vector<int> evaluationSteps = {1000};
+  const std::vector<int> evaluationSteps = {100};
   // const std::vector<int> evaluationSteps = {250,500,1000};
   // const std::vector<int> evaluationSteps = {10,20,50};
   bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
