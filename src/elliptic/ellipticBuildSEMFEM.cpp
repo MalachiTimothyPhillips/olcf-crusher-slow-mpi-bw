@@ -242,12 +242,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
                    /* mode */ 0);
   }
 
-  constructOnHost = 
-    platform->device.mode() == std::string("OpenCL")
-    ||
-    platform->device.mode() == std::string("HIP")
-    ||
-    platform->device.mode() == std::string("Serial");
+  constructOnHost = !platform->device.deviceAtomic;
 
   if(!constructOnHost) load();
 
@@ -855,11 +850,7 @@ void fem_assembly() {
   if(comm.id == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
 }
 
-void load(){
-  computeStiffnessMatrixKernel = platform->kernels.getKernel(
-    "computeStiffnessMatrix"
-  );
-}
+void load() { computeStiffnessMatrixKernel = platform->kernels.get("computeStiffnessMatrix"); }
 void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
 
   (v_coord)[0][0] = 0;

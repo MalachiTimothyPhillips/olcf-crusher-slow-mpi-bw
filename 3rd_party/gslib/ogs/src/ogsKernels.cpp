@@ -311,8 +311,6 @@ void ogs::initKernels(MPI_Comm comm, occa::device device, bool verbose) {
       ogs::gatherManyKernel_longMin = device.buildKernel(DOGS "/okl/gatherMany.okl", "gatherMany_longMin", props);
       ogs::gatherManyKernel_longMax = device.buildKernel(DOGS "/okl/gatherMany.okl", "gatherMany_longMax", props);
 
-
-
       ogs::scatterKernel_float = device.buildKernel(DOGS "/okl/scatter.okl", "scatter_float", props);
       ogs::scatterKernel_double = device.buildKernel(DOGS "/okl/scatter.okl", "scatter_double", props);
       ogs::scatterKernel_int = device.buildKernel(DOGS "/okl/scatter.okl", "scatter_int", props);
@@ -323,10 +321,12 @@ void ogs::initKernels(MPI_Comm comm, occa::device device, bool verbose) {
       ogs::scatterVecKernel_int = device.buildKernel(DOGS "/okl/scatterVec.okl", "scatterVec_int", props);
       ogs::scatterVecKernel_long = device.buildKernel(DOGS "/okl/scatterVec.okl", "scatterVec_long", props);
 
-      ogs::scatterManyKernel_float = device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_float", props);
+      ogs::scatterManyKernel_float =
+          device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_float", props);
       ogs::scatterManyKernel_double = device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_double", props);
       ogs::scatterManyKernel_int = device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_int", props);
-      ogs::scatterManyKernel_long = device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_long", props);
+      ogs::scatterManyKernel_long =
+          device.buildKernel(DOGS "/okl/scatterMany.okl", "scatterMany_long", props);
     }
     MPI_Barrier(comm);
   }

@@ -47,8 +47,7 @@ class MGLevel : public parAlmond::multigridLevel
 public:
 
   elliptic_t* elliptic;
-  mesh_t* mesh;
-  dfloat lambda;
+  mesh_t *mesh;
 
   int degree;
 
@@ -99,7 +98,6 @@ public:
 
   //local patch data
   occa::memory o_invAP, o_patchesIndex, o_invDegreeAP;
-  //ogs_t* extendedOgs = nullptr;
   void* extendedOgs;
   void* ogs;
   void build(
@@ -111,22 +109,23 @@ public:
   bool isCoarse;
 
   //build a single level
-  MGLevel(elliptic_t* ellipticBase, dfloat lambda_, int Nc,
-          setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_,
-          bool _isCoarse = false
-          );
-  //build a level and connect it to the previous one
-  MGLevel(elliptic_t* ellipticBase, //finest level
-          mesh_t** meshLevels,
-          elliptic_t* ellipticFine,          //previous level
-          elliptic_t* ellipticCoarse,          //current level
-          dfloat lambda_,
-          int Nf, int Nc,
+  MGLevel(elliptic_t *ellipticBase,
+          int Nc,
           setupAide options_,
           parAlmond::KrylovType ktype_,
           MPI_Comm comm_,
-          bool _isCoarse = false
-          );
+          bool _isCoarse = false);
+  //build a level and connect it to the previous one
+  MGLevel(elliptic_t *ellipticBase, // finest level
+          mesh_t **meshLevels,
+          elliptic_t *ellipticFine,   // previous level
+          elliptic_t *ellipticCoarse, // current level
+          int Nf,
+          int Nc,
+          setupAide options_,
+          parAlmond::KrylovType ktype_,
+          MPI_Comm comm_,
+          bool _isCoarse = false);
 
   void Ax(dfloat* /*x*/, dfloat* /*Ax*/) {}
   void Ax(occa::memory o_x, occa::memory o_Ax);

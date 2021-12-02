@@ -4,12 +4,9 @@ on:
   # allows us to run workflows manually
   workflow_dispatch:
 
-  pull_request:
-    branches:
-      - next
   push:
     branches:
-      - next
+      - master 
 
 env:
   GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -20,6 +17,7 @@ env:
   OCCA_CUDA_ENABLED: "0"
   OCCA_HIP_ENABLED: "0"
   OCCA_OPENCL_ENABLED: "0"
+  NEKRS_COMPILER_FLAGS: "-O2"
   NEKRS_OCCA_MODE_DEFAULT: "SERIAL"
   NEKRS_CI: "1"
 

@@ -33,8 +33,18 @@
 bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, int tstep)
 {
   bool autoTunePreconditioner = false;
-  mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
+  if (elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "JACOBI"))
+    ellipticUpdateJacobi(elliptic, elliptic->precon->o_invDiagA);
+  else if (elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "MULTIGRID"))
+    ellipticMultiGridUpdateLambda(elliptic);
+
+  mesh_t *mesh = elliptic->mesh;
+
+  std::string name = elliptic->name;
+  if (name.find("scalar") != std::string::npos) {
+    name = "scalar";
+  }
 
   int maxIter = 999;
   options.getArgs("MAXIMUM ITERATIONS", maxIter);
@@ -74,9 +84,6 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
     if(platform->comm.mpiRank == 0) printf("%s x0 norm: %.15e\n", elliptic->name.c_str(), rhsNorm);
   }
 
-  if(elliptic->var_coeff && options.compareArgs("PRECONDITIONER", "JACOBI"))
-    ellipticUpdateJacobi(elliptic);
-
   // compute initial residual r = rhs - Ax0
   ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_x, elliptic->o_Ap, dfloatString);
   ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_x, elliptic->o_Ap, dfloatString);
@@ -97,26 +104,22 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
      options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
-    //if(!autoTunePreconditioner){
-    if(true){
-      platform->timer.tic(elliptic->name + " proj pre",1);
-      elliptic->res00Norm = 
-        platform->linAlg->weightedNorm2Many(
-          mesh->Nlocal,
-          elliptic->Nfields,
-          elliptic->Ntotal,
-          elliptic->o_invDegree,
-          o_r,
-          platform->comm.mpiComm
-        )
-        * sqrt(elliptic->resNormFactor); 
-      if(std::isnan(elliptic->res00Norm)) {
-        if(platform->comm.mpiRank == 0) printf("Unreasonable res00Norm!\n");
-        ABORT(EXIT_FAILURE);
-      }
-      elliptic->residualProjection->pre(o_r);
-      platform->timer.toc(elliptic->name + " proj pre");
+
+    platform->timer.tic(name + " proj pre", 1);
+    elliptic->res00Norm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+                                                              elliptic->Nfields,
+                                                              elliptic->Ntotal,
+                                                              elliptic->o_invDegree,
+                                                              o_r,
+                                                              platform->comm.mpiComm) *
+                          sqrt(elliptic->resNormFactor);
+    if (std::isnan(elliptic->res00Norm)) {
+      if (platform->comm.mpiRank == 0)
+        printf("Unreasonable res00Norm!\n");
+      ABORT(EXIT_FAILURE);
     }
+    elliptic->solutionProjection->pre(o_r);
+    platform->timer.toc(name + " proj pre");
   }
 
   elliptic->res0Norm = 
@@ -156,10 +159,10 @@ bool ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, i
 
 
   if(options.compareArgs("INITIAL GUESS","PROJECTION") ||
-     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) { 
-    platform->timer.tic(elliptic->name + " proj post",1);
-    elliptic->residualProjection->post(o_x, autoTunePreconditioner);
-    platform->timer.toc(elliptic->name + " proj post");
+     options.compareArgs("INITIAL GUESS","PROJECTION-ACONJ")) {
+    platform->timer.tic(name + " proj post", 1);
+    elliptic->solutionProjection->post(o_x);
+    platform->timer.toc(name + " proj post");
   } else {
     elliptic->res00Norm = elliptic->res0Norm;
   }

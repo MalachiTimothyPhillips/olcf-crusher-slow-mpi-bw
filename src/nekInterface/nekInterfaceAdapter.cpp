@@ -349,8 +349,8 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
   char line[BUFSIZ];
   const char *cache_dir = getenv("NEKRS_CACHE_DIR");
 
-  const std::string install_dir(getenv("NEKRS_HOME"));
-  const std::string nek5000_dir = install_dir + "/nek5000";
+  const std::string installDir(getenv("NEKRS_HOME"));
+  const std::string nek5000_dir = installDir + "/nek5000";
 
   const int verbose = options.compareArgs("VERBOSE","TRUE") ? 1:0;
 
@@ -464,9 +464,7 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
 void buildNekInterface(int ldimt, int N, int np, setupAide& options)
 {
   int buildRank = rank;
-  int buildNodeLocal = 0;
-  if (getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
   if(buildNodeLocal)
     MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
   
@@ -474,11 +472,11 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
   
     if(buildRank == 0){
       const std::string cache_dir = std::string(getenv("NEKRS_CACHE_DIR")) + "/nek5000";
-      mkdir(cache_dir.c_str(), S_IRWXU); 
+      mkdir(cache_dir.c_str(), S_IRWXU);
 
-      const std::string install_dir(getenv("NEKRS_HOME"));
-      const std::string nekInterface_dir = install_dir + "/nekInterface";
-      const std::string nek5000_dir = install_dir + "/nek5000";
+      const std::string installDir(getenv("NEKRS_HOME"));
+      const std::string nekInterface_dir = installDir + "/nekInterface";
+      const std::string nek5000_dir = installDir + "/nek5000";
 
       char buf[10*BUFSIZ];
       char *ret = getcwd(buf, sizeof(buf));
@@ -548,21 +546,23 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
         if(rank == 0) 
 	  printf("building nekInterface for lx1=%d, lelt=%d and lelg=%d ...", N+1, lelt, nelgt); fflush(stdout);
 
-        sprintf(buf, "cd %s && cp -f %s/makefile.template makefile && "
-		     "make -s -j8 " 
-		     "S=%s "
-		     "OPT_INCDIR=\"%s\" "
-		     "CASENAME=%s "
-		     "CASEDIR=%s "
-		     "-f %s/Makefile lib usr libnekInterface "
-		     "%s",
-                     cache_dir.c_str(), nek5000_dir.c_str(), 
-		     nek5000_dir.c_str(), 
-		     include_dirs.c_str(), 
-		     usrname.c_str(), 
-		     cache_dir.c_str(), 
-                     nekInterface_dir.c_str(), 
-		     pipeToNull.c_str());
+        sprintf(buf,
+                "cd %s && cp -f %s/makefile.template makefile && "
+                "make -s -j8 "
+                "S=%s "
+                "OPT_INCDIR=\"%s\" "
+                "CASENAME=%s "
+                "CASEDIR=%s "
+                "-f %s/Makefile lib usr libnekInterface "
+                "%s",
+                cache_dir.c_str(),
+                nek5000_dir.c_str(),
+                nek5000_dir.c_str(),
+                include_dirs.c_str(),
+                usrname.c_str(),
+                cache_dir.c_str(),
+                nekInterface_dir.c_str(),
+                pipeToNull.c_str());
         if(verbose && rank == 0) printf("%s\n", buf);
         if(system(buf)) return EXIT_FAILURE;
         fileSync(libFile);
@@ -570,7 +570,8 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
         if(rank == 0) printf("done (%gs)\n", MPI_Wtime() - tStart);
         fflush(stdout);
       } else {
-        if(rank == 0) printf("skip building nekInterface (SIZE has not changed)\n");
+        if (rank == 0)
+          printf("skip building nekInterface (SIZE requires no update)\n");
         fflush(stdout);
       }
     } 
@@ -601,9 +602,7 @@ void bootstrap()
   MPI_Comm_size(platform->comm.mpiComm,&size);
 
   int buildRank = rank;
-  int buildNodeLocal = 0;
-  if (getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
   if(buildNodeLocal)
     MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
 

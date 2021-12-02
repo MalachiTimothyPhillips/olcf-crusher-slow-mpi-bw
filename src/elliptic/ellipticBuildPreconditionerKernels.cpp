@@ -46,41 +46,37 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
 
   {
     kernelName = "mask";
-    mesh->maskKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    mesh->maskKernel = platform->kernels.get(kernelName + orderSuffix);
 
-    mesh->maskPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix + "pfloat");
-                                 kernelName = "fusedCopyDfloatToPfloat";
-    elliptic->fusedCopyDfloatToPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    mesh->maskPfloatKernel = platform->kernels.get(kernelName + orderSuffix + "pfloat");
+    kernelName = "fusedCopyDfloatToPfloat";
+    elliptic->fusedCopyDfloatToPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
     kernelName = "copyDfloatToPfloat";
-    elliptic->copyDfloatToPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->copyDfloatToPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "copyPfloatToDfloat";
-    elliptic->copyPfloatToDPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->copyPfloatToDPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "scaledAdd";
-    elliptic->scaledAddPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->scaledAddPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "dotMultiply";
-    elliptic->dotMultiplyPfloatKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->dotMultiplyPfloatKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateSmoothedSolutionVec";
-    elliptic->updateSmoothedSolutionVecKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->updateSmoothedSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateChebyshevSolutionVec";
-    elliptic->updateChebyshevSolutionVecKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->updateChebyshevSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
 
     kernelName = "updateIntermediateSolutionVec";
-    elliptic->updateIntermediateSolutionVecKernel =
-      platform->kernels.getKernel(kernelName + orderSuffix);
+    elliptic->updateIntermediateSolutionVecKernel = platform->kernels.get(kernelName + orderSuffix);
+
+    kernelName = "ellipticBlockBuildDiagonalHex3D";
+    elliptic->updateDiagonalKernel = platform->kernels.get(kernelName + orderSuffix);
+
+    elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
+    elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");
   }
 
   MPI_Barrier(platform->comm.mpiComm);

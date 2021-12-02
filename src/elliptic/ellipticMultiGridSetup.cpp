@@ -34,8 +34,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   mesh_t* mesh = elliptic->mesh;
   setupAide options = elliptic->options;
 
-  const dfloat lambda = elliptic->lambda[0];
-
   //read all the nodes files and load them in a dummy mesh array
   mesh_t** meshLevels = (mesh_t**) calloc(mesh->N + 1,sizeof(mesh_t*));
   for (int n = 1; n < mesh->N + 1; n++) {
@@ -61,7 +59,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   int Nmin = levelDegree[numMGLevels - 1];
 
   //initialize parAlmond
-  precon->parAlmond = parAlmond::Init(platform->device, platform->comm.mpiComm, options);
+  precon->parAlmond = parAlmond::Init(platform->device.occaDevice(), platform->comm.mpiComm, options);
   parAlmond::multigridLevel** levels = precon->parAlmond->levels;
 
   oogs_mode oogsMode = OOGS_AUTO;
@@ -72,6 +70,11 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     if(platform->comm.mpiRank == 0)
       printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nmax);
 
+    elliptic->o_lambdaPfloat = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
+    elliptic->copyDfloatToPfloatKernel(2 * mesh->Nelements * mesh->Np,
+                                       elliptic->o_lambda,
+                                       elliptic->o_lambdaPfloat);
+
     auto callback = [&]()
                     {
                       ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList,
@@ -80,8 +83,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     elliptic->oogs   = oogs::setup(elliptic->ogs, 1, 0, ogsPfloat, NULL, oogsMode);
     elliptic->oogsAx = oogs::setup(elliptic->ogs, 1, 0, ogsPfloat, callback, oogsMode);
 
-    levels[0] = new MGLevel(elliptic, lambda, Nmax, options,
-                            precon->parAlmond->ktype, platform->comm.mpiComm);
+    levels[0] = new MGLevel(elliptic, Nmax, options, precon->parAlmond->ktype, platform->comm.mpiComm);
     MGLevelAllocateStorage((MGLevel*) levels[0], 0,
                            precon->parAlmond->ctype);
     precon->parAlmond->numLevels++;
@@ -91,11 +93,12 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   for (int n = 1; n < numMGLevels - 1; n++) {
     int Nc = levelDegree[n];
     int Nf = levelDegree[n - 1];
+    elliptic_t *ellipticFine = ((MGLevel *)levels[n - 1])->elliptic;
     //build elliptic struct for this degree
     if(platform->comm.mpiRank == 0)
       printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nc);
 
-    elliptic_t* ellipticC = ellipticBuildMultigridLevel(elliptic,Nc,Nf);
+    elliptic_t *ellipticC = ellipticBuildMultigridLevel(ellipticFine, Nc, Nf);
 
     auto callback = [&]()
                     {
@@ -112,12 +115,13 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     //add the level manually
     levels[n] = new MGLevel(elliptic,
                             meshLevels,
-                            ((MGLevel*) levels[n - 1])->elliptic,
+                            ellipticFine,
                             ellipticC,
-                            lambda,
-                            Nf, Nc,
+                            Nf,
+                            Nc,
                             options,
-                            precon->parAlmond->ktype, platform->comm.mpiComm);
+                            precon->parAlmond->ktype,
+                            platform->comm.mpiComm);
     MGLevelAllocateStorage((MGLevel*) levels[n], n,
                            precon->parAlmond->ctype);
     precon->parAlmond->numLevels++;
@@ -172,8 +176,12 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
       hlong* coarseGlobalStarts = (hlong*) calloc(platform->comm.mpiCommSize + 1, sizeof(hlong));
 
       if(options.compareArgs("GALERKIN COARSE OPERATOR","TRUE"))
-        ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,lambda,&coarseA,&nnzCoarseA,
-                                             &coarseogs,coarseGlobalStarts);
+        ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,
+                                             elliptic,
+                                             &coarseA,
+                                             &nnzCoarseA,
+                                             &coarseogs,
+                                             coarseGlobalStarts);
       else
         ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
                                 coarseGlobalStarts);
@@ -218,14 +226,15 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
                                           meshLevels,
                                           ellipticFine,
                                           ellipticCoarse,
-                                          lambda,
-                                          Nf, Nc,
+                                          Nf,
+                                          Nc,
                                           options,
-                                          precon->parAlmond->ktype, platform->comm.mpiComm,
+                                          precon->parAlmond->ktype,
+                                          platform->comm.mpiComm,
                                           true);
   } else {
-    levels[numMGLevels - 1] = new MGLevel(ellipticCoarse, lambda, Nmin, options,
-                                          precon->parAlmond->ktype, platform->comm.mpiComm, true);
+    levels[numMGLevels - 1] =
+        new MGLevel(ellipticCoarse, Nmin, options, precon->parAlmond->ktype, platform->comm.mpiComm, true);
   }
   MGLevelAllocateStorage((MGLevel*) levels[numMGLevels - 1], numMGLevels - 1,
                          precon->parAlmond->ctype);

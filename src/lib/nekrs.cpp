@@ -22,10 +22,19 @@ static MPI_Comm commg, comm;
 static nrs_t* nrs;
 static setupAide options;
 static dfloat lastOutputTime = 0;
+static int firstOutfld = 1;
 static int enforceLastStep = 0;
 static int enforceOutputStep = 0;
 
 static void setOccaVars();
+
+bool useNodeLocalCache()
+{
+  int buildNodeLocal = 0;
+  if (getenv("NEKRS_CACHE_LOCAL"))
+    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  return (buildNodeLocal > 0);
+}
 
 namespace nekrs
 {
@@ -73,10 +82,10 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   setOccaVars();
 
   if (rank == 0) {
-    std::string install_dir;
-    install_dir.assign(getenv("NEKRS_HOME"));
+    std::string installDir;
+    installDir.assign(getenv("NEKRS_HOME"));
     std::cout << std::endl;
-    std::cout << "using NEKRS_HOME: " << install_dir << std::endl;
+    std::cout << "using NEKRS_HOME: " << installDir << std::endl;
 
     std:: string cache_dir;
     cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
@@ -110,9 +119,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   platform->timer.tic("setup", 1);
 
   int buildRank = rank;
-  int buildNodeLocal = 0;
-  if (getenv("NEKRS_CACHE_LOCAL"))
-    buildNodeLocal = std::stoi(getenv("NEKRS_CACHE_LOCAL"));
+  const bool buildNodeLocal = useNodeLocalCache();
   if(buildNodeLocal)
     MPI_Comm_rank(platform->comm.mpiCommLocal, &buildRank);    
 
@@ -165,25 +172,12 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   nrsSetup(comm, options, nrs);
 
-  nrs->o_U.copyFrom(nrs->U);
-  nrs->o_P.copyFrom(nrs->P);
-  nrs->o_prop.copyFrom(nrs->prop);
-  if(nrs->Nscalar) {
-    nrs->cds->o_S.copyFrom(nrs->cds->S);
-    nrs->cds->o_prop.copyFrom(nrs->cds->prop);
-  }
-
-  evaluateProperties(nrs, startTime());
-  nrs->o_prop.copyTo(nrs->prop);
-  if(nrs->Nscalar) nrs->cds->o_prop.copyTo(nrs->cds->prop);
-
-  nek::ocopyToNek(startTime(), 0);
-
   platform->timer.toc("setup");
   const double setupTime = platform->timer.query("setup", "DEVICE:MAX");
   if(rank == 0) {
     std::cout << "\nsettings:\n" << std::endl << options << std::endl;
-    std::cout << "occa memory usage: " << platform->device.memoryAllocated()/1e9 << " GB" << std::endl;
+    std::cout << "occa memory usage: " << platform->device.occaDevice().memoryAllocated() / 1e9 << " GB"
+              << std::endl;
     std::cout << "initialization took " << setupTime << " s" << std::endl;
   }
   fflush(stdout);
@@ -291,7 +285,7 @@ void outfld(double time, std::string suffix)
   std::string oldValue;
   platform->options.getArgs("CHECKPOINT OUTPUT MESH", oldValue);
 
-  if(lastOutputTime == 0)
+  if (firstOutfld)
     platform->options.setArgs("CHECKPOINT OUTPUT MESH", "TRUE");
 
   if(platform->options.compareArgs("MOVING MESH", "TRUE"))
@@ -299,6 +293,7 @@ void outfld(double time, std::string suffix)
 
   writeFld(nrs, time, suffix);
   lastOutputTime = time;
+  firstOutfld = 0;
 
   platform->options.setArgs("CHECKPOINT OUTPUT MESH", oldValue);
 }
@@ -435,11 +430,11 @@ static void setOccaVars()
   if (!getenv("OCCA_CACHE_DIR"))
     occa::env::OCCA_CACHE_DIR = cache_dir + "/occa/";
 
-  std::string install_dir;
-  install_dir.assign(getenv("NEKRS_HOME"));
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_HOME"));
 
   if (!getenv("OCCA_DIR"))
-    occa::env::OCCA_DIR = install_dir + "/";
+    occa::env::OCCA_DIR = installDir + "/";
 
   occa::env::OCCA_INSTALL_DIR = occa::env::OCCA_DIR;
 }
