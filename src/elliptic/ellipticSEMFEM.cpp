@@ -183,7 +183,6 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
       boomerAMGSolve(o_buffer2.ptr(), o_buffer.ptr());
     }
   } else {
-    std::cout << "Calling AmgX solver!\n";
     AMGXsolve(o_buffer2.ptr(), o_buffer.ptr());
   }
 

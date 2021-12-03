@@ -38,9 +38,9 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     schedules.push_back(levels);
   }
 
-  // default
+  // default, Cheb-ASM(2),(7,3,1)
   defaultSolver = {
-      PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules[0]};
+      PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules[1]};
   allSolvers.insert(defaultSolver);
   solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
   solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
@@ -54,6 +54,22 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   solverToTime[description] = std::vector<double>(NSamples, -1.0);
   solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
   solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
+
+  // Cheb-RAS(2),(7,3,1)
+  description = {
+      PreconditionerType::PMG, ChebyshevSmootherType::RAS, 2, schedules[1]};
+  allSolvers.insert(defaultSolver);
+  solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[defaultSolver] = std::vector<unsigned int>(NSamples, 0);
+
+  // Cheb-Jac(2),(7,5,3,1)
+  description = {
+      PreconditionerType::PMG, ChebyshevSmootherType::RAS, 2, schedules[2]};
+  allSolvers.insert(defaultSolver);
+  solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[defaultSolver] = std::vector<unsigned int>(NSamples, 0);
 
   /**
   // pMG combinations
