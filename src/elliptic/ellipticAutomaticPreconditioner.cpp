@@ -20,6 +20,8 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER NUM SAMPLES", NSamples);
 
+  NSamples = 1; // easier...
+
   minChebyOrder = 2; // should obey input...
   maxChebyOrder = 2;
 
@@ -40,7 +42,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 
   // default, Cheb-ASM(2),(7,3,1)
   defaultSolver = {
-      PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules[1]};
+      PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules.at(1)};
   allSolvers.insert(defaultSolver);
   solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
   solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
@@ -57,19 +59,19 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 
   // Cheb-RAS(2),(7,3,1)
   description = {
-      PreconditionerType::PMG, ChebyshevSmootherType::RAS, 2, schedules[1]};
-  allSolvers.insert(defaultSolver);
-  solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
-  solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
-  solverToIterations[defaultSolver] = std::vector<unsigned int>(NSamples, 0);
+      PreconditionerType::PMG, ChebyshevSmootherType::RAS, 2, schedules.at(1)};
+  allSolvers.insert(description);
+  solverToTime[description] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
 
   // Cheb-Jac(2),(7,5,3,1)
   description = {
-      PreconditionerType::PMG, ChebyshevSmootherType::RAS, 2, schedules[2]};
-  allSolvers.insert(defaultSolver);
-  solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
-  solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
-  solverToIterations[defaultSolver] = std::vector<unsigned int>(NSamples, 0);
+      PreconditionerType::PMG, ChebyshevSmootherType::JACOBI, 2, schedules.at(0)};
+  allSolvers.insert(description);
+  solverToTime[description] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
 
   /**
   // pMG combinations
@@ -105,7 +107,7 @@ bool
 automaticPreconditioner_t::apply(int tstep)
 {
   // kludge
-  const std::vector<int> evaluationSteps = {10};
+  const std::vector<int> evaluationSteps = {1,1001}; // <- want to ensure projection space isn't saturated
   // const std::vector<int> evaluationSteps = {250,500,1000};
   // const std::vector<int> evaluationSteps = {10,20,50};
   bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(), evaluationSteps.end(),
