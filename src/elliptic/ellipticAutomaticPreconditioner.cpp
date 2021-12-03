@@ -45,11 +45,10 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   auto preconditioner = PreconditionerType::SEMFEM;
   solverDescription_t description = {
       preconditioner, ChebyshevSmootherType::NONE, 0, {}};
-  // TODO... enable soon...
-  // allSolvers.insert(description);
-  // solverToTime[description] = std::vector<double>(NSamples, -1.0);
-  // solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
-  // solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
+  allSolvers.insert(description);
+  solverToTime[description] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
 
   // pMG combinations
   preconditioner = PreconditionerType::PMG;
