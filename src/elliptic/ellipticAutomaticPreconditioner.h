@@ -72,13 +72,13 @@ struct solverDescription_t{
 
   inline bool operator==(const solverDescription_t& other) const
   {
-    return std::tie(preconditioner, chebyOrder, schedule) ==
-           std::tie(other.preconditioner, other.chebyOrder, other.schedule);
+    return std::tie(preconditioner, smoother, chebyOrder, schedule) ==
+           std::tie(other.preconditioner, other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator<(const solverDescription_t& other) const
   {
-    return std::tie(preconditioner, chebyOrder, schedule) <
-           std::tie(other.preconditioner, other.chebyOrder, other.schedule);
+    return std::tie(preconditioner, smoother, chebyOrder, schedule) <
+           std::tie(other.preconditioner, other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator> (const solverDescription_t& other) const { return *this < other; }
   inline bool operator<=(const solverDescription_t& other) const { return !(*this > other); }
