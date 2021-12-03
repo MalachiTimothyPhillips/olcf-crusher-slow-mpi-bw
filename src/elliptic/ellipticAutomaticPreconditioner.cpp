@@ -82,16 +82,6 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
 bool
 automaticPreconditioner_t::apply(int tstep)
 {
-  if (platform->comm.mpiRank == 0)
-    std::cout << "Inside automaticPreconditioner_t::apply!\n";
-  fflush(stdout);
-  //bool evaluatePreconditioner = true;
-  //evaluatePreconditioner &= activeTuner;
-  //evaluatePreconditioner &= tstep >= autoStart;
-  //if(evaluatePreconditioner){
-  //  evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
-  //}
-
   // kludge
   const std::vector<int> evaluationSteps = {10};
   // const std::vector<int> evaluationSteps = {250,500,1000};
@@ -136,12 +126,7 @@ automaticPreconditioner_t::selectSolver()
     visitedSolvers.begin(), visitedSolvers.end(),
     std::inserter(remainingSolvers, remainingSolvers.begin()));
 
-  std::cout << "Remaining solvers:\n";
-  for (auto &&solver : remainingSolvers)
-    std::cout << "\t" << solver.to_string() << "\n";
-  if(remainingSolvers.empty())
-  {
-    std::cout << "sampleCounter = " << sampleCounter << std::endl;
+  if (remainingSolvers.empty()) {
     if(sampleCounter == (NSamples-1)){
       currentSolver = determineFastestSolver();
       if(platform->comm.mpiRank == 0 && sampleCounter == (NSamples-1)){
@@ -162,7 +147,8 @@ automaticPreconditioner_t::selectSolver()
       sampleCounter++;
       return true; // <-
     }
-  } else {
+  }
+  else {
 
     currentSolver = remainingSolvers.back();
     visitedSolvers.insert(currentSolver);
