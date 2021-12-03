@@ -38,8 +38,13 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
     schedules.push_back(levels);
   }
 
+  // default
   defaultSolver = {
       PreconditionerType::PMG, ChebyshevSmootherType::ASM, 2, schedules[0]};
+  allSolvers.insert(defaultSolver);
+  solverToTime[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverTimePerIter[defaultSolver] = std::vector<double>(NSamples, -1.0);
+  solverToIterations[defaultSolver] = std::vector<unsigned int>(NSamples, 0);
 
   // SEMFEM
   auto preconditioner = PreconditionerType::SEMFEM;
@@ -50,6 +55,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
   solverTimePerIter[description] = std::vector<double>(NSamples, -1.0);
   solverToIterations[description] = std::vector<unsigned int>(NSamples, 0);
 
+  /**
   // pMG combinations
   preconditioner = PreconditionerType::PMG;
   for(auto && schedule : schedules){
@@ -66,6 +72,7 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t& m_elliptic)
       }
     }
   }
+  **/
 
   auto** levels = elliptic.precon->parAlmond->levels;
   for(int levelIndex = 0; levelIndex < elliptic.nLevels; ++levelIndex)
@@ -195,9 +202,14 @@ void automaticPreconditioner_t::reinitializePreconditioner() {
 
 void automaticPreconditioner_t::reinitializeSEMFEM() {
   elliptic.options.setArgs("PRECONDITIONER", "SEMFEM");
+  elliptic.options.setArgs("SEMFEM SOLVER", "AMGX");
+  elliptic.options.setArgs("AMG SOLVER PRECISION", "FP32");
 }
 
 void automaticPreconditioner_t::reinitializePMG() {
+  elliptic.options.setArgs("PRECONDITIONER", "MULTIGRID");
+  elliptic.options.setArgs("AMG SOLVER PRECISION", "FP64");
+
   dfloat minMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", minMultiplier);
 

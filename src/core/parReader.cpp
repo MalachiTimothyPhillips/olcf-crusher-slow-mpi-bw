@@ -812,6 +812,8 @@ void parsePreconditioner(const int rank,
     parsePreconditioner(rank, options, par, parScope, p_preconditioner);
     p_preconditioner = "pmg+coarse";
     parsePreconditioner(rank, options, par, parScope, p_preconditioner);
+    options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
+    options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
     return;
   }
 

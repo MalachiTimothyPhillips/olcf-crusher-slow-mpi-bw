@@ -41,12 +41,7 @@ void ellipticPreconditionerSetup(elliptic_t* elliptic, ogs_t* ogs)
     if(platform->comm.mpiRank == 0) printf("building MG preconditioner ... \n"); fflush(stdout);
     ellipticMultiGridSetup(elliptic,precon);
 
-    std::string oldSolver = elliptic->options.getArgs("AMG SOLVER");
-    elliptic->options.setArgs("AMG SOLVER", "AMGX");
     ellipticSEMFEMSetup(elliptic); // <- always include SEMFEM, too...
-    // restore previous settings
-    elliptic->options.setArgs("AMG SOLVER", oldSolver);
-
   } else if(options.compareArgs("PRECONDITIONER", "SEMFEM")) {
     ellipticSEMFEMSetup(elliptic);
   } else if(options.compareArgs("PRECONDITIONER", "JACOBI")) {

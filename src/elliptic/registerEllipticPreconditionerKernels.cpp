@@ -420,7 +420,18 @@ void registerEllipticPreconditionerKernels(std::string section, int poissonEquat
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
-  registerMultiGridKernels(section, poissonEquation);
-  registerSEMFEMKernels(section, N, poissonEquation);
-  registerJacobiKernels(section, poissonEquation);
+  if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "MULTIGRID")) {
+    registerMultiGridKernels(section, poissonEquation);
+    registerSEMFEMKernels(section, N, poissonEquation);
+    //registerJacobiKernels(section, poissonEquation);
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "SEMFEM")) {
+    registerSEMFEMKernels(section, N, poissonEquation);
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "JACOBI")) {
+    registerJacobiKernels(section, poissonEquation);
+  } else if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER", "NONE")) {
+    // nothing 
+  } else {
+    printf("ERROR: Unknown preconditioner!\n");
+    ABORT(EXIT_FAILURE);
+  }
 }
