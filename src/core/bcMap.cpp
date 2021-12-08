@@ -14,6 +14,55 @@
 #define DIRICHLET 1
 #define NEUMANN 2
 
+namespace {
+enum class alignment_t { X, Y, Z, UNALIGNED };
+std::string to_string(alignment_t a)
+{
+  switch (a) {
+  case alignment_t::X:
+    return "X";
+  case alignment_t::Y:
+    return "Y";
+  case alignment_t::Z:
+    return "Z";
+  case alignment_t::UNALIGNED:
+    return "UNALIGNED";
+  }
+
+  return "";
+}
+alignment_t computeAlignment(mesh_t *mesh, dlong element, dlong face)
+{
+  const dfloat alignmentTol = 1e-3;
+  dfloat nxDiff = 0.0;
+  dfloat nyDiff = 0.0;
+  dfloat nzDiff = 0.0;
+
+  for (int fp = 0; fp < mesh->Nfp; ++fp) {
+    const dlong sid = mesh->Nsgeo * (mesh->Nfaces * mesh->Nfp * element + mesh->Nfp * face + fp);
+    const dfloat nx = mesh->sgeo[sid + NXID];
+    const dfloat ny = mesh->sgeo[sid + NYID];
+    const dfloat nz = mesh->sgeo[sid + NZID];
+    nxDiff += std::abs(std::abs(nx) - 1.0);
+    nyDiff += std::abs(std::abs(ny) - 1.0);
+    nzDiff += std::abs(std::abs(nz) - 1.0);
+  }
+
+  nxDiff /= mesh->Nfp;
+  nyDiff /= mesh->Nfp;
+  nzDiff /= mesh->Nfp;
+
+  if (nxDiff < alignmentTol)
+    return alignment_t::X;
+  if (nyDiff < alignmentTol)
+    return alignment_t::Y;
+  if (nzDiff < alignmentTol)
+    return alignment_t::Z;
+
+  return alignment_t::UNALIGNED;
+}
+}
+
 // stores for every (field, boundaryID) pair a bcID
 static std::map<std::pair<std::string, int>, int> bToBc;
 static int nbid[] = {0, 0};
@@ -370,6 +419,119 @@ void setBcMap(std::string field, int* map, int nIDs)
   {
     std::cout << "Out of Range error: " << oor.what() << "!\n";
     ABORT(1);
+  }
+}
+void checkBoundaryAlignment(mesh_t *mesh, std::string field)
+{
+  if (field != std::string("velocity") && field != std::string("mesh"))
+    return;
+
+  std::ostringstream errorLogger;
+
+  for (int e = 0; e < mesh->Nelements; e++) {
+    for (int f = 0; f < mesh->Nfaces; f++) {
+      int bc = id(mesh->EToB[f + e * mesh->Nfaces], field);
+      if (bc == 4 || bc == 5 || bc == 6) {
+        auto expectedAlignment = alignment_t::UNALIGNED;
+        switch (bc) {
+        case 4:
+          expectedAlignment = alignment_t::X;
+          break;
+        case 5:
+          expectedAlignment = alignment_t::Y;
+          break;
+        case 6:
+          expectedAlignment = alignment_t::Z;
+          break;
+        }
+
+        auto alignment = computeAlignment(mesh, e, f);
+        if (alignment != expectedAlignment) {
+          errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
+                      << " has an unexpected alignment.\n";
+          errorLogger << "\t"
+                      << "alignment " << to_string(alignment) << " != expected alignment "
+                      << to_string(expectedAlignment) << "\n";
+        }
+        if (alignment == alignment_t::UNALIGNED) {
+          errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
+                      << " is unaligned, despite being marked as an aligned boundary!\n";
+        }
+      }
+    }
+  }
+
+  std::string errors = errorLogger.str();
+  int errorLength = errors.size();
+
+  MPI_Allreduce(MPI_IN_PLACE, &errorLength, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+  if (errorLength > 0) {
+    for (int rank = 0; rank < platform->comm.mpiCommSize; rank++) {
+      if (platform->comm.mpiRank == rank) {
+        std::cout << errors;
+      }
+      std::cout << std::endl;
+      MPI_Barrier(platform->comm.mpiComm);
+    }
+    ABORT(1);
+  }
+}
+
+void remapUnalignedBoundaries(mesh_t *mesh, std::string field)
+{
+  if (field != std::string("velocity") && field != std::string("mesh"))
+    return;
+
+  std::map<int, bool> remapBID;
+  std::map<int, alignment_t> alignmentBID;
+
+  int nid = nbid[0];
+  if (mesh->cht)
+    nid = nbid[1];
+
+  for (int bid = 1; bid <= nid; ++bid) {
+    int bcType = id(bid, field);
+    remapBID[bid] = (bcType == 7);
+  }
+
+  for (int e = 0; e < mesh->Nelements; e++) {
+    for (int f = 0; f < mesh->Nfaces; f++) {
+      int bid = mesh->EToB[f + e * mesh->Nfaces];
+      int bc = id(bid, field);
+      auto alignment = computeAlignment(mesh, e, f);
+      if (alignmentBID.count(bid) == 0) {
+        alignmentBID[bid] = alignment;
+      }
+
+      auto previousAlignment = alignmentBID[bid];
+      remapBID[bid] &= (alignment != alignment_t::UNALIGNED) && (alignment == previousAlignment);
+    }
+  }
+
+  for (int bid = 1; bid <= nid; ++bid) {
+    int canRemap = remapBID[bid];
+    MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
+    if (canRemap) {
+
+      auto alignmentType = alignmentBID[bid];
+
+      int newBcType = 0;
+      switch (alignmentType) {
+      case alignment_t::X:
+        newBcType = 4;
+        break;
+      case alignment_t::Y:
+        newBcType = 5;
+        break;
+      case alignment_t::Z:
+        newBcType = 6;
+        break;
+      default:
+        break;
+      }
+
+      bToBc[{field, bid - 1}] = newBcType;
+    }
   }
 }
 } // namespace

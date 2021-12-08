@@ -418,6 +418,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   if(err) ABORT(1);
   free(tmp);
 
+  bcMap::checkBoundaryAlignment(mesh, "velocity");
+  bcMap::remapUnalignedBoundaries(mesh, "velocity");
+
   nrs->EToB = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
   for (int e = 0; e < mesh->Nelements; e++) {
@@ -430,6 +433,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_EToB = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToB);
 
   if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY")) {
+
+    bcMap::checkBoundaryAlignment(mesh, "mesh");
+    bcMap::remapUnalignedBoundaries(mesh, "mesh");
+
     nrs->EToBMesh = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
     int cnt = 0;
     for (int e = 0; e < mesh->Nelements; e++) {
