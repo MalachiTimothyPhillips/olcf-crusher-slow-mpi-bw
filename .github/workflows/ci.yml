@@ -220,9 +220,13 @@ jobs:
     - name: Set install dir permissions
       run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
 
-    - name: 'channelStress'
+    - name: 'channelStress (no rotation)'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel 2 1
+
+    - name: 'channelStress (45 degree rotation)'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel 2 2
 
 
   kershaw:
