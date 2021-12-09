@@ -31,20 +31,12 @@ void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precis
   if (Nmasked)
     maskKernel(Nmasked, o_maskIds, o_x);
 }
-void applyMaskUnaligned(nrs_t *nrs,
-                        occa::memory &o_mask,
-                        elliptic_t *solver,
-                        occa::memory &o_x,
-                        std::string precision)
+void applyMaskUnaligned(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
-  applyMaskUnalignedInterior(nrs, o_mask, solver, o_x, precision);
-  applyMaskUnalignedExterior(nrs, o_mask, solver, o_x, precision);
+  applyMaskUnalignedInterior(nrs, solver, o_x, precision);
+  applyMaskUnalignedExterior(nrs, solver, o_x, precision);
 }
-void applyMaskUnalignedInterior(nrs_t *nrs,
-                                occa::memory &o_mask,
-                                elliptic_t *solver,
-                                occa::memory &o_x,
-                                std::string precision)
+void applyMaskUnalignedInterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   const dlong Nelems = solver->mesh->NlocalGatherElements;
   if (Nelems == 0)
@@ -62,11 +54,7 @@ void applyMaskUnalignedInterior(nrs_t *nrs,
 
   applyMaskInterior(solver, o_x, precision);
 }
-void applyMaskUnalignedExterior(nrs_t *nrs,
-                                occa::memory &o_mask,
-                                elliptic_t *solver,
-                                occa::memory &o_x,
-                                std::string precision)
+void applyMaskUnalignedExterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   const dlong Nelems = solver->mesh->NglobalGatherElements;
   if (Nelems == 0)

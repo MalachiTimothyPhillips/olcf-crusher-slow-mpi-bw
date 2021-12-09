@@ -183,18 +183,13 @@ struct nrs_t
 
   occa::properties* kernelInfo;
 
-  occa::memory o_Vn;
+  // TODO: store in surface geometric factors?
   occa::memory o_V1;
   occa::memory o_V2;
-
-  occa::memory o_Vmask;
-  occa::memory o_Wmask;
 
   dfloat *Vn;
   dfloat *V1;
   dfloat *V2;
-  dfloat *Vmask;
-  dfloat *Wmask;
 
   occa::kernel enforceUnKernel;
 };

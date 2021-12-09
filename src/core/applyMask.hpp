@@ -7,19 +7,7 @@ void applyMask(elliptic_t *solver, occa::memory &o_x, std::string precision);
 void applyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precision);
 void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precision);
 
-void applyMaskUnaligned(nrs_t *nrs,
-                        occa::memory &o_mask,
-                        elliptic_t *solver,
-                        occa::memory &o_x,
-                        std::string precision);
-void applyMaskUnalignedInterior(nrs_t *nrs,
-                                occa::memory &o_mask,
-                                elliptic_t *solver,
-                                occa::memory &o_x,
-                                std::string precision);
-void applyMaskUnalignedExterior(nrs_t *nrs,
-                                occa::memory &o_mask,
-                                elliptic_t *solver,
-                                occa::memory &o_x,
-                                std::string precision);
+void applyMaskUnaligned(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision);
+void applyMaskUnalignedInterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision);
+void applyMaskUnalignedExterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_x, std::string precision);
 #endif

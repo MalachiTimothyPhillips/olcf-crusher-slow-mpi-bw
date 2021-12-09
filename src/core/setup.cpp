@@ -709,25 +709,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   if (nrs->flow) {
 
-    nrs->Vn = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-    nrs->V1 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-    nrs->V2 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-    nrs->Vmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-
-    dfloat *v1mask = nrs->Vmask + 0 * nrs->fieldOffset;
-    dfloat *v2mask = nrs->Vmask + 1 * nrs->fieldOffset;
-    dfloat *v3mask = nrs->Vmask + 2 * nrs->fieldOffset;
-
-    const int ifieldOld = *(nekData.ifield);
-    *(nekData.ifield) = 1;
-    nek::stsmask(v1mask, v2mask, v3mask);
-    *(nekData.ifield) = ifieldOld;
-
-    nrs->o_Vn = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vn);
-    nrs->o_V1 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V1);
-    nrs->o_V2 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V2);
-    nrs->o_Vmask = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vmask);
-
     if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP VELOCITY ================\n");
 
     nrs->uvwSolver = NULL;
@@ -752,6 +733,31 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       const std::string unalignedSYMString("zeroNValue/zeroGradient");
       if (bcTypeText == unalignedSYMString)
         unalignedSYM = true;
+    }
+
+    if (unalignedSYM) {
+      nrs->Vn = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+      nrs->V1 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+      nrs->V2 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+
+      dfloat *Vmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
+
+      dfloat *v1mask = Vmask + 0 * nrs->fieldOffset;
+      dfloat *v2mask = Vmask + 1 * nrs->fieldOffset;
+      dfloat *v3mask = Vmask + 2 * nrs->fieldOffset;
+
+      const int ifieldOld = *(nekData.ifield);
+      *(nekData.ifield) = 1;
+      nek::stsmask(v1mask, v2mask, v3mask); // still rely on call for V1, V2
+      *(nekData.ifield) = ifieldOld;
+
+      nrs->o_V1 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V1);
+      nrs->o_V2 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V2);
+
+      free(nrs->Vn);
+      free(nrs->V1);
+      free(nrs->V2);
+      free(Vmask);
     }
 
     nrs->vOptions = options;
@@ -836,14 +842,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (unalignedSYM) {
         nrs->uvwSolver->applyMaskInterior =
             [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedInterior(nrs, nrs->o_Vmask, solver, o_x, precision);
+              applyMaskUnalignedInterior(nrs, solver, o_x, precision);
             };
         nrs->uvwSolver->applyMaskExterior =
             [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedExterior(nrs, nrs->o_Vmask, solver, o_x, precision);
+              applyMaskUnalignedExterior(nrs, solver, o_x, precision);
             };
         nrs->uvwSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          applyMaskUnaligned(nrs, nrs->o_Vmask, solver, o_x, precision);
+          applyMaskUnaligned(nrs, solver, o_x, precision);
         };
       }
 
@@ -1022,19 +1028,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     if(options.compareArgs("MESH SOLVER", "ELASTICITY")){
 
-      nrs->Wmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-
-      dfloat *w1mask = nrs->Wmask + 0 * nrs->fieldOffset;
-      dfloat *w2mask = nrs->Wmask + 1 * nrs->fieldOffset;
-      dfloat *w3mask = nrs->Wmask + 2 * nrs->fieldOffset;
-
-      const int ifieldOld = *(nekData.ifield);
-      *(nekData.ifield) = 0;
-      nek::stsmask(w1mask, w2mask, w3mask);
-      *(nekData.ifield) = ifieldOld;
-
-      nrs->o_Wmask = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->Vmask);
-
       if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP MESH ================\n");
       int* uvwMeshBCType = (int*) calloc(3 * NBCType, sizeof(int));
       int* uMeshBCType = uvwMeshBCType + 0 * NBCType;
@@ -1083,14 +1076,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (unalignedSYM) {
         nrs->meshSolver->applyMaskInterior =
             [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedInterior(nrs, nrs->o_Wmask, solver, o_x, precision);
+              applyMaskUnalignedInterior(nrs, solver, o_x, precision);
             };
         nrs->meshSolver->applyMaskExterior =
             [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedExterior(nrs, nrs->o_Wmask, solver, o_x, precision);
+              applyMaskUnalignedExterior(nrs, solver, o_x, precision);
             };
         nrs->meshSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          applyMaskUnaligned(nrs, nrs->o_Wmask, solver, o_x, precision);
+          applyMaskUnaligned(nrs, solver, o_x, precision);
         };
       }
       ellipticSolveSetup(nrs->meshSolver);
