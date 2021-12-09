@@ -29,10 +29,8 @@
                                          const dlong offset,
                                          const dfloat time,
                                          @restrict const dfloat*  sgeo,
-                                         @restrict const dfloat*  Vn,
                                          @restrict const dfloat*  V1,
                                          @restrict const dfloat*  V2,
-                                         @restrict const dfloat*  Vmask,
                                          @restrict const dfloat*  x,
                                          @restrict const dfloat*  y,
                                          @restrict const dfloat*  z,
@@ -56,10 +54,6 @@
         if(bcType > 0) {
           if(bcType == 7) {
 
-            //const dfloat vnx = sgeo[sid * p_Nsgeo + p_NXID];
-            //const dfloat vny = sgeo[sid * p_Nsgeo + p_NYID];
-            //const dfloat vnz = sgeo[sid * p_Nsgeo + p_NZID];
-
             const dfloat v1x = V1[idM + 0 * offset];
             const dfloat v1y = V1[idM + 1 * offset];
             const dfloat v1z = V1[idM + 2 * offset];
@@ -72,16 +66,8 @@
             const dfloat v = U[idM + 1 * offset];
             const dfloat w = U[idM + 2 * offset];
 
-            //const dfloat r1mask = Vmask[idM + 0 * offset];
-            //const dfloat r2mask = Vmask[idM + 1 * offset];
-            //const dfloat r3mask = Vmask[idM + 2 * offset];
-
-            //const dfloat Rnor = r1mask * (u * vnx + v * vny + w * vnz);
-            //const dfloat Rtn1 = r2mask * (u * v1x + v * v1y + w * v1z);
-            //const dfloat Rtn2 = r3mask * (u * v2x + v * v2y + w * v2z);
-            const dfloat Rnor = 0.0;
-            const dfloat Rtn1 = 1.0 * (u * v1x + v * v1y + w * v1z);
-            const dfloat Rtn2 = 1.0 * (u * v2x + v * v2y + w * v2z);
+            const dfloat Rtn1 = (u * v1x + v * v1y + w * v1z);
+            const dfloat Rtn2 = (u * v2x + v * v2y + w * v2z);
 
             UH[idM + 0 * offset] = Rtn1 * v1x + Rtn2 * v2x;
             UH[idM + 1 * offset] = Rtn1 * v1y + Rtn2 * v2y;
