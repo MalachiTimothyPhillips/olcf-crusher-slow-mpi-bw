@@ -103,8 +103,8 @@ void meshOccaPopulateDeviceHex3D(mesh_t *mesh, setupAide &newOptions, occa::prop
   mesh->o_ggeo =
     platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo * sizeof(dfloat),
                         mesh->ggeo);
-
-  if (bcMap::unalignedBoundary(mesh->cht, "velocity")) {
+  mesh->unaligned = bcMap::unalignedBoundary(mesh->cht, "velocity");
+  if (mesh->unaligned) {
     mesh->o_VT1 =
         platform->device.malloc(mesh->Nelements * mesh->Nfaces * mesh->Nfp * 3 * sizeof(dfloat), mesh->VT1);
     mesh->o_VT2 =
