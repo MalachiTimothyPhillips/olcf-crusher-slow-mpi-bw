@@ -418,9 +418,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   if(err) ABORT(1);
   free(tmp);
 
-  bcMap::checkBoundaryAlignment(mesh, "velocity");
-  bcMap::remapUnalignedBoundaries(mesh, "velocity");
-
   nrs->EToB = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
   for (int e = 0; e < mesh->Nelements; e++) {
@@ -433,9 +430,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_EToB = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToB);
 
   if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY")) {
-
-    bcMap::checkBoundaryAlignment(mesh, "mesh");
-    bcMap::remapUnalignedBoundaries(mesh, "mesh");
 
     nrs->EToBMesh = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
     int cnt = 0;
@@ -733,31 +727,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       const std::string unalignedSYMString("zeroNValue/zeroGradient");
       if (bcTypeText == unalignedSYMString)
         unalignedSYM = true;
-    }
-
-    if (unalignedSYM) {
-      nrs->Vn = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-      nrs->V1 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-      nrs->V2 = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-
-      dfloat *Vmask = (dfloat *)calloc(nrs->NVfields * nrs->fieldOffset, sizeof(dfloat));
-
-      dfloat *v1mask = Vmask + 0 * nrs->fieldOffset;
-      dfloat *v2mask = Vmask + 1 * nrs->fieldOffset;
-      dfloat *v3mask = Vmask + 2 * nrs->fieldOffset;
-
-      const int ifieldOld = *(nekData.ifield);
-      *(nekData.ifield) = 1;
-      nek::stsmask(v1mask, v2mask, v3mask); // still rely on call for V1, V2
-      *(nekData.ifield) = ifieldOld;
-
-      nrs->o_V1 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V1);
-      nrs->o_V2 = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat), nrs->V2);
-
-      free(nrs->Vn);
-      free(nrs->V1);
-      free(nrs->V2);
-      free(Vmask);
     }
 
     nrs->vOptions = options;

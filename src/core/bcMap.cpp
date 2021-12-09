@@ -5,6 +5,7 @@
 #include <vector>
 #include <sstream>
 #include <map>
+#include <set>
 
 #include "nrs.hpp"
 #include "platform.hpp"
@@ -63,6 +64,7 @@ alignment_t computeAlignment(mesh_t *mesh, dlong element, dlong face)
 }
 }
 
+static std::set<std::string> fields;
 // stores for every (field, boundaryID) pair a bcID
 static std::map<std::pair<std::string, int>, int> bToBc;
 static int nbid[] = {0, 0};
@@ -219,6 +221,8 @@ namespace bcMap
 void setup(std::vector<std::string> slist, std::string field)
 {
   if (slist.size() == 0 || slist[0].compare("none") == 0) return;
+
+  fields.insert(field);
 
   if (field.compare(0, 8, "scalar00") == 0) /* tmesh */ 
     nbid[1] = slist.size();
@@ -421,41 +425,42 @@ void setBcMap(std::string field, int* map, int nIDs)
     ABORT(1);
   }
 }
-void checkBoundaryAlignment(mesh_t *mesh, std::string field)
+void checkBoundaryAlignment(mesh_t *mesh)
 {
-  if (field != std::string("velocity") && field != std::string("mesh"))
-    return;
-
   std::ostringstream errorLogger;
+  for (auto &&field : fields) {
+    if (field != std::string("velocity") && field != std::string("mesh"))
+      continue;
 
-  for (int e = 0; e < mesh->Nelements; e++) {
-    for (int f = 0; f < mesh->Nfaces; f++) {
-      int bc = id(mesh->EToB[f + e * mesh->Nfaces], field);
-      if (bc == 4 || bc == 5 || bc == 6) {
-        auto expectedAlignment = alignment_t::UNALIGNED;
-        switch (bc) {
-        case 4:
-          expectedAlignment = alignment_t::X;
-          break;
-        case 5:
-          expectedAlignment = alignment_t::Y;
-          break;
-        case 6:
-          expectedAlignment = alignment_t::Z;
-          break;
-        }
+    for (int e = 0; e < mesh->Nelements; e++) {
+      for (int f = 0; f < mesh->Nfaces; f++) {
+        int bc = id(mesh->EToB[f + e * mesh->Nfaces], field);
+        if (bc == 4 || bc == 5 || bc == 6) {
+          auto expectedAlignment = alignment_t::UNALIGNED;
+          switch (bc) {
+          case 4:
+            expectedAlignment = alignment_t::X;
+            break;
+          case 5:
+            expectedAlignment = alignment_t::Y;
+            break;
+          case 6:
+            expectedAlignment = alignment_t::Z;
+            break;
+          }
 
-        auto alignment = computeAlignment(mesh, e, f);
-        if (alignment != expectedAlignment) {
-          errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
-                      << " has an unexpected alignment.\n";
-          errorLogger << "\t"
-                      << "alignment " << to_string(alignment) << " != expected alignment "
-                      << to_string(expectedAlignment) << "\n";
-        }
-        if (alignment == alignment_t::UNALIGNED) {
-          errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
-                      << " is unaligned, despite being marked as an aligned boundary!\n";
+          auto alignment = computeAlignment(mesh, e, f);
+          if (alignment != expectedAlignment) {
+            errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
+                        << " has an unexpected alignment.\n";
+            errorLogger << "\t"
+                        << "alignment " << to_string(alignment) << " != expected alignment "
+                        << to_string(expectedAlignment) << "\n";
+          }
+          if (alignment == alignment_t::UNALIGNED) {
+            errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
+                        << " is unaligned, despite being marked as an aligned boundary!\n";
+          }
         }
       }
     }
@@ -477,61 +482,79 @@ void checkBoundaryAlignment(mesh_t *mesh, std::string field)
   }
 }
 
-void remapUnalignedBoundaries(mesh_t *mesh, std::string field)
+void remapUnalignedBoundaries(mesh_t *mesh)
 {
-  if (field != std::string("velocity") && field != std::string("mesh"))
-    return;
+  for (auto &&field : fields) {
+    if (field != std::string("velocity") && field != std::string("mesh"))
+      continue;
 
-  std::map<int, bool> remapBID;
-  std::map<int, alignment_t> alignmentBID;
+    std::map<int, bool> remapBID;
+    std::map<int, alignment_t> alignmentBID;
 
-  int nid = nbid[0];
-  if (mesh->cht)
-    nid = nbid[1];
+    int nid = nbid[0];
+    if (mesh->cht)
+      nid = nbid[1];
 
-  for (int bid = 1; bid <= nid; ++bid) {
-    int bcType = id(bid, field);
-    remapBID[bid] = (bcType == 7);
-  }
-
-  for (int e = 0; e < mesh->Nelements; e++) {
-    for (int f = 0; f < mesh->Nfaces; f++) {
-      int bid = mesh->EToB[f + e * mesh->Nfaces];
-      int bc = id(bid, field);
-      auto alignment = computeAlignment(mesh, e, f);
-      if (alignmentBID.count(bid) == 0) {
-        alignmentBID[bid] = alignment;
-      }
-
-      auto previousAlignment = alignmentBID[bid];
-      remapBID[bid] &= (alignment != alignment_t::UNALIGNED) && (alignment == previousAlignment);
+    for (int bid = 1; bid <= nid; ++bid) {
+      int bcType = id(bid, field);
+      remapBID[bid] = (bcType == 7);
     }
-  }
 
-  for (int bid = 1; bid <= nid; ++bid) {
-    int canRemap = remapBID[bid];
-    MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
-    if (canRemap) {
+    for (int e = 0; e < mesh->Nelements; e++) {
+      for (int f = 0; f < mesh->Nfaces; f++) {
+        int bid = mesh->EToB[f + e * mesh->Nfaces];
+        int bc = id(bid, field);
+        auto alignment = computeAlignment(mesh, e, f);
+        if (alignmentBID.count(bid) == 0) {
+          alignmentBID[bid] = alignment;
+        }
 
-      auto alignmentType = alignmentBID[bid];
-
-      int newBcType = 0;
-      switch (alignmentType) {
-      case alignment_t::X:
-        newBcType = 4;
-        break;
-      case alignment_t::Y:
-        newBcType = 5;
-        break;
-      case alignment_t::Z:
-        newBcType = 6;
-        break;
-      default:
-        break;
+        auto previousAlignment = alignmentBID[bid];
+        remapBID[bid] &= (alignment != alignment_t::UNALIGNED) && (alignment == previousAlignment);
       }
+    }
 
-      bToBc[{field, bid - 1}] = newBcType;
+    for (int bid = 1; bid <= nid; ++bid) {
+      int canRemap = remapBID[bid];
+      MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
+      if (canRemap) {
+
+        auto alignmentType = alignmentBID[bid];
+
+        int newBcType = 0;
+        switch (alignmentType) {
+        case alignment_t::X:
+          newBcType = 4;
+          break;
+        case alignment_t::Y:
+          newBcType = 5;
+          break;
+        case alignment_t::Z:
+          newBcType = 6;
+          break;
+        default:
+          break;
+        }
+
+        bToBc[{field, bid - 1}] = newBcType;
+      }
     }
   }
 }
+
+bool unalignedBoundary(bool cht, std::string field)
+{
+  int nid = nbid[0];
+  if (cht)
+    nid = nbid[1];
+
+  for (int bid = 1; bid <= nid; bid++) {
+    int bcType = id(bid, field);
+    if (bcType == 7)
+      return true;
+  }
+
+  return false;
+}
+
 } // namespace

@@ -8,9 +8,7 @@
 nekdata_private nekData;
 static int rank;
 static setupAide* options;
-static nrs_t* nrs;
-static bool calledStsMask = false;
-static int bcInPar = 0;
+static nrs_t *nrs;
 
 static void (* usrdat_ptr)(void);
 static void (* usrdat2_ptr)(void);
@@ -54,9 +52,6 @@ static void (* nek_setabbd_ptr)(double *, double*, int*, int*);
 static void (* nek_storesol_ptr)(void);
 static void (* nek_restoresol_ptr)(void);
 static void (* nek_updggeom_ptr)(void);
-
-static void (* nek_stsmask_ptr)(double*, double*, double*);
-static void (*nekf_set_cbc_ptr)(int *);
 
 void noop_func(void) {}
 
@@ -324,12 +319,6 @@ void set_usr_handles(const char* session_in,int verbose)
   nek_restoresol_ptr = (void (*)(void))dlsym(handle, fname("nekf_restoresol"));
   check_error(dlerror());
   nek_updggeom_ptr = (void (*)(void))dlsym(handle, fname("nekf_updggeom"));
-  check_error(dlerror());
-
-  nek_stsmask_ptr = (void (*)(double*, double*, double*))dlsym(handle, fname("stsmask"));
-  check_error(dlerror());
-
-  nekf_set_cbc_ptr = (void (*)(int *))dlsym(handle, fname("nekf_set_cbc"));
   check_error(dlerror());
 
 #define postfix(x) x ## _ptr
@@ -686,7 +675,7 @@ int setup(nrs_t* nrs_in)
   options->getArgs("MESH CONNECTIVITY TOL", meshConTol);
 
   int nBcRead = 1;
-  bcInPar = 1;
+  int bcInPar = 1;
   if(bcMap::size(0) == 0 && bcMap::size(1) == 0) {
     bcInPar = 0;
     nBcRead = flow + nscal;
@@ -1016,48 +1005,5 @@ void coeffAB(double *coeff, double *dt, int order)
   (*nek_setabbd_ptr)(coeff, dt, &order, &one);
 }
 
-void recomputeGeometry()
-{
-  (*nek_updggeom_ptr)();
-}
-
-// precondition:
-// - nrs->EToB has been set
-// On first call, set nek5000 cbc to be the same as nekRS
-void stsmask(double* uMask, double* vMask, double* wMask)
-{
-  if (!calledStsMask && bcInPar) {
-    (*nekf_set_cbc_ptr)(nrs->EToB);
-    calledStsMask = true;
-  }
-  (*nek_stsmask_ptr)(uMask, vMask, wMask);
-
-  mesh_t *mesh = nrs->meshV;
-
-  const dlong Nlocal = mesh->Nelements * mesh->Np;
-
-  dfloat *vnx = nrs->Vn + 0 * nrs->fieldOffset;
-  dfloat *vny = nrs->Vn + 1 * nrs->fieldOffset;
-  dfloat *vnz = nrs->Vn + 2 * nrs->fieldOffset;
-
-  dfloat *v1x = nrs->V1 + 0 * nrs->fieldOffset;
-  dfloat *v1y = nrs->V1 + 1 * nrs->fieldOffset;
-  dfloat *v1z = nrs->V1 + 2 * nrs->fieldOffset;
-
-  dfloat *v2x = nrs->V2 + 0 * nrs->fieldOffset;
-  dfloat *v2y = nrs->V2 + 1 * nrs->fieldOffset;
-  dfloat *v2z = nrs->V2 + 2 * nrs->fieldOffset;
-
-  memcpy(vnx, nekData.vnx, sizeof(dfloat) * Nlocal);
-  memcpy(vny, nekData.vny, sizeof(dfloat) * Nlocal);
-  memcpy(vnz, nekData.vnz, sizeof(dfloat) * Nlocal);
-
-  memcpy(v1x, nekData.v1x, sizeof(dfloat) * Nlocal);
-  memcpy(v1y, nekData.v1y, sizeof(dfloat) * Nlocal);
-  memcpy(v1z, nekData.v1z, sizeof(dfloat) * Nlocal);
-
-  memcpy(v2x, nekData.v2x, sizeof(dfloat) * Nlocal);
-  memcpy(v2y, nekData.v2y, sizeof(dfloat) * Nlocal);
-  memcpy(v2z, nekData.v2z, sizeof(dfloat) * Nlocal);
-}
+void recomputeGeometry() { (*nek_updggeom_ptr)(); }
 }

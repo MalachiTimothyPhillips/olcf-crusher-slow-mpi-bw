@@ -46,8 +46,8 @@ void applyMaskUnalignedInterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_
   nrs->enforceUnKernel(Nelems,
                        nrs->fieldOffset,
                        o_elemList,
-                       nrs->o_V1,
-                       nrs->o_V2,
+                       nrs->meshV->o_VT1,
+                       nrs->meshV->o_VT2,
                        solver->mesh->o_vmapM,
                        nrs->o_EToB,
                        o_x);
@@ -64,8 +64,8 @@ void applyMaskUnalignedExterior(nrs_t *nrs, elliptic_t *solver, occa::memory &o_
   nrs->enforceUnKernel(Nelems,
                        nrs->fieldOffset,
                        o_elemList,
-                       nrs->o_V1,
-                       nrs->o_V2,
+                       nrs->meshV->o_VT1,
+                       nrs->meshV->o_VT2,
                        solver->mesh->o_vmapM,
                        nrs->o_EToB,
                        o_x);

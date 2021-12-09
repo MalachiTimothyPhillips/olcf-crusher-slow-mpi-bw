@@ -888,59 +888,6 @@ c        write(6,*) 'cht t cbc_bmap:', (cbc_bmap(i,ifld), i=1,6)
       return
       end
 c-----------------------------------------------------------------------
-      subroutine nekf_set_cbc(etob)
-
-      include 'SIZE'
-      include 'INPUT'
-      include 'NEKINTF'
-
-      integer etob(nelt*2*ndim)
-
-      integer counter
-
-      character*3 c
-
-      counter = 1
-
-      do iel = 1,nelt
-        do ifc = 1,2*ndim
-          do ifld = 0,1
-              nrsBC = etob(counter)
-              if(nrsBC.eq.0) then
-                 c = 'E  '
-              endif
-              if(nrsBC.eq.1) then
-                 c = 'W  '
-              endif
-              if(nrsBC.eq.2) then
-                 c = 'v  '
-              endif
-              if(nrsBC.eq.3) then
-                 c = 'o  '
-              endif
-              if(nrsBC.eq.4) then
-                 c = 'SYX'
-              endif
-              if(nrsBC.eq.5) then
-                 c = 'SYY'
-              endif
-              if(nrsBC.eq.6) then
-                 c = 'SYZ'
-              endif
-              if(nrsBC.eq.7) then
-                 c = 'SYM'
-              endif
-              cbc(ifc,iel,ifld) = c
-          enddo
-          counter = counter + 1
-        enddo
-      enddo
-
-      ! update corner b.c.
-      call setcdof
-      return
-      end
-c-----------------------------------------------------------------------
       subroutine nekf_scptr(id,ptr)
 
       implicit none
