@@ -56,9 +56,9 @@
         if(bcType > 0) {
           if(bcType == 7) {
 
-            const dfloat vnx = Vn[idM + 0 * offset];
-            const dfloat vny = Vn[idM + 1 * offset];
-            const dfloat vnz = Vn[idM + 2 * offset];
+            const dfloat vnx = sgeo[sid * p_Nsgeo + p_NXID];
+            const dfloat vny = sgeo[sid * p_Nsgeo + p_NYID];
+            const dfloat vnz = sgeo[sid * p_Nsgeo + p_NZID];
 
             const dfloat v1x = V1[idM + 0 * offset];
             const dfloat v1y = V1[idM + 1 * offset];
