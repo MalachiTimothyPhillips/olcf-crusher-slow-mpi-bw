@@ -203,8 +203,8 @@ void ellipticSolveSetup(elliptic_t* elliptic)
   fflush(stdout);
 
   {
-      mesh->maskKernel =
-        platform->kernels.get("mask");
+    mesh->maskKernel = platform->kernels.get("mask");
+    mesh->maskPfloatKernel = platform->kernels.get("maskPfloat");
   }
 
   {

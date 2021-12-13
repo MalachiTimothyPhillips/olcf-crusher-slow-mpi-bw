@@ -105,6 +105,10 @@ void registerEllipticKernels(std::string section, int poissonEquation) {
 
     fileName = oklpath + "mask.okl";
     platform->kernels.add("mask", fileName, kernelInfo);
+
+    occa::properties pfloatKernelInfo = kernelInfo;
+    pfloatKernelInfo["defines/dfloat"] = pfloatString;
+    platform->kernels.add("maskPfloat", fileName, kernelInfo);
   }
 
   kernelInfo["defines/p_Nfields"] = Nfields;
