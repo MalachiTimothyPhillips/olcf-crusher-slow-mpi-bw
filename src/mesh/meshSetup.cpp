@@ -18,9 +18,9 @@ occa::properties meshKernelProperties(int N)
   const int Nfp = Nq * Nq;
   constexpr int Nfaces {6};
 
-  constexpr int Nvgeo {12};
-  constexpr int Nggeo {7};
-  constexpr int Nsgeo{5};
+  constexpr int Nvgeo{12};
+  constexpr int Nggeo{7};
+  constexpr int Nsgeo{7};
 
   meshProperties["defines/" "p_dim"] = 3;
   meshProperties["defines/" "p_Nverts"] = 8;
@@ -43,6 +43,10 @@ occa::properties meshKernelProperties(int N)
   meshProperties["defines/" "p_NZID"] = NZID;
   meshProperties["defines/"
                  "p_SJID"] = SJID;
+  meshProperties["defines/"
+                 "p_IJID"] = IJID;
+  meshProperties["defines/"
+                 "p_WIJID"] = WIJID;
   meshProperties["defines/"
                  "p_WSJID"] = WSJID;
 

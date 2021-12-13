@@ -199,6 +199,8 @@ void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh)
         mesh->sgeo[base + NYID] = ny;
         mesh->sgeo[base + NZID] = nz;
         mesh->sgeo[base + SJID] = sJ;
+        mesh->sgeo[base + IJID] = 1. / J;
+        mesh->sgeo[base + WIJID] = 1. / (J * mesh->gllw[0]);
         mesh->sgeo[base + WSJID] = sJ * mesh->gllw[i % mesh->Nq] * mesh->gllw[i / mesh->Nq];
 
         base = 3 * (mesh->Nfaces * mesh->Nfp * e + mesh->Nfp * f + i); // tangential components
