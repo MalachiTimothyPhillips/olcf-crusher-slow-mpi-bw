@@ -69,7 +69,6 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
                 elliptic->o_maskIdsLocal,
                 elliptic->NmaskedGlobal,
                 elliptic->o_maskIdsGlobal,
-                elliptic->o_mapB,
                 &ogs);
     elliptic->ogs = ogs;
     elliptic->o_invDegree = elliptic->ogs->o_invDegree;

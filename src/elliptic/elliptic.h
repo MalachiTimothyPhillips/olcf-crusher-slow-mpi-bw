@@ -107,8 +107,7 @@ struct elliptic_t
 
   occa::memory o_wrk;
 
-  //C0-FEM mask data
-  int* mapB;      // boundary flag of face nodes
+  // C0-FEM mask data
   dlong Nmasked;
   dlong NmaskedLocal;
   dlong NmaskedGlobal;
@@ -116,7 +115,6 @@ struct elliptic_t
   occa::memory o_maskIds;
   occa::memory o_maskIdsGlobal;
   occa::memory o_maskIdsLocal;
-  occa::memory o_mapB;
 
   occa::memory o_x;
   occa::memory o_x0;
@@ -261,6 +259,5 @@ void ellipticOgs(mesh_t *mesh,
                  occa::memory &o_maskIdsLocal,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
-                 occa::memory &o_mapB,
                  ogs_t **ogs);
 #endif

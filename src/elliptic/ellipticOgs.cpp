@@ -13,7 +13,6 @@ void ellipticOgs(mesh_t *mesh,
                  occa::memory &o_maskIdsLocal,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
-                 occa::memory &o_mapB,
                  ogs_t **ogs)
 {
   const int Nlocal = (nFields == 1) ? mNlocal : nFields * offset;
@@ -54,7 +53,6 @@ void ellipticOgs(mesh_t *mesh,
       }
     }
   }
-  o_mapB = platform->device.malloc(Nlocal * sizeof(int), mapB);
   dlong *maskIds = (dlong*) calloc(Nmasked, sizeof(dlong));
 
   Nmasked = 0;
