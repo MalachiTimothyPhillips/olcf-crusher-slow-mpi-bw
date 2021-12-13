@@ -106,7 +106,9 @@ void interpolateHex3D(dfloat* Inter, dfloat* x, int N, dfloat* Ix, int M);
 #define NYID 1
 #define NZID 2
 #define SJID 3
-#define WSJID 4
+#define IJID 4
+#define WIJID 5
+#define WSJID 6
 
 // Mesh generation
 void NodesHex3D(int _N, dfloat* _r, dfloat* _s, dfloat* _t);
