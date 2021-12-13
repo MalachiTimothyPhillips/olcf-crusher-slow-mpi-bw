@@ -1069,6 +1069,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                      nrs->fieldOffset,
                                      startTime,
                                      mesh->o_sgeo,
+                                     mesh->o_VT1,
+                                     mesh->o_VT2,
                                      mesh->o_x,
                                      mesh->o_y,
                                      mesh->o_z,
@@ -1085,12 +1087,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0.0, platform->o_mempool.slice0);
     for (int sweep = 0; sweep < 2; sweep++) {
-    nrs->meshV->velocityDirichletKernel(mesh->Nelements,
-                                   nrs->fieldOffset,
-                                   mesh->o_vmapM,
-                                   nrs->o_EToBMesh,
-                                   platform->o_mempool.slice3,
-                                   platform->o_mempool.slice0);
+      nrs->meshV->velocityDirichletKernel(mesh->Nelements,
+                                          nrs->fieldOffset,
+                                          mesh->o_VT1,
+                                          mesh->o_VT2,
+                                          mesh->o_vmapM,
+                                          nrs->o_EToBMesh,
+                                          platform->o_mempool.slice3,
+                                          platform->o_mempool.slice0);
       //take care of Neumann-Dirichlet shared edges across elements
       if(sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if(sweep == 1) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
