@@ -376,9 +376,7 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
     }
   }
 
-  const int lx1m =
-      (options.compareArgs("MOVING MESH", "TRUE") || options.compareArgs("STRESSFORMULATION", "TRUE")) ? lx1
-                                                                                                       : 1;
+  const int lx1m = (options.compareArgs("MOVING MESH", "TRUE")) ? lx1 : 1;
 
   int count = 0;
   while(fgets(line, BUFSIZ, fp) != NULL) {
@@ -759,18 +757,6 @@ int setup(nrs_t* nrs_in)
   nekData.wx = (double*) ptr("wx");
   nekData.wy = (double*) ptr("wy");
   nekData.wz = (double*) ptr("wz");
-
-  nekData.vnx = (double *)ptr("vnx");
-  nekData.vny = (double *)ptr("vny");
-  nekData.vnz = (double *)ptr("vnz");
-
-  nekData.v1x = (double *)ptr("v1x");
-  nekData.v1y = (double *)ptr("v1y");
-  nekData.v1z = (double *)ptr("v1z");
-
-  nekData.v2x = (double *)ptr("v2x");
-  nekData.v2y = (double *)ptr("v2y");
-  nekData.v2z = (double *)ptr("v2z");
 
   int cht = 0;
   if (nekData.nelv != nekData.nelt && nscal) cht = 1;

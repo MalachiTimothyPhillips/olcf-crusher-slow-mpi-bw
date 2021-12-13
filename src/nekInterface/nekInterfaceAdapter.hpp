@@ -76,13 +76,6 @@ struct nekdata_private
 
   /* mesh velocities */
   double *wx, *wy, *wz;
-
-  /* face normal ? */
-  double *vnx, *vny, *vnz;
-
-  /* tangential normals */
-  double *v1x, *v1y, *v1z;
-  double *v2x, *v2y, *v2z;
 };
 
 extern nekdata_private nekData;
