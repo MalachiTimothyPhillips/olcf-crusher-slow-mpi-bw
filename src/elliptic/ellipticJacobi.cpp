@@ -48,5 +48,7 @@ void ellipticUpdateJacobi(elliptic_t* elliptic, occa::memory& o_invDiagA)
 
   const pfloat one = 1.0;
   elliptic->adyManyPfloatKernel(Nlocal, elliptic->Nfields, elliptic->Ntotal, one, o_invDiagA);
-  mesh->maskPfloatKernel(elliptic->Nmasked, elliptic->o_maskIds, o_invDiagA);
+
+  if (elliptic->Nmasked)
+    mesh->maskPfloatKernel(elliptic->Nmasked, elliptic->o_maskIds, o_invDiagA);
 }
