@@ -8,7 +8,6 @@
 #include "filter.hpp"
 #include "avm.hpp"
 #include <cctype>
-#include <applyMask.hpp>
 
 namespace{
 cds_t* cdsSetup(nrs_t* nrs, setupAide options);
@@ -691,9 +690,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
  
       cds->solver[is]->options = cds->options[is];
 
-      cds->solver[is]->applyMask = applyMask;
-      cds->solver[is]->applyMaskInterior = applyMaskInterior;
-      cds->solver[is]->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(cds->solver[is]);
     }
   }
@@ -802,23 +798,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->loffset = 0; // use same ellipticCoeff for u,v and w
       nrs->uvwSolver->poisson = 0;
 
-      nrs->uvwSolver->applyMask = applyMask;
-      nrs->uvwSolver->applyMaskInterior = applyMaskInterior;
-      nrs->uvwSolver->applyMaskExterior = applyMaskExterior;
-      if (unalignedSYM) {
-        nrs->uvwSolver->applyMaskInterior =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedInterior(nrs, solver, o_x, precision);
-            };
-        nrs->uvwSolver->applyMaskExterior =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedExterior(nrs, solver, o_x, precision);
-            };
-        nrs->uvwSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          applyMaskUnaligned(nrs, solver, o_x, precision);
-        };
-      }
-
       ellipticSolveSetup(nrs->uvwSolver);
     } else {
       nrs->uSolver = new elliptic_t();
@@ -839,9 +818,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uSolver->loffset = 0;
       nrs->uSolver->poisson = 0;
 
-      nrs->uSolver->applyMask = applyMask;
-      nrs->uSolver->applyMaskInterior = applyMaskInterior;
-      nrs->uSolver->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(nrs->uSolver);
 
       nrs->vSolver = new elliptic_t();
@@ -862,9 +838,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->vSolver->loffset = 0;
       nrs->vSolver->poisson = 0;
 
-      nrs->vSolver->applyMask = applyMask;
-      nrs->vSolver->applyMaskInterior = applyMaskInterior;
-      nrs->vSolver->applyMaskExterior = applyMaskExterior;
       ellipticSolveSetup(nrs->vSolver);
 
       if (nrs->dim == 3) {
@@ -886,9 +859,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->wSolver->loffset = 0;
         nrs->wSolver->poisson = 0;
 
-        nrs->wSolver->applyMask = applyMask;
-        nrs->wSolver->applyMaskInterior = applyMaskInterior;
-        nrs->wSolver->applyMaskExterior = applyMaskExterior;
         ellipticSolveSetup(nrs->wSolver);
       }
     }
@@ -984,9 +954,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     }
 
     nrs->pSolver->options = nrs->pOptions;
-    nrs->pSolver->applyMask = applyMask;
-    nrs->pSolver->applyMaskInterior = applyMaskInterior;
-    nrs->pSolver->applyMaskExterior = applyMaskExterior;
     ellipticSolveSetup(nrs->pSolver);
 
   } // flow
@@ -1036,22 +1003,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->loffset = 0; // use same ellipticCoeff for u,v and w
       nrs->meshSolver->poisson = 0;
 
-      nrs->meshSolver->applyMask = applyMask;
-      nrs->meshSolver->applyMaskInterior = applyMaskInterior;
-      nrs->meshSolver->applyMaskExterior = applyMaskExterior;
-      if (unalignedSYM) {
-        nrs->meshSolver->applyMaskInterior =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedInterior(nrs, solver, o_x, precision);
-            };
-        nrs->meshSolver->applyMaskExterior =
-            [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-              applyMaskUnalignedExterior(nrs, solver, o_x, precision);
-            };
-        nrs->meshSolver->applyMask = [nrs](elliptic_t *solver, occa::memory &o_x, std::string precision) {
-          applyMaskUnaligned(nrs, solver, o_x, precision);
-        };
-      }
       ellipticSolveSetup(nrs->meshSolver);
     }
   }

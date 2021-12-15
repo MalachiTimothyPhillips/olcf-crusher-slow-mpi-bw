@@ -40,6 +40,7 @@
 
 #include "timer.hpp"
 #include <functional>
+#include "ellipticApplyMask.hpp"
 
 #define ELLIPTIC_ENABLE_TIMER
 
@@ -170,9 +171,11 @@ struct elliptic_t
   SolutionProjection* solutionProjection;
   GmresData* gmresData;
 
-  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMask;
-  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMaskExterior;
-  std::function<void(elliptic_t *solver, occa::memory &o_x, std::string precision)> applyMaskInterior;
+  bool unaligned;
+
+  occa::kernel enforceUnKernel;
+  occa::kernel enforceUnPfloatKernel;
+  occa::memory o_BCType;
 };
 
 #include "ellipticMultiGrid.h"

@@ -210,7 +210,6 @@ set(SRC
     src/core/compileKernels.cpp
     src/core/setup.cpp
     src/core/registerNrsKernels.cpp
-    src/core/applyMask.cpp
     src/timeStepper/timeStepper.cpp
     src/lns/tombo.cpp
     src/lns/constantFlowRate.cpp
