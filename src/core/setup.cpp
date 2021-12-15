@@ -94,7 +94,8 @@ determineMGLevels(std::string section)
     };
 
     return mg_level_lookup.at(N);
-  } else if(platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER","JAC")) {
+  }
+  else {
     std::map<int,std::vector<int> > mg_level_lookup =
     {
       {1,{1}},
@@ -116,8 +117,6 @@ determineMGLevels(std::string section)
 
     return mg_level_lookup.at(N);
   }
-
-  return {};
 }
 
 
@@ -485,11 +484,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
       {
         kernelName = "strongAdvectionVolume" + suffix;
-        nrs->advectionStrongVolumeKernel =
-          platform->kernels.get( section + kernelName);
+        nrs->strongAdvectionVolumeKernel = platform->kernels.get(section + kernelName);
         kernelName = "strongAdvectionCubatureVolume" + suffix;
-        nrs->advectionStrongCubatureVolumeKernel =
-          platform->kernels.get( section + kernelName);
+        nrs->strongAdvectionCubatureVolumeKernel = platform->kernels.get(section + kernelName);
       }
 
       kernelName = "curl" + suffix;
@@ -499,7 +496,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       kernelName = "gradientVolume" + suffix;
       nrs->gradientVolumeKernel =  platform->kernels.get( section + kernelName);
 
-      kernelName = "nrswGradientVolume" + suffix;
+      kernelName = "wGradientVolume" + suffix;
       nrs->wgradientVolumeKernel =
         platform->kernels.get( section + kernelName);
 
@@ -508,22 +505,22 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->sumMakefKernel =  platform->kernels.get( section + kernelName);
       }
 
-      kernelName = "nrswDivergenceVolume" + suffix;
+      kernelName = "wDivergenceVolume" + suffix;
       nrs->wDivergenceVolumeKernel =
         platform->kernels.get( section + kernelName);
       kernelName = "divergenceVolume" + suffix;
       nrs->divergenceVolumeKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "divergenceSurfaceTOMBO" + suffix;
+      kernelName = "divergenceSurface" + suffix;
       nrs->divergenceSurfaceKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "advectMeshVelocityHex3D";
+      kernelName = "advectMeshVelocity" + suffix;
       nrs->advectMeshVelocityKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "pressureRhsTOMBO" + suffix;
+      kernelName = "pressureRhs" + suffix;
       nrs->pressureRhsKernel =
         platform->kernels.get( section + kernelName);
 
@@ -535,7 +532,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->pressureDirichletBCKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "velocityRhsTOMBO" + suffix;
+      kernelName = "velocityRhs" + suffix;
       nrs->velocityRhsKernel =
         platform->kernels.get( section + kernelName);
 
@@ -567,7 +564,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->subCycleStrongVolumeKernel =
           platform->kernels.get( section + kernelName);
 
-        kernelName = "subCycleERKUpdate";
+        kernelName = "subCycleRKUpdate";
         nrs->subCycleRKUpdateKernel =
           platform->kernels.get( section + kernelName);
         kernelName = "subCycleRK";
@@ -578,7 +575,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         nrs->subCycleInitU0Kernel =  platform->kernels.get( section + kernelName);
       }
 
-      kernelName = "multiExtrapolate";
+      kernelName = "extrapolate";
       nrs->extrapolateKernel =
         platform->kernels.get( section + kernelName);
 
@@ -1324,60 +1321,48 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
 
    {
         kernelName = "strongAdvectionVolume" + suffix;
-        cds->advectionStrongVolumeKernel =
-          platform->kernels.get( section + kernelName);
+        cds->strongAdvectionVolumeKernel = platform->kernels.get(section + kernelName);
 
         kernelName = "strongAdvectionCubatureVolume" + suffix;
-        cds->advectionStrongCubatureVolumeKernel =  
-          platform->kernels.get( section + kernelName);
+        cds->strongAdvectionCubatureVolumeKernel = platform->kernels.get(section + kernelName);
 
-  	kernelName = "advectMeshVelocityHex3D";
-      cds->advectMeshVelocityKernel =
-        platform->kernels.get( section + kernelName);
+        kernelName = "advectMeshVelocity" + suffix;
+        cds->advectMeshVelocityKernel = platform->kernels.get(section + kernelName);
 
-      kernelName = "maskCopy";
-      cds->maskCopyKernel =
-        platform->kernels.get( section + kernelName);
+        kernelName = "maskCopy";
+        cds->maskCopyKernel = platform->kernels.get(section + kernelName);
 
-      {
         kernelName = "sumMakef";
-        cds->sumMakefKernel =  platform->kernels.get( section + kernelName);
-      }
+        cds->sumMakefKernel = platform->kernels.get(section + kernelName);
 
-      kernelName = "helmholtzBC" + suffix;
-      cds->helmholtzRhsBCKernel =  platform->kernels.get( section + kernelName);
-      kernelName = "dirichletBC";
-      cds->dirichletBCKernel =  platform->kernels.get( section + kernelName);
+        kernelName = "helmholtzBC" + suffix;
+        cds->helmholtzRhsBCKernel = platform->kernels.get(section + kernelName);
+        kernelName = "dirichletBC";
+        cds->dirichletBCKernel = platform->kernels.get(section + kernelName);
 
-      kernelName = "setEllipticCoeff";
-      cds->setEllipticCoeffKernel =
-        platform->kernels.get( section + kernelName);
+        kernelName = "setEllipticCoeff";
+        cds->setEllipticCoeffKernel = platform->kernels.get(section + kernelName);
 
-      kernelName = "filterRT" + suffix;
-      cds->filterRTKernel =
-        platform->kernels.get( section + kernelName);
+        kernelName = "filterRT" + suffix;
+        cds->filterRTKernel = platform->kernels.get(section + kernelName);
 
-      kernelName = "nStagesSum3";
-      cds->nStagesSum3Kernel =
-        platform->kernels.get( section + kernelName);
+        kernelName = "nStagesSum3";
+        cds->nStagesSum3Kernel = platform->kernels.get(section + kernelName);
 
-      if(cds->Nsubsteps) {
-        kernelName = "subCycleStrongCubatureVolume" + suffix;
-        cds->subCycleStrongCubatureVolumeKernel =
-          platform->kernels.get( section + kernelName);
-        kernelName = "subCycleStrongVolume" + suffix;
-        cds->subCycleStrongVolumeKernel =
-          platform->kernels.get( section + kernelName);
+        if (cds->Nsubsteps) {
+          kernelName = "subCycleStrongCubatureVolume" + suffix;
+          cds->subCycleStrongCubatureVolumeKernel = platform->kernels.get(section + kernelName);
+          kernelName = "subCycleStrongVolume" + suffix;
+          cds->subCycleStrongVolumeKernel = platform->kernels.get(section + kernelName);
 
+          kernelName = "subCycleRKUpdate";
+          cds->subCycleRKUpdateKernel = platform->kernels.get(section + kernelName);
+          kernelName = "subCycleRK";
+          cds->subCycleRKKernel = platform->kernels.get(section + kernelName);
 
-        kernelName = "subCycleERKUpdate";
-        cds->subCycleRKUpdateKernel =  platform->kernels.get( section + kernelName);
-        kernelName = "subCycleRK";
-        cds->subCycleRKKernel =  platform->kernels.get( section + kernelName);
-
-        kernelName = "subCycleInitU0";
-        cds->subCycleInitU0Kernel =  platform->kernels.get( section + kernelName);
-      }
+          kernelName = "subCycleInitU0";
+          cds->subCycleInitU0Kernel = platform->kernels.get(section + kernelName);
+        }
   }
 
   MPI_Barrier(platform->comm.mpiComm);
