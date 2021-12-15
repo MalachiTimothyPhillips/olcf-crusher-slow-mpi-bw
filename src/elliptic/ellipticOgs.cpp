@@ -1,5 +1,6 @@
 #include "elliptic.h"
 #include "platform.hpp"
+#include <bcTypes.hpp>
 
 void ellipticOgs(mesh_t *mesh,
                  dlong mNlocal,
@@ -48,7 +49,8 @@ void ellipticOgs(mesh_t *mesh,
     for (dlong n = 0; n < mesh->Nlocal; n++) {
       if (mapB[n + fld * offset] == largeNumber) {
         mapB[n + fld * offset] = 0;
-      } else if (mapB[n + fld * offset] == 1) { //Dirichlet boundary
+      }
+      else if (mapB[n + fld * offset] == DIRICHLET) { // Dirichlet boundary
         Nmasked++;
       }
     }

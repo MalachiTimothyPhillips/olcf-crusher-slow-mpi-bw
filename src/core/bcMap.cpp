@@ -11,9 +11,7 @@
 #include "platform.hpp"
 #include "udf.hpp"
 
-#define NOTBOUNDARY 0
-#define DIRICHLET 1
-#define NEUMANN 2
+#include <bcTypes.hpp>
 
 namespace {
 enum class alignment_t { X, Y, Z, UNALIGNED };
