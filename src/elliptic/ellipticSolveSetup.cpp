@@ -180,6 +180,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
                 elliptic->Ntotal,
                 elliptic->BCType,
                 elliptic->NBCType,
+                elliptic->unaligned,
                 elliptic->Nmasked,
                 elliptic->o_maskIds,
                 elliptic->NmaskedLocal,

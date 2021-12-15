@@ -8,6 +8,7 @@ void ellipticOgs(mesh_t *mesh,
                  dlong offset,
                  int *BCType,
                  int BCTypeOffset,
+                 bool &unaligned,
                  dlong &Nmasked,
                  occa::memory &o_maskIds,
                  dlong &NmaskedLocal,
@@ -16,6 +17,7 @@ void ellipticOgs(mesh_t *mesh,
                  occa::memory &o_maskIdsGlobal,
                  ogs_t **ogs)
 {
+  unaligned = false;
   const int Nlocal = (nFields == 1) ? mNlocal : nFields * offset;
   const int largeNumber = 1 << 20;
 
@@ -52,6 +54,9 @@ void ellipticOgs(mesh_t *mesh,
       }
       else if (mapB[n + fld * offset] == DIRICHLET) { // Dirichlet boundary
         Nmasked++;
+      }
+      else if (mapB[n + fld * offset] == DIRICHLETNORMAL) {
+        unaligned = true;
       }
     }
   }

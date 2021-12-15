@@ -248,8 +248,6 @@ int type(int bid, std::string field)
 
   int bcType = -1;
 
-  bool unalignedSYM = false;
-
   if (field.compare("x-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -259,7 +257,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("y-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
@@ -270,7 +268,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = DIRICHLET;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("z-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
@@ -281,7 +279,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("x-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
@@ -292,7 +290,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
   } else if (field.compare("y-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -302,7 +300,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = DIRICHLET;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
   } else if (field.compare("z-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -312,7 +310,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
   } else if (field.compare("pressure") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = NEUMANN;
@@ -322,7 +320,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = NEUMANN, unalignedSYM = true;
+      bcType = DIRICHLETNORMAL;
     if (bcID == 3) oudfFindDirichlet(field);
   } else if (field.compare(0, 6, "scalar") == 0) {
     const int bcID = bToBc[{field, bid - 1}];
@@ -335,11 +333,6 @@ int type(int bid, std::string field)
 
   if(bcType < 0) {
     std::cout << __func__ << "(): Unexpected error occured!" << std::endl;
-    ABORT(1);
-  }
-
-  if (unalignedSYM && platform->options.compareArgs("STRESSFORMULATION", "FALSE")) {
-    std::cout << __func__ << "(): un-aligned SYM boundary condition requires stress formulation!\n" << std::endl;
     ABORT(1);
   }
 
