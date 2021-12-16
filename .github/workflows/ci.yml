@@ -180,6 +180,10 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 5
 
+    - name: 'mv_cyl + unaligned SYM + mesh solver'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 6
+
 
   conj_ht:
     needs: install

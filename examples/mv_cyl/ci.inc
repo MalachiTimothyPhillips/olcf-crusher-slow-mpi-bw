@@ -45,6 +45,11 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   if(ciMode == 5){
     platform->par->set("casedata", "p_rot", 0.5);
   }
+  if(ciMode == 6){
+    options.setArgs("MESH SOLVER", "ELASTICITY");
+    options.setArgs("MESH SOLVER TOLERANCE", "1e-12");
+    platform->par->set("casedata", "p_rot", 0.5);
+  }
 }
 
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
@@ -107,6 +112,16 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     expectedErr[3] = 0.295E-05;
     expectedErr[4] = 0.2465620E-05;
     expectedErr[5] = 0.125E-05;
+    expectedPIter = 6;
+  }
+  if(ciMode == 6)
+  {
+    expectedErr[0] = 0.2465620E-06;
+    expectedErr[1] = 0.6938894E-16;
+    expectedErr[2] = 0.3E-05;
+    expectedErr[3] = 0.21E-05;
+    expectedErr[4] = 0.2465620E-05;
+    expectedErr[5] = 0.108E-05;
     expectedPIter = 6;
   }
 
