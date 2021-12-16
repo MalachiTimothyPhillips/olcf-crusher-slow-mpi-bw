@@ -320,7 +320,7 @@ int type(int bid, std::string field)
     if (bcID == 5) bcType = NEUMANN;
     if (bcID == 6) bcType = NEUMANN;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = NEUMANN;
     if (bcID == 3) oudfFindDirichlet(field);
   } else if (field.compare(0, 6, "scalar") == 0) {
     const int bcID = bToBc[{field, bid - 1}];
