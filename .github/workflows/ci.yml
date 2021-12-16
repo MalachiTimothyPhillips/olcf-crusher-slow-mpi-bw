@@ -176,7 +176,7 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 4
 
-    - name: 'mv_cyl + subcycling + unaligned SYM'
+    - name: 'mv_cyl + unaligned SYM'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 5
 
