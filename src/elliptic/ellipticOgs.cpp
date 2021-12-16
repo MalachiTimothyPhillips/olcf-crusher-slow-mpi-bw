@@ -15,6 +15,7 @@ void ellipticOgs(mesh_t *mesh,
                  occa::memory &o_maskIdsLocal,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
+                 occa::memory &o_BCType,
                  ogs_t **ogs)
 {
   unaligned = false;
@@ -140,4 +141,6 @@ void ellipticOgs(mesh_t *mesh,
     free(maskedGlobalIds);
   }
   free(maskIds);
+
+  o_BCType = platform->device.malloc(BCTypeOffset * nFields * sizeof(int), BCType);
 }

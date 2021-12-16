@@ -62,7 +62,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
                 /* nFields */ 1,
                 /* offset */ 0,
                 elliptic->BCType,
-                /* BCTypeOffset */ 0,
+                elliptic->NBCType,
                 elliptic->unaligned,
                 elliptic->Nmasked,
                 elliptic->o_maskIds,
@@ -70,6 +70,7 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
                 elliptic->o_maskIdsLocal,
                 elliptic->NmaskedGlobal,
                 elliptic->o_maskIdsGlobal,
+                elliptic->o_BCType,
                 &ogs);
     elliptic->ogs = ogs;
     elliptic->o_invDegree = elliptic->ogs->o_invDegree;

@@ -187,6 +187,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
                 elliptic->o_maskIdsLocal,
                 elliptic->NmaskedGlobal,
                 elliptic->o_maskIdsGlobal,
+                elliptic->o_BCType,
                 &ogs);
     elliptic->ogs = ogs;
     elliptic->o_invDegree = elliptic->ogs->o_invDegree;
@@ -205,6 +206,8 @@ void ellipticSolveSetup(elliptic_t* elliptic)
   {
     mesh->maskKernel = platform->kernels.get("mask");
     mesh->maskPfloatKernel = platform->kernels.get("maskPfloat");
+    elliptic->enforceUnKernel = platform->kernels.get("enforceUn");
+    elliptic->enforceUnPfloatKernel = platform->kernels.get("enforceUnPfloat");
   }
 
   {

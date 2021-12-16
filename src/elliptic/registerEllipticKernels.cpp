@@ -1,4 +1,5 @@
 #include <compileKernels.hpp>
+#include "bcTypes.hpp"
 #include "elliptic.h"
 
 namespace{
@@ -109,6 +110,15 @@ void registerEllipticKernels(std::string section, int poissonEquation) {
     occa::properties pfloatKernelInfo = kernelInfo;
     pfloatKernelInfo["defines/dfloat"] = pfloatString;
     platform->kernels.add("maskPfloat", fileName, pfloatKernelInfo);
+
+    occa::properties enforceUnProperties = kernelInfo;
+    enforceUnProperties["defines/p_DIRICHLETNORMAL"] = DIRICHLETNORMAL;
+    enforceUnProperties["defines/outputType"] = dfloatString;
+    fileName = oklpath + "enforceUn.okl";
+    platform->kernels.add("enforceUn", fileName, enforceUnProperties);
+
+    enforceUnProperties["defines/outputType"] = pfloatString;
+    platform->kernels.add("enforceUnPfloat", fileName, enforceUnProperties);
   }
 
   kernelInfo["defines/p_Nfields"] = Nfields;
