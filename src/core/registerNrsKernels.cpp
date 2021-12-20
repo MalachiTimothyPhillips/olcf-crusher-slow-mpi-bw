@@ -163,10 +163,6 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     platform->kernels.add(
         section + kernelName, fileName, kernelInfoBC);
 
-    kernelName = "enforceUn" + suffix;
-    fileName = oklpath + "nrs/" + kernelName + ".okl";
-    platform->kernels.add(section + kernelName, fileName, meshProps);
-
     kernelName = "velocityNeumannBC" + suffix;
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(
