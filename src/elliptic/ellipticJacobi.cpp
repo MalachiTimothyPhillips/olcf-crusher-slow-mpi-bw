@@ -26,6 +26,7 @@
 
 #include "elliptic.h"
 #include "linAlg.hpp"
+#include "ellipticApplyMask.hpp"
 
 void ellipticUpdateJacobi(elliptic_t* elliptic, occa::memory& o_invDiagA)
 {

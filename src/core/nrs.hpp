@@ -181,9 +181,7 @@ struct nrs_t
   occa::memory o_EToB;
   occa::memory o_EToBMesh;
 
-  occa::properties* kernelInfo;
-
-  occa::kernel enforceUnKernel;
+  occa::properties *kernelInfo;
 };
 
 

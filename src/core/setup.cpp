@@ -539,9 +539,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->velocityDirichletBCKernel =
         platform->kernels.get( section + kernelName);
 
-      kernelName = "enforceUn" + suffix;
-      nrs->enforceUnKernel = platform->kernels.get(section + kernelName);
-
       kernelName = "velocityNeumannBC" + suffix;
       nrs->velocityNeumannBCKernel =
         platform->kernels.get( section + kernelName);
@@ -708,7 +705,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     int* vBCType = uvwBCType + 1 * NBCType;
     int* wBCType = uvwBCType + 2 * NBCType;
 
-    bool unalignedSYM = false;
     for (int bID = 1; bID <= nbrBIDs; bID++) {
       std::string bcTypeText(bcMap::text(bID, "velocity"));
       if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -716,10 +712,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       uBCType[bID] = bcMap::type(bID, "x-velocity");
       vBCType[bID] = bcMap::type(bID, "y-velocity");
       wBCType[bID] = bcMap::type(bID, "z-velocity");
-
-      const std::string unalignedSYMString("zeroNValue/zeroGradient");
-      if (bcTypeText == unalignedSYMString)
-        unalignedSYM = true;
     }
 
     nrs->vOptions = options;
@@ -967,7 +959,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       int* vMeshBCType = uvwMeshBCType + 1 * NBCType;
       int* wMeshBCType = uvwMeshBCType + 2 * NBCType;
 
-      bool unalignedSYM = false;
       for (int bID = 1; bID <= nbrBIDs; bID++) {
         std::string bcTypeText(bcMap::text(bID, "mesh"));
         if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -975,9 +966,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         uMeshBCType[bID] = bcMap::type(bID, "x-mesh");
         vMeshBCType[bID] = bcMap::type(bID, "y-mesh");
         wMeshBCType[bID] = bcMap::type(bID, "z-mesh");
-        const std::string unalignedSYMString("zeroNValue/zeroGradient");
-        if (bcTypeText == unalignedSYMString)
-          unalignedSYM = true;
       }
 
       const int meshCoeffField = platform->options.compareArgs("MESH COEFF FIELD", "TRUE");
