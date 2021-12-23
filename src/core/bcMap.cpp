@@ -418,14 +418,21 @@ void setBcMap(std::string field, int* map, int nIDs)
 }
 void checkBoundaryAlignment(mesh_t *mesh)
 {
-  std::ostringstream errorLogger;
+  int nid = nbid[0];
+  if (mesh->cht)
+    nid = nbid[1];
+  bool bail = false;
   for (auto &&field : fields) {
     if (field != std::string("velocity") && field != std::string("mesh"))
       continue;
 
+    std::map<int, alignment_t> expectedAlignmentInvalidBIDs;
+    std::map<int, std::set<alignment_t>> actualAlignmentsInvalidBIDs;
+
     for (int e = 0; e < mesh->Nelements; e++) {
       for (int f = 0; f < mesh->Nfaces; f++) {
-        int bc = id(mesh->EToB[f + e * mesh->Nfaces], field);
+        int bid = mesh->EToB[e * mesh->Nfaces + f];
+        int bc = id(bid, field);
         if (bc == 4 || bc == 5 || bc == 6) {
           auto expectedAlignment = alignment_t::UNALIGNED;
           switch (bc) {
@@ -442,33 +449,71 @@ void checkBoundaryAlignment(mesh_t *mesh)
 
           auto alignment = computeAlignment(mesh, e, f);
           if (alignment != expectedAlignment) {
-            errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
-                        << " has an unexpected alignment.\n";
-            errorLogger << "\t"
-                        << "alignment " << to_string(alignment) << " != expected alignment "
-                        << to_string(expectedAlignment) << "\n";
-          }
-          if (alignment == alignment_t::UNALIGNED) {
-            errorLogger << "On rank: " << platform->comm.mpiRank << " element: " << e << " face: " << f
-                        << " is unaligned, despite being marked as an aligned boundary!\n";
+            expectedAlignmentInvalidBIDs[bid] = expectedAlignment;
+            actualAlignmentsInvalidBIDs[bid].insert(alignment);
           }
         }
       }
     }
-  }
 
-  std::string errors = errorLogger.str();
-  int errorLength = errors.size();
+    int err = expectedAlignmentInvalidBIDs.size();
+    MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+    if (err > 0) {
+      bail = true;
 
-  MPI_Allreduce(MPI_IN_PLACE, &errorLength, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
-  if (errorLength > 0) {
-    for (int rank = 0; rank < platform->comm.mpiCommSize; rank++) {
-      if (platform->comm.mpiRank == rank) {
-        std::cout << errors;
+      std::vector<int> valid(nid, 1);
+      for (int bid = 1; bid <= nid; bid++) {
+        valid[bid - 1] = expectedAlignmentInvalidBIDs.count(bid) == 0;
       }
-      std::cout << std::endl;
+
+      constexpr int invalidAlignment = -1;
+      constexpr int nAlignments = 4;
+      std::vector<int> expectedAlignments(nid, invalidAlignment);
+      std::vector<int> encounteredAlignments(nid * nAlignments, invalidAlignment);
+      for (auto &&bidAndAlignments : actualAlignmentsInvalidBIDs) {
+        const auto bid = bidAndAlignments.first;
+        const auto &alignments = bidAndAlignments.second;
+        encounteredAlignments[(bid - 1) * nAlignments + 0] = (alignments.count(alignment_t::X));
+        encounteredAlignments[(bid - 1) * nAlignments + 1] = (alignments.count(alignment_t::Y));
+        encounteredAlignments[(bid - 1) * nAlignments + 2] = (alignments.count(alignment_t::Z));
+        encounteredAlignments[(bid - 1) * nAlignments + 3] = (alignments.count(alignment_t::UNALIGNED));
+        expectedAlignments[(bid - 1)] = static_cast<int>(expectedAlignmentInvalidBIDs[bid]);
+      }
+      MPI_Allreduce(MPI_IN_PLACE, valid.data(), nid, MPI_INT, MPI_MIN, platform->comm.mpiComm);
+      MPI_Allreduce(MPI_IN_PLACE,
+                    encounteredAlignments.data(),
+                    nid * nAlignments,
+                    MPI_INT,
+                    MPI_MAX,
+                    platform->comm.mpiComm);
+      MPI_Allreduce(MPI_IN_PLACE, expectedAlignments.data(), nid, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+
+      if (platform->comm.mpiRank == 0) {
+        std::cout << "Encountered incorrectly aligned boundaries in field \"" << field << "\":\n";
+        for (int bid = 1; bid <= nid; bid++) {
+          if (valid[bid - 1] == 0) {
+            std::cout << "\tBoundary ID " << bid << ":\n";
+            std::cout << "\t\texpected alignment : "
+                      << to_string(static_cast<alignment_t>(expectedAlignments[bid - 1])) << "\n";
+            std::cout << "\t\tencountered alignments:\n";
+            if (encounteredAlignments[(bid - 1) * nAlignments + 0])
+              std::cout << "\t\t\tX\n";
+            if (encounteredAlignments[(bid - 1) * nAlignments + 1])
+              std::cout << "\t\t\tY\n";
+            if (encounteredAlignments[(bid - 1) * nAlignments + 2])
+              std::cout << "\t\t\tZ\n";
+            if (encounteredAlignments[(bid - 1) * nAlignments + 3])
+              std::cout << "\t\t\tUNALIGNED\n";
+          }
+        }
+      }
+
+      fflush(stdout);
       MPI_Barrier(platform->comm.mpiComm);
     }
+  }
+
+  if (bail) {
     ABORT(1);
   }
 }
