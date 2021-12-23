@@ -171,7 +171,7 @@ struct elliptic_t
   SolutionProjection* solutionProjection;
   GmresData* gmresData;
 
-  bool unaligned;
+  bool UNormalZero;
 
   occa::kernel enforceUnKernel;
   occa::kernel enforceUnPfloatKernel;
@@ -256,7 +256,7 @@ void ellipticOgs(mesh_t *mesh,
                  dlong offset,
                  int *BCType,
                  int BCTypeOffset,
-                 bool &unaligned,
+                 bool &UNormalZero,
                  dlong &Nmasked,
                  occa::memory &o_maskIds,
                  dlong &NmaskedLocal,

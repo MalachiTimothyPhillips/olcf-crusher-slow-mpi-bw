@@ -7,7 +7,7 @@ void applyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
   occa::kernel &enforceUnKernel =
       (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
 
-  if (solver->unaligned) {
+  if (solver->UNormalZero) {
     dlong Nelems = mesh->NlocalGatherElements;
 
     if (Nelems > 0) {
@@ -50,7 +50,7 @@ void applyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precis
   occa::kernel &enforceUnKernel =
       (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
 
-  if (solver->unaligned) {
+  if (solver->UNormalZero) {
     dlong Nelems = mesh->NlocalGatherElements;
 
     if (Nelems > 0) {
@@ -83,7 +83,7 @@ void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precis
   const dlong Nmasked = solver->NmaskedGlobal;
   occa::memory &o_maskIds = solver->o_maskIdsGlobal;
 
-  if (solver->unaligned) {
+  if (solver->UNormalZero) {
     const dlong Nelems = mesh->NglobalGatherElements;
 
     if (Nelems > 0) {

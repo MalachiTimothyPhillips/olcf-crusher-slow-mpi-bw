@@ -187,7 +187,7 @@ struct mesh_t
   occa::memory o_vmapM, o_vmapP, o_mapP;
 
   // tangential directions (only needed in unaligned case)
-  bool unaligned;
+  bool UNormalZero;
   dfloat *VT1, *VT2;
   occa::memory o_VT1, o_VT2;
 
