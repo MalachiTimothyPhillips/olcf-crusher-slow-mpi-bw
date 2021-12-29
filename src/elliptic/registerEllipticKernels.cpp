@@ -117,7 +117,7 @@ void registerEllipticKernels(std::string section, int poissonEquation) {
     std::string fileName;
 
     occa::properties enforceUnProperties = kernelInfo;
-    enforceUnProperties["defines/p_DIRICHLETNORMAL"] = DIRICHLETNORMAL;
+    enforceUnProperties["defines/p_ZERO_NORMAL"] = ZERO_NORMAL;
     enforceUnProperties["defines/outputType"] = dfloatString;
     fileName = oklpath + "enforceUn" + suffix + ".okl";
     platform->kernels.add("enforceUn", fileName, enforceUnProperties);

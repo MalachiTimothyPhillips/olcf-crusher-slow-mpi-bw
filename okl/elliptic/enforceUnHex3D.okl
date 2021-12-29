@@ -23,7 +23,7 @@
 
         const dlong bcType = bid >= 0 ? BToBCType[bid] : -1;
 
-        if(bcType == p_DIRICHLETNORMAL) {
+        if(bcType == p_ZERO_NORMAL) {
 
           const dfloat v1x = V1[sid * 3 + 0];
           const dfloat v1y = V1[sid * 3 + 1];

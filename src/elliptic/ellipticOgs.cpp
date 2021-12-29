@@ -55,7 +55,7 @@ void ellipticOgs(mesh_t *mesh,
       else if (mapB[n + fld * offset] == DIRICHLET) { // Dirichlet boundary
         Nmasked++;
       }
-      else if (mapB[n + fld * offset] == DIRICHLETNORMAL) {
+      else if (mapB[n + fld * offset] == ZERO_NORMAL) {
         UNormalZero = true;
       }
     }
@@ -65,7 +65,8 @@ void ellipticOgs(mesh_t *mesh,
   Nmasked = 0;
   for(int fld = 0; fld < nFields; fld++) {
     for (dlong n = 0; n < mesh->Nlocal; n++) {
-      if (mapB[n + fld * offset] == 1) maskIds[Nmasked++] = n + fld * offset;
+      if (mapB[n + fld * offset] == DIRICHLET)
+        maskIds[Nmasked++] = n + fld * offset;
     }
   }
   if(Nmasked) o_maskIds = platform->device.malloc(Nmasked * sizeof(dlong), maskIds);
@@ -76,7 +77,7 @@ void ellipticOgs(mesh_t *mesh,
       const dlong elemOffset = mesh->localGatherElementList[el] * mesh->Np;
       for (dlong qp = 0; qp < mesh->Np; qp++) {
         const dlong n = elemOffset + qp;
-        if (mapB[n + fld * offset] == 1)
+        if (mapB[n + fld * offset] == DIRICHLET)
           NmaskedLocal++;
       }
     }
@@ -88,7 +89,7 @@ void ellipticOgs(mesh_t *mesh,
       const dlong elemOffset = mesh->localGatherElementList[el] * mesh->Np;
       for (dlong qp = 0; qp < mesh->Np; qp++) {
         const dlong n = elemOffset + qp;
-        if (mapB[n + fld * offset] == 1)
+        if (mapB[n + fld * offset] == DIRICHLET)
           localMaskIds[NmaskedLocal++] = n + fld * offset;
       }
     }
@@ -103,7 +104,7 @@ void ellipticOgs(mesh_t *mesh,
       const dlong elemOffset = mesh->globalGatherElementList[eg] * mesh->Np;
       for (dlong qp = 0; qp < mesh->Np; qp++) {
         const dlong n = elemOffset + qp;
-        if (mapB[n + fld * offset] == 1)
+        if (mapB[n + fld * offset] == DIRICHLET)
           NmaskedGlobal++;
       }
     }
@@ -115,7 +116,7 @@ void ellipticOgs(mesh_t *mesh,
       const dlong elemOffset = mesh->globalGatherElementList[eg] * mesh->Np;
       for (dlong qp = 0; qp < mesh->Np; qp++) {
         const dlong n = elemOffset + qp;
-        if (mapB[n + fld * offset] == 1)
+        if (mapB[n + fld * offset] == DIRICHLET)
           globalMaskIds[NmaskedGlobal++] = n + fld * offset;
       }
     }

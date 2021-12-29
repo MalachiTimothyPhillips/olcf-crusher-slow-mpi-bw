@@ -237,14 +237,16 @@ void setup(std::vector<std::string> slist, std::string field)
 
 int id(int bid, std::string field)
 {
-  if (bid < 1) return NOTBOUNDARY;
+  if (bid < 1)
+    return NO_OP;
 
   return bToBc[{field, bid - 1}];
 }
 
 int type(int bid, std::string field)
 {
-  if (bid < 1) return NOTBOUNDARY;
+  if (bid < 1)
+    return NO_OP;
 
   int bcType = -1;
 
@@ -252,81 +254,106 @@ int type(int bid, std::string field)
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
     if (bcID == 4) bcType = DIRICHLET;
-    if (bcID == 5) bcType = NEUMANN;
-    if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 5)
+      bcType = NEUMANN;
+    if (bcID == 6)
+      bcType = NEUMANN;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("y-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
-    if (bcID == 4) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
+    if (bcID == 4)
+      bcType = NEUMANN;
     if (bcID == 5) bcType = DIRICHLET;
-    if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 6)
+      bcType = NEUMANN;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("z-velocity") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
-    if (bcID == 4) bcType = NEUMANN;
-    if (bcID == 5) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
+    if (bcID == 4)
+      bcType = NEUMANN;
+    if (bcID == 5)
+      bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
     if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("x-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
     if (bcID == 4) bcType = DIRICHLET;
-    if (bcID == 5) bcType = NEUMANN;
-    if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 5)
+      bcType = NEUMANN;
+    if (bcID == 6)
+      bcType = NEUMANN;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
   } else if (field.compare("y-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
-    if (bcID == 4) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
+    if (bcID == 4)
+      bcType = NEUMANN;
     if (bcID == 5) bcType = DIRICHLET;
-    if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 6)
+      bcType = NEUMANN;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
   } else if (field.compare("z-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
     if (bcID == 2) bcType = DIRICHLET;
-    if (bcID == 3) bcType = NEUMANN;
-    if (bcID == 4) bcType = NEUMANN;
-    if (bcID == 5) bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
+    if (bcID == 4)
+      bcType = NEUMANN;
+    if (bcID == 5)
+      bcType = NEUMANN;
     if (bcID == 6) bcType = DIRICHLET;
     if (bcID == 7)
-      bcType = DIRICHLETNORMAL;
+      bcType = ZERO_NORMAL;
   } else if (field.compare("pressure") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
-    if (bcID == 1) bcType = NEUMANN;
-    if (bcID == 2) bcType = NEUMANN;
+    if (bcID == 1)
+      bcType = NEUMANN;
+    if (bcID == 2)
+      bcType = NEUMANN;
     if (bcID == 3) bcType = DIRICHLET;
-    if (bcID == 4) bcType = NEUMANN;
-    if (bcID == 5) bcType = NEUMANN;
-    if (bcID == 6) bcType = NEUMANN;
+    if (bcID == 4)
+      bcType = NEUMANN;
+    if (bcID == 5)
+      bcType = NEUMANN;
+    if (bcID == 6)
+      bcType = NEUMANN;
     if (bcID == 7)
       bcType = NEUMANN;
     if (bcID == 3) oudfFindDirichlet(field);
   } else if (field.compare(0, 6, "scalar") == 0) {
     const int bcID = bToBc[{field, bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
-    if (bcID == 2) bcType = NEUMANN;
-    if (bcID == 3) bcType = NEUMANN;
+    if (bcID == 2)
+      bcType = NEUMANN;
+    if (bcID == 3)
+      bcType = NEUMANN;
     if (bcID == 1) oudfFindDirichlet(field);
     if (bcID == 3) oudfFindNeumann(field);
   }
