@@ -11,7 +11,7 @@
 #include "platform.hpp"
 #include "udf.hpp"
 
-#include <bcTypes.hpp>
+#include <elliptic.h>
 
 namespace {
 enum class alignment_t { X, Y, Z, UNALIGNED };

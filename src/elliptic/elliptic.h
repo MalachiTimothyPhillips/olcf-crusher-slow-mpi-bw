@@ -44,6 +44,11 @@
 
 #define ELLIPTIC_ENABLE_TIMER
 
+#define NOTBOUNDARY 0
+#define DIRICHLET 1
+#define NEUMANN 2
+#define DIRICHLETNORMAL 3
+
 class SolutionProjection;
 class elliptic_t;
 

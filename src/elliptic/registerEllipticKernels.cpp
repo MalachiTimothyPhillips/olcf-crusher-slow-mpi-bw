@@ -1,5 +1,4 @@
 #include <compileKernels.hpp>
-#include "bcTypes.hpp"
 #include "elliptic.h"
 
 namespace{

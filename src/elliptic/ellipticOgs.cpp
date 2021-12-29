@@ -1,6 +1,5 @@
 #include "elliptic.h"
 #include "platform.hpp"
-#include <bcTypes.hpp>
 
 void ellipticOgs(mesh_t *mesh,
                  dlong mNlocal,
