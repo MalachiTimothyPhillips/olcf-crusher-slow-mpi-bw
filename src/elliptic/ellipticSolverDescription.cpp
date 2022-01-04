@@ -23,10 +23,10 @@ std::string ellipticSolverDescription(elliptic_t *elliptic)
       output << ",(" << elliptic->levels[0];
       for (int level = 1; level < elliptic->nLevels; level++)
         output << "," << elliptic->levels[level];
-      output << ")\n";
+      output << ")";
     }
     else {
-      output << smoother << "\n";
+      output << smoother << "";
     }
   }
 
