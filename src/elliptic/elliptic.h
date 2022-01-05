@@ -171,8 +171,6 @@ struct elliptic_t
 #include "ellipticMultiGrid.h"
 #include "ellipticSolutionProjection.h"
 
-std::string ellipticSolverDescription(elliptic_t *elliptic);
-
 elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* elliptic);
 
 void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_z);
