@@ -10,6 +10,8 @@ struct bcData
   dfloat x, y, z;
   dfloat nx, ny, nz;
 
+  dfloat trn, tr1, tr2;
+
   dfloat u, v, w;
   dfloat p;
 

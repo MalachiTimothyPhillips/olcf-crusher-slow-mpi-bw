@@ -52,6 +52,12 @@
         TRy = -bc.p*bc.ny;                                              \
         TRz = -bc.p*bc.nz;                                              \
     }                                                                   \
+    if(bcType == 8) {                                                   \
+        velocityNeumannConditions(&bc);                                 \
+        TRx = bc.trn;                                                   \
+        TRy = bc.tr1;                                                   \
+        TRz = bc.tr2;                                                   \
+    }                                                                   \
     s_ndU[j][i] = WsJ*TRx;                                              \
     s_ndV[j][i] = WsJ*TRy;                                              \
     s_ndW[j][i] = WsJ*TRz;                                              \
