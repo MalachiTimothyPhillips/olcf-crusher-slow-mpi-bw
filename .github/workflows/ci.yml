@@ -244,6 +244,14 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel 2 2
 
+    - name: 'channelStress, SHL boundaries (no rotation)'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel-shl 2 3
+
+    - name: 'channelStress, SHL boundaries (45 degree rotation)'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/channel
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel-shl 2 4
+
 
   kershaw:
     runs-on: ubuntu-18.04
