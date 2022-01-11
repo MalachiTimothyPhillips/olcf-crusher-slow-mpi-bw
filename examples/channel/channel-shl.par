@@ -6,6 +6,13 @@ dt = 1e-03
 timeStepper = tombo2
 writeInterval = 0
 
+usr = "channel.usr"
+oudf = "channel.oudf"
+udf = "channel.udf"
+
+[MESH]
+file = "channel.re2"
+
 [PROBLEMTYPE]
 equation = Stokes
 stressFormulation = true # required for variable viscosity
@@ -14,7 +21,7 @@ stressFormulation = true # required for variable viscosity
 residualTol = 1e-08
 
 [VELOCITY]
-boundaryTypeMap = sym
+boundaryTypeMap = shl
 residualTol = 1e-12
 density = 1.0
 viscosity = 0.1 
