@@ -1,18 +1,17 @@
-
-#define hash_data              TOKEN_PASTE(findpts_hash_data_               ,D)
-#define hash_index             TOKEN_PASTE(hash_index_                      ,D)
-#define eval_src_pt            TOKEN_PASTE(eval_src_pt_                     ,D)
-#define eval_out_pt            TOKEN_PASTE(eval_out_pt_                     ,D)
-#define src_pt                 TOKEN_PASTE(src_pt_                          ,D)
-#define out_pt                 TOKEN_PASTE(out_pt_                          ,D)
-#define findpts_el_data        TOKEN_PASTE(findpts_el_data_                 ,D)
-#define findpts_local_data     TOKEN_PASTE(findpts_local_data_              ,D)
-#define findpts_local_eval_int TOKEN_PASTE(ogs_findpts_local_eval_internal_ ,D)
-#define findpts_local          TOKEN_PASTE(ogs_findpts_local_               ,D)
-#define findpts_local_eval     TOKEN_PASTE(ogs_findpts_local_eval_          ,D)
-#define findpts_data           TOKEN_PASTE(findpts_data_                    ,D)
-#define findpts                TOKEN_PASTE(ogs_findpts_                     ,D)
-#define findpts_eval           TOKEN_PASTE(ogs_findpts_eval_                ,D)
+#define hash_data findpts_hash_data_3
+#define hash_index hash_index_3
+#define eval_src_pt eval_src_pt_3
+#define eval_out_pt eval_out_pt_3
+#define src_pt src_pt_3
+#define out_pt out_pt_3
+#define findpts_el_data findpts_el_data_3
+#define findpts_local_data findpts_local_data_3
+#define findpts_local_eval_int ogs_findpts_local_eval_internal_3
+#define findpts_local ogs_findpts_local_3
+#define findpts_local_eval ogs_findpts_local_eval_3
+#define findpts_data findpts_data_3
+#define findpts ogs_findpts_3
+#define findpts_eval ogs_findpts_eval_3
 
 #define   AT(T,var,i)   \
         (T*)(      (char*)var##_base   +(i)*var##_stride   )
@@ -31,9 +30,10 @@ struct hash_data {
 static ulong hash_index(const struct hash_data *p, const double x[D])
 {
   const ulong n = p->hash_n;
-  return ( WHEN_3D( hash_index_aux(p->bnd[2].min,p->fac[2],n,x[2])  *n )
-                   +hash_index_aux(p->bnd[1].min,p->fac[1],n,x[1]) )*n
-                   +hash_index_aux(p->bnd[0].min,p->fac[0],n,x[0]);
+  return (hash_index_aux(p->bnd[2].min, p->fac[2], n, x[2]) * n +
+          hash_index_aux(p->bnd[1].min, p->fac[1], n, x[1])) *
+             n +
+         hash_index_aux(p->bnd[0].min, p->fac[0], n, x[0]);
 }
 
 

@@ -4,15 +4,12 @@ struct findpts_el_pt {
   dlong  flags;
 };
 
-#if p_D==3
 struct findpts_el_gface { dfloat *x[p_D], *dxdn[p_D]; };
 struct findpts_el_gedge { dfloat *x[p_D], *dxdn1[p_D], *dxdn2[p_D],
                                        *d2xdn1[p_D], *d2xdn2[p_D]; };
-struct findpts_el_gpt   { dfloat x[p_D], jac[p_D*p_D], hes[18]; };
-#else
-struct findpts_el_gedge { dfloat *x[p_D], *dxdn1[p_D]; };
-struct findpts_el_gpt   { dfloat x[p_D], jac[p_D*p_D], hes[4]; };
-#endif
+struct findpts_el_gpt {
+  dfloat x[p_D], jac[p_D * p_D], hes[18];
+};
 
 struct findpts_el_data {
   dlong npt_max;
@@ -27,13 +24,9 @@ struct findpts_el_data {
   const dfloat *x[p_D]; // unused: storage for an single element's data
 
   dlong side_init; // unused: storage for an single element's data
-  dfloat *sides; // unused: storage for an single element's data
-#if p_D==3
+  dfloat *sides;   // unused: storage for an single element's data
   struct findpts_el_gface face[2*p_D];   // unused: storage for an single element's data
-  struct findpts_el_gedge edge[2*2*p_D]; // unused: storage for an single element's data
-#else
-  struct findpts_el_gedge edge[2*p_D]; // unused: storage for an single element's data
-#endif
+  struct findpts_el_gedge edge[2 * 2 * p_D]; // unused: storage for an single element's data
   struct findpts_el_gpt pt[1<<p_D]; // unused: storage for an single element's data
 
   dfloat *work; // unused: workspace for an single element's data

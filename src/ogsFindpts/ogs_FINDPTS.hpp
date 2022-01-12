@@ -3,14 +3,14 @@
 
 #include "ogs.hpp"
 
-typedef struct {
+struct ogs_findpts_t {
   int D;
   void *findpts_data;
   occa::device *device;
   occa::kernel local_eval_kernel;
   occa::kernel local_kernel;
   occa::memory o_fd_local;
-} ogs_findpts_t;
+};
 
 ogs_findpts_t *ogsFindptsSetup(
   const dlong D, MPI_Comm comm,

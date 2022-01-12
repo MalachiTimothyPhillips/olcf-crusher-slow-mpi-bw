@@ -37,17 +37,6 @@ SOFTWARE.
 #include "ogstypes.h"
 
 // need to access internals of findpts_data structs
-struct hash_data_2 {
-  ulong hash_n;
-  struct dbl_range bnd[2];
-  double fac[2];
-  uint *offset;
-};
-struct findpts_data_2 {
-  struct crystal cr;
-  struct findpts_local_data_2 local;
-  struct hash_data_2 hash;
-};
 struct hash_data_3 {
   ulong hash_n;
   struct dbl_range bnd[3];
@@ -59,31 +48,6 @@ struct findpts_data_3 {
   struct findpts_local_data_3 local;
   struct hash_data_3 hash;
 };
-
-struct findpts_data_2 *ogsHostFindptsSetup_2(
-  MPI_Comm mpi_comm,
-  const dfloat *const elx[2],
-  const dlong n[2], const dlong nel,
-  const dlong m[2], const dfloat bbox_tol,
-  const hlong local_hash_size, const hlong global_hash_size,
-  const dlong npt_max, const dfloat newt_tol) {
-
-  if (sizeof(dfloat) != sizeof(double)) {
-    fail(1,__FILE__,__LINE__,"ogs's dfloat is not compatible with gslib's double");
-  }
-  if (sizeof(dlong) != sizeof(uint)) {
-    fail(1,__FILE__,__LINE__,"ogs's dlong is not compatible with gslib's uint");
-  }
-
-  struct comm gs_comm;
-  comm_init(&gs_comm, mpi_comm);
-
-  struct findpts_data_2* fd = findpts_setup_2(&gs_comm, elx, n, nel, m, bbox_tol,
-                                              local_hash_size, global_hash_size,
-                                              npt_max, newt_tol);
-  comm_free(&gs_comm);
-  return fd;
-}
 
 struct findpts_data_3 *ogsHostFindptsSetup_3(
   MPI_Comm mpi_comm,
@@ -110,44 +74,16 @@ struct findpts_data_3 *ogsHostFindptsSetup_3(
   return fd;
 }
 
-
-void ogsHostFindptsFree_2(struct findpts_data_2 *fd) {
-  findpts_free_2(fd);
-}
 void ogsHostFindptsFree_3(struct findpts_data_3 *fd) {
   findpts_free_3(fd);
 }
 
-void ogsHostFindptsLagData_2(struct findpts_data_2 *const fd,
-                             dfloat **lag_data, dlong *lag_data_size) {
-  for (int i = 0; i < 2; ++i) {
-    lag_data[i] = fd->local.fed.lag_data[i];
-    lag_data_size[i] = gll_lag_size(fd->local.fed.n[i]);
-  }
-}
 void ogsHostFindptsLagData_3(struct findpts_data_3 *const fd,
                              dfloat **lag_data, dlong *lag_data_size) {
   for (int i = 0; i < 3; ++i) {
     lag_data[i] = fd->local.fed.lag_data[i];
     lag_data_size[i] = gll_lag_size(fd->local.fed.n[i]);
   }
-}
-
-void ogsHostFindpts_2(    dlong  *const  code_base   , const dlong  code_stride   ,
-                          dlong  *const  proc_base   , const dlong  proc_stride   ,
-                          dlong  *const    el_base   , const dlong    el_stride   ,
-                          dfloat *const     r_base   , const dlong     r_stride   ,
-                          dfloat *const dist2_base   , const dlong dist2_stride   ,
-                    const dfloat *const     x_base[2], const dlong     x_stride[2],
-                    const dfloat npt, struct findpts_data_2 *const fd) {
-
-  findpts_2( code_base,  code_stride,
-             proc_base,  proc_stride,
-               el_base,    el_stride,
-                r_base,     r_stride,
-            dist2_base, dist2_stride,
-                x_base,     x_stride,
-            npt, fd);
 }
 
 void ogsHostFindpts_3(    dlong  *const  code_base   , const dlong  code_stride   ,
@@ -167,22 +103,6 @@ void ogsHostFindpts_3(    dlong  *const  code_base   , const dlong  code_stride 
             npt, fd);
 }
 
-void ogsHostFindptsEval_2(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const code_base, const dlong code_stride,
-  const dlong  *const proc_base, const dlong proc_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat *const in, struct findpts_data_2 *const fd) {
-
-  findpts_eval_2( out_base,  out_stride,
-                 code_base, code_stride,
-                 proc_base, proc_stride,
-                   el_base,   el_stride,
-                    r_base,    r_stride,
-                 npt, in, fd);
-}
-
 void ogsHostFindptsEval_3(
         dfloat *const  out_base, const dlong  out_stride,
   const dlong  *const code_base, const dlong code_stride,
@@ -197,18 +117,6 @@ void ogsHostFindptsEval_3(
                    el_base,   el_stride,
                     r_base,    r_stride,
                  npt, in, fd);
-}
-
-void ogsHostFindptsLocalEval_2(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat *const in, struct findpts_data_2 *const fd) {
-
-  findpts_local_eval_2(out_base,  out_stride,
-                        el_base,   el_stride,
-                         r_base,    r_stride,
-                       npt, in, &fd->local);
 }
 
 void ogsHostFindptsLocalEval_3(

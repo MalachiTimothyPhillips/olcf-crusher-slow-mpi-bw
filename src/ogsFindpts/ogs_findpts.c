@@ -36,15 +36,5 @@ static ulong hash_index_aux(double low, double fac, ulong n, double x)
   const slong i = lfloor((x-low)*fac);
   return i<0 ? 0 : (n-1<(ulong)i ? n-1 : (ulong)i);
 }
-
-#define D 2
-#define WHEN_3D(a)
-#include "ogs_findpts_imp.h"
-#undef WHEN_3D
-#undef D
-
 #define D 3
-#define WHEN_3D(a) a
 #include "ogs_findpts_imp.h"
-#undef WHEN_3D
-#undef D

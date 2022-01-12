@@ -59,12 +59,6 @@ static dlong hash_index(const struct findpts_local_hash_data *p, const dfloat x[
 
 //// Linear algebra ////
 /* A is row-major */
-static void lin_solve_2(dfloat x[2], const dfloat A[4], const dfloat y[2])
-{
-  const dfloat idet = 1/(A[0]*A[3] - A[1]*A[2]);
-  x[0] = idet*(A[3]*y[0] - A[1]*y[1]);
-  x[1] = idet*(A[0]*y[1] - A[2]*y[0]);
-}
 
 /* A is row-major */
 static void lin_solve_3(dfloat x[3], const dfloat A[9], const dfloat y[3])
@@ -88,22 +82,12 @@ static void lin_solve_3(dfloat x[3], const dfloat A[9], const dfloat y[3])
   x[2] = idet*(inv6*y[0] + inv7*y[1] + inv8*y[2]);
 }
 
-static void lin_solve_sym_2(dfloat x[2], const dfloat A[3], const dfloat y[2])
-{
-  const dfloat idet = 1/(A[0]*A[2] - A[1]*A[1]);
-  x[0] = idet*(A[2]*y[0] - A[1]*y[1]);
-  x[1] = idet*(A[0]*y[1] - A[1]*y[0]);
-}
-
 static dfloat norm2(const dfloat x[p_D]) {
-#if p_D==3
   return x[0]*x[0] + x[1]*x[1] + x[2]*x[2];
-#else
-  return x[0]*x[0] + x[1]*x[1];
-#endif
 }
 
 
+// MTP: What???
 
 /* the bit structure of flags is CTTSSRR
    the C bit --- 1<<6 --- is set when the point is converged
@@ -140,16 +124,11 @@ static dlong which_bit(const dlong x)
 }
 
 static dlong face_index(const dlong x) {
-#if p_D==3
   return which_bit(x)-1;
-#else
-  return 2;
-#endif
 }
 
 static dlong edge_index(const dlong x)
 {
-#if p_D==3
   const dlong y = ~((x>>1) | x);
   const dlong RTSR = ((x>>1)&1u) | ((x>>2)&2u) | ((x>>3)&4u) | ((x<<2)&8u);
   const dlong re = RTSR>>1;
@@ -158,9 +137,6 @@ static dlong edge_index(const dlong x)
   return   ( (0u - ( y    &1u)) & re )
          | ( (0u - ((y>>2)&1u)) & se )
          | ( (0u - ((y>>4)&1u)) & te );
-#else
-  return which_bit(x)-1;
-#endif
 }
 
 static dlong point_index(const dlong x)
@@ -168,7 +144,6 @@ static dlong point_index(const dlong x)
   return ((x>>1)&1u) | ((x>>2)&2u) | ((x>>3)&4u);
 }
 
-#if p_D==3
 // gets face info
 // Must be called within an inner loop, with the final argument being the loop index
 // workspace is a shared workspace
@@ -212,7 +187,6 @@ static findpts_el_gface get_face(
   }
   return face;
 }
-#endif
 
 static findpts_el_gedge get_edge(
   const struct findpts_el_data *fd, const dfloat *elx[p_D], dlong ei,
@@ -220,29 +194,19 @@ static findpts_el_gedge get_edge(
   dlong j)
 {
   findpts_el_gedge edge;
-#if p_D==3
   const dlong de = ei>>2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
   const dlong side_n1 = ei&1, side_n2 = (ei&2)>>1;
   const dlong nn2 = fd->n[dn2];
-#else
-  const dlong dn1 = ei>>1, de = plus_1_mod_2(dn1), dn2 = 2;
-  const dlong side_n1 = ei&1, side_n2 = 0;
-  const dlong nn2 = 1;
-#endif
   const dlong n1 = fd->n[de], nn1 = fd->n[dn1];
   const dlong in1 = side_n1*(nn1-1), in2 = side_n2*(nn2-1);
   const dfloat *wt1 = fd->wtend[dn1]+side_n1*nn1*3;
-#if p_D==3
   const dfloat *wt2 = fd->wtend[dn2]+side_n2*nn2*3;
-#endif
   for(dlong d=0;d<p_D;++d){
     edge.x[d]      = workspace +      d *n1;
     edge.dxdn1[d]  = workspace + (p_D+d)*n1;
-#if p_D==3
     edge.dxdn2[d]  = workspace + (  6+d)*n1;
     edge.d2xdn1[d] = workspace + (  7+d)*n1;
     edge.d2xdn2[d] = workspace + (  8+d)*n1;
-#endif
   }
 
   const dlong mask = 8u<<(ei/2);
@@ -253,7 +217,6 @@ static findpts_el_gedge get_edge(
       for(dlong d=0;d<p_D;++d){
         // copy first/last entries in normal directions
         edge.x[d][j] = ELX(d, j, in1, in2);
-#if p_D==3
         // tensor product between elx (w/ first/last entries in second direction)
         // and the derivatives in the first normal direction
         dfloat sums_k[2] = {0, 0};
@@ -272,14 +235,6 @@ static findpts_el_gedge get_edge(
         }
         edge.dxdn2[d][j] = sums_k[0];
         edge.d2xdn2[d][j] = sums_k[1];
-#else
-        // tensor product between elx and the derivative in the normal direction
-        dfloat sums_k = 0;
-        for(dlong k=0;k<nn1;++k){
-          sum_k += fd->wtend[dn][nn1+k]*ELX(d, j, k, 0);
-        }
-        edge.dxdn1[d][j] = sum_l;
-#endif
       }
       #undef ELX
     }
@@ -291,28 +246,18 @@ static findpts_el_gpt get_pt(
   struct findpts_el_data *fd, const dfloat *elx[p_D], dlong pi)
 {
   const dlong n1 = p_NR, n2 = p_NS, n3=p_NT;
-#if p_D==3
   const dlong side_n1 = pi&1, side_n2 = (pi>>1)&1, side_n3 = (pi>>2)&1;
-#else
-  const dlong side_n1 = pi&1, side_n2 = (pi>>1)&1, side_n3=0;
-#endif
   const dlong in1 = side_n1*(n1-1), in2 = side_n2*(n2-1), in3 = side_n3*(n3-1);
   const dlong hes_stride = (p_D+1)*p_D/2;
   findpts_el_gpt pt;
 
   #define ELX(d, j, k, l) elx[d][j+k*p_NR+l*p_NR*p_NS]
   for(dlong d=0;d<p_D;++d){
-#if p_D==3
     pt.x[d] = ELX(d, side_n1*(n1-1), side_n2*(n2-1), side_n3*(n3-1));
-#else
-    pt.x[d] = ELX(d, side_n1*(n1-1), side_n2*(n2-1), 0);
-#endif
 
     dfloat *wt1 = fd->wtend[0]+n1*(1+3*side_n1);
     dfloat *wt2 = fd->wtend[1]+n2*(1+3*side_n2);
-#if p_D==3
     dfloat *wt3 = fd->wtend[2]+n3*(1+3*side_n3);
-#endif
 
     for(dlong i=0;i<p_D;++i) pt.jac[p_D*d+i] = 0;
     for(dlong i=0;i<hes_stride;++i) pt.hes[hes_stride*d+i] = 0;
@@ -328,7 +273,6 @@ static findpts_el_gpt get_pt(
       pt.hes[hes_off] += wt2[n2+k]*ELX(d, in1, k, in3);
     }
 
-#if p_D==3
     for(dlong l=0;l<n3;++l){
       pt.jac[p_D*d+2]        += wt3[   l]*ELX(d, in1, in2, l);
       pt.hes[hes_stride*d+5] += wt3[n3+l]*ELX(d, in1, in2, l);
@@ -352,7 +296,6 @@ static findpts_el_gpt get_pt(
       }
       pt.hes[hes_stride*d+1] += wt2[k]*sum_j;
     }
-#endif
     #undef ELX
   }
   return pt;
@@ -394,12 +337,8 @@ bool reject_prior_step_q(      findpts_el_pt *out,
        which is why we divide by 4 below */
     dfloat v0 = fabs(p->r[0]-p->oldr[0]);
     dfloat v1 = fabs(p->r[1]-p->oldr[1]);
-#if p_D==3
     dfloat v2 = fabs(p->r[2]-p->oldr[2]);
     out->tr = (v1>v2?(v0>v1?v0:v1):(v0>v2?v0:v2))/4;
-#else
-    out->tr = (v0>v1?v0:v1)/4;
-#endif
     out->dist2=p->dist2;
     for(dlong d=0;d<p_D;++d) out->r[d]=p->oldr[d];
     out->flags=p->flags>>7;
@@ -409,7 +348,6 @@ bool reject_prior_step_q(      findpts_el_pt *out,
   }
 }
 
-#if p_D==3
 /* minimize ||resid - jac * dr||_2, with |dr| <= tr, |r0+dr|<=1
    (exact solution of trust region problem) */
 void newton_vol(struct findpts_el_pt *const out,
@@ -697,163 +635,6 @@ newton_edge_fin:
   out->flags = flags | new_flags | (p->flags<<7);
 }
 
-#else
-
-void newton_area(struct findpts_el_pt *const out,
-                 const dfloat jac[4], const dfloat resid[2],
-                 const struct findpts_el_pt *const p, const dfloat tol)
-{
-  const dfloat tr = p->tr;
-  dfloat bnd[4] = { -1,1, -1,1 };
-  dfloat r0[2];
-  dfloat dr[2], fac;
-  dlong d, mask, flags;
-
-  r0[0] = p->r[0], r0[1] = p->r[1];
-
-  mask = 0xfu;
-  for(d=0;d<2;++d) {
-    if(r0[d]-tr>-1) bnd[2*d  ]=r0[d]-tr, mask^=1u<<(2*d);
-    if(r0[d]+tr< 1) bnd[2*d+1]=r0[d]+tr, mask^=2u<<(2*d);
-  }
-
-  lin_solve_2(dr, jac,resid);
-
-  fac = 1, flags = 0;
-  for(d=0;d<2;++d) {
-    dfloat nr = r0[d]+dr[d];
-    if((nr-bnd[2*d])*(bnd[2*d+1]-nr)>=0) continue;
-    if(nr<bnd[2*d]) {
-      dfloat f = (bnd[2*d  ]-r0[d])/dr[d];
-      if(f<fac) fac=f, flags = 1u<<(2*d);
-    } else {
-      dfloat f = (bnd[2*d+1]-r0[d])/dr[d];
-      if(f<fac) fac=f, flags = 2u<<(2*d);
-    }
-  }
-
-  if(flags==0) goto newton_area_fin;
-
-  for(d=0;d<2;++d) dr[d]*=fac;
-
-  newton_area_edge: {
-    const dlong ei = edge_index(flags);
-    const dlong dn = ei>>1, de = plus_1_mod_2(dn);
-    const dfloat res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
-    /* y = J_u^T res */
-    const dfloat y = jac[de]*res0+jac[2+de]*res1;
-    /* JtJ = J_u^T J_u */
-    const dfloat JtJ = jac[  de]*jac[  de]
-                      +jac[2+de]*jac[2+de];
-    const dfloat drc = y/JtJ;
-    dfloat fac = 1;
-    dlong new_flags = 0;
-    {
-      const dfloat rz = r0[de]+dr[de], lb=bnd[2*de],ub=bnd[2*de+1];
-      const dfloat nr = r0[de]+(dr[de]+drc);
-      if((nr-lb)*(ub-nr)<0) {
-        if(nr<lb) {
-          dfloat f = (lb-rz)/drc;
-          if(f<fac) fac=f, new_flags = 1u<<(2*de);
-        } else {
-          dfloat f = (ub-rz)/drc;
-          if(f<fac) fac=f, new_flags = 2u<<(2*de);
-        }
-      }
-    }
-    dr[de] += fac*drc;
-    flags |= new_flags;
-    goto newton_area_relax;
-  }
-
-  /* check and possibly relax constraints */
-  newton_area_relax: {
-    const dlong old_flags = flags;
-    /* res := res_0 - J dr */
-    const dfloat res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
-    /* y := J^T res */
-    dfloat y[2]; y[0] = jac[0]*res0+jac[2]*res1,
-                 y[1] = jac[1]*res0+jac[3]*res1;
-    for(dlong d=0;d<p_D;++d){
-      dlong f = flags>>(2*d) & 3u;
-      if(f) dr[d] = bnd[2*d+(f-1)] - r0[d];
-    }
-    for(d=0;d<2;++d) {
-      dlong c = flags>>(2*d) & 3u;
-      if(c==0) continue;
-      else if(dr[d]*y[d]<0) flags &= ~(3u<<(2*d));
-        printf("FAIL! c=%u, dr[d]=%g\n",c,dr[d]);
-    }
-    if(flags==old_flags) goto newton_area_fin;
-    switch(num_constrained(flags)) {
-      case 1: goto newton_area_edge;
-    }
-  }
-
-newton_area_fin:
-  flags &= mask;
-  if(fabs(dr[0])+fabs(dr[1]) < tol) flags |= CONVERGED_FLAG;
-  {
-    const dfloat res0 = resid[0]-(jac[0]*dr[0]+jac[1]*dr[1]),
-                 res1 = resid[1]-(jac[2]*dr[0]+jac[3]*dr[1]);
-    out->dist2p=resid[0]*resid[0]+resid[1]*resid[1]
-                -(res0*res0+res1*res1);
-  }
-  for(dlong d=0;d<p_D;++d){
-    dlong f = flags>>(2*d) & 3u;
-    out->r[d] = f==0 ? r0[d]+dr[d] : ( f==1 ? -1 : 1 );
-  }
-  out->flags = flags | (p->flags<<7);
-}
-
-static void newton_edge(struct findpts_el_pt *const out,
-  const dfloat jac[4], const dfloat rhes, const dfloat resid[2],
-  const dlong de, const dlong dn,
-  dlong flags,
-  const struct findpts_el_pt *const p, const dfloat tol)
-{
-  const dfloat tr = p->tr;
-  /* A = J^T J - resid_d H_d */
-  const dfloat A = jac[  de]*jac[  de]
-                  +jac[2+de]*jac[2+de] - rhes;
-  /* y = J^T r */
-  const dfloat y = jac[  de]*resid[0]
-                  +jac[2+de]*resid[1];
-
-  const dfloat oldr = p->r[de];
-  dfloat dr,nr,tdr,tnr;
-  dfloat v,tv; dlong new_flags=0, tnew_flags=0;
-
-  #define EVAL(dr) (dr*A-2*y)*dr
-
-  /* if A is not SPD, quadratic model has no minimum */
-  if(A>0) {
-    dr = y/A, nr = oldr+dr;
-    if(fabs(dr)<tr && fabs(nr)<1) { v=EVAL(dr); goto newton_edge_fin; }
-  }
-
-  if(( nr=oldr-tr)>-1)  dr=-tr;
-  else                  nr=-1,  dr=-1-oldr,  new_flags = flags | 1u<<(2*de);
-  v =EVAL( dr);
-
-  if((tnr=oldr+tr)< 1) tdr=tr;
-  else                 tnr= 1, tdr= 1-oldr, tnew_flags = flags | 2u<<(2*de);
-  tv=EVAL(tdr);
-
-  if(tv<v) nr=tnr, dr=tdr, v=tv, new_flags=tnew_flags;
-
-newton_edge_fin:
-  /* check convergence */
-  if(fabs(dr) < tol) new_flags |= CONVERGED_FLAG;
-  out->r[de]=nr;
-  out->r[dn]=p->r[dn];
-  out->dist2p = -v;
-  out->flags = flags | new_flags | (p->flags<<7);
-}
-#endif
-
 void seed_j(const dfloat *elx[p_D],
             const dfloat  x[p_D],
                   dfloat *z[p_D],
@@ -867,9 +648,7 @@ void seed_j(const dfloat *elx[p_D],
 
   dfloat zr = z[0][j];
   for (dlong l = 0; l < p_NT; ++l) {
-#if p_D == 3
     const dfloat zt = z[2][l];
-#endif
     for (dlong k = 0; k < p_NS; ++k) {
       dfloat zs = z[1][k];
 
@@ -882,15 +661,12 @@ void seed_j(const dfloat *elx[p_D],
         dist2[j] = dist2_jkl;
         r[0][j] = zr;
         r[1][j] = zs;
-#if p_D == 3
         r[2][j] = zt;
-#endif
       }
     }
   }
 }
 
-#if p_D==3
 dfloat tensor_ig3_j(      dfloat *g_partials,
                     const dfloat *Jr,
                     const dfloat *Dr,
@@ -926,7 +702,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
   }
   return sum;
 }
-#endif
 
 @kernel void ogs_findpts_local(
         dlong  *const  code_base     , const dlong  code_stride     ,
@@ -952,11 +727,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
     @shared dfloat r_workspace[MAX_CONST(4, MAX_N+1)*(p_D*p_D+2*p_D) + p_D*2*MAX_N];
     @shared findpts_el_pt el_pts[2];
 
-#if p_D==3
     #define CONSTRAINT_SIZE MAX_CONST(MAX_N*MAX_N*6, MAX_N*p_D*3)
-#else
-    #define CONSTRAINT_SIZE MAX_N*p_D*2;
-#endif
     @shared dfloat constraint_workspace[CONSTRAINT_SIZE];
     @exclusive dlong constraint_init;
 
@@ -1040,7 +811,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
               switch (num_constrained(tmp->flags & FLAG_MASK)) {
                 case 0:{ // findpt_vol
 // need 3 dimensions to have a volume
-#if p_D==3
                   dfloat *wtr = r_workspace_ptr;
                   dfloat *wts = wtr + 2*p_NR;
                   dfloat *wtt = wts + 2*p_NS;
@@ -1088,7 +858,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   @barrier("local");
                   if(reject_prior_step_q(fpt, resid, tmp, fd->tol)) break;
                   newton_vol(fpt, jac, resid, tmp, fd->tol);
-#endif
                   break;
                 }
                 case 1:{ // findpt_face / findpt_area
@@ -1104,10 +873,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   dfloat *jac   = resid + p_D;
                   dfloat *resid_temp = jac + p_D*p_D;
                   dfloat *jac_temp   = resid_temp + p_D*n1;
-#if p_D==3
                   dfloat *hes      = jac_temp + p_D*p_D*n1;
                   dfloat *hes_temp = hes + p_D;
-#endif
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     // need to compute 1st derivatives
                     lagrange_eval(wt1, fd->fed.lag_data[d1], n1, der, tmp->r[d1], j);
@@ -1116,42 +883,32 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   @barrier("local");
                   dfloat *J1 = wt1, *D1 = wt1+n1;
                   dfloat *J2 = wt2, *D2 = wt2+n2;
-#if p_D==3
                   dfloat *DD1 = D1+n1, *DD2 = D2+n2;
                   struct findpts_el_gface face;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     face = get_face(&fd->fed,elx,fi,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
-#endif
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if (j < n1) {
                       for(dlong d=0;d<p_D;++d) {
-#if p_D==3
                         const dfloat *u = face.x[d];
                         const dfloat *du = face.dxdn[d];
-#else
-                        const dfloat *u = elx[d];
-#endif
                         dfloat sums_k[4] = {0.0, 0.0, 0.0, 0.0};
                         for(dlong k=0; k<n2;++k) {
                           sums_k[0] +=  u[j+k*n1]*J2[k];
                           sums_k[1] +=  u[j+k*n1]*D2[k];
-#if p_D==3
                           sums_k[2] +=  u[j+k*n1]*DD2[k];
                           sums_k[3] += du[j+k*n1]*J2[k];
-#endif
                         }
 
                         resid_temp[p_D*j+d] = sums_k[0]*J1[j];
                         jac_temp[p_D*p_D*j+p_D*d+d1] = sums_k[0]*D1[j];
                         jac_temp[p_D*p_D*j+p_D*d+d2] = sums_k[1]*J1[j];
-#if p_D==3
                         jac_temp[p_D*p_D*j+p_D*d+dn] = sums_k[3]*J1[j];
                         hes_temp[p_D*j  ]   = sums_k[0]*DD1[j];
                         hes_temp[p_D*j+1]   = sums_k[1]*D1[j];
                         hes_temp[p_D*j+2]   = sums_k[2]*J1[j];
-#endif
                       }
                     }
                   }
@@ -1166,18 +923,15 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                       jac[l] = 0;
                       for(dlong j=0;j<n1;++j) jac[l] += jac_temp[l+j*p_D*p_D];
                     }
-#if p_D==3
                     if(l<p_D){
                       hes[l] = 0;
                       for(dlong j=0;j<n1;++j) hes[l] += hes_temp[l+3*j];
                       hes[l] *= resid[l];
                     }
-#endif
                   }
                   @barrier("local");
                   if(reject_prior_step_q(fpt, resid, tmp, fd->tol)) break;
 
-#if p_D==3
                   const dfloat steep = resid[0] * jac[  dn]
                                       +resid[1] * jac[3+dn]
                                       +resid[2] * jac[6+dn];
@@ -1187,18 +941,11 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     newton_face(fpt, jac, hes, resid, d1,d2,dn,
                                 tmp->flags&FLAG_MASK, tmp, fd->tol);
                   }
-#else
-                  newton_area(fpt, jac, resid, tmp, fd->tol);
-#endif
                   break;
                 }
                 case 2:{ // findpt_edge
                   const dlong ei = edge_index(tmp->flags & FLAG_MASK);
-#if p_D==3
                   const dlong de = ei>>2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
-#else
-                  const dlong dn1 = ei>>1, dne = plus_1_mod_2(dn1), dn2 = -1;
-#endif
                   const dlong n1 = n[de];
                   dlong d_j[3]; d_j[0] = de; d_j[1] = dn1; d_j[2] = dn2;
                   const dlong hes_count = 2*p_D-1; // p_D=3 ? 5 : 1;
@@ -1213,12 +960,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     edge = get_edge(&fd->fed,elx,ei,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
-#if p_D==3
                   // TODO consider optimizing this using the internal structure of findpts_el_gedge
                   const dfloat* const* e_x[p_D+3] = {edge.x, edge.x, edge.dxdn1, edge.dxdn2, edge.d2xdn1, edge.d2xdn2};
-#else
-                  const dfloat* const* e_x[p_D+1] = {edge.x, edge.x, edge.dxdn1};
-#endif
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     lagrange_eval(wt, fd->fed.lag_data[de], n1, 2, tmp->r[de], j);
                   }
@@ -1279,7 +1022,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                     steep[k] *= tmp->r[dn];
                   }
-#if p_D==3
                   if(steep[0]<0) {
                     if(steep[1]<0) {
                       newton_vol(fpt, jac,resid, tmp, fd->tol);
@@ -1298,14 +1040,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                                   tmp->flags & FLAG_MASK, tmp, fd->tol);
                     }
                   }
-#else
-                  if(steep[0]) { /* relax constraint */
-                    newton_area(fpt, jac, resid, tmp, fd->tol);
-                  } else {
-                    newton_edge(fpt, jac, hes[0], resid, de,dn1,
-                                tmp->flags & FLAG_MASK, tmp, fd->tol);
-                  }
-#endif
                   break;
                 }
                 case 3:{ // findpts_pt
@@ -1325,7 +1059,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                     steep[d] *= tmp->r[d];
                   }
-#if p_D==3
                   dlong de, dn1, dn2, d1, d2, dn, hi0, hi1, hi2;
                   if(steep[0]<0) {
                     if(steep[1]<0) {
@@ -1382,27 +1115,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     newton_edge(fpt, jac,rh,resid, de,dn1,dn2,
                                 tmp->flags&(~(3u<<(2*de))), tmp, fd->tol);
                   } break;
-#else
-                  if(steep[0]<0) {
-                    if(steep[1]<0){
-                      newton_area(fpt, jac,resid, tmp, fd->tol);
-                    }else {
-                      const dfloat rh = resid[0]*hes[0]+resid[1]*hes[2+0];
-                      newton_edge(fpt, jac,rh,resid, 0,1,
-                                  tmp->flags&(3u<<(2*1)), tmp, fd->tol);
-                    }
-                  }else{
-                    if(steep[1]<0) {
-                      const dfloat rh = resid[0]*hes[1]+resid[1]*hes[2+1];
-                      newton_edge(fpt, jac,rh,resid, 1,0,
-                                  tmp->flags&(3u<<(2*0)), tmp, tol);
-                    } else {
-                      fpt->r[0]=tmp->r[0],fpt->r[1]=tmp->r[1];
-                      fpt->dist2p=0;
-                      fpt->flags = tmp->flags | CONVERGED_FLAG;
-                    }
-                  }
-#endif
                   break;
                 }
               }
