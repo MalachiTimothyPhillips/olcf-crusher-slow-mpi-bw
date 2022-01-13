@@ -82,12 +82,16 @@ static void lin_solve_3(dfloat x[3], const dfloat A[9], const dfloat y[3])
   x[2] = idet*(inv6*y[0] + inv7*y[1] + inv8*y[2]);
 }
 
+static void lin_solve_sym_2(dfloat x[2], const dfloat A[3], const dfloat y[2])
+{
+  const dfloat idet = 1/(A[0]*A[2] - A[1]*A[1]);
+  x[0] = idet*(A[2]*y[0] - A[1]*y[1]);
+  x[1] = idet*(A[0]*y[1] - A[1]*y[0]);
+}
+
 static dfloat norm2(const dfloat x[p_D]) {
   return x[0]*x[0] + x[1]*x[1] + x[2]*x[2];
 }
-
-
-// MTP: What???
 
 /* the bit structure of flags is CTTSSRR
    the C bit --- 1<<6 --- is set when the point is converged
