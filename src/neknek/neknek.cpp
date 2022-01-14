@@ -257,14 +257,13 @@ void neknekUpdateBoundary(nrs_t *nrs)
 
   const dlong D = nrs->dim;
 
-  occa::memory o_U = nrs->o_U.cast(occa::dtype::get<dfloat>());
-  for(dlong d = 0; d < D; ++d) {
-    fieldEval(nrs, d, o_U+d*nrs->fieldOffset);
-  }
+  fieldEval(nrs, 0, nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat));
+  fieldEval(nrs, 1, nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat));
+  fieldEval(nrs, 2, nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat));
+
   if (neknek->Nscalar > 0) {
-    occa::memory o_S = nrs->cds->o_S.cast(occa::dtype::get<dfloat>());
     for(dlong i = 0; i < neknek->Nscalar; ++i) {
-      fieldEval(nrs, D+i, nrs->cds->o_S+nrs->cds->fieldOffset[i]);
+      fieldEval(nrs, D+i, nrs->cds->o_S+nrs->cds->fieldOffsetScan[i]*sizeof(dfloat));
     }
   }
   // TODO Allow for higher order extrapolation
