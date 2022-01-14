@@ -7,14 +7,8 @@
 std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa::device device,
                                                              dlong D, const dlong *n) {
 
-  printf("Calling ogs::initFindptsKernel\n"); fflush(stdout);
-
   occa::kernel findpts_local;
   occa::kernel findpts_local_eval;
-
-  std::string oklDir;
-  oklDir.assign(getenv("NEKRS_INSTALL_DIR"));
-  oklDir += "/okl/ogsFindpts/";
 
   occa::properties kernelInfo;
   kernelInfo["defines"].asObject();
@@ -32,8 +26,8 @@ std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa
   kernelInfo["defines/dfloat"] = dfloatString;
   kernelInfo["defines/DBL_MAX"] = DBL_MAX;
 
-  kernelInfo["includes"] += oklDir+"findpts.okl.hpp";
-  kernelInfo["includes"] += oklDir+"poly.okl.hpp";
+  kernelInfo["includes"] += DFINDPTS "/okl/findpts.okl.hpp";
+  kernelInfo["includes"] += DFINDPTS "/okl/poly.okl.hpp";
 
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -41,9 +35,9 @@ std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa
 
   for (int r=0;r<2;r++){
     if ((r==0 && rank==0) || (r==1 && rank>0)) {
-      findpts_local = device.buildKernel(oklDir+"findpts_local.okl", "ogs_findpts_local", kernelInfo);
+      findpts_local = device.buildKernel(DFINDPTS "/okl/findpts_local.okl", "ogs_findpts_local", kernelInfo);
       findpts_local_eval =
-          device.buildKernel(oklDir + "findpts_local_eval.okl", "findpts_local_eval", kernelInfo);
+          device.buildKernel(DFINDPTS "/okl/findpts_local_eval.okl", "findpts_local_eval", kernelInfo);
     }
     MPI_Barrier(comm);
   }

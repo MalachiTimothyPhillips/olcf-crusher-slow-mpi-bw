@@ -261,6 +261,7 @@ target_link_libraries(nekrs-lib PUBLIC libocca PRIVATE HYPRE gs ${GSLIB})
 
 target_compile_definitions(nekrs-lib PUBLIC
     -DDOGS="${CMAKE_INSTALL_PREFIX}/gatherScatter"
+    -DDFINDPTS="${CMAKE_INSTALL_PREFIX}/findpts"
     -DHYPRE)
 
 target_include_directories(nekrs-lib 
