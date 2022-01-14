@@ -3,7 +3,7 @@
 #include "neknek.hpp"
 #include "nrs.hpp"
 #include "nekInterfaceAdapter.hpp"
-#include "ogsKernels_FINDPTS.hpp"
+#include "ogsKernelsFindpts.hpp"
 
 static void reserveAllocation(nrs_t *nrs, dlong npt) {
   neknek_t *neknek = nrs->neknek;

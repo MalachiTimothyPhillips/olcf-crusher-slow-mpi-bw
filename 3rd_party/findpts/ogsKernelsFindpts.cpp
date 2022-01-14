@@ -1,7 +1,7 @@
 
 #include "ogstypes.h"
-#include "ogs_FINDPTS.hpp"
-#include "ogsKernels_FINDPTS.hpp"
+#include "ogsFindpts.hpp"
+#include "ogsKernelsFindpts.hpp"
 #include <cfloat>
 
 std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa::device device,

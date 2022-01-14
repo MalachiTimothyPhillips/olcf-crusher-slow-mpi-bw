@@ -27,9 +27,9 @@ SOFTWARE.
 #include <cassert>
 #include <cstdlib>
 #include "ogstypes.h"
-#include "ogs_FINDPTS.hpp"
-#include "ogsInterface_FINDPTS.h"
-#include "ogsKernels_FINDPTS.hpp"
+#include "ogsFindpts.hpp"
+#include "ogsInterfaceFindpts.h"
+#include "ogsKernelsFindpts.hpp"
 #include "gslib.h"
 
 struct hash_data_3 {

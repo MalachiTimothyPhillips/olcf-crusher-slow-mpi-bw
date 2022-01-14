@@ -6,7 +6,7 @@
 #include "udf.hpp"
 #include <vector>
 #include <tuple>
-#include "ogsKernels_FINDPTS.hpp"
+#include "ogsKernelsFindpts.hpp"
 
 std::string createOptionsPrefix(std::string section) {
   std::string prefix = section + std::string(" ");

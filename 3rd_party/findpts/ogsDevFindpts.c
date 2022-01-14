@@ -33,7 +33,7 @@ SOFTWARE.
 #include <string.h>
 
 #include "gslib.h"
-#include "ogs_findpts.h"
+#include "ogsFindpts.h"
 
 #include "ogstypes.h"
 

@@ -2,7 +2,7 @@
 #define nekrs_interp_hpp_
 
 #include "nrs.hpp"
-#include "ogs_FINDPTS.hpp"
+#include "ogsFindpts.hpp"
 
 // Contains data for doing interpolations on a particular mesh
 struct interp_t{

@@ -1,13 +1,13 @@
 
 #include <type_traits>
 #include "ogstypes.h"
-#include "ogs_FINDPTS.hpp"
+#include "ogsFindpts.hpp"
 #include "platform.hpp"
 
 extern "C" {
 
 #include "gslib.h"
-#include "ogs_findpts.h"
+#include "ogsFindpts.h"
 
 #define   AT(T,var,i)   \
         (T*)(      (char*)var##_base   +(i)*var##_stride   )

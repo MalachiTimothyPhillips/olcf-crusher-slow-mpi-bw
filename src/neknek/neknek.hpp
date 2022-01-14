@@ -3,7 +3,7 @@
 
 #include <mpi.h>
 #include "nrssys.hpp"
-#include "ogs_FINDPTS.hpp"
+#include "ogsFindpts.hpp"
 
 struct neknek_t {
   dlong nsessions, sessionID;
