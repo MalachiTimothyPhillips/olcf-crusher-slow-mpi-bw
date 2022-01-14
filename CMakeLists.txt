@@ -179,7 +179,7 @@ include(config/hypre.cmake)
 include(config/nek5000.cmake)
 
 ###############################################################################
-# Definitions for libP, gslib, and blaslapack
+# Definitions for libP, gslib, blaslapack, and findpts
 ###############################################################################
 
 
@@ -187,6 +187,7 @@ include(config/mesh.cmake)
 include(config/elliptic.cmake)
 include(config/gslib.cmake)
 include(config/blaslapack.cmake)
+include(config/findpts.cmake)
 
 ###############################################################################
 # Build NekRS
@@ -237,17 +238,12 @@ set(SRC
     src/udf/udf.cpp
     src/udf/compileUDFKernels.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
-    src/ogsFindpts/ogsFindpts.cpp
-    src/ogsFindpts/ogs_findpts_local.cpp
-    src/ogsFindpts/ogs_findpts.c
-    src/ogsFindpts/ogsDevFindpts.c
-    src/ogsFindpts/ogsHostFindpts.c
-    src/ogsFindpts/ogsKernels_FINDPTS.cpp
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
     ${ELLIPTIC_SOURCES}
     ${BLASLAPACK_SOURCES}
     ${OGS_SOURCES}
+    ${FINDPTS_SOURCES}
 )
 
 set_property(
@@ -286,6 +282,7 @@ target_include_directories(nekrs-lib
   ${NEKINTERFACEDIR}
   ${OGS_SOURCE_DIR}/include
   ${OGS_SOURCE_DIR}
+  ${FINDPTS_SOURCE_DIR}
   ${ELLIPTIC_SOURCE_DIR}
   PRIVATE
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/hypre
