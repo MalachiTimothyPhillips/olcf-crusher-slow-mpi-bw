@@ -166,15 +166,25 @@ void ogsFindptsFree(ogs_findpts_t *fd)
   delete fd;
 }
 
-void ogsFindpts(    dlong*  const  code_base  , const dlong  code_stride,
-                    dlong*  const  proc_base  , const dlong  proc_stride,
-                    dlong*  const    el_base  , const dlong    el_stride,
-                    dfloat* const     r_base  , const dlong     r_stride,
-                    dfloat* const dist2_base  , const dlong dist2_stride,
-              const dfloat* const     x_base[], const dlong     x_stride[],
-              const dlong npt, ogs_findpts_t* const fd,
-              const bool use_device) {
+void ogsFindpts(ogs_findpts_data_t *const findPtsData,
+                const dfloat *const x_base[],
+                const dlong x_stride[],
+                const dlong npt,
+                ogs_findpts_t *const fd,
+                const bool use_device)
+{
   // x_base, x_stride have length D
+
+  dlong *const code_base = findPtsData->code_base;
+  const dlong code_stride = sizeof(dlong);
+  dlong *const proc_base = findPtsData->proc_base;
+  const dlong proc_stride = sizeof(dlong);
+  dlong *const el_base = findPtsData->el_base;
+  const dlong el_stride = sizeof(dlong);
+  dfloat *const r_base = findPtsData->r_base;
+  const dlong r_stride = 3 * sizeof(dfloat);
+  dfloat *const dist2_base = findPtsData->dist2_base;
+  const dlong dist2_stride = sizeof(dfloat);
 
   if (use_device) {
     ogsDevFindpts_3(code_base,

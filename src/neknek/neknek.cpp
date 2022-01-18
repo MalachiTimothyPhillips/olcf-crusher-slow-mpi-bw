@@ -119,45 +119,29 @@ static void findInterpPoints(nrs_t* nrs){
   neknek->pointMap[nrs->fieldOffset] = neknek->npt;
   neknek->o_pointMap.copyFrom(neknek->pointMap);
 
-  dfloat *rallocTemp = new dfloat[npt*(2+D)];
-  dfloat *dist2      = rallocTemp; rallocTemp +=   npt;
-  dfloat *dist2Temp  = rallocTemp; rallocTemp +=   npt;
-  dfloat *    rTemp  = rallocTemp; rallocTemp += D*npt;
-
-  dlong *iallocTemp = new dlong[npt*3];
-  dlong  * procTemp = iallocTemp; iallocTemp +=   npt;
-  dlong  * codeTemp = iallocTemp; iallocTemp +=   npt;
-  dlong  *   elTemp = iallocTemp; iallocTemp +=   npt;
-
-  for (dlong i = 0; i < npt; ++i) {
-    dist2[i] = DBL_MAX;
-    neknek->code[i] = 2;
-  }
+  auto findPtsData = new ogs_findpts_data_t(npt);
 
   dfloat *interpX_3[3] = {interpX, interpX+npt, interpX+2*npt};
   dfloat *nullptr_3[3] = {nullptr, nullptr, nullptr};
   dlong interpXStride[3] = {1*sizeof(dfloat), 1*sizeof(dfloat), 1*sizeof(dfloat)};
   for(dlong sess = 0; sess < nsessions; ++sess) {
-    ogsFindpts( codeTemp,   1*sizeof(dlong),
-                procTemp,   1*sizeof(dlong),
-                  elTemp,   1*sizeof(dlong),
-                   rTemp,   D*sizeof(dfloat),
-               dist2Temp,   1*sizeof(dfloat),
-               (sess==sessionID)?nullptr_3:interpX_3, interpXStride,
-               (sess==sessionID)?0:npt,
+    ogsFindpts(findPtsData,
+               (sess == sessionID) ? nullptr_3 : interpX_3,
+               interpXStride,
+               (sess == sessionID) ? 0 : npt,
                ogsHandles[sess]);
 
     if(sess!=sessionID) {
       for(dlong i = 0; i < npt; ++i) {
         // TODO review this condition
         // ideally should find point farthest from a boundary
-        if((codeTemp[i] == 0 || codeTemp[i] == 1) && dist2[i] > dist2Temp[i]){
-          neknek->code[i] =  codeTemp[i];
-                 dist2[i] = dist2Temp[i];
-          neknek->proc[i] =  procTemp[i];
-          neknek->el  [i] =    elTemp[i];
+        if ((findPtsData->code_base[i] == 0 || findPtsData->code_base[i] == 1) &&
+            findPtsData->dist2_base[i] < std::numeric_limits<dfloat>::max()) {
+          neknek->code[i] = findPtsData->code_base[i];
+          neknek->proc[i] = findPtsData->proc_base[i];
+          neknek->el[i] = findPtsData->el_base[i];
           for(dlong d = 0; d<D; ++d) {
-            neknek->r[D*i+d] = rTemp[D*i+d];
+            neknek->r[D * i + d] = findPtsData->r_base[D * i + d];
           }
         }
       }
@@ -170,10 +154,7 @@ static void findInterpPoints(nrs_t* nrs){
     ogsFindptsFree(ogsHandles[i]);
   }
 
-  delete [] interpX;
-  delete [] dist2;    //rallocTemp;
-  delete [] procTemp; //iallocTemp;
-
+  delete[] interpX;
 }
 
 void neknekSetup(nrs_t *nrs)

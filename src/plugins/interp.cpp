@@ -58,14 +58,15 @@ void interp_t::findPoints(const dfloat *const * x,   const dlong xStride[],
                            xStride[1]*sizeof(dfloat),
                            xStride[2]*sizeof(dfloat)};
 
-  ogsFindpts(code,   codeStride*sizeof(dlong),
-             proc,   procStride*sizeof(dlong),
-             el,       elStride*sizeof(dlong),
-             r,         rStride*sizeof(dfloat),
-             dist2, dist2Stride*sizeof(dfloat),
-             x,     xStrideBytes,
-             n, findpts);
-
+  // TODO: implement
+  // ogsFindpts(code,   codeStride*sizeof(dlong),
+  //           proc,   procStride*sizeof(dlong),
+  //           el,       elStride*sizeof(dlong),
+  //           r,         rStride*sizeof(dfloat),
+  //           dist2, dist2Stride*sizeof(dfloat),
+  //           x,     xStrideBytes,
+  //           n, findpts);
+  // unpack data
 
   if(printWarnings) {
     dlong nFail = 0;
