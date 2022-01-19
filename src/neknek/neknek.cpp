@@ -193,19 +193,7 @@ static void fieldEval(nrs_t *nrs, dlong field, occa::memory in) {
   const dlong D = nrs->dim;
   dfloat *out = neknek->valInterp+field*neknek->npt;
 
-  ogsFindptsEval(out,
-                 1 * sizeof(dfloat),
-                 neknek->findPtsData->code_base,
-                 1 * sizeof(dlong),
-                 neknek->findPtsData->proc_base,
-                 1 * sizeof(dlong),
-                 neknek->findPtsData->el_base,
-                 1 * sizeof(dlong),
-                 neknek->findPtsData->r_base,
-                 D * sizeof(dfloat),
-                 neknek->npt,
-                 in,
-                 neknek->ogsHandle);
+  ogsFindptsEval(out, neknek->findPtsData, neknek->npt, in, neknek->ogsHandle);
 }
 
 void neknekUpdateBoundary(nrs_t *nrs)

@@ -185,13 +185,10 @@ struct particle_set {
       xBase[i] = x[i].data();
       xStride[i] = 1;
     }
-    interp_->findPoints(xBase, xStride,
-                        code.data(),       1,
-                        proc.data(),       1,
-                          el.data(),       1,
-                        &(r.data()[0][0]), 3,
-                        dist2,             dist2Stride,
-                        size(), printWarnings);
+
+    ogs_findpts_data_t data(code.data(), proc.data(), el.data(), &(r.data()[0][0]), dist2);
+
+    interp_->findPoints(xBase, xStride, &data, size(), printWarnings);
     if(dist2In == nullptr) {
       delete[] dist2;
     }
@@ -243,13 +240,9 @@ struct particle_set {
   template<typename fieldPtr>
   void interp(fieldPtr field, dfloat *out[], dlong nFields)
   {
-    interp_->evalPoints(field, nFields,
-                        code.data(),       1,
-                        proc.data(),       1,
-                        el.data(),         1,
-                        &(r.data()[0][0]), 3,
-                        out,               1,
-                        size());
+    ogs_findpts_data_t data(code.data(), proc.data(), el.data(), &(r.data()[0][0]), nullptr);
+
+    interp_->evalPoints(field, nFields, &data, size());
   }
 
   // Interpolates the fields at each particle with the assumption that all particles belong to local elements

@@ -15,11 +15,25 @@ struct ogs_findpts_t {
 };
 
 struct ogs_findpts_data_t {
+  bool owned;
   dlong *code_base;
   dlong *proc_base;
   dlong *el_base;
   dfloat *r_base;
   dfloat *dist2_base;
+
+  ogs_findpts_data_t() { owned = false; }
+
+  ogs_findpts_data_t(dlong *_code_base,
+                     dlong *_proc_base,
+                     dlong *_el_base,
+                     dfloat *_r_base,
+                     dfloat *_dist2_base)
+      : code_base(_code_base), proc_base(_proc_base), el_base(_el_base), r_base(_r_base),
+        dist2_base(_dist2_base)
+  {
+    owned = false;
+  }
 
   ogs_findpts_data_t(int npt)
   {
@@ -32,6 +46,18 @@ struct ogs_findpts_data_t {
     for (dlong i = 0; i < npt; ++i) {
       dist2_base[i] = std::numeric_limits<dfloat>::max();
       code_base[i] = 2;
+    }
+    owned = true;
+  }
+
+  ~ogs_findpts_data_t()
+  {
+    if (owned) {
+      free(code_base);
+      free(proc_base);
+      free(el_base);
+      free(r_base);
+      free(dist2_base);
     }
   }
 };
@@ -51,21 +77,17 @@ void ogsFindpts(ogs_findpts_data_t *findPtsData,
                 const dlong npt,
                 ogs_findpts_t *const fd,
                 const bool use_device = true);
-void ogsFindptsEval(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const code_base, const dlong code_stride,
-  const dlong  *const proc_base, const dlong proc_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat *const in, ogs_findpts_t *const fd);
+void ogsFindptsEval(dfloat *const out_base,
+                    ogs_findpts_data_t *findPtsData,
+                    const dlong npt,
+                    const dfloat *const in,
+                    ogs_findpts_t *const fd);
 
-void ogsFindptsEval(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const code_base, const dlong code_stride,
-  const dlong  *const proc_base, const dlong proc_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, occa::memory d_in, ogs_findpts_t *const fd);
+void ogsFindptsEval(dfloat *const out_base,
+                    ogs_findpts_data_t *findPtsData,
+                    const dlong npt,
+                    occa::memory d_in,
+                    ogs_findpts_t *const fd);
 
 void ogsFindptsLocalEval(
         dfloat *const  out_base, const dlong  out_stride,

@@ -221,16 +221,26 @@ void ogsFindpts(ogs_findpts_data_t *const findPtsData,
   }
 }
 
-void ogsFindptsEval(
-        dfloat* const  out_base, const dlong  out_stride,
-  const dlong*  const code_base, const dlong code_stride,
-  const dlong*  const proc_base, const dlong proc_stride,
-  const dlong*  const   el_base, const dlong   el_stride,
-  const dfloat* const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat* const in, ogs_findpts_t *const fd) {
+void ogsFindptsEval(dfloat *const out_base,
+                    ogs_findpts_data_t *findPtsData,
+                    const dlong npt,
+                    const dfloat *const in,
+                    ogs_findpts_t *const fd)
+{
+
+  dlong *const code_base = findPtsData->code_base;
+  const dlong code_stride = sizeof(dlong);
+  dlong *const proc_base = findPtsData->proc_base;
+  const dlong proc_stride = sizeof(dlong);
+  dlong *const el_base = findPtsData->el_base;
+  const dlong el_stride = sizeof(dlong);
+  dfloat *const r_base = findPtsData->r_base;
+  const dlong r_stride = 3 * sizeof(dfloat);
+  dfloat *const dist2_base = findPtsData->dist2_base;
+  const dlong dist2_stride = sizeof(dfloat);
 
   ogsHostFindptsEval_3(out_base,
-                       out_stride,
+                       sizeof(dfloat),
                        code_base,
                        code_stride,
                        proc_base,
@@ -244,17 +254,26 @@ void ogsFindptsEval(
                        (findpts_data_3 *)fd->findpts_data);
 }
 
+void ogsFindptsEval(dfloat *const out_base,
+                    ogs_findpts_data_t *findPtsData,
+                    const dlong npt,
+                    occa::memory d_in,
+                    ogs_findpts_t *const fd)
+{
 
-void ogsFindptsEval(
-        dfloat* const  out_base, const dlong  out_stride,
-  const dlong*  const code_base, const dlong code_stride,
-  const dlong*  const proc_base, const dlong proc_stride,
-  const dlong*  const   el_base, const dlong   el_stride,
-  const dfloat* const    r_base, const dlong    r_stride,
-  const dlong npt, occa::memory d_in, ogs_findpts_t* const fd) {
+  dlong *const code_base = findPtsData->code_base;
+  const dlong code_stride = sizeof(dlong);
+  dlong *const proc_base = findPtsData->proc_base;
+  const dlong proc_stride = sizeof(dlong);
+  dlong *const el_base = findPtsData->el_base;
+  const dlong el_stride = sizeof(dlong);
+  dfloat *const r_base = findPtsData->r_base;
+  const dlong r_stride = 3 * sizeof(dfloat);
+  dfloat *const dist2_base = findPtsData->dist2_base;
+  const dlong dist2_stride = sizeof(dfloat);
 
   ogsDevFindptsEval_3(out_base,
-                      out_stride,
+                      sizeof(dfloat),
                       code_base,
                       code_stride,
                       proc_base,

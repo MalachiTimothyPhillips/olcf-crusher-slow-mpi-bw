@@ -45,41 +45,32 @@ interp_t::~interp_t()
   ogsFindptsFree(findpts);
 }
 
-void interp_t::findPoints(const dfloat *const * x,   const dlong xStride[],
-                                dlong*  code,  const dlong  codeStride,
-                                dlong*  proc,  const dlong  procStride,
-                                dlong*  el,    const dlong    elStride,
-                                dfloat* r,     const dlong     rStride,
-                                dfloat* dist2, const dlong dist2Stride,
-                          dlong n, bool printWarnings)
+void interp_t::findPoints(const dfloat *const *x,
+                          const dlong xStride[],
+                          ogs_findpts_data_t *findPtsData,
+                          dlong n,
+                          bool printWarnings)
 {
   // findpts takes strides in terms of bytes, but findPoints takes strides in terms of elements
   dlong xStrideBytes[3] = {xStride[0]*sizeof(dfloat),
                            xStride[1]*sizeof(dfloat),
                            xStride[2]*sizeof(dfloat)};
 
-  // TODO: implement
-  // ogsFindpts(code,   codeStride*sizeof(dlong),
-  //           proc,   procStride*sizeof(dlong),
-  //           el,       elStride*sizeof(dlong),
-  //           r,         rStride*sizeof(dfloat),
-  //           dist2, dist2Stride*sizeof(dfloat),
-  //           x,     xStrideBytes,
-  //           n, findpts);
-  // unpack data
+  ogsFindpts(findPtsData, x, xStrideBytes, n, findpts);
 
   if(printWarnings) {
     dlong nFail = 0;
     for (int in = 0; in < n; ++in) {
-      if (code[in] == 1) {
-        if (dist2[in] > 10*newton_tol) {
+      if (findPtsData->code_base[in] == 1) {
+        if (findPtsData->dist2_base[in] > 10 * newton_tol) {
           nFail += 1;
           if (nFail < 5){
-            std::cerr << " WARNING: point on boundary or outside the mesh xy[z]d^2: "
-                      << x[0][in] << "," << x[1][in] << ", " << x[2][in] << ", " << dist2[in] << std::endl;
+            std::cerr << " WARNING: point on boundary or outside the mesh xy[z]d^2: " << x[0][in] << ","
+                      << x[1][in] << ", " << x[2][in] << ", " << findPtsData->dist2_base[in] << std::endl;
           }
         }
-      } else if (code[in] == 2) {
+      }
+      else if (findPtsData->code_base[in] == 2) {
         nFail += 1;
         if (nFail < 5){
           std::cerr << " WARNING: point not within mesh xy[z]: "
@@ -96,41 +87,29 @@ void interp_t::findPoints(const dfloat *const * x,   const dlong xStride[],
   }
 }
 
-void interp_t::evalPoints(const dfloat* fields, const dlong nFields,
-                          const dlong*   code,  const dlong codeStride,
-                          const dlong*   proc,  const dlong procStride,
-                          const dlong*   el,    const dlong   elStride,
-                          const dfloat*  r,     const dlong    rStride,
-                                dfloat** out,   const dlong  outStride[],
+void interp_t::evalPoints(const dfloat *fields,
+                          const dlong nFields,
+                          ogs_findpts_data_t *findPtsData,
+                          dfloat **out,
+                          const dlong outStride[],
                           dlong n)
 {
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsEval(out[i],  outStride[i]*sizeof(dfloat),
-                   code,   codeStride   *sizeof(dlong),
-                   proc,   procStride   *sizeof(dlong),
-                   el,       elStride   *sizeof(dlong),
-                   r,         rStride   *sizeof(dfloat),
-                   n, fields+i*nrs->fieldOffset, findpts);
+    ogsFindptsEval(out[i], findPtsData, n, fields + i * nrs->fieldOffset, findpts);
   }
 }
 
-void interp_t::evalPoints(occa::memory fields, const dlong nFields,
-                          const dlong*   code, const dlong codeStride,
-                          const dlong*   proc, const dlong procStride,
-                          const dlong*   el,   const dlong   elStride,
-                          const dfloat*  r,    const dlong    rStride,
-                                dfloat** out,  const dlong  outStride[],
+void interp_t::evalPoints(occa::memory fields,
+                          const dlong nFields,
+                          ogs_findpts_data_t *findPtsData,
+                          dfloat **out,
+                          const dlong outStride[],
                           dlong n)
 {
   occa::memory o_fields = fields.cast(occa::dtype::get<dfloat>());
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsEval(out[i],  outStride[i]*sizeof(dfloat),
-                   code,   codeStride   *sizeof(dlong),
-                   proc,   procStride   *sizeof(dlong),
-                   el,       elStride   *sizeof(dlong),
-                   r,         rStride   *sizeof(dfloat),
-                   n, o_fields+i*nrs->fieldOffset, findpts);
+    ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset, findpts);
   }
 }
 

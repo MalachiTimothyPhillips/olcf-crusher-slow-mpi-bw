@@ -278,7 +278,6 @@ target_include_directories(nekrs-lib
   src/lns
   src/cds
   src/neknek
-  src/ogsFindpts
   ${MESH_SOURCE_DIR}
   ${NEKINTERFACEDIR}
   ${OGS_SOURCE_DIR}/include
