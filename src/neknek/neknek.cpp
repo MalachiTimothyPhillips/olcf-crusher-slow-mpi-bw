@@ -11,20 +11,11 @@ static void reserveAllocation(nrs_t *nrs, dlong npt) {
   occa::device &device = platform_t::getInstance()->device.occaDevice();
 
   if(neknek->valInterp == nullptr || neknek->npt != npt) {
-    if(neknek->valInterp != nullptr) {
-      delete [] neknek->valInterp;
-      delete [] neknek->proc;
-    }
 
-    dfloat *ralloc = new dfloat[npt*(D+D+neknek->Nscalar)];
-    neknek->valInterp  = ralloc; ralloc += (D+neknek->Nscalar)*npt;
-    neknek->r           = ralloc; ralloc += npt*D;
+    delete[] neknek->valInterp;
 
-    dlong *ialloc = new dlong[npt*3 + nrs->fieldOffset+1];
-    neknek->proc        = ialloc; ialloc += npt;
-    neknek->code        = ialloc; ialloc += npt;
-    neknek->el          = ialloc; ialloc += npt;
-    neknek->pointMap    = ialloc; ialloc += nrs->fieldOffset+1;
+    neknek->valInterp = (dfloat *)calloc((D + neknek->Nscalar) * npt, sizeof(dfloat));
+    neknek->pointMap = (dlong *)calloc(nrs->fieldOffset + 1, sizeof(dlong));
 
     neknek->o_pointMap  = device.malloc(nrs->fieldOffset+1, occa::dtype::get<dlong>());
     if(npt > 0) {
@@ -120,6 +111,7 @@ static void findInterpPoints(nrs_t* nrs){
   neknek->o_pointMap.copyFrom(neknek->pointMap);
 
   auto findPtsData = new ogs_findpts_data_t(npt);
+  neknek->findPtsData = findPtsData;
 
   dfloat *interpX_3[3] = {interpX, interpX+npt, interpX+2*npt};
   dfloat *nullptr_3[3] = {nullptr, nullptr, nullptr};
@@ -130,22 +122,6 @@ static void findInterpPoints(nrs_t* nrs){
                interpXStride,
                (sess == sessionID) ? 0 : npt,
                ogsHandles[sess]);
-
-    if(sess!=sessionID) {
-      for(dlong i = 0; i < npt; ++i) {
-        // TODO review this condition
-        // ideally should find point farthest from a boundary
-        if ((findPtsData->code_base[i] == 0 || findPtsData->code_base[i] == 1) &&
-            findPtsData->dist2_base[i] < std::numeric_limits<dfloat>::max()) {
-          neknek->code[i] = findPtsData->code_base[i];
-          neknek->proc[i] = findPtsData->proc_base[i];
-          neknek->el[i] = findPtsData->el_base[i];
-          for(dlong d = 0; d<D; ++d) {
-            neknek->r[D * i + d] = findPtsData->r_base[D * i + d];
-          }
-        }
-      }
-    }
   }
   // TODO add warning prints
 
@@ -217,14 +193,19 @@ static void fieldEval(nrs_t *nrs, dlong field, occa::memory in) {
   const dlong D = nrs->dim;
   dfloat *out = neknek->valInterp+field*neknek->npt;
 
-  ogsFindptsEval(out,          1*sizeof(dfloat),
-                 neknek->code, 1*sizeof(dlong),
-                 neknek->proc, 1*sizeof(dlong),
-                 neknek->el,   1*sizeof(dlong),
-                 neknek->r,    D*sizeof(dfloat),
-                 neknek->npt, in,
+  ogsFindptsEval(out,
+                 1 * sizeof(dfloat),
+                 neknek->findPtsData->code_base,
+                 1 * sizeof(dlong),
+                 neknek->findPtsData->proc_base,
+                 1 * sizeof(dlong),
+                 neknek->findPtsData->el_base,
+                 1 * sizeof(dlong),
+                 neknek->findPtsData->r_base,
+                 D * sizeof(dfloat),
+                 neknek->npt,
+                 in,
                  neknek->ogsHandle);
-
 }
 
 void neknekUpdateBoundary(nrs_t *nrs)

@@ -24,10 +24,7 @@ struct neknek_t {
   dfloat *valInterp = nullptr;
   occa::memory o_valInterp;
 
-  dlong  *code;
-  dlong  *proc;
-  dlong  *el;
-  dfloat *r;
+  ogs_findpts_data_t *findPtsData;
 };
 
 
