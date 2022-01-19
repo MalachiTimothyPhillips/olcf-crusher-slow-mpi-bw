@@ -139,6 +139,9 @@ neknek_t::neknek_t(nrs_t *nrs, const session_data_t &session)
 {
 
   nrs->neknek = this;
+  if(nrs->cds){
+    nrs->cds->neknek = this;
+  }
 
   int nsessmax = 0;
   platform->options.getArgs("NEKNEK MAX NUM SESSIONS", nsessmax);

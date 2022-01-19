@@ -392,6 +392,11 @@ int main(int argc, char** argv)
 
   cmdOptions* cmdOpt = processCmdLineOptions(argc, argv, commGlobal);
   session_data_t session;
+  session.globalComm = commGlobal;
+  session.sessionID = 0;
+  session.localComm = commGlobal;
+  session.nsessions = 1;
+
   MPI_Comm comm = setupSession(cmdOpt, commGlobal, session);
 
   int rank, size;
