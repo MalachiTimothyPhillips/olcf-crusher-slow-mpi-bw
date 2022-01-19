@@ -133,6 +133,24 @@ static void findInterpPoints(nrs_t* nrs){
   delete[] interpX;
 }
 
+neknek_t::neknek_t(nrs_t *nrs, const session_data_t &session)
+    : nsessions(session.nsessions), sessionID(session.sessionID), globalComm(session.globalComm),
+      localComm(session.localComm), connected(session.connected)
+{
+
+  nrs->neknek = this;
+
+  int nsessmax = 0;
+  platform->options.getArgs("NEKNEK MAX NUM SESSIONS", nsessmax);
+  if (nsessmax > 1) {
+    this->connected = true;
+  }
+
+  platform->options.getArgs("NEKNEK CORRECTOR STEPS", this->NcorrectorSteps);
+
+  neknekSetup(nrs);
+}
+
 void neknekSetup(nrs_t *nrs)
 {
   if(platform->options.compareArgs("BUILD ONLY", "TRUE")) {

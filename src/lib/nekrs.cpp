@@ -44,10 +44,15 @@ double startTime(void)
   return val;
 }
 
-void setup(MPI_Comm commg_in, MPI_Comm comm_in, 
-    	   int buildOnly, int commSizeTarget,
-           int ciMode, std::string _setupFile,
-           std::string _backend, std::string _deviceID, neknek_t* neknek)
+void setup(MPI_Comm commg_in,
+           MPI_Comm comm_in,
+           int buildOnly,
+           int commSizeTarget,
+           int ciMode,
+           std::string _setupFile,
+           std::string _backend,
+           std::string _deviceID,
+           const session_data_t &session)
 {
   MPI_Comm_dup(commg_in, &commg);
   MPI_Comm_dup(comm_in, &comm);
@@ -68,13 +73,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   if (rank == 0) std::cout << "reading par file ...\n"; 
   auto par = new inipp::Ini();	  
   std::string setupFile = _setupFile + ".par";
-  options = parRead((void*) par, setupFile, comm);
-  const int nsessmax = std::stoi(options.getArgs("NEKNEK MAX NUM SESSIONS"));
-  if(nsessmax > 1){
-    neknek->connected = true;
-  }
-
-  neknek->NcorrectorSteps = std::stoi(options.getArgs("NEKNEK CORRECTOR STEPS"));
+  options = parRead((void *)par, setupFile, comm);
 
   {
     char buf[FILENAME_MAX];
@@ -150,7 +149,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   if(rank == 0 && ciMode)
     std::cout << "enabling continous integration mode " << ciMode << "\n";
 
-  nek::bootstrap(neknek);
+  nek::bootstrap(session);
 
   if(udf.setup0) udf.setup0(comm, options);
 
@@ -174,9 +173,8 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   platform->linAlg = linAlg_t::getInstance();
 
   nrs = new nrs_t();
-  nrs->neknek = neknek;
   nrsSetup(comm, options, nrs);
-  neknekSetup(nrs);
+  new neknek_t(nrs, session);
 
   platform->timer.toc("setup");
   const double setupTime = platform->timer.query("setup", "DEVICE:MAX");

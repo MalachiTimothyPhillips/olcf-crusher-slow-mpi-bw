@@ -5,6 +5,15 @@
 #include "nrssys.hpp"
 #include "ogsFindpts.hpp"
 
+struct nrs_t;
+
+struct session_data_t {
+  dlong nsessions, sessionID;
+  MPI_Comm globalComm;
+  MPI_Comm localComm;
+  bool connected;
+};
+
 struct neknek_t {
   dlong nsessions, sessionID;
   MPI_Comm globalComm;
@@ -25,10 +34,9 @@ struct neknek_t {
   occa::memory o_valInterp;
 
   ogs_findpts_data_t *findPtsData;
+  neknek_t(nrs_t *nrs, const session_data_t &session);
 };
 
-
-struct nrs_t;
 void neknekSetup(nrs_t *nrs);
 void neknekUpdateBoundary(nrs_t *nrs);
 

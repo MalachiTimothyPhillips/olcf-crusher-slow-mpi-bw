@@ -13,7 +13,7 @@
 #define DEFINE_USER_FUNC(a) void nek_ ## a(void) { (*a ## _ptr)(); }
 
 struct setupAide;
-struct neknek_t;
+struct session_data_t;
 
 struct nekdata_private
 {
@@ -115,7 +115,7 @@ void   outpost(double* v1, double* v2, double* v3, double* vp, double* vt, char*
 int    lglel(int e);
 void   uf(double* u, double* v, double* w);
 int    setup(nrs_t* nrs);
-void   bootstrap(neknek_t* neknek);
+void bootstrap(const session_data_t &);
 void   ifoutfld(int i);
 void   setic(void);
 void   userchk(void);

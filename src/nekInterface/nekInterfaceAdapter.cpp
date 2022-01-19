@@ -600,7 +600,7 @@ void gen_bcmap()
   (*nek_gen_bcmap_ptr)();
 }
 
-void bootstrap(neknek_t* neknek)
+void bootstrap(const session_data_t &session)
 {
   options = &platform->options;
 
@@ -653,11 +653,11 @@ void bootstrap(neknek_t* neknek)
                            cwd.length(), usrname.length(),
                            meshFile.length());
     } else {
-      dlong ifneknekc = neknek->connected;
-      dlong nsessions = neknek->nsessions;
-      dlong sessionID = neknek->sessionID;
-      MPI_Fint nek_comm = MPI_Comm_c2f(neknek->localComm);
-      MPI_Fint nek_global_comm = MPI_Comm_c2f(neknek->globalComm);
+      dlong ifneknekc = session.connected;
+      dlong nsessions = session.nsessions;
+      dlong sessionID = session.sessionID;
+      MPI_Fint nek_comm = MPI_Comm_c2f(session.localComm);
+      MPI_Fint nek_global_comm = MPI_Comm_c2f(session.globalComm);
       (*nek_bootstrap_neknek_ptr)(&nek_comm, &nek_global_comm,
                           &ifneknekc,
                           &nsessions,

@@ -116,8 +116,7 @@ struct cmdOptions
   bool neknekConnected = true;
 };
 
-struct session
-{
+struct session_t {
   int size;
   std::string setupFile;
 };
@@ -245,7 +244,7 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
   return cmdOpt;
 }
 
-MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm, neknek_t* neknek)
+MPI_Comm setupSession(cmdOptions *cmdOpt, const MPI_Comm &comm, session_data_t &session)
 {
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -277,7 +276,7 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm, neknek_t* neknek
     free(buf);
 
     auto list = serializeString(multiSessionFileContent, ';');
-    auto sessionList = new session[list.size()];
+    auto sessionList = new session_t[list.size()];
 
     int nSessions = 0;
     int rankSum = 0;
@@ -294,7 +293,7 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm, neknek_t* neknek
       nSessions++;
     }
 
-    neknek->nsessions = nSessions;
+    session.nsessions = nSessions;
 
     int err = 0;
     if(rankSum != size) err = 1;
@@ -324,9 +323,9 @@ MPI_Comm setupSession(cmdOptions* cmdOpt, const MPI_Comm &comm, neknek_t* neknek
     MPI_Comm_rank(newComm, &rank);
     MPI_Comm_size(newComm, &size);
 
-    neknek->sessionID = color;
-    neknek->globalComm = comm;
-    neknek->localComm = newComm;
+    session.sessionID = color;
+    session.globalComm = comm;
+    session.localComm = newComm;
 
     cmdOpt->setupFile = sessionList[color].setupFile;
     cmdOpt->sizeTarget = size;
@@ -392,8 +391,8 @@ int main(int argc, char** argv)
   }
 
   cmdOptions* cmdOpt = processCmdLineOptions(argc, argv, commGlobal);
-  neknek_t *neknek = new neknek_t();
-  MPI_Comm comm = setupSession(cmdOpt, commGlobal, neknek);
+  session_data_t session;
+  MPI_Comm comm = setupSession(cmdOpt, commGlobal, session);
 
   int rank, size;
   MPI_Comm_rank(comm, &rank);
@@ -423,10 +422,15 @@ int main(int argc, char** argv)
   MPI_Barrier(comm);
   const double time0 = MPI_Wtime();
 
-  nekrs::setup(commGlobal, comm, 
-	       cmdOpt->buildOnly, cmdOpt->sizeTarget,
-               cmdOpt->ciMode, cmdOpt->setupFile,
-               cmdOpt->backend, cmdOpt->deviceID, neknek);
+  nekrs::setup(commGlobal,
+               comm,
+               cmdOpt->buildOnly,
+               cmdOpt->sizeTarget,
+               cmdOpt->ciMode,
+               cmdOpt->setupFile,
+               cmdOpt->backend,
+               cmdOpt->deviceID,
+               session);
 
   if (cmdOpt->buildOnly) {
     nekrs::finalize();
