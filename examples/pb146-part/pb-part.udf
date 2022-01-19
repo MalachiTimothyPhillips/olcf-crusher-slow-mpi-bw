@@ -4,7 +4,7 @@
 
 #include <math.h>
 #include "udf.hpp"
-#include "plugins/particle.hpp"
+#include "pointInterpolation/particle.hpp"
 
 #include "casedata.h"
 

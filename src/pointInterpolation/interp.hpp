@@ -5,13 +5,12 @@
 #include "ogsFindpts.hpp"
 
 // Contains data for doing interpolations on a particular mesh
-struct interp_t{
-  nrs_t* nrs;
+struct interp_t {
+  nrs_t *nrs;
   double newton_tol;
-  ogs_findpts_t* findpts;
+  ogs_findpts_t *findpts;
 
-
-  interp_t(nrs_t* nrs_, dfloat newton_tol_ = 0);
+  interp_t(nrs_t *nrs_, dfloat newton_tol_ = 0);
   ~interp_t();
 
   // Finds the process, element, and reference coordinates of the given points
@@ -39,25 +38,36 @@ struct interp_t{
   // Evalutes points located on this process
   // Given a (code, proc, el, r) tuple computed by findPoints, proc must be this
   // process's rank, code must be 0 or 1, and el and r are passed to this function
-  void evalLocalPoints(const dfloat* fields, const dlong nFields,
-                       const dlong*   el,    const dlong    el_stride,
-                       const dfloat*  r,     const dlong     r_stride,
-                             dfloat** out,   const dlong   out_stride[],
+  void evalLocalPoints(const dfloat *fields,
+                       const dlong nFields,
+                       const dlong *el,
+                       const dlong el_stride,
+                       const dfloat *r,
+                       const dlong r_stride,
+                       dfloat **out,
+                       const dlong out_stride[],
                        dlong n);
   // Evalutes points located on this process
   // Given a (code, proc, el, r) tuple computed by findPoints, proc must be this
   // process's rank, code must be 0 or 1, and el and r are passed to this function
-  void evalLocalPoints(occa::memory fields, const dlong nFields,
-                       const dlong*   el,   const dlong    el_stride,
-                       const dfloat*  r,    const dlong     r_stride,
-                             dfloat** out,  const dlong   out_stride[],
+  void evalLocalPoints(occa::memory fields,
+                       const dlong nFields,
+                       const dlong *el,
+                       const dlong el_stride,
+                       const dfloat *r,
+                       const dlong r_stride,
+                       dfloat **out,
+                       const dlong out_stride[],
                        dlong n);
 
   // Evaluates a field at the given points
-  template<typename fieldPtr>
-  void interpField(fieldPtr fields, dlong nFields,
-                   const dfloat* x[],   const dlong x_stride[],
-                         dfloat* out[], const dlong out_stride[],
+  template <typename fieldPtr>
+  void interpField(fieldPtr fields,
+                   dlong nFields,
+                   const dfloat *x[],
+                   const dlong x_stride[],
+                   dfloat *out[],
+                   const dlong out_stride[],
                    dlong n)
   {
 
