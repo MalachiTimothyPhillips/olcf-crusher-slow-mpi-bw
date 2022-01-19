@@ -3,8 +3,8 @@
 
 #include "nrs.hpp"
 #include "gslib.h"
-#include "ogs_FINDPTS.hpp"
-#include "plugins/interp.hpp"
+#include "ogsFindpts.hpp"
+#include "pointInterpolation/interp.hpp"
 
 // Contains a set of particles and the information needed to interpolate on the mesh
 template <class Extra = char> struct particle_set {
