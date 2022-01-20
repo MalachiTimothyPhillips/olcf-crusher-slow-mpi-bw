@@ -147,16 +147,16 @@ void interpolateHex3D(dfloat* Inter, dfloat* x, int N, dfloat* Ix, int M);
 /* offsets for geometric factors */
 #define RXID 0
 #define RYID 1
-#define SXID 2
-#define SYID 3
-#define  JID 4
-#define JWID 5
-#define IJWID 6
-#define RZID 7
-#define SZID 8
-#define TXID 9
-#define TYID 10
-#define TZID 11
+#define RZID 2
+#define SXID 3
+#define SYID 4
+#define SZID 5
+#define TXID 6
+#define TYID 7
+#define TZID 8
+#define JID 9
+#define JWID 10
+#define IJWID 11
 
 /* offsets for second order geometric factors */
 #define G00ID 0

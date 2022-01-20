@@ -218,6 +218,7 @@ struct mesh_t
 
   occa::kernel geometricFactorsKernel;
   occa::kernel surfaceGeometricFactorsKernel;
+  occa::kernel cubatureGeometricFactorsKernel;
   occa::kernel nStagesSumVectorKernel;
   occa::kernel velocityDirichletKernel;
 };
