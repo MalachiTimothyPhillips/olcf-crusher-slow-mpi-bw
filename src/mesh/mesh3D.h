@@ -38,7 +38,6 @@ void meshParallelConnect3D(mesh_t *mesh);
 
 // compute geometric factors for local to physical map
 void meshGeometricFactorsHex3D(mesh_t *mesh);
-void meshCubatureGeometricFactorsHex3D(mesh_t *mesh);
 
 void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh);
 

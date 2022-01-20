@@ -160,6 +160,7 @@ struct mesh_t
   dfloat* cubDW;     // 1D weak differentiation matrix
   dfloat* cubDWmatrices;
 
+  dlong Ncubvgeo;
   dfloat* cubvgeo;  //volume geometric data at cubature points
 
   dfloat* interpRaise;
