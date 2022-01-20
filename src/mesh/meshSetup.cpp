@@ -19,6 +19,7 @@ occa::properties meshKernelProperties(int N)
   constexpr int Nfaces {6};
 
   constexpr int Nvgeo{12};
+  constexpr int Ncubvgeo{9};
   constexpr int Nggeo{7};
   constexpr int Nsgeo{7};
 
@@ -37,6 +38,8 @@ occa::properties meshKernelProperties(int N)
   meshProperties["defines/" "p_Nvgeo"] = Nvgeo;
   meshProperties["defines/" "p_Nsgeo"] = Nsgeo;
   meshProperties["defines/" "p_Nggeo"] = Nggeo;
+  meshProperties["defines/"
+                 "p_Ncubvgeo"] = Ncubvgeo;
 
   meshProperties["defines/" "p_NXID"] = NXID;
   meshProperties["defines/" "p_NYID"] = NYID;
@@ -369,16 +372,9 @@ void meshVOccaSetup3D(mesh_t* mesh, occa::properties &kernelInfo)
 void loadKernels(mesh_t* mesh)
 {
   const std::string meshPrefix = "mesh-";
-  if(platform->options.compareArgs("MOVING MESH", "TRUE")){
-    {
-        mesh->velocityDirichletKernel =
-          platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
-        mesh->geometricFactorsKernel =
-          platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
-        mesh->surfaceGeometricFactorsKernel =
-          platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
-        mesh->nStagesSumVectorKernel =
-          platform->kernels.get(meshPrefix + "nStagesSumVector");
-    }
-  }
+  mesh->velocityDirichletKernel = platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
+  mesh->geometricFactorsKernel = platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
+  mesh->surfaceGeometricFactorsKernel = platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
+  mesh->cubatureGeometricFactorsKernel = platform->kernels.get(meshPrefix + "cubatureGeometricFactorsHex3D");
+  mesh->nStagesSumVectorKernel = platform->kernels.get(meshPrefix + "nStagesSumVector");
 }

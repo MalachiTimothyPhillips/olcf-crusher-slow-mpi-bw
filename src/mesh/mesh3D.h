@@ -38,6 +38,7 @@ void meshParallelConnect3D(mesh_t *mesh);
 
 // compute geometric factors for local to physical map
 void meshGeometricFactorsHex3D(mesh_t *mesh);
+void meshCubatureGeometricFactorsHex3D(mesh_t *mesh);
 
 void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh);
 
@@ -85,12 +86,12 @@ void interpolateHex3D(dfloat* Inter, dfloat* x, int N, dfloat* Ix, int M);
 #define SXID 3
 #define SYID 4
 #define SZID 5
-#define JID 6
-#define JWID 7
-#define IJWID 8
-#define TXID 9
-#define TYID 10
-#define TZID 11
+#define TXID 6
+#define TYID 7
+#define TZID 8
+#define JID 9
+#define JWID 10
+#define IJWID 11
 
 /* offsets for second order geometric factors */
 #define G00ID 0
