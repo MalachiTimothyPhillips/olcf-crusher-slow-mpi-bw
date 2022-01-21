@@ -27,10 +27,6 @@ extern "C" void FUNC(UrstCubatureHex3D)(const dlong &Nelements,
     for(int i = 0; i < p_cubNq; ++i) {
       const int id = i + j * p_cubNq;
 
-      if(i < p_Nq){
-          s_D[j][i]  = D[j*p_Nq+i];
-      }
-
       s_cubInterpT[j][i] = cubInterpT[id];
     }
   }
@@ -114,7 +110,7 @@ extern "C" void FUNC(UrstCubatureHex3D)(const dlong &Nelements,
     for(int k = 0; k < p_cubNq; ++k) {
       for(int j = 0; j < p_cubNq; ++j)
         for(int i = 0; i < p_cubNq; ++i) {
-          const dlong gid = e * p_cubNp * p_Ncubvgeo + k * p_cubNq * p_cubNq + j * p_cubNq + i;
+          const dlong gid = element * p_cubNp * p_Ncubvgeo + k * p_cubNq * p_cubNq + j * p_cubNq + i;
           const dfloat drdx = cubvgeo[gid + p_RXID * p_cubNp];
           const dfloat drdy = cubvgeo[gid + p_RYID * p_cubNp];
           const dfloat drdz = cubvgeo[gid + p_RZID * p_cubNp];

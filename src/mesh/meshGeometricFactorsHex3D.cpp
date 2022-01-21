@@ -249,7 +249,7 @@ void meshGeometricFactorsHex3D(mesh_t *mesh)
                  tz =  (xr * ys - yr * xs) / J;
 
           /* store geometric factors */
-          dlong base = mesh->Nvgeo * mesh->cubNp * e + n;
+          dlong base = mesh->Ncubvgeo * mesh->cubNp * e + n;
           mesh->cubvgeo[base + mesh->cubNp * RXID] = rx;
           mesh->cubvgeo[base + mesh->cubNp * RYID] = ry;
           mesh->cubvgeo[base + mesh->cubNp * RZID] = rz;
