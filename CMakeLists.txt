@@ -318,6 +318,10 @@ add_executable(urst-bin src/bench/urst/main.cpp)
 set_target_properties(urst-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-urst)
 target_link_libraries(urst-bin PRIVATE nekrs-lib)
 
+add_executable(cubgeo-bin src/bench/cubgeo/main.cpp)
+set_target_properties(cubgeo-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs-bench-cubgeo)
+target_link_libraries(cubgeo-bin PRIVATE nekrs-lib)
+
 if(ENABLE_CUDA)
   set(BACKEND_DEFAULT "CUDA" CACHE STRING "Default occa mode")
 elseif(ENABLE_HIP)
@@ -339,7 +343,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin urst-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin urst-bin cubgeo-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
