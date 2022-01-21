@@ -23,6 +23,7 @@ occa::memory o_cubw;
 occa::memory o_U;
 occa::memory o_Urst;
 occa::memory o_vgeo;
+occa::memory o_cubvgeo;
 
 int Nelements;
 int Np;
@@ -44,18 +45,7 @@ double run(int Ntests)
       urstKernel(Nelements, o_vgeo, fieldOffset, o_U, o_meshU, o_Urst);
     }
     else {
-      urstKernel(Nelements,
-                 o_D,
-                 o_x,
-                 o_y,
-                 o_z,
-                 o_cubInterpT,
-                 o_cubw,
-                 fieldOffset,
-                 cubatureOffset,
-                 o_U,
-                 o_meshU,
-                 o_Urst);
+      urstKernel(Nelements, o_cubvgeo, o_cubInterpT, fieldOffset, cubatureOffset, o_U, o_meshU, o_Urst);
     }
   }
 
@@ -228,6 +218,7 @@ int main(int argc, char **argv)
   void *U = randAlloc(nFields * fieldOffset);
   void *Urst = randAlloc(nFields * cubatureOffset);
   void *vgeo = randAlloc(Nvgeo * Nelements * Np);
+  void *cubvgeo = randAlloc(Nvgeo * Nelements * cubNp);
 
   o_D = platform->device.malloc(Nq * Nq * wordSize, D);
   free(D);
@@ -247,6 +238,8 @@ int main(int argc, char **argv)
   free(Urst);
   o_vgeo = platform->device.malloc(Nvgeo * Nelements * Np * wordSize, vgeo);
   free(vgeo);
+  o_cubvgeo = platform->device.malloc(Nvgeo * Nelements * cubNp * wordSize, cubvgeo);
+  free(cubvgeo);
 
   // warm-up
   double elapsed = run(10);
