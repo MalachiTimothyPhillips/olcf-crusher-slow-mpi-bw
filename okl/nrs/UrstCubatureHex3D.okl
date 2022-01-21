@@ -1,7 +1,6 @@
 @kernel void UrstCubatureHex3D(const dlong Nelements,
                                @restrict const dfloat* cubvgeo,
                                @restrict const dfloat* cubInterpT,
-                               @restrict const dfloat* cubW,
                                const dlong offset,
                                const dlong cubatureOffset,
                                @restrict const dfloat*  U,
@@ -21,15 +20,9 @@
 
     @exclusive dfloat r_U[p_cubNq], r_V[p_cubNq], r_W[p_cubNq];
 
-
-    @shared dfloat s_cubW[p_cubNq];
-
-
     for(int j = 0; j < p_cubNq; ++j; @inner(1)) {
       for(int i = 0; i < p_cubNq; ++i; @inner(0)) {
         const int id = i + j * p_cubNq;
-
-        if(j==0) s_cubW[i] = cubW[i];
 
         if (id < p_Nq * p_cubNq) s_cubInterpT[j][i] = cubInterpT[id]; 
 
@@ -121,7 +114,7 @@
       for(int j = 0; j < p_cubNq; ++j; @inner(1))
         for(int i = 0; i < p_cubNq; ++i; @inner(0)) {
 
-          const dlong gid = element * p_cubNp * p_Ncubvgeo + k * p_cubNq * p_cubNq + j * p_cubNq + i;
+          const dlong gid = element * p_cubNp * p_Nvgeo + k * p_cubNq * p_cubNq + j * p_cubNq + i;
           const dfloat drdx = cubvgeo[gid + p_RXID * p_cubNp];
           const dfloat drdy = cubvgeo[gid + p_RYID * p_cubNp];
           const dfloat drdz = cubvgeo[gid + p_RZID * p_cubNp];
@@ -131,17 +124,16 @@
           const dfloat dtdx = cubvgeo[gid + p_TXID * p_cubNp];
           const dfloat dtdy = cubvgeo[gid + p_TYID * p_cubNp];
           const dfloat dtdz = cubvgeo[gid + p_TZID * p_cubNp];
-
-          const dfloat W = s_cubW[i] * s_cubW[j] * s_cubW[k];
+          const dfloat JW   = cubvgeo[gid + p_JWID * p_cubNp];
 
           const dfloat Un = r_U[k];
           const dfloat Vn = r_V[k];
           const dfloat Wn = r_W[k];
 
           const dlong id = element * p_cubNp + k * p_cubNq * p_cubNq + j * p_cubNq + i;
-          result[id + 0 * cubatureOffset] = W * (Un * drdx + Vn * drdy + Wn * drdz);
-          result[id + 1 * cubatureOffset] = W * (Un * dsdx + Vn * dsdy + Wn * dsdz);
-          result[id + 2 * cubatureOffset] = W * (Un * dtdx + Vn * dtdy + Wn * dtdz);
+          result[id + 0 * cubatureOffset] = JW * (Un * drdx + Vn * drdy + Wn * drdz);
+          result[id + 1 * cubatureOffset] = JW * (Un * dsdx + Vn * dsdy + Wn * dsdz);
+          result[id + 2 * cubatureOffset] = JW * (Un * dtdx + Vn * dtdy + Wn * dtdz);
         }
     }
   }

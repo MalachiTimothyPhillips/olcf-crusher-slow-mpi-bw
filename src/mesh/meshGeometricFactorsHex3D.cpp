@@ -73,7 +73,7 @@ void meshGeometricFactorsHex3D(mesh_t *mesh)
 
   /* note that we have volume geometric factors for each node */
   mesh->vgeo    = (dfloat*) calloc(mesh->Nelements * mesh->Nvgeo * mesh->Np, sizeof(dfloat));
-  mesh->cubvgeo = (dfloat *)calloc(mesh->Nelements * mesh->Ncubvgeo * mesh->cubNp, sizeof(dfloat));
+  mesh->cubvgeo = (dfloat *)calloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp, sizeof(dfloat));
   mesh->ggeo    = (dfloat*) calloc(mesh->Nelements * mesh->Nggeo * mesh->Np,    sizeof(dfloat));
 
   dfloat minJ = 1e9, maxJ = -1e9, maxSkew = 0;
@@ -248,8 +248,10 @@ void meshGeometricFactorsHex3D(mesh_t *mesh)
           dfloat tx =  (yr * zs - zr * ys) / J, ty = -(xr * zs - zr * xs) / J,
                  tz =  (xr * ys - yr * xs) / J;
 
+          dfloat JW = J * mesh->cubw[i] * mesh->cubw[j] * mesh->cubw[k];
+
           /* store geometric factors */
-          dlong base = mesh->Ncubvgeo * mesh->cubNp * e + n;
+          dlong base = mesh->Nvgeo * mesh->cubNp * e + n;
           mesh->cubvgeo[base + mesh->cubNp * RXID] = rx;
           mesh->cubvgeo[base + mesh->cubNp * RYID] = ry;
           mesh->cubvgeo[base + mesh->cubNp * RZID] = rz;
@@ -261,6 +263,10 @@ void meshGeometricFactorsHex3D(mesh_t *mesh)
           mesh->cubvgeo[base + mesh->cubNp * TXID] = tx;
           mesh->cubvgeo[base + mesh->cubNp * TYID] = ty;
           mesh->cubvgeo[base + mesh->cubNp * TZID] = tz;
+
+          mesh->cubvgeo[base + mesh->cubNp * JID] = J;
+          mesh->cubvgeo[base + mesh->cubNp * JWID] = JW;
+          mesh->cubvgeo[base + mesh->cubNp * IJWID] = 1. / JW;
         }
 #endif
   }

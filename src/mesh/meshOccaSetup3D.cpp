@@ -103,8 +103,8 @@ void meshOccaPopulateDeviceHex3D(mesh_t *mesh, setupAide &newOptions, occa::prop
     platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo * sizeof(dfloat),
                         mesh->ggeo);
   if (mesh->cubNq - 1) {
-    mesh->o_cubvgeo = platform->device.malloc(mesh->Nelements * mesh->Ncubvgeo * mesh->cubNp * sizeof(dfloat),
-                                              mesh->cubvgeo);
+    mesh->o_cubvgeo =
+        platform->device.malloc(mesh->Nelements * mesh->Nvgeo * mesh->cubNp * sizeof(dfloat), mesh->cubvgeo);
   }
 
   mesh->o_vmapM =

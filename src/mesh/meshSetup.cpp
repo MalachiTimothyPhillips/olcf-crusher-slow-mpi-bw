@@ -19,7 +19,6 @@ occa::properties meshKernelProperties(int N)
   constexpr int Nfaces {6};
 
   constexpr int Nvgeo{12};
-  constexpr int Ncubvgeo{9};
   constexpr int Nggeo{7};
   constexpr int Nsgeo{7};
 
@@ -37,9 +36,8 @@ occa::properties meshKernelProperties(int N)
 
   meshProperties["defines/" "p_Nvgeo"] = Nvgeo;
   meshProperties["defines/" "p_Nsgeo"] = Nsgeo;
-  meshProperties["defines/" "p_Nggeo"] = Nggeo;
   meshProperties["defines/"
-                 "p_Ncubvgeo"] = Ncubvgeo;
+                 "p_Nggeo"] = Nggeo;
 
   meshProperties["defines/" "p_NXID"] = NXID;
   meshProperties["defines/" "p_NYID"] = NYID;

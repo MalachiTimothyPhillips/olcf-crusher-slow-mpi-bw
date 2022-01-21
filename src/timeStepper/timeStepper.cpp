@@ -228,7 +228,6 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
     nrs->UrstCubatureKernel(mesh->Nelements,
                             mesh->o_cubvgeo,
                             mesh->o_cubInterpT,
-                            mesh->o_cubw,
                             nrs->fieldOffset,
                             cubatureOffset,
                             nrs->o_U,

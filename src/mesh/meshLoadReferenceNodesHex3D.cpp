@@ -40,7 +40,6 @@ void meshLoadReferenceNodesHex3D(mesh_t *mesh, int N, int cubN)
   mesh->Nverts = 8;
 
   mesh->Nvgeo = 12;
-  mesh->Ncubvgeo = 9;
   mesh->Nggeo = 7;
   mesh->Nsgeo = 7;
 
