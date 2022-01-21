@@ -176,7 +176,7 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     fileName = oklpath + "nrs/Urst" + suffix + ".okl";
 
     kernelName = "UrstCubature" + suffix;
-    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    fileName = oklpath + "nrs/" + kernelName + extension;
     platform->kernels.add(
         section + kernelName, fileName, prop);
 
