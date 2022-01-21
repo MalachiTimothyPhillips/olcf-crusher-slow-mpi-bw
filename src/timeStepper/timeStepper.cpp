@@ -11,7 +11,6 @@
 #include "timeStepper.hpp"
 #include "tombo.hpp"
 #include "udf.hpp"
-#include <fstream>
 
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);
@@ -240,17 +239,6 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
         nrs->o_U,
         mesh->o_U,
         o_Urst);
-
-  std::ofstream UrstFile;
-  UrstFile.open("Urst.dat");
-  dfloat *Urst = (dfloat *)calloc(3 * cubatureOffset, sizeof(dfloat));
-  o_Urst.copyTo(Urst, 3 * cubatureOffset * sizeof(dfloat));
-  for (int fld = 0; fld < 3; fld++) {
-    for (int i = 0; i < mesh->Nelements * mesh->cubNp; ++i) {
-      UrstFile << Urst[fld * cubatureOffset + i] << std::endl;
-    }
-  }
-  UrstFile.close();
 
   if (nrs->Nscalar) {
     platform->timer.tic("makeq", 1);
