@@ -159,7 +159,8 @@ void uic(int ifield)
 
 void end()
 {
-  (*nek_end_ptr)();
+  if(nek_is_setup)
+    (*nek_end_ptr)();
 }
 
 void setic(void)
@@ -704,6 +705,8 @@ int setup(nrs_t* nrs_in)
                    &rhoCp,
                    &lambda,
                    &stressForm);
+
+  nek_is_setup = true;
 
   nekData.param = (double*) ptr("param");
   nekData.ifield = (int*) ptr("ifield");

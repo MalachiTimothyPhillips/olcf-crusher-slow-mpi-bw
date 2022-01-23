@@ -334,21 +334,16 @@ c-----------------------------------------------------------------------
       include 'TOTAL'
       include 'DPROCMAP'
 
-      if(instep.ne.0) call runstat
+c      if(instep.ne.0) call runstat
 
 c      if (ifstrs) then
 c         call fgslib_crs_free(xxth_strs) 
 c      else
 c         call fgslib_crs_free(xxth(1))
 c      endif
-
-#ifdef DPROCMAP
-#ifdef MPI
-      call MPI_Win_free(dProcmapH, ierr)
-#endif
-#endif 
-      call in_situ_end()
-      call exitt0()
+       call dProcmapFinalize()
+c      call in_situ_end()
+c      call exitt0()
 
       return
       end

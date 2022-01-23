@@ -355,6 +355,13 @@ void* nrsPtr(void)
 void finalize(void)
 {
   AMGXfree();
+  nek::end();
+  
+  if(nullptr != platform)
+    platform->comm.finalize();
+  
+  MPI_Comm_free(&comm);
+  MPI_Comm_free(&commg);
 }
 
 int runTimeStatFreq()
