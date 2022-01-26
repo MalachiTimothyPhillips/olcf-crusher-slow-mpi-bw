@@ -31,14 +31,6 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   if(ciMode == 2){
     platform->par->set("casedata", "p_rot", 0.7853981633974483);
   }
-
-  // SHL
-  if(ciMode == 3){
-    platform->par->set("casedata", "p_rot", 0.0);
-  }
-  if(ciMode == 4){
-    platform->par->set("casedata", "p_rot", 0.7853981633974483);
-  }
 }
 
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
@@ -52,15 +44,8 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   double *err = (double *) nek::scPtr(5);
 
-  double vxErr = 0.0;
-  double vyErr = 0.0;
-  if(ciMode == 1 || ciMode == 2){
-    vxErr = abs((err[0] - 9.5942E-09)/err[0]);
-    vyErr = abs((err[1] - 2.3012E-07)/err[1]);
-  } else {
-    vxErr = abs((err[0] - 2.9051E+01)/err[0]);
-    vyErr = abs((err[1] - 2.0675E-07)/err[1]);
-  }
+  const double vxErr = abs((err[0] - 9.5942E-09)/err[0]);
+  const double vyErr = abs((err[1] - 2.3012E-07)/err[1]);
 
   if (rank == 0)
     printf("relative error to target: vx=%g vy=%g\n", 
