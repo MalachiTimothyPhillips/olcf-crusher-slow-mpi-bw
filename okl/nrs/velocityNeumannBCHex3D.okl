@@ -67,9 +67,9 @@
         TRy = trY;                                                       \
         TRz = trZ;                                                       \
     }                                                                    \
-    s_ndU[j][i] =     TRx;                                               \
-    s_ndV[j][i] =     TRy;                                               \
-    s_ndW[j][i] =     TRz;                                               \
+    s_ndU[j][i] = WsJ*TRx;                                               \
+    s_ndV[j][i] = WsJ*TRy;                                               \
+    s_ndW[j][i] = WsJ*TRz;                                               \
   }
 
 //RHS contributions for continuous solver
