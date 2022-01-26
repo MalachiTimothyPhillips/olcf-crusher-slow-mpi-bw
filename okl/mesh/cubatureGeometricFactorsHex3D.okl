@@ -59,7 +59,7 @@
       for(int i = 0; i < p_cubNq; ++i; @inner(0)) {
         const int id = i + j * p_cubNq;
 
-        if (i == 0) s_cubw[i] = cubW[i];
+        if (j == 0) s_cubw[i] = cubW[i];
         if (id < p_Nq * p_cubNq) s_cubInterpT[j][i] = cubInterpT[id]; 
         if (i < p_Nq && j < p_Nq) s_D[j][i]  = D[j*p_Nq+i];
 
@@ -215,9 +215,9 @@
       @barrier("local");
     }
 
-    for(int k = 0; k < p_cubNq; ++k; @inner(1)) {
-      for(int j = 0; j < p_cubNq; ++j; @inner(0)){
-        for(int i = 0; i < p_cubNq; ++i) {
+    for(int k = 0; k < p_cubNq; ++k) {
+      for(int j = 0; j < p_cubNq; ++j; @inner(1)){
+        for(int i = 0; i < p_cubNq; ++i; @inner(0)) {
           const dfloat xr = r_cubxre[k], xs = r_cubxse[k], xt = r_cubxte[k];
           const dfloat yr = r_cubyre[k], ys = r_cubyse[k], yt = r_cubyte[k];
           const dfloat zr = r_cubzre[k], zs = r_cubzse[k], zt = r_cubzte[k];
