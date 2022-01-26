@@ -1,7 +1,0 @@
-// Boundary conditions
-void velocityNeumannConditions(bcData* bc)
-{
-  bc->trn = 1.0;
-  bc->tr1 = 1.0;
-  bc->tr2 = 0.0;
-}
