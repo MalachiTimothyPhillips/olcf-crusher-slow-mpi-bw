@@ -29,7 +29,7 @@
             const dfloat WsJ = sgeo[sk * p_Nsgeo + p_WSJID];
             const dlong idM = vmapM[sk];
             s_sum[m] = field[idM] * WsJ;
-            s_area[m] = field[idM] * WsJ;
+            s_area[m] = WsJ;
           } else {
             s_sum[m] = 0.0;
             s_area[m] = 0.0;
