@@ -209,12 +209,6 @@ void registerNrsKernels(occa::properties kernelInfoBC)
       prop["defines/p_cubNp"] = cubNp;
 
       occa::properties subCycleStrongCubatureProps = prop;
-      if (platform->options.compareArgs("THREAD MODEL", "CUDA")) {
-        subCycleStrongCubatureProps["defines/smXX"] = 1;
-      }
-      if (platform->options.compareArgs("THREAD MODEL", "HIP")) {
-        subCycleStrongCubatureProps["defines/gfxXX"] = 1;
-      }
 
       kernelName = "subCycleStrongCubatureVolume" + suffix;
       fileName = oklpath + "nrs/" + kernelName + extension;
