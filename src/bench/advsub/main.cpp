@@ -200,6 +200,12 @@ int main(int argc, char** argv)
   props["defines/p_nEXT"] = nEXT;
   props["defines/p_NVfields"] = nFields;
   props["defines/p_MovingMesh"] = 0;
+  if (platform->options.compareArgs("THREAD MODEL", "CUDA")) {
+    props["defines/smXX"] = 1;
+  }
+  if (platform->options.compareArgs("THREAD MODEL", "HIP")) {
+    props["defines/gfxXX"] = 1;
+  }
 
   std::string kernelName;
   if(dealias){
