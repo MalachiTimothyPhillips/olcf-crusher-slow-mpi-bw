@@ -126,12 +126,13 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     const int Nq = N+1;
     if( BLOCKSIZE < Nq * Nq ){
       if(platform->comm.mpiRank == 0)
-        printf("ERROR: several kernels require BLOCKSIZE >= Nq * Nq."
-          "BLOCKSIZE = %d, Nq*Nq = %d\n", BLOCKSIZE, Nq * Nq);
+        printf("ERROR: several kernels requires BLOCKSIZE >= Nq * Nq."
+               "BLOCKSIZE = %d, Nq*Nq = %d\n",
+               BLOCKSIZE,
+               Nq * Nq);
       ABORT(EXIT_FAILURE);
     }
   }
-
   platform_t* platform = platform_t::getInstance();
   device_t& device = platform->device;
   nrs->kernelInfo = new occa::properties();
@@ -427,6 +428,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_EToB = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToB);
 
   if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY")) {
+
     nrs->EToBMesh = (int*) calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
     int cnt = 0;
     for (int e = 0; e < mesh->Nelements; e++) {
@@ -684,11 +686,13 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       cds->solver[is]->loffset = 0;
  
       cds->solver[is]->options = cds->options[is];
+
       ellipticSolveSetup(cds->solver[is]);
     }
   }
 
   if (nrs->flow) {
+
     if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP VELOCITY ================\n");
 
     nrs->uvwSolver = NULL;
@@ -700,6 +704,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     int* uBCType = uvwBCType + 0 * NBCType;
     int* vBCType = uvwBCType + 1 * NBCType;
     int* wBCType = uvwBCType + 2 * NBCType;
+
     for (int bID = 1; bID <= nbrBIDs; bID++) {
       std::string bcTypeText(bcMap::text(bID, "velocity"));
       if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -945,12 +950,15 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   } // flow
   if(nrs->flow){
+
     if(options.compareArgs("MESH SOLVER", "ELASTICITY")){
+
       if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP MESH ================\n");
       int* uvwMeshBCType = (int*) calloc(3 * NBCType, sizeof(int));
       int* uMeshBCType = uvwMeshBCType + 0 * NBCType;
       int* vMeshBCType = uvwMeshBCType + 1 * NBCType;
       int* wMeshBCType = uvwMeshBCType + 2 * NBCType;
+
       for (int bID = 1; bID <= nbrBIDs; bID++) {
         std::string bcTypeText(bcMap::text(bID, "mesh"));
         if(platform->comm.mpiRank == 0) printf("bID %d -> bcType %s\n", bID, bcTypeText.c_str());
@@ -997,6 +1005,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                                      nrs->fieldOffset,
                                      startTime,
                                      mesh->o_sgeo,
+                                     mesh->o_VT1,
+                                     mesh->o_VT2,
                                      mesh->o_x,
                                      mesh->o_y,
                                      mesh->o_z,
@@ -1013,12 +1023,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0.0, platform->o_mempool.slice0);
     for (int sweep = 0; sweep < 2; sweep++) {
-    nrs->meshV->velocityDirichletKernel(mesh->Nelements,
-                                   nrs->fieldOffset,
-                                   mesh->o_vmapM,
-                                   nrs->o_EToBMesh,
-                                   platform->o_mempool.slice3,
-                                   platform->o_mempool.slice0);
+      nrs->meshV->velocityDirichletKernel(mesh->Nelements,
+                                          nrs->fieldOffset,
+                                          mesh->o_VT1,
+                                          mesh->o_VT2,
+                                          mesh->o_vmapM,
+                                          nrs->o_EToBMesh,
+                                          platform->o_mempool.slice3,
+                                          platform->o_mempool.slice0);
       //take care of Neumann-Dirichlet shared edges across elements
       if(sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if(sweep == 1) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
@@ -1289,7 +1301,7 @@ cds_t* cdsSetup(nrs_t* nrs, setupAide options)
 
           kernelName = "subCycleInitU0";
           cds->subCycleInitU0Kernel = platform->kernels.get(section + kernelName);
-      }
+        }
   }
 
   MPI_Barrier(platform->comm.mpiComm);
