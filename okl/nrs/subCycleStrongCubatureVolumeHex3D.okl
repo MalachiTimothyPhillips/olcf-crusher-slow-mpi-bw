@@ -109,7 +109,9 @@
             }
         }
 
+#ifndef gfxXX
 #pragma unroll p_Nq
+#endif
         for(int c = 0; c < p_Nq; ++c) {
             @barrier("local");
 
@@ -175,7 +177,9 @@
             }
         }
 
+#ifndef gfxXX
 #pragma unroll p_cubNq
+#endif
         for(int k = 0; k < p_cubNq; ++k) {
             @barrier("local");
 
@@ -230,7 +234,9 @@
         }
 
         // now project back in t
+#ifndef gfxXX
 #pragma unroll p_Nq
+#endif
         for(int c = 0; c < p_Nq; ++c) {
             @barrier("local");
 
