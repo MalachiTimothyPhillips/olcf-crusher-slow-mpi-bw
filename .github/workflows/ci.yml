@@ -268,11 +268,11 @@ jobs:
       run: chmod -R 755 ${{ env.NEKRS_INSTALL_DIR }}
 
     - name: 'traction channel (no rotation)'
-      working-directory: ${{ env.NEKRS_EXAMPLES }}/shl-channel
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/shlChannel
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel 2 1
 
     - name: 'traction channel (45 degree rotation)'
-      working-directory: ${{ env.NEKRS_EXAMPLES }}/shl-channel
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/shlChannel
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi channel 2 2
 
   kershaw:
