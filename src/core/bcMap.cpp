@@ -60,7 +60,7 @@ alignment_t computeAlignment(mesh_t *mesh, dlong element, dlong face)
 
   return alignment_t::UNALIGNED;
 }
-}
+} // namespace
 
 static std::set<std::string> fields;
 // stores for every (field, boundaryID) pair a bcID
