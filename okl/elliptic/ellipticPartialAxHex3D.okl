@@ -10,11 +10,7 @@
                                     @restrict       dfloat* Aq)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) {
-#if ((p_Nq % 2 == 0) && dfloat == double)
-    @shared dfloat s_D[p_Nq][p_Nq+1];
-#else
     @shared dfloat s_D[p_Nq][p_Nq];
-#endif
     @shared dfloat s_q[p_Nq][p_Nq];
 
     @shared dfloat s_Gqr[p_Nq][p_Nq];
