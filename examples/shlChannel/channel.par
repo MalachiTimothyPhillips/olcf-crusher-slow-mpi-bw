@@ -22,4 +22,4 @@ density = 1.0
 viscosity = 1.0
 
 [CASEDATA]
-P_ROT = 0.0
+P_ROT = 0.5
