@@ -62,7 +62,7 @@
         @exclusive dfloat r_U2[p_cubNq], r_V2[p_cubNq], r_W2[p_cubNq];
         @exclusive dfloat r_Ud[p_cubNq], r_Vd[p_cubNq], r_Wd[p_cubNq];
 
-        @exclusive dfloat r_c[p_nEXT];
+        @shared dfloat s_c[p_nEXT];
 
         @exclusive dlong element;
 
@@ -71,19 +71,28 @@
                 const int id = i + j * p_cubNq;
                 element = elementList[e];
 
+                if(i == 0 && j == 0){
 #pragma unroll p_nEXT
-                for (int s = 0; s < p_nEXT; s++) {
-                    dfloat coeff = 0;
-                    if(s == 0) coeff = c0;
-                    if(s == 1) coeff = c1;
-                    if(s == 2) coeff = c2;
-                    r_c[s] = coeff;
+                  for (int s = 0; s < p_nEXT; s++) {
+                      dfloat coeff = 0;
+                      if(s == 0) coeff = c0;
+                      if(s == 1) coeff = c1;
+                      if(s == 2) coeff = c2;
+                      s_c[s] = coeff;
+                  }
                 }
 
                 if (id < p_Nq * p_cubNq)
                     s_cubInterpT[j][i] = cubInterpT[id];
 
                 s_cubD[j][i] = cubD[id];
+            }
+        }
+
+        @barrier("local");
+
+        for(int j = 0; j < p_cubNq; ++j; @inner(1)) {
+            for(int i = 0; i < p_cubNq; ++i; @inner(0)) {
 
 #pragma unroll p_cubNq
                 for(int k = 0; k < p_cubNq; ++k) {
@@ -95,9 +104,9 @@
 #pragma unroll p_nEXT
                     for(int s = 0; s < p_nEXT; ++s) {
                         const int s_offset = s * p_NVfields * cubatureOffset;
-                        Ue += r_c[s] * conv[id + 0 * cubatureOffset + s_offset];
-                        Ve += r_c[s] * conv[id + 1 * cubatureOffset + s_offset];
-                        We += r_c[s] * conv[id + 2 * cubatureOffset + s_offset];
+                        Ue += s_c[s] * conv[id + 0 * cubatureOffset + s_offset];
+                        Ve += s_c[s] * conv[id + 1 * cubatureOffset + s_offset];
+                        We += s_c[s] * conv[id + 2 * cubatureOffset + s_offset];
                     }
                     r_U[k] = Ue;
                     r_V[k] = Ve;
@@ -302,8 +311,8 @@
                         if(p_MovingMesh) {
 #pragma unroll p_nEXT
                             for (int s = 0; s < p_nEXT; s++) {
-                                invLMM += r_c[s] * invLumpedMassMatrix[id + s * offset];
-                                bdivw += r_c[s] * BdivW[id + s * offset];
+                                invLMM += s_c[s] * invLumpedMassMatrix[id + s * offset];
+                                bdivw += s_c[s] * BdivW[id + s * offset];
                             }
                         }
 
