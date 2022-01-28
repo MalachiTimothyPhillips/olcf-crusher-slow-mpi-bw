@@ -20,6 +20,8 @@ void userf(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
+  platform->options.getArgs("VISCOSITY", visc);
+  kernelInfo["defines/p_visc"] = visc;
   userfKernel = oudfBuildKernel(kernelInfo, "userf");
 }
 
@@ -40,7 +42,6 @@ void UDF_Setup(nrs_t *nrs)
 
   udf.uEqnSource = &userf;
 
-  platform->options.getArgs("VISCOSITY", visc);
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)

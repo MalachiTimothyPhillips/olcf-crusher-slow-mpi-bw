@@ -12,7 +12,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("POLYNOMIAL DEGREE", std::string("7"));
   options.setArgs("RESTART FROM FILE", std::string("0"));
   options.setArgs("SOLUTION OUTPUT INTERVAL", "0");
-  options.setArgs("VISCOSITY", std::string("1.0"));
+  options.setArgs("VISCOSITY", std::string("10.0"));
   options.setArgs("DENSITY", std::string("1"));
   options.setArgs("END TIME", std::string("0.3"));
   options.setArgs("DT", std::string("1e-3"));
@@ -46,8 +46,8 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   double vxErr = 0.0;
   double vyErr = 0.0;
-  vxErr = abs((err[0] - 3.1475E-02)/err[0]);
-  vyErr = abs((err[1] - 1.3906E-10));
+  vxErr = abs((err[0] - 1.1207E-08)/err[0]);
+  vyErr = abs((err[1] - 1.8415E-11));
 
   const double absTol = 1e-8;
 
