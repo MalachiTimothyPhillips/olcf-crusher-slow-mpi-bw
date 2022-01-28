@@ -14,7 +14,6 @@
 namespace {
 
 occa::kernel subcyclingKernel;
-occa::kernel oldSubcyclingKernel;
 occa::memory o_elementList;
 occa::memory o_cubD;
 occa::memory o_cubInterpT;
@@ -22,7 +21,6 @@ occa::memory o_BdivW;
 occa::memory o_conv;
 occa::memory o_Ud;
 occa::memory o_NU;
-occa::memory o_NUGold;
 occa::memory o_invLMM;
 
 int Nelements;
@@ -32,51 +30,15 @@ dlong fieldOffset;
 dlong cubatureOffset;
 bool dealias;
 
-void diff_fields(occa::memory &o_x, occa::memory &o_y)
-{
-  dfloat *x = (dfloat *)calloc(3 * fieldOffset, sizeof(dfloat));
-  dfloat *y = (dfloat *)calloc(3 * fieldOffset, sizeof(dfloat));
-  o_x.copyTo(x, 3 * fieldOffset * sizeof(dfloat));
-  o_y.copyTo(y, 3 * fieldOffset * sizeof(dfloat));
-
-  double l1Err = 0.0;
-  for (int fld = 0; fld < 3; ++fld) {
-    for (int i = 0; i < Nelements * Np; ++i) {
-      l1Err += fabs(x[i + fld * fieldOffset] - y[i + fld * fieldOffset]);
-    }
-  }
-  if (platform->comm.mpiRank == 0) {
-    std::cout << "Error is : " << l1Err << "\n";
-  }
-
-  free(x);
-  free(y);
-}
-
 double run(int Ntests)
 {
-  const dfloat c0 = 0.1;
-  const dfloat c1 = 0.2;
-  const dfloat c2 = 0.3;
-
-  oldSubcyclingKernel(Nelements,
-                      o_elementList,
-                      o_cubD,
-                      o_cubInterpT,
-                      fieldOffset,
-                      cubatureOffset,
-                      0,
-                      o_invLMM,
-                      o_BdivW,
-                      c0,
-                      c1,
-                      c2,
-                      o_conv,
-                      o_Ud,
-                      o_NUGold);
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const double start = MPI_Wtime();
+
+  const dfloat c0 = 0.1;
+  const dfloat c1 = 0.2;
+  const dfloat c2 = 0.3;
 
   for(int test = 0; test < Ntests; ++test) {
     if(!dealias) {
@@ -90,9 +52,6 @@ double run(int Ntests)
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
-
-  diff_fields(o_NU, o_NUGold);
-
   return (MPI_Wtime() - start) / Ntests;
 } 
 
@@ -249,8 +208,7 @@ int main(int argc, char** argv)
     kernelName = "subCycleStrongVolumeHex3D";
   }
 
-  // const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  const std::string ext = ".okl";
+  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
   std::string fileName = 
     installDir + "/okl/nrs/" + kernelName + ext;
   
@@ -258,10 +216,6 @@ int main(int argc, char** argv)
   if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
   subcyclingKernel = platform->device.buildKernel(fileName, props, true);
-
-  kernelName = "oldSubCycleStrongCubatureVolumeHex3D";
-  fileName = installDir + "/okl/nrs/" + kernelName + ext;
-  oldSubcyclingKernel = platform->device.buildKernel(fileName, props, true);
 
   // populate arrays
 
@@ -287,7 +241,6 @@ int main(int argc, char** argv)
   o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD);
   free(cubD);
   o_NU = platform->device.malloc(nFields * fieldOffset * wordSize, NU);
-  o_NUGold = platform->device.malloc(nFields * fieldOffset * wordSize, NU);
   free(NU);
   o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv);
   free(conv);
