@@ -10,8 +10,12 @@
                                     @restrict       dfloat* Aq)
 {
   for(dlong e = 0; e < Nelements; ++e; @outer(0)) {
-#if ((p_Nq % 2 == 0) && dfloat == double)
+#ifndef FP32
+#if (p_Nq % 2 == 0)
     @shared dfloat s_D[p_Nq][p_Nq+1];
+#else
+    @shared dfloat s_D[p_Nq][p_Nq];
+#endif
 #else
     @shared dfloat s_D[p_Nq][p_Nq];
 #endif
