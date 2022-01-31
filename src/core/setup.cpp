@@ -697,6 +697,15 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     nrs->uvwSolver = NULL;
 
+    bool unalignedBoudary = bcMap::unalignedBoundary(mesh->cht, "velocity");
+    if (unalignedboundary) {
+      if (!options.compareArgs("STRESSFORMULATION", "TRUE")) {
+        if (platform->comm.mpiRank == 0)
+          printf("ERROR: unaligned SHL/SYM boundaries require STRESSFORMULATION = TRUE\n");
+        ABORT(EXIT_FAILURE);
+      }
+    }
+
     if(platform->options.compareArgs("VELOCITY BLOCK SOLVER", "TRUE"))
       nrs->uvwSolver = new elliptic_t();
 
