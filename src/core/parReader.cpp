@@ -237,7 +237,6 @@ int validateKeys(const inipp::Ini::Sections& sections)
   }
   for (auto const & sec : sections) {
     if(sec.first.find("casedata") != std::string::npos) continue;
-    if(sec.first.find("general") != std::string::npos) generalExists = true;
     const auto& validKeys = getValidKeys(sec.first);
     for (auto const & val : sec.second) {
       if (std::find(validKeys.begin(), validKeys.end(), val.first) == validKeys.end()) {
@@ -1636,15 +1635,26 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
 
   bool stressFormulation;
-  if (par->extract("problemtype", "stressformulation", stressFormulation))
-    if (stressFormulation)
+  if (par->extract("problemtype", "stressformulation", stressFormulation)){
+    if (stressFormulation){
       options.setArgs("STRESSFORMULATION", "TRUE");
+    }
+  }
 
   std::string eqn;
   if (par->extract("problemtype", "equation", eqn)) {
+    const std::vector<std::string> validValues = {
+      {"stokes"},
+    }
+    const std::vector<std::string> list = serializeString(eqn, '+');
+    for(std::string s : list)
+    {
+      checkValidity(rank, validValues, s);
+    }
     options.setArgs("ADVECTION", "TRUE");
-    if (eqn == "stokes")
+    if (eqn == "stokes"){
       options.setArgs("ADVECTION", "FALSE");
+    }
   }
 
   if (par->sections.count("velocity")) {
