@@ -187,8 +187,6 @@ struct mesh_t
   occa::memory o_vgeo, o_sgeo;
   occa::memory o_vmapM, o_vmapP, o_mapP;
 
-  bool UNormalZero; // unaligned SYM boundary
-
   occa::memory o_EToB, o_x, o_y, o_z;
 
   // cubature (for wadg)
