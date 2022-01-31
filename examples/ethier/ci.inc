@@ -82,6 +82,12 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
   }
+  if (ciMode == 11) {
+    options.setArgs("PRESSURE MULTIGRID SMOOTHER", "DAMPEDJACOBI,CHEBYSHEV");
+    options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
+    options.setArgs("SUBCYCLING STEPS", std::string("1"));
+    options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
+  }
 
   options.setArgs("TIME INTEGRATOR", "TOMBO3");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
@@ -187,7 +193,9 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
   const int rank = platform->comm.mpiRank;
   if(tstep == 1 && ciMode != 7){
     int NiterP = nrs->pSolver->Niter;
-    const int expectedNiterP = 6;
+
+    // mode 11 uses Chebyshev+Jacobi smoothing
+    const int expectedNiterP = (ciMode == 11) ? 13 : 6;
     const int pIterErr = abs(NiterP - expectedNiterP);
     if(pIterErr >= 2) {
       if(rank==0){
@@ -244,7 +252,9 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              s01IterErr = abs(NiterS01 - 10);
              s02IterErr = abs(NiterS02 - 10);
              break;
-    case 2 : velIterErr = abs(NiterU - 10);
+    case 2 : 
+    case 11:
+             velIterErr = abs(NiterU - 10);
              s1Err = abs((err[2] - 6.11E-12)/err[2]);
              s2Err = abs((err[3] - 6.84E-12)/err[3]);
              pIterErr = abs(NiterP - 1);
