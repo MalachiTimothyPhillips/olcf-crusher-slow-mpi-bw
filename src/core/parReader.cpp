@@ -79,32 +79,28 @@ static std::vector<std::string> problemTypeKeys = {
 
 // common keys
 static std::vector<std::string> commonKeys = {
-  {"solver"},
-  {"residualTol"},
-  {"initialGuess"},
-  {"preconditioner"},
-  {"pMultigridCoarsening"},
-  {"smootherType"},
-  {"coarseSolver"},
-  {"boundaryTypeMap"},
-  {"maxIterations"},
-  {"regularization"},
+    {"solver"},
+    {"residualTol"},
+    {"initialGuess"},
+    {"preconditioner"},
+    {"pMultigridCoarsening"},
+    {"smootherType"},
+    {"coarseSolver"},
+    {"boundaryTypeMap"},
+    {"maxIterations"},
+    {"regularization"},
 
-  // deprecated filter params
-  {"filtering"},
-  {"filterWeight"},
-  {"filterModes"},
-  {"filterCutoffRatio"},
+    // deprecated filter params
+    {"filtering"},
+    {"filterWeight"},
+    {"filterModes"},
+    {"filterCutoffRatio"},
 
-  // deprecated no-op extrapolation param
-  {"extrapolation"},
-
-
-  // deprecated projection params
-  {"residualProj"},
-  {"residualProjection"},
-  {"residualProjectionVectors"},
-  {"residualProjectionStart"},
+    // deprecated projection params
+    {"residualProj"},
+    {"residualProjection"},
+    {"residualProjectionVectors"},
+    {"residualProjectionStart"},
 };
 
 static std::vector<std::string> meshKeys = {
@@ -151,20 +147,17 @@ static std::vector<std::string> occaKeys = {
 static std::vector<std::string> pressureKeys = {};
 
 static std::vector<std::string> deprecatedKeys = {
-  // deprecated filter params
-  {"filtering"},
-  {"filterWeight"},
-  {"filterModes"},
-  {"filterCutoffRatio"},
+    // deprecated filter params
+    {"filtering"},
+    {"filterWeight"},
+    {"filterModes"},
+    {"filterCutoffRatio"},
 
-  // deprecated no-op extrapolation param
-  {"extrapolation"},
-
-  // deprecated projection params
-  {"residualProj"},
-  {"residualProjection"},
-  {"residualProjectionVectors"},
-  {"residualProjectionStart"},
+    // deprecated projection params
+    {"residualProj"},
+    {"residualProjection"},
+    {"residualProjectionVectors"},
+    {"residualProjectionStart"},
 };
 
 static std::vector<std::string> validSections = {
