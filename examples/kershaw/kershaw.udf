@@ -1,6 +1,84 @@
 #include <math.h>
 #include <numeric>
 #include "udf.hpp"
+#include <vector>
+#include <algorithm>
+
+extern "C" {
+void dgesvd_(char * jobu, char * jobvt, int * m, int * n, double * a, int * lda, double * s, double * u, int * ldu, double * vt, int * ldvt, double * work, int * lwork, int * info);
+}
+
+static void SVD(const int Nrows, double *A, double *S)
+{
+  int NB = 256;
+  char JOBU = 'N';
+  char JOBVT = 'N';
+  int N = Nrows;
+  int LDA = Nrows;
+  int LWORK = (NB + 2) * N;
+
+  double *WORK = new double[LWORK];
+  double *U = new double[Nrows * Nrows];
+  double *VT = new double[Nrows * Nrows];
+
+  int INFO = -999;
+
+  dgesvd_(&JOBU, &JOBVT, &N, &N, A, &LDA, S, U, &N, VT, &N, WORK, &LWORK, &INFO);
+
+  assert(INFO == 0);
+
+  delete[] U;
+  delete[] VT;
+  delete[] WORK;
+}
+
+static void printCondEst(nrs_t* nrs){
+  if(nrs->pSolver->options.compareArgs("KRYLOV SOLVER", "PGMRES+FLEXIBLE")){
+    int nRestart = 15;
+    nrs->pSolver->options.getArgs("PGMRES RESTART", nRestart);
+
+    const int Niter = nrs->pSolver->Niter;
+
+    const int N = std::min(Niter, nRestart+1);
+    if(N > 1){
+
+      std::vector<double> S(N, 0.0);
+      std::vector<double> H(N*N, 0.0);
+
+      // extract upper(N,N) block from H
+      for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++){
+          H[i*N+j] = nrs->pSolver->gmresData->H[i*(nRestart+1)+j];
+        }
+      }
+
+      // singular values are already sorted by dgesvd, but in reverse order
+      SVD(N, H.data(), S.data());
+
+      std::reverse(S.begin(), S.end());
+
+      const dfloat maxSingularValue = S.back();
+      dfloat minSingularValue = 0.0;
+      for(auto&& s : S){
+        if(s > 0.0){
+          minSingularValue = s;
+          break;
+        }
+      }
+
+      const dfloat condest = maxSingularValue / minSingularValue;
+
+      if(platform->comm.mpiRank == 0){
+        printf("Estimates for preconditioned operator\n");
+        printf("\tMin singular value : %g\n", minSingularValue);
+        printf("\tMax singular value : %g\n", maxSingularValue);
+        printf("\tCondition number   : %g\n", condest);
+      }
+    }
+
+
+  }
+};
 
 /* UDF Functions */                                                      
 static dfloat P_EPS;
@@ -24,6 +102,8 @@ void UDF_Setup(nrs_t *nrs)
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
+  constexpr bool dumpSolverDetails = true;
+
   mesh_t* mesh = nrs->meshV;
 
   for (int i = 0; i < mesh->Nlocal; i++) {
@@ -97,6 +177,11 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       printf("aggregated throughput: %g DOF/s\n", throughput);
       printf("aggregated throughput: %g (DOF x iter)/s\n", (double) nrs->pSolver->Niter * throughput);
     }
+
+    if(dumpSolverDetails){
+      printCondEst(nrs);
+    }
+
   }
   EXIT_AND_FINALIZE(0);
   
