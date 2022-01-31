@@ -72,6 +72,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("TARGET CFL", "0.5");
   }
   if (ciMode == 9) {
+    options.setArgs("ADVECTION TYPE", "CONVECTIVE");
     options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
     options.setArgs("SUBCYCLING STEPS", std::string("1"));
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
@@ -309,7 +310,24 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              s01IterErr = abs(NiterS01 - 10);
              s02IterErr = abs(NiterS02 - 10);
              break;
-
+    case 9 : velIterErr = abs(NiterU - 10);
+             s1Err = abs((err[2] - 1.03E-11)/err[2]);
+             s2Err = abs((err[3] - 1.34E-11)/err[3]);
+             pIterErr = abs(NiterP - 1);
+             vxErr = abs((err[0] - 2.78E-10)/err[0]);
+             prErr = abs((err[1] - 6.98E-10)/err[1]);
+             s01IterErr = abs(NiterS01 - 10);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
+    case 10 : velIterErr = abs(NiterU - 10);
+             s1Err = abs((err[2] - 1.03E-11)/err[2]);
+             s2Err = abs((err[3] - 1.34E-11)/err[3]);
+             pIterErr = abs(NiterP - 1);
+             vxErr = abs((err[0] - 2.78E-10)/err[0]);
+             prErr = abs((err[1] - 6.98E-10)/err[1]);
+             s01IterErr = abs(NiterS01 - 10);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
      }
 
   if (ciMode == 4){
