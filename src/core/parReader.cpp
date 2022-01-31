@@ -167,6 +167,20 @@ static std::vector<std::string> deprecatedKeys = {
   {"residualProjectionStart"},
 };
 
+static std::vector<std::string> validSections = {
+    {"general"},
+    {"temperature"},
+    {"pressure"},
+    {"velocity"},
+    {"problemtype"},
+    {"amgx"},
+    {"boomeramg"},
+    {"occa"},
+    {"mesh"},
+    {"scalar"},
+    {"casedata"},
+};
+
 void convertToLowerCase(std::vector<std::string>& stringVec)
 {
   for(auto && s : stringVec){
@@ -188,6 +202,7 @@ void makeStringsLowerCase()
   convertToLowerCase(boomeramgKeys);
   convertToLowerCase(pressureKeys);
   convertToLowerCase(occaKeys);
+  convertToLowerCase(validSections);
 }
 
 const std::vector<std::string>& getValidKeys(const std::string& section)
@@ -228,6 +243,26 @@ int validateKeys(const inipp::Ini::Sections& sections)
   bool generalExists = false;
   for (auto const & sec : sections) {
     if(sec.first.find("general") != std::string::npos) generalExists = true;
+
+    // check that section exists
+    if (std::find(validSections.begin(), validSections.end(), sec.first) == validSections.end()) {
+      if (sec.first.find("scalar") != std::string::npos) {
+        // scalar sections must have a two-digit number, e.g., 01
+        if (sec.first.size() != std::string("scalar").size() + 2) {
+          std::ostringstream error;
+          error << "ERROR: Scalar section names require exactly two digits, e.g. [SCALAR01]. ";
+          error << "You provided " << sec.first << " as a scalar section name." << std::endl;
+          append_error(error.str());
+          err++;
+        }
+      }
+      else {
+        std::ostringstream error;
+        error << "ERROR: Invalid section name: " << sec.first << std::endl;
+        append_error(error.str());
+        err++;
+      }
+    }
   }
   if(!generalExists){
     std::ostringstream error;
@@ -1644,8 +1679,8 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
   std::string eqn;
   if (par->extract("problemtype", "equation", eqn)) {
     const std::vector<std::string> validValues = {
-      {"stokes"},
-    }
+        {"stokes"},
+    };
     const std::vector<std::string> list = serializeString(eqn, '+');
     for(std::string s : list)
     {
