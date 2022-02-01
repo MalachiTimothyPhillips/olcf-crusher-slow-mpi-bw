@@ -1,6 +1,7 @@
 #include <math.h>
 #include <limits>
 #include <vector>
+#include <numeric>
 
 static int ciMode = 0;
 
@@ -95,6 +96,32 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("SCALAR00 SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("SCALAR01 SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("VARIABLEPROPERTIES", "FALSE");
+}
+
+void ciTestAvgBoundary(nrs_t* nrs)
+{
+  const int rank = platform->comm.mpiRank;
+  auto * mesh = nrs->meshV;
+  constexpr int N = 11;
+  std::array<dfloat, N> values;
+  std::iota(values.begin(), values.end(), 1);
+
+  occa::memory o_flds = platform->device.malloc(nrs->fieldOffset * N * sizeof(dfloat));
+
+  for(int i = 0; i < N; ++i){
+    auto o_fld_i = o_flds + i * nrs->fieldOffset * sizeof(dfloat);
+    platform->linAlg->fill(mesh->Nlocal, values.at(i), o_fld_i);
+  }
+
+  std::array<dfloat, N> avgBoundaryValues;
+  const int BID = 1;
+  mesh->avgBoundaryValue(BID, N, o_flds, avgBoundaryValues.data());
+
+  const auto testTol = 50. * std::numeric_limits<dfloat>::epsilon();
+  for(int i = 0; i < N; ++i){
+    const auto error = std::abs(values[i] - avgBoundaryValues[i]);
+    if(error > testTol) FAIL;
+  }
 }
 
 dfloat sum(dfloat const * const array, const int size, MPI_Comm comm)
@@ -205,7 +232,8 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     }
   }
   if (!nrs->lastStep) return;
- 
+
+  ciTestAvgBoundary(nrs);
 
   ciTestLinAlg(1);
   ciTestLinAlg(BLOCKSIZE / 16);
