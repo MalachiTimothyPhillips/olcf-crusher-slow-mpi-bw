@@ -98,29 +98,64 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("VARIABLEPROPERTIES", "FALSE");
 }
 
+void surfaceArea(nrs_t* nrs, int BID, dfloat& SA)
+{
+  auto* mesh = nrs->meshV;
+
+  SA = 0.0;
+
+  for(int elem = 0; elem < mesh->Nelements; ++elem){
+    for(int face = 0; face < mesh->Nfaces; ++face){
+      for(int fp = 0; fp < mesh->Nfp; ++fp){
+        const auto base = mesh->Nsgeo * (mesh->Nfaces * mesh->Nfp * elem + mesh->Nfp * face + fp);
+        /* volume index of face node */
+        const auto n = mesh->faceNodes[face * mesh->Nfp + fp];
+        const auto WsJ = mesh->sgeo[base + WSJID];
+        if(mesh->EToB[elem * mesh->Nfaces + face] == BID){
+            SA += WsJ;
+        }
+      }
+    }
+  }
+
+  MPI_Allreduce(MPI_IN_PLACE, &SA, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+}
+
 void ciTestAvgBoundary(nrs_t* nrs)
 {
   const int rank = platform->comm.mpiRank;
   auto * mesh = nrs->meshV;
-  constexpr int N = 11;
-  std::array<dfloat, N> values;
-  std::iota(values.begin(), values.end(), 1);
+  const int BID = 1;
+  const auto testTol = 50. * std::numeric_limits<dfloat>::epsilon();
 
-  occa::memory o_flds = platform->device.malloc(nrs->fieldOffset * N * sizeof(dfloat));
+  constexpr int N = 5;
 
-  for(int i = 0; i < N; ++i){
-    auto o_fld_i = o_flds + i * nrs->fieldOffset * sizeof(dfloat);
-    platform->linAlg->fill(mesh->Nlocal, values.at(i), o_fld_i);
+  dfloat SA = 0.0;
+
+  surfaceArea(nrs, BID, SA);
+
+  // surface area of unit sphere
+  const auto SAref = 4. * M_PI;
+  if(std::abs((SA - SAref)/SAref) > 0.02){
+    if(rank == 0){
+      std::cout << "ciTestAvgBoundary: surface area of unit sphere is " << SAref << " instead of " << SA << std::endl;
+    }
+    FAIL;
   }
 
-  std::array<dfloat, N> avgBoundaryValues;
-  const int BID = 1;
-  mesh->avgBoundaryValue(BID, N, o_flds, avgBoundaryValues.data());
+  occa::memory o_fld = platform->device.malloc(N * nrs->fieldOffset * sizeof(dfloat));
+  platform->linAlg->fill(N*nrs->fieldOffset, SA, o_fld);
 
-  const auto testTol = 50. * std::numeric_limits<dfloat>::epsilon();
-  for(int i = 0; i < N; ++i){
-    const auto error = std::abs(values[i] - avgBoundaryValues[i]);
-    if(error > testTol) FAIL;
+  std::array<dfloat, N> results;
+  mesh->avgBoundaryValue(BID, N, o_fld, results.data());
+
+  for(auto&& v : results){
+    if(std::abs(v - SA) > testTol){
+      if(rank == 0){
+        std::cout << "ciTestAvgBoundary: FAILED" << std::endl;
+      }
+      FAIL;
+    }
   }
 }
 
