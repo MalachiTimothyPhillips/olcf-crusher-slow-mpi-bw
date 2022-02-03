@@ -71,13 +71,13 @@
                 element = elementList[e];
 
 #pragma unroll p_nEXT
-                  for (int s = 0; s < p_nEXT; s++) {
-                      dfloat coeff = 0;
-                      if(s == 0) coeff = c0;
-                      if(s == 1) coeff = c1;
-                      if(s == 2) coeff = c2;
-                      r_c[s] = coeff;
-                  }
+                for (int s = 0; s < p_nEXT; s++) {
+                    dfloat coeff = 0;
+                    if(s == 0) coeff = c0;
+                    if(s == 1) coeff = c1;
+                    if(s == 2) coeff = c2;
+                    r_c[s] = coeff;
+                }
 
                 if (id < p_Nq * p_cubNq)
                     s_cubInterpT[j][i] = cubInterpT[id];
