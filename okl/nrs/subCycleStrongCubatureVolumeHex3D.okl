@@ -43,8 +43,8 @@
 {
     // (phi, U.grad Ud)
     for(dlong e = 0; e < Nelements; ++e; @outer(0)) {
-        @shared dfloat r_cubD[p_cubNq][p_cubNq];
-        @shared dfloat r_cubInterpT[p_Nq][p_cubNq];
+        @shared dfloat s_cubD[p_cubNq][p_cubNq];
+        @shared dfloat s_cubInterpT[p_Nq][p_cubNq];
 
         @shared dfloat s_U[p_cubNq][p_cubNq];
         @shared dfloat s_V[p_cubNq][p_cubNq];
@@ -80,9 +80,9 @@
                   }
 
                 if (id < p_Nq * p_cubNq)
-                    r_cubInterpT[j][i] = cubInterpT[id];
+                    s_cubInterpT[j][i] = cubInterpT[id];
 
-                r_cubD[j][i] = cubD[id];
+                s_cubD[j][i] = cubD[id];
 
 #pragma unroll p_cubNq
                 for(int k = 0; k < p_cubNq; ++k) {
@@ -120,7 +120,7 @@
                         dfloat Ud1 = 0,Vd1 = 0, Wd1 = 0;
 
                         for(int a = 0; a < p_Nq; ++a) {
-                            dfloat Iia = r_cubInterpT[a][i];
+                            dfloat Iia = s_cubInterpT[a][i];
                             Ud1 += Iia * s_Ud[b][a];
                             Vd1 += Iia * s_Vd[b][a];
                             Wd1 += Iia * s_Wd[b][a];
@@ -142,7 +142,7 @@
 
                     // interpolate in b
                     for(int b = 0; b < p_Nq; ++b) {
-                        dfloat Ijb = r_cubInterpT[b][j];
+                        dfloat Ijb = s_cubInterpT[b][j];
                         Ud2 += Ijb * s_Ud1[b][i];
                         Vd2 += Ijb * s_Vd1[b][i];
                         Wd2 += Ijb * s_Wd1[b][i];
@@ -151,7 +151,7 @@
                     // interpolate in c progressively
 #pragma unroll p_cubNq
                     for(int k = 0; k < p_cubNq; ++k) {
-                        dfloat Ikc = r_cubInterpT[c][k];
+                        dfloat Ikc = s_cubInterpT[c][k];
 
                         r_Ud[k] += Ikc * Ud2;
                         r_Vd[k] += Ikc * Vd2;
@@ -182,14 +182,14 @@
                     dfloat Wdr = 0, Wds = 0, Wdt = 0;
 
                     for(int n = 0; n < p_cubNq; ++n) {
-                        dfloat Din = r_cubD[i][n];
+                        dfloat Din = s_cubD[i][n];
                         Udr += Din * s_Ud[j][n];
                         Vdr += Din * s_Vd[j][n];
                         Wdr += Din * s_Wd[j][n];
                     }
 
                     for(int n = 0; n < p_cubNq; ++n) {
-                        dfloat Djn = r_cubD[j][n];
+                        dfloat Djn = s_cubD[j][n];
                         Uds += Djn * s_Ud[n][i];
                         Vds += Djn * s_Vd[n][i];
                         Wds += Djn * s_Wd[n][i];
@@ -197,7 +197,7 @@
 
 #pragma unroll p_cubNq
                     for(int n = 0; n < p_cubNq; ++n) {
-                        dfloat Dkn = r_cubD[k][n];
+                        dfloat Dkn = s_cubD[k][n];
                         Udt += Dkn * r_Ud[n];
                         Vdt += Dkn * r_Vd[n];
                         Wdt += Dkn * r_Wd[n];
@@ -237,7 +237,7 @@
 
 #pragma unroll p_cubNq
                     for(int k = 0; k < p_cubNq; ++k) {
-                        dfloat Ikc = r_cubInterpT[c][k];
+                        dfloat Ikc = s_cubInterpT[c][k];
                         rhsU += Ikc * r_U2[k];
                         rhsV += Ikc * r_V2[k];
                         rhsW += Ikc * r_W2[k];
@@ -257,7 +257,7 @@
                         dfloat rhsU = 0, rhsV = 0, rhsW = 0;
 
                         for(int j = 0; j < p_cubNq; ++j) {
-                            dfloat Ijb = r_cubInterpT[b][j];
+                            dfloat Ijb = s_cubInterpT[b][j];
                             rhsU += Ijb * s_U[j][i];
                             rhsV += Ijb * s_V[j][i];
                             rhsW += Ijb * s_W[j][i];
@@ -283,7 +283,7 @@
 
                         dfloat rhsU = 0, rhsV = 0, rhsW = 0;
                         for(int i = 0; i < p_cubNq; ++i) {
-                            dfloat Iia = r_cubInterpT[a][i];
+                            dfloat Iia = s_cubInterpT[a][i];
                             rhsU += Iia * s_Ud[b][i];
                             rhsV += Iia * s_Vd[b][i];
                             rhsW += Iia * s_Wd[b][i];
