@@ -110,6 +110,7 @@ void linAlg_t::setup()
     weightedInnerProdKernel = kernels.get("weightedInnerProd");
     weightedInnerProdManyKernel = kernels.get("weightedInnerProdMany");
     weightedInnerProdMultiKernel = kernels.get("weightedInnerProdMulti");
+    crossProductKernel = kernels.get("crossProduct");
   }
 }
 
@@ -598,10 +599,16 @@ linAlg_t::innerProd(const dlong N, occa::memory &o_x, occa::memory &o_y, MPI_Com
   if (N > 1) {
     innerProdKernel(Nblock, N, offset, o_x, o_y, o_scratch);
 
-    o_scratch.copyTo(scratch, Nbytes);
+    if (serial) {
+      dot = *((dfloat *)o_scratch.ptr());
+    }
+    else {
 
-    for (dlong n = 0; n < Nblock; ++n) {
-      dot += scratch[n];
+      o_scratch.copyTo(scratch, Nbytes);
+
+      for (dlong n = 0; n < Nblock; ++n) {
+        dot += scratch[n];
+      }
     }
   }
   else {
@@ -926,4 +933,13 @@ dfloat linAlg_t::weightedNorm1Many(const dlong N,
   platform->timer.toc("dotp");
 #endif
   return norm;
+}
+
+void linAlg_t::crossProduct(const dlong N,
+                            const dlong fieldOffset,
+                            occa::memory &o_x,
+                            occa::memory &o_y,
+                            occa::memory &o_z)
+{
+  crossProductKernel(N, fieldOffset, o_x, o_y, o_z);
 }

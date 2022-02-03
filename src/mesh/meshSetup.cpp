@@ -20,7 +20,7 @@ occa::properties meshKernelProperties(int N)
 
   constexpr int Nvgeo{12};
   constexpr int Nggeo{7};
-  constexpr int Nsgeo{7};
+  constexpr int Nsgeo{13};
 
   meshProperties["defines/" "p_dim"] = 3;
   meshProperties["defines/" "p_Nverts"] = 8;
@@ -36,7 +36,8 @@ occa::properties meshKernelProperties(int N)
 
   meshProperties["defines/" "p_Nvgeo"] = Nvgeo;
   meshProperties["defines/" "p_Nsgeo"] = Nsgeo;
-  meshProperties["defines/" "p_Nggeo"] = Nggeo;
+  meshProperties["defines/"
+                 "p_Nggeo"] = Nggeo;
 
   meshProperties["defines/" "p_NXID"] = NXID;
   meshProperties["defines/" "p_NYID"] = NYID;
@@ -49,6 +50,18 @@ occa::properties meshKernelProperties(int N)
                  "p_WIJID"] = WIJID;
   meshProperties["defines/"
                  "p_WSJID"] = WSJID;
+  meshProperties["defines/"
+                 "p_T1XID"] = T1XID;
+  meshProperties["defines/"
+                 "p_T1YID"] = T1YID;
+  meshProperties["defines/"
+                 "p_T1ZID"] = T1ZID;
+  meshProperties["defines/"
+                 "p_T2XID"] = T2XID;
+  meshProperties["defines/"
+                 "p_T2YID"] = T2YID;
+  meshProperties["defines/"
+                 "p_T2ZID"] = T2ZID;
 
   meshProperties["defines/" "p_G00ID"] = G00ID;
   meshProperties["defines/" "p_G01ID"] = G01ID;
@@ -138,6 +151,8 @@ mesh_t *createMesh(MPI_Comm comm,
   // global nodes
   meshGlobalIds(mesh);
   bcMap::check(mesh);
+  bcMap::checkBoundaryAlignment(mesh);
+  bcMap::remapUnalignedBoundaries(mesh);
 
   meshOccaSetup3D(mesh, platform->options, kernelInfo);
 
@@ -365,16 +380,10 @@ void meshVOccaSetup3D(mesh_t* mesh, occa::properties &kernelInfo)
 void loadKernels(mesh_t* mesh)
 {
   const std::string meshPrefix = "mesh-";
-  if(platform->options.compareArgs("MOVING MESH", "TRUE")){
-    {
-        mesh->velocityDirichletKernel =
-          platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
-        mesh->geometricFactorsKernel =
-          platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
-        mesh->surfaceGeometricFactorsKernel =
-          platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
-        mesh->nStagesSumVectorKernel =
-          platform->kernels.get(meshPrefix + "nStagesSumVector");
-    }
-  }
+  mesh->avgBIDValueKernel = platform->kernels.get(meshPrefix + "avgBIDValue");
+  mesh->velocityDirichletKernel = platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
+  mesh->geometricFactorsKernel = platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
+  mesh->surfaceGeometricFactorsKernel = platform->kernels.get(meshPrefix + "surfaceGeometricFactorsHex3D");
+  mesh->cubatureGeometricFactorsKernel = platform->kernels.get(meshPrefix + "cubatureGeometricFactorsHex3D");
+  mesh->nStagesSumVectorKernel = platform->kernels.get(meshPrefix + "nStagesSumVector");
 }

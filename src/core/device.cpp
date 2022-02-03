@@ -67,6 +67,18 @@ device_t::buildKernel(const std::string &fileName,
     propsWithSuffix["kernelNameSuffix"] = suffix;
     if(_verbose)
       propsWithSuffix["verbose"] = true;
+
+    if (this->mode() == "CUDA")
+      propsWithSuffix["defines/smXX"] = 1;
+    if (this->mode() == "HIP")
+      propsWithSuffix["defines/gfxXX"] = 1;
+
+    const std::string floatingPointType = static_cast<std::string>(propsWithSuffix["defines/dfloat"]);
+
+    if (floatingPointType.find("float") != std::string::npos) {
+      propsWithSuffix["defines/FP32"] = 1;
+    }
+
     return _device.buildKernel(fileName, kernelName, propsWithSuffix);
   }
   else{

@@ -23,7 +23,6 @@
    SOFTWARE.
 
  */
-
 //RHS contributions for continuous solver
 
 @kernel void velocityDirichletBCHex3D(const dlong Nelements,
@@ -43,6 +42,48 @@
                                          @restrict dfloat*  UH)
 {
   for(dlong e = 0; e < Nelements; e++; @outer(0)) {
+
+    for(int f = 0; f < p_Nfaces; f++) {
+      for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
+        const int n = m + f * p_Nfp;
+        const int sk = e * p_Nfp * p_Nfaces + n;
+        const dlong sid  = e * p_Nfaces * p_Nfp + n;
+        const dlong idM = vmapM[sk];
+        const dlong bcType = EToB[f + p_Nfaces * e];
+
+        if(bcType > 0) {
+          if(bcType == 7 || bcType == 8) {
+
+            const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
+            const dfloat t1y = sgeo[sid * p_Nsgeo + p_T1YID];
+            const dfloat t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
+
+            const dfloat t2x = sgeo[sid * p_Nsgeo + p_T2XID];
+            const dfloat t2y = sgeo[sid * p_Nsgeo + p_T2YID];
+            const dfloat t2z = sgeo[sid * p_Nsgeo + p_T2ZID];
+
+            const dfloat u = U[idM + 0 * offset];
+            const dfloat v = U[idM + 1 * offset];
+            const dfloat w = U[idM + 2 * offset];
+
+            const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
+            const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
+
+            UH[idM + 0 * offset] = Rtn1 * t1x + Rtn2 * t2x;
+            UH[idM + 1 * offset] = Rtn1 * t1y + Rtn2 * t2y;
+            UH[idM + 2 * offset] = Rtn1 * t1z + Rtn2 * t2z;
+          }else if(bcType == 4) {
+            UH[idM + 0 * offset] = 0.0;
+          }else if(bcType == 5) {
+            UH[idM + 1 * offset] = 0.0;
+          }else if(bcType == 6) {
+            UH[idM + 2 * offset] = 0.0;
+          }
+        }
+      }
+      @barrier("global");
+    }
+
     for(int f = 0; f < p_Nfaces; f++) {
       for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
         struct bcData bc;
@@ -64,6 +105,14 @@
           bc.nx = sgeo[sid * p_Nsgeo + p_NXID];
           bc.ny = sgeo[sid * p_Nsgeo + p_NYID];
           bc.nz = sgeo[sid * p_Nsgeo + p_NZID];
+
+          bc.t1x = sgeo[sid * p_Nsgeo + p_T1XID];
+          bc.t1y = sgeo[sid * p_Nsgeo + p_T1YID];
+          bc.t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
+
+          bc.t2x = sgeo[sid * p_Nsgeo + p_T2XID];
+          bc.t2y = sgeo[sid * p_Nsgeo + p_T2YID];
+          bc.t2z = sgeo[sid * p_Nsgeo + p_T2ZID];
 
           bc.u = U[idM + 0 * offset];
           bc.v = U[idM + 1 * offset];
@@ -98,12 +147,6 @@
           if(bcType == 1) {
             UH[idM + 0 * offset] = 0.0;
             UH[idM + 1 * offset] = 0.0;
-            UH[idM + 2 * offset] = 0.0;
-          }else if(bcType == 4) {
-            UH[idM + 0 * offset] = 0.0;
-          }else if(bcType == 5) {
-            UH[idM + 1 * offset] = 0.0;
-          }else if(bcType == 6) {
             UH[idM + 2 * offset] = 0.0;
           }
         }

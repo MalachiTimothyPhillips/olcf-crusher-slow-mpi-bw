@@ -45,6 +45,7 @@ struct nrs_t
 
   int Nscalar;
   dlong fieldOffset;
+  dlong cubatureOffset;
   setupAide vOptions, pOptions, mOptions;
 
   int NVfields, NTfields;
@@ -184,7 +185,7 @@ struct nrs_t
   occa::memory o_EToB;
   occa::memory o_EToBMesh;
 
-  occa::properties* kernelInfo;
+  occa::properties *kernelInfo;
 };
 
 

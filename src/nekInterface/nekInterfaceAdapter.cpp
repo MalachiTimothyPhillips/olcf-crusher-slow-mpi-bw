@@ -9,7 +9,7 @@
 nekdata_private nekData;
 static int rank;
 static setupAide* options;
-static nrs_t* nrs;
+static nrs_t *nrs;
 
 static void (* usrdat_ptr)(void);
 static void (* usrdat2_ptr)(void);
@@ -39,7 +39,8 @@ static void (* nek_uf_ptr)(double*, double*, double*);
 static int (* nek_lglel_ptr)(int*);
 static void (* nek_bootstrap_ptr)(int*, char*, char*, char*, int, int, int);
 static void (* nek_bootstrap_neknek_ptr)(int*, int*, int*, int*, int*, char*, char*, char*, int, int, int);
-static void (* nek_setup_ptr)(int*, int*, int*, int*, double*, double*, double*, double*, double*);
+static void (
+    *nek_setup_ptr)(int *, int *, int *, int *, double *, double *, double *, double *, double *, int *);
 static void (* nek_ifoutfld_ptr)(int*);
 static void (* nek_setics_ptr)(void);
 static int (* nek_bcmap_ptr)(int*, int*,int*);
@@ -275,7 +276,8 @@ void set_usr_handles(const char* session_in,int verbose)
     (void (*)(int*, int*, int*, int*, int*, char*, char*, char*, int, int, int))dlsym(handle, fname("nekf_bootstrap_neknek"));
   check_error(dlerror());
   nek_setup_ptr =
-    (void (*)(int*, int*, int*, int*, double*, double*, double*, double*, double*))dlsym(handle, fname("nekf_setup"));
+      (void (*)(int *, int *, int *, int *, double *, double *, double *, double *, double *, int *))
+          dlsym(handle, fname("nekf_setup"));
   check_error(dlerror());
   nek_uic_ptr = (void (*)(int*))dlsym(handle, fname("nekf_uic"));
   check_error(dlerror());
@@ -379,10 +381,9 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
     }
   }
 
-  const int lx1m = options.compareArgs("MOVING MESH", "TRUE") ? lx1 : 1;
+  int lx1m = (options.compareArgs("MOVING MESH", "TRUE")) ? lx1 : 1;
+  lx1m = (options.compareArgs("STRESSFORMULATION", "TRUE")) ? lx1 : lx1m;
   const int nsessmax = std::stoi(options.getArgs("NEKNEK MAX NUM SESSIONS"));
-
-
 
   int count = 0;
   while(fgets(line, BUFSIZ, fp) != NULL) {
@@ -719,8 +720,18 @@ int setup(nrs_t* nrs_in)
   dfloat lambda;
   options->getArgs("SCALAR00 DIFFUSIVITY", lambda);
 
-  (*nek_setup_ptr)(&flow, &nscal, &nBcRead, &meshPartType, &meshConTol,
-		   &rho, &mue, &rhoCp, &lambda); 
+  int stressForm = options->compareArgs("STRESSFORMULATION", "TRUE");
+
+  (*nek_setup_ptr)(&flow,
+                   &nscal,
+                   &nBcRead,
+                   &meshPartType,
+                   &meshConTol,
+                   &rho,
+                   &mue,
+                   &rhoCp,
+                   &lambda,
+                   &stressForm);
 
   nekData.param = (double*) ptr("param");
   nekData.ifield = (int*) ptr("ifield");
@@ -796,7 +807,7 @@ int setup(nrs_t* nrs_in)
     }
     for(int is = 0; is < nscal; is++) {
       std::stringstream ss;
-      ss << std::setfill('0') << std::setw(2) << is;
+      ss << std::setfill('0') << std::setw(getDigitsRepresentation(NSCALAR_MAX - 1)) << is;
       std::string sid = ss.str();
 
       int isTMesh = 0;
@@ -1009,8 +1020,5 @@ void coeffAB(double *coeff, double *dt, int order)
   (*nek_setabbd_ptr)(coeff, dt, &order, &one);
 }
 
-void recomputeGeometry()
-{
-  (*nek_updggeom_ptr)();
-}
+void recomputeGeometry() { (*nek_updggeom_ptr)(); }
 }

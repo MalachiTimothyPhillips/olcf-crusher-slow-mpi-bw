@@ -446,7 +446,6 @@ int main(int argc, char** argv)
   MPI_Barrier(comm);
   double elapsedTime = (MPI_Wtime() - time0);
 
-  const int runTimeStatFreq = 500;
   const int updCheckFreq = 20;
 
   int tStep = 0;
@@ -488,7 +487,8 @@ int main(int argc, char** argv)
 
     if (outputStep) nekrs::outfld(time);
 
-    if (tStep % runTimeStatFreq == 0 || lastStep) nekrs::printRuntimeStatistics(tStep);
+    if (tStep % nekrs::runTimeStatFreq() == 0 || lastStep)
+      nekrs::printRuntimeStatistics(tStep);
 
     MPI_Barrier(comm);
     elapsedTime += (MPI_Wtime() - timeStart);
