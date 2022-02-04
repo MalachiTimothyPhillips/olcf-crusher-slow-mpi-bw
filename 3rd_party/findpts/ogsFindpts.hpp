@@ -76,7 +76,7 @@ void ogsFindpts(ogs_findpts_data_t *findPtsData,
                 const dlong x_stride[],
                 const dlong npt,
                 ogs_findpts_t *const fd,
-                const bool use_device = true);
+                const bool use_legacy_findpts = false);
 void ogsFindptsEval(dfloat *const out_base,
                     ogs_findpts_data_t *findPtsData,
                     const dlong npt,

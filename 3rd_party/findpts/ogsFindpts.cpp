@@ -121,7 +121,7 @@ ogs_findpts_t* ogsFindptsSetup(
   occa::device* device) {
   // elx, n, m have length D
 
-  void *findpts_data = ogsHostFindptsSetup_3(comm,
+  void *findpts_data = ogsLegacyFindptsSetup_3(comm,
                                              elx,
                                              n,
                                              nel,
@@ -156,7 +156,7 @@ ogs_findpts_t* ogsFindptsSetup(
 
 void ogsFindptsFree(ogs_findpts_t *fd)
 {
-  ogsHostFindptsFree_3((findpts_data_3 *)fd->findpts_data);
+  ogsLegacyFindptsFree_3((findpts_data_3 *)fd->findpts_data);
   if (fd->device != nullptr) {
     // Use OCCA's reference counting to free memory and kernel objects
     fd->local_eval_kernel = occa::kernel();
@@ -171,7 +171,7 @@ void ogsFindpts(ogs_findpts_data_t *const findPtsData,
                 const dlong x_stride[],
                 const dlong npt,
                 ogs_findpts_t *const fd,
-                const bool use_device)
+                const bool use_legacy_findpts)
 {
   // x_base, x_stride have length D
 
@@ -186,7 +186,7 @@ void ogsFindpts(ogs_findpts_data_t *const findPtsData,
   dfloat *const dist2_base = findPtsData->dist2_base;
   const dlong dist2_stride = sizeof(dfloat);
 
-  if (use_device) {
+  if (!use_legacy_findpts) {
     ogsDevFindpts_3(code_base,
                     code_stride,
                     proc_base,
@@ -204,7 +204,7 @@ void ogsFindpts(ogs_findpts_data_t *const findPtsData,
                     fd);
   }
   else {
-    ogsHostFindpts_3(code_base,
+    ogsLegacyFindpts_3(code_base,
                      code_stride,
                      proc_base,
                      proc_stride,
@@ -239,7 +239,7 @@ void ogsFindptsEval(dfloat *const out_base,
   dfloat *const dist2_base = findPtsData->dist2_base;
   const dlong dist2_stride = sizeof(dfloat);
 
-  ogsHostFindptsEval_3(out_base,
+  ogsLegacyFindptsEval_3(out_base,
                        sizeof(dfloat),
                        code_base,
                        code_stride,
@@ -294,7 +294,7 @@ void ogsFindptsLocalEval(
   const dfloat* const    r_base, const dlong    r_stride,
   const dlong npt, const dfloat* const in, ogs_findpts_t* const fd) {
 
-  ogsHostFindptsLocalEval_3(out_base,
+  ogsLegacyFindptsLocalEval_3(out_base,
                             out_stride,
                             el_base,
                             el_stride,

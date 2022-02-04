@@ -7,7 +7,7 @@
 extern "C" {
 struct findpts_data_3;
 
-struct findpts_data_3 *ogsHostFindptsSetup_3(MPI_Comm comm,
+struct findpts_data_3 *ogsLegacyFindptsSetup_3(MPI_Comm comm,
                                              const dfloat *const elx[3],
                                              const dlong n[3],
                                              const dlong nel,
@@ -18,11 +18,11 @@ struct findpts_data_3 *ogsHostFindptsSetup_3(MPI_Comm comm,
                                              const dlong npt_max,
                                              const dfloat newt_tol);
 
-void ogsHostFindptsFree_3(struct findpts_data_3 *fd);
+void ogsLegacyFindptsFree_3(struct findpts_data_3 *fd);
 
-void ogsHostFindptsLagData_3(struct findpts_data_3 *const fd, dfloat **lag_data, dlong *lag_data_size);
+void ogsLegacyFindptsLagData_3(struct findpts_data_3 *const fd, dfloat **lag_data, dlong *lag_data_size);
 
-void ogsHostFindpts_3(dlong *const code_base,
+void ogsLegacyFindpts_3(dlong *const code_base,
                       const dlong code_stride,
                       dlong *const proc_base,
                       const dlong proc_stride,
@@ -37,7 +37,7 @@ void ogsHostFindpts_3(dlong *const code_base,
                       const dfloat npt,
                       struct findpts_data_3 *const fd);
 
-void ogsHostFindptsEval_3(dfloat *const out_base,
+void ogsLegacyFindptsEval_3(dfloat *const out_base,
                           const dlong out_stride,
                           const dlong *const code_base,
                           const dlong code_stride,
@@ -82,7 +82,7 @@ void ogsDevFindptsEval_3(dfloat *const out_base,
                          struct findpts_data_3 *const fd,
                          const void *const ogs_fd);
 
-void ogsHostFindptsLocalEval_3(dfloat *const out_base,
+void ogsLegacyFindptsLocalEval_3(dfloat *const out_base,
                                const dlong out_stride,
                                const dlong *const el_base,
                                const dlong el_stride,
