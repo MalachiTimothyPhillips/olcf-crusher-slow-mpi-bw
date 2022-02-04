@@ -19,7 +19,7 @@ extern "C" {
 static_assert(std::is_same<dfloat, double>::value, "OGS dfloat is not compatible with GSLIB double");
 static_assert(sizeof(dlong) == sizeof(uint), "OGS dlong is not compatible with GSLIB uint");
 
-void ogs_findpts_local_3(    uint   *const  code_base   , const unsigned  code_stride   ,
+void ogs_findpts_local(    uint   *const  code_base   , const unsigned  code_stride   ,
                              uint   *const    el_base   , const unsigned    el_stride   ,
                              double *const     r_base   , const unsigned     r_stride   ,
                              double *const dist2_base   , const unsigned dist2_stride   ,
@@ -101,7 +101,7 @@ void ogs_findpts_local_3(    uint   *const  code_base   , const unsigned  code_s
   }
 }
 
-void ogs_findpts_local_eval_internal_3(
+void ogs_findpts_local_eval_internal(
     struct eval_out_pt_3 *opt, const struct eval_src_pt_3 *spt,
     const uint pn, const void *const in,
     struct findpts_local_data_3 *const gs_fd, const void *const ogs_fd_void)
@@ -140,7 +140,7 @@ void ogs_findpts_local_eval_internal_3(
   d_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
 }
 
-void ogs_findpts_local_eval_3(
+void ogs_findpts_local_eval(
           void * const out_base, const uint out_stride,
     const void * const el_base,  const uint el_stride,
     const void * const r_base,   const uint r_stride,

@@ -49,7 +49,7 @@ struct findpts_data_3 {
   struct hash_data_3 hash;
 };
 
-struct findpts_data_3 *ogsLegacyFindptsSetup_3(
+struct findpts_data_3 *ogsLegacyFindptsSetup(
   MPI_Comm mpi_comm,
   const dfloat *const elx[3],
   const dlong n[3], const dlong nel,
@@ -74,11 +74,11 @@ struct findpts_data_3 *ogsLegacyFindptsSetup_3(
   return fd;
 }
 
-void ogsLegacyFindptsFree_3(struct findpts_data_3 *fd) {
+void ogsLegacyFindptsFree(struct findpts_data_3 *fd) {
   findpts_free_3(fd);
 }
 
-void ogsLegacyFindptsLagData_3(struct findpts_data_3 *const fd,
+void ogsLegacyFindptsLagData(struct findpts_data_3 *const fd,
                              dfloat **lag_data, dlong *lag_data_size) {
   for (int i = 0; i < 3; ++i) {
     lag_data[i] = fd->local.fed.lag_data[i];
@@ -86,7 +86,7 @@ void ogsLegacyFindptsLagData_3(struct findpts_data_3 *const fd,
   }
 }
 
-void ogsLegacyFindpts_3(    dlong  *const  code_base   , const dlong  code_stride   ,
+void ogsLegacyFindpts(    dlong  *const  code_base   , const dlong  code_stride   ,
                           dlong  *const  proc_base   , const dlong  proc_stride   ,
                           dlong  *const    el_base   , const dlong    el_stride   ,
                           dfloat *const     r_base   , const dlong     r_stride   ,
@@ -103,7 +103,7 @@ void ogsLegacyFindpts_3(    dlong  *const  code_base   , const dlong  code_strid
             npt, fd);
 }
 
-void ogsLegacyFindptsEval_3(
+void ogsLegacyFindptsEval(
         dfloat *const  out_base, const dlong  out_stride,
   const dlong  *const code_base, const dlong code_stride,
   const dlong  *const proc_base, const dlong proc_stride,
@@ -119,7 +119,7 @@ void ogsLegacyFindptsEval_3(
                  npt, in, fd);
 }
 
-void ogsLegacyFindptsLocalEval_3(
+void ogsLegacyFindptsLocalEval(
         dfloat *const  out_base, const dlong  out_stride,
   const dlong  *const   el_base, const dlong   el_stride,
   const dfloat *const    r_base, const dlong    r_stride,
