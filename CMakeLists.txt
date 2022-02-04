@@ -234,6 +234,7 @@ set(SRC
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
     src/pointInterpolation/interp.cpp
+    src/lpm/historyParticle.cpp
     src/neknek/neknek.cpp
     src/udf/udf.cpp
     src/udf/compileUDFKernels.cpp
@@ -275,6 +276,7 @@ target_include_directories(nekrs-lib
   src/regularization
   src/linAlg
   src/timeStepper
+  src/pointInterpolation
   src/lns
   src/cds
   src/neknek
