@@ -724,6 +724,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->vOptions.setArgs("MULTIGRID SMOOTHER",   options.getArgs("VELOCITY MULTIGRID SMOOTHER"));
     nrs->vOptions.setArgs("MULTIGRID CHEBYSHEV DEGREE",
                           options.getArgs("VELOCITY MULTIGRID CHEBYSHEV DEGREE"));
+    nrs->pOptions.setArgs("MULTIGRID PRE SMOOTHINGS", options.getArgs("VELOCITY MULTIGRID PRE SMOOTHINGS"));
+    nrs->pOptions.setArgs("MULTIGRID POST SMOOTHINGS", options.getArgs("VELOCITY MULTIGRID POST SMOOTHINGS"));
     nrs->vOptions.setArgs("PARALMOND CYCLE",      options.getArgs("VELOCITY PARALMOND CYCLE"));
     nrs->vOptions.setArgs("PARALMOND SMOOTHER",   options.getArgs("VELOCITY PARALMOND SMOOTHER"));
     nrs->vOptions.setArgs("PARALMOND PARTITION",  options.getArgs("VELOCITY PARALMOND PARTITION"));
@@ -880,6 +882,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("MULTIGRID SMOOTHER",   options.getArgs("PRESSURE MULTIGRID SMOOTHER"));
     nrs->pOptions.setArgs("MULTIGRID COARSE SOLVE",   options.getArgs("PRESSURE MULTIGRID COARSE SOLVE"));
     nrs->pOptions.setArgs("MULTIGRID COARSE SEMFEM",   options.getArgs("PRESSURE MULTIGRID COARSE SEMFEM"));
+    nrs->pOptions.setArgs("MULTIGRID PRE SMOOTHINGS", options.getArgs("PRESSURE MULTIGRID PRE SMOOTHINGS"));
+    nrs->pOptions.setArgs("MULTIGRID POST SMOOTHINGS", options.getArgs("PRESSURE MULTIGRID POST SMOOTHINGS"));
     nrs->pOptions.setArgs("MULTIGRID DOWNWARD SMOOTHER",
                           options.getArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER"));
     nrs->pOptions.setArgs("MULTIGRID UPWARD SMOOTHER",

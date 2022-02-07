@@ -25,6 +25,7 @@ SOFTWARE.
 */
 
 #include "parAlmond.hpp"
+#include "platform.hpp"
 #include <omp.h>
 
 namespace parAlmond {
@@ -252,8 +253,11 @@ void solver_t::device_vcycle(int k){
   occa::memory o_rhsC = levelC->o_rhs;
   occa::memory o_xC   = levelC->o_x;
 
-  //apply smoother to x and then compute res = rhs-Ax
-  level->smooth(o_rhs, o_x, true);
+  for (int smoothingPass = 0; smoothingPass < level->preSmoothings; smoothingPass++) {
+    // apply smoother to x and then compute res = rhs-Ax
+    level->smooth(o_rhs, o_x, smoothingPass == 0);
+  }
+
   level->residual(o_rhs, o_x, o_res);
 
   // rhsC = P^T res
@@ -264,7 +268,10 @@ void solver_t::device_vcycle(int k){
   // x = x + P xC
   levelC->prolongate(o_xC, o_x);
 
-  level->smooth(o_rhs, o_x, false);
+  for (int smoothingPass = 0; smoothingPass < level->postSmoothings; smoothingPass++) {
+    // apply smoother to x and then compute res = rhs-Ax
+    level->smooth(o_rhs, o_x, false);
+  }
 }
 
 namespace {

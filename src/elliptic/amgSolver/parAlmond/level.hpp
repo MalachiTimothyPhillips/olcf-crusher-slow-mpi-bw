@@ -45,6 +45,8 @@ public:
   dfloat *wk=NULL;
   occa::memory o_ck, o_vk, o_wk;
 
+  dlong preSmoothings = 1, postSmoothings = 1;
+
   //switch for weighted inner products
   bool weighted;
   dfloat *weight=NULL;

@@ -62,6 +62,9 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, int Nc,
 
   o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
   o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
+
+  elliptic->options.getArgs("MULTIGRID PRE SMOOTHINGS", this->preSmoothings);
+  elliptic->options.getArgs("MULTIGRID POST SMOOTHINGS", this->postSmoothings);
 }
 
 //build a level and connect it to the previous one
@@ -107,6 +110,9 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
 
   o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
   o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
+
+  elliptic->options.getArgs("MULTIGRID PRE SMOOTHINGS", this->preSmoothings);
+  elliptic->options.getArgs("MULTIGRID POST SMOOTHINGS", this->postSmoothings);
 }
 
 void MGLevel::setupSmoother(elliptic_t* ellipticBase)
