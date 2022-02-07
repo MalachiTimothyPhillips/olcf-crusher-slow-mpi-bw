@@ -789,8 +789,17 @@ void MGLevel::generate_weights()
 
   oogs::startFinish(wts, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) ogs);
 
-  for(dlong i = 0; i < weightSize; ++i)
-    wts[i] = 1.0 / wts[i];
+  if (elliptic->options.compareArgs("SCHWARZ WEIGHTING", "UNIFORM")) {
+    for (dlong i = 0; i < weightSize; ++i) {
+      wts[i] = 1.0;
+    }
+  }
+  else {
+    for (dlong i = 0; i < weightSize; ++i) {
+      wts[i] = 1.0 / wts[i];
+    }
+  }
+
   o_wts = platform->device.malloc(weightSize * sizeof(pfloat), wts);
   free(work1);
   free(work2);
