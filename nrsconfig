@@ -21,6 +21,8 @@ set -e -a
 : ${OCCA_ENABLE_OPENCL:=1}
 : ${AMGX_ENABLED:=0}
 
+: ${USE_REDUCED_PRECISION:=1}
+
 if uname -a | grep 'ppc64'; then
   NEKRS_COMPILER_FLAGS=$(echo "$NEKRS_COMPILER_FLAGS" | sed -e "s/march/mcpu/g")
 fi
@@ -58,6 +60,7 @@ cmake -Wno-dev \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
       -DHYPRE_BIGINT=1 \
       -DENABLE_AMGX="${AMGX_ENABLED}" \
+      -DREDUCED_PRECISION_PRECONDITIONER="${USE_REDUCED_PRECISION}" \
       .. 
 
 if [ $? -eq 0 ]; then

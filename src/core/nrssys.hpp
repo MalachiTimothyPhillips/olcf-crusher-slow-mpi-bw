@@ -20,7 +20,7 @@
 #endif
 
 //smoother float data type
-#if 1
+#ifdef REDUCED_PRECISION_PRECONDITIONER
 #define pfloat float
 #define MPI_PFLOAT MPI_FLOAT
 #define pfloatFormat "%f"
