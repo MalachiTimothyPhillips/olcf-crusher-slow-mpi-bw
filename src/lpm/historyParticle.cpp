@@ -1,12 +1,29 @@
 #include "historyParticle.hpp"
+#include "nrs.hpp"
 
 #define OUT_CHUNK_SIZE 100000 /* chunk size for outputing particles */
 #define USE_MPIIO      true
 
-historyData_t::historyData_t(dfloat v_hist_[2][3], dfloat color_, hlong id_)
+namespace{
+std::array<dfloat,historyData_t::integrationOrder> particleTimestepperCoeffs(nrs_t* nrs, int tstep)
+{
+  constexpr int integrationOrder = historyData_t::integrationOrder;
+  std::array<dfloat, integrationOrder> coeffs;
+  const int particleOrder = mymin(tstep, integrationOrder);
+  nek::coeffAB(coeffs.data(), nrs->dt, particleOrder);
+  for (int i = 0; i < particleOrder; ++i)
+    coeffs[i] *= nrs->dt[0];
+  for (int i = integrationOrder; i > particleOrder; i--)
+    coeffs[i - 1] = 0.0;
+  
+  return coeffs;
+}
+}
+
+historyData_t::historyData_t(dfloat v_hist_[historyData_t::integrationOrder-1][3], dfloat color_, hlong id_)
 
 {
-  for (int i = 0; i < 2; ++i) {
+  for (int i = 0; i < historyData_t::integrationOrder-1; ++i) {
     for (int j = 0; j < 3; ++j) {
       v_hist[i][j] = v_hist_[i][j];
     }
@@ -120,25 +137,15 @@ void particleUpdate(historyParticles_t& particles, nrs_t* nrs, int tstep){
   occa::memory o_U = nrs->o_U.cast(occa::dtype::get<dfloat>());
   particles.interpLocal(o_U, u1, 3);
 
-  double c1, c2, c3, dt = nrs->dt[0];
-  if (tstep == 0) { // AB1
-    c1 = 1.0;
-    c2 = 0.0;
-    c3 = 0.0;
-  } else if (tstep == 1) { // AB2
-    c1 =  3.0 / 2.0;
-    c2 = -1.0 / 2.0;
-    c3 =  0.0 / 2.0;
-  } else { // AB3
-    c1 =  23.0 / 12.0;
-    c2 = -16.0 / 12.0;
-    c3 =   5.0 / 12.0;
-  }
+  auto coeffs = particleTimestepperCoeffs(nrs, tstep);
 
   for (int i = 0; i < particles.size(); ++i) {
     // Update particle position and velocity history
     for (int k=0; k < 3; ++k) {
-       particles.x[k][i] += dt*(c1*u1[k][i] + c2*particles.extra[i].v_hist[0][k] + c3*particles.extra[i].v_hist[1][k]);
+       particles.x[k][i] += coeffs[0]*u1[k][i];
+       for(int j = 1; j < historyData_t::integrationOrder - 1; ++j){
+        particles.x[k][i] += coeffs[j]*particles.extra[i].v_hist[j-1][k];
+       }
        particles.extra[i].v_hist[1][k] = particles.extra[i].v_hist[0][k];
        particles.extra[i].v_hist[0][k] = u1[k][i];
     }
