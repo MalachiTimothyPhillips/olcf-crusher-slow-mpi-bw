@@ -27,6 +27,7 @@
 #include "elliptic.h"
 #include "timer.hpp"
 #include "linAlg.hpp"
+#include "observer.hpp"
 
 int richardson(elliptic_t *elliptic,
                occa::memory &o_r,
@@ -62,8 +63,10 @@ int richardson(elliptic_t *elliptic,
     // M^{-1} (b - A x)
     ellipticPreconditioner(elliptic, o_r, o_z);
 
-    // x_{k+1} = x_k + M^{-1} (b - A x)
-    platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, 1.0, o_x);
+    preconditionerO
+
+        // x_{k+1} = x_k + M^{-1} (b - A x)
+        platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, 1.0, o_x);
 
     // r_{k+1} = b - A x_{k+1}
     ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
