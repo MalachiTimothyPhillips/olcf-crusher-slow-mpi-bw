@@ -1,6 +1,8 @@
 #if !defined(nekrs_particle_hpp_)
 #define nekrs_particle_hpp_
 
+#include <array>
+
 #include "nrs.hpp"
 #include "gslib.h"
 #include "ogsFindpts.hpp"
@@ -9,22 +11,6 @@
 
 // Contains a set of particles and the information needed to interpolate on the mesh
 template <class Extra = char> struct particle_set {
-  // helper class to allow making a vector of arrays
-  struct dfloat_array {
-    dfloat val[3];
-
-    dfloat_array() {}
-
-    dfloat_array(dfloat val_[3])
-    {
-      for (int i = 0; i < 3; ++i) {
-        val[i] = val_[i];
-      }
-    }
-
-    dfloat &operator[](int i) { return val[i]; }
-    dfloat operator[](int i) const { return val[i]; }
-  };
   // helper class to pass components of a single particle
   struct particle_t {
     dfloat x[3];
@@ -45,7 +31,7 @@ template <class Extra = char> struct particle_set {
       }
     }
 
-    particle_t(dfloat x_[3], dlong code_, dlong proc_, dlong el_, dfloat_array r_, Extra extra_)
+    particle_t(dfloat x_[3], dlong code_, dlong proc_, dlong el_, std::array<dfloat,3> r_, Extra extra_)
         : code(code_), proc(proc_), el(el_), extra(extra_)
     {
       for (int i = 0; i < 3; ++i) {
@@ -62,7 +48,7 @@ template <class Extra = char> struct particle_set {
   std::vector<dlong> proc;
   std::vector<dlong> el;
   std::vector<Extra> extra;
-  std::vector<dfloat_array> r;
+  std::vector<std::array<dfloat,3>> r;
 
   particle_set(nrs_t *nrs_, double newton_tol_) : interp_(new interp_t(nrs_, newton_tol_)) {}
 
