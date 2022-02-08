@@ -25,7 +25,6 @@ SOFTWARE.
 */
 
 #include "parAlmond.hpp"
-#include "platform.hpp"
 #include <omp.h>
 
 namespace parAlmond {

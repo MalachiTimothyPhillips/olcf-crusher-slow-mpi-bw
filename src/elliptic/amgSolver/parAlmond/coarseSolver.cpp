@@ -36,6 +36,8 @@ SOFTWARE.
 #include "amgx.h"
 #include "platform.hpp"
 
+#include "observer.hpp"
+
 namespace {
   static occa::kernel convertFP64ToFP32Kernel;
   static occa::kernel convertFP32ToFP64Kernel;
@@ -419,6 +421,8 @@ void coarseSolver::AmgXSolve(occa::memory o_rhs, occa::memory o_x) {
   }
 }
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
+
+  observer_t::get()->increment("Ac^{-1}");
 
   platform->timer.tic("coarseSolve", 1);
   if(useSEMFEM){

@@ -27,15 +27,21 @@
 #include "elliptic.h"
 #include "linAlg.hpp"
 #include <iostream>
+#include "observer.hpp"
 void MGLevel::Ax(occa::memory o_x, occa::memory o_Ax)
 {
   ellipticOperator(elliptic,o_x,o_Ax, pfloatString);
+
+  observer_t::get()->increment("A");
 }
 
 void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
 {
   if(stype != SmootherType::SCHWARZ) {
     ellipticOperator(elliptic,o_x,o_res, dfloatString);
+
+    observer_t::get()->increment("A");
+
     // subtract r = b - A*x
     platform->linAlg->axpbyMany(
       Nrows,
@@ -71,6 +77,7 @@ void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
 
 void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 {
+  observer_t::get()->increment("S_o");
   platform->timer.tic(elliptic->name + " preconditioner smoother", 1);
   if(!x_is_zero && stype == SmootherType::SCHWARZ) return;
   if(!strstr(pfloatString,dfloatString)) {
@@ -96,6 +103,8 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
 void MGLevel::smoother(occa::memory o_x, occa::memory o_Sx, bool x_is_zero)
 {
+  observer_t::get()->increment("S_c");
+
   // x_is_zero = true <-> downward leg
   if(x_is_zero) {
     if (smtypeDown == SecondarySmootherType::JACOBI)

@@ -56,6 +56,10 @@ int richardson(elliptic_t *elliptic,
            tol);
   }
 
+  if (platform->comm.mpiRank == 0) {
+    printf("it,\tres,\tA,\tMinv,\tS_o,\tS_c,\tAcinv\n");
+  }
+
   int iter = 0;
   do {
     iter++;
@@ -63,13 +67,16 @@ int richardson(elliptic_t *elliptic,
     // M^{-1} (b - A x)
     ellipticPreconditioner(elliptic, o_r, o_z);
 
-    preconditionerO
+    observer_t::get()->increment("M^{-1}");
 
-        // x_{k+1} = x_k + M^{-1} (b - A x)
-        platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, 1.0, o_x);
+    // x_{k+1} = x_k + M^{-1} (b - A x)
+    platform->linAlg->axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, 1.0, o_z, 1.0, o_x);
 
     // r_{k+1} = b - A x_{k+1}
     ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+
+    observer_t::get()->increment("A");
+
     platform->linAlg
         ->axpbyzMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, -1.0, o_Ax, 1.0, o_b, o_r);
 
@@ -84,6 +91,18 @@ int richardson(elliptic_t *elliptic,
 
     if (verbose && (platform->comm.mpiRank == 0))
       printf("it %d r norm %.15e\n", iter, rdotr);
+
+    if (platform->comm.mpiRank == 0) {
+
+      auto observer = observer_t::get();
+      const auto A = observer->count("A");
+      const auto Minv = observer->count("M^{-1}");
+      const auto S_o = observer->count("S_o");
+      const auto S_c = observer->count("S_c");
+      const auto Acinv = observer->count("Ac^{-1}");
+      printf("%d,\t%g,\t%d,\t%d,\t%d,\t%d,\t%d\n", iter, rdotr, A, Minv, S_o, S_c, Acinv);
+    }
+
   } while (rdotr > tol && iter < MAXIT);
 
   return iter;
