@@ -36,6 +36,8 @@ set(INCLUDE_DIRS
   ${NEKRS_INSTALL_DIR}/include/cds
   ${NEKRS_INSTALL_DIR}/include/linAlg
   ${NEKRS_INSTALL_DIR}/include/neknek
+  ${NEKRS_INSTALL_DIR}/include/pointInterpolation
+  ${NEKRS_INSTALL_DIR}/include/lpm
   ${NEKRS_INSTALL_DIR}/occa/include
 )
 
