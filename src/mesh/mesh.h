@@ -45,7 +45,7 @@
 struct mesh_t
 {
   dfloat avgBoundaryValue(int BID, occa::memory o_fld);
-  void avgBoundaryValue(int BID, int Nfields, occa::memory o_flds, dfloat *avgs);
+  void avgBoundaryValue(int BID, int Nfields, int offsetFld, occa::memory o_flds, dfloat *avgs);
   void move();
   void update();
   void computeInvLMM();

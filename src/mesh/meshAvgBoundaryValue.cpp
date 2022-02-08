@@ -9,11 +9,11 @@ static occa::memory h_sumFace;
 dfloat mesh_t::avgBoundaryValue(int BID, occa::memory o_fld)
 {
   dfloat avg = 0.0;
-  avgBoundaryValue(BID, 1, o_fld, &avg);
+  avgBoundaryValue(BID, 1, fieldOffset, o_fld, &avg);
   return avg;
 }
 
-void mesh_t::avgBoundaryValue(int BID, int Nfields, occa::memory o_fld, dfloat *avgs)
+void mesh_t::avgBoundaryValue(int BID, int Nfields, int offsetFld, occa::memory o_fld, dfloat *avgs)
 {
   const auto offset = Nfaces * Nelements;
   const auto Nbytes = (Nfields + 1) * offset * sizeof(dfloat);
@@ -37,7 +37,7 @@ void mesh_t::avgBoundaryValue(int BID, int Nfields, occa::memory o_fld, dfloat *
     sum = (dfloat *)calloc(Nfields + 1, sizeof(dfloat));
   }
 
-  avgBIDValueKernel(Nelements, BID, Nfields, fieldOffset, offset, o_sgeo, o_EToB, o_vmapM, o_fld, o_sumFace);
+  avgBIDValueKernel(Nelements, BID, Nfields, offsetFld, offset, o_sgeo, o_EToB, o_vmapM, o_fld, o_sumFace);
 
   o_sumFace.copyTo(sumFace, Nbytes);
 

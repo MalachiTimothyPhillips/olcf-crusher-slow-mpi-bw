@@ -147,7 +147,7 @@ void ciTestAvgBoundary(nrs_t* nrs)
   platform->linAlg->fill(N*nrs->fieldOffset, SA, o_fld);
 
   std::array<dfloat, N> results;
-  mesh->avgBoundaryValue(BID, N, o_fld, results.data());
+  mesh->avgBoundaryValue(BID, N, nrs->fieldOffset, o_fld, results.data());
 
   for(auto&& v : results){
     if(std::abs(v - SA) > testTol){
