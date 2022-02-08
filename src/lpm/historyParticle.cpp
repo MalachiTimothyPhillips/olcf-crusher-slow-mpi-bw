@@ -1,6 +1,8 @@
 #include "historyParticle.hpp"
 #include "nrs.hpp"
 
+#include "nekInterfaceAdapter.hpp" // for nek::coeffAB
+
 #define OUT_CHUNK_SIZE 100000 /* chunk size for outputing particles */
 #define USE_MPIIO      true
 

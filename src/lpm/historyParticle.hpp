@@ -7,7 +7,7 @@ class nrs_t;
 
 class historyData_t {
 public:
-  static constexpr integrationOrder {3};
+  static constexpr int integrationOrder {3};
   dfloat v_hist[integrationOrder-1][3];
   hlong  id;
   dfloat color;

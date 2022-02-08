@@ -13,8 +13,8 @@
 template <class Extra = char> struct particle_set {
   // helper class to pass components of a single particle
   struct particle_t {
-    dfloat x[3];
-    dfloat r[3];
+    std::array<dfloat,3> x;
+    std::array<dfloat,3> r;
     dlong code;
     dlong proc;
     dlong el;
@@ -22,7 +22,7 @@ template <class Extra = char> struct particle_set {
 
     particle_t() {}
 
-    particle_t(dfloat x_[3], dlong code_, dlong proc_, dlong el_, dfloat r_[3], Extra extra_)
+    particle_t(std::array<dfloat,3> x_, dlong code_, dlong proc_, dlong el_, std::array<dfloat,3> r_, Extra extra_)
         : code(code_), proc(proc_), el(el_), extra(extra_)
     {
       for (int i = 0; i < 3; ++i) {
@@ -31,14 +31,6 @@ template <class Extra = char> struct particle_set {
       }
     }
 
-    particle_t(dfloat x_[3], dlong code_, dlong proc_, dlong el_, std::array<dfloat,3> r_, Extra extra_)
-        : code(code_), proc(proc_), el(el_), extra(extra_)
-    {
-      for (int i = 0; i < 3; ++i) {
-        x[i] = x_[i];
-        r[i] = r_[i];
-      }
-    }
   };
 
   std::shared_ptr<interp_t> interp_;
