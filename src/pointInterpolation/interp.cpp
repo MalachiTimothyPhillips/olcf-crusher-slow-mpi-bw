@@ -111,9 +111,8 @@ void interp_t::evalPoints(occa::memory fields,
                           const dlong outStride[],
                           dlong n)
 {
-  occa::memory o_fields = fields.cast(occa::dtype::get<dfloat>());
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset, findpts);
+    ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts);
   }
 }
 
@@ -198,7 +197,7 @@ void interp_t::evalLocalPoints(occa::memory o_fields,
                         o_r,
                         rStrideBytes,
                         n,
-                        o_fields + i * fieldOffset,
+                        o_fields + i * fieldOffset * sizeof(dfloat),
                         findpts);
   }
   if (unitOutStride) {

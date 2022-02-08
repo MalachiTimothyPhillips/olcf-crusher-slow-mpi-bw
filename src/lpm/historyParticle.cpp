@@ -136,8 +136,7 @@ void particleUpdate(historyParticles_t& particles, nrs_t* nrs, int tstep){
   u1[0] = new dfloat[3*particles.size()];
   u1[1] = u1[0] + particles.size();
   u1[2] = u1[1] + particles.size();
-  occa::memory o_U = nrs->o_U.cast(occa::dtype::get<dfloat>());
-  particles.interpLocal(o_U, u1, 3);
+  particles.interpLocal(nrs->o_U, u1, 3);
 
   auto coeffs = particleTimestepperCoeffs(nrs, tstep);
 

@@ -34,7 +34,7 @@ occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage)
                            mesh->o_EToB,
                            cds->o_EToB[is],
                            cds->neknek->o_pointMap,
-                           cds->neknek->o_valInterp+(cds->dim+is)*cds->neknek->npt,
+                           cds->neknek->o_valInterp+(cds->dim+is)*cds->neknek->npt*sizeof(dfloat),
                            *(cds->o_usrwrk),
                            platform->o_mempool.slice2);
 

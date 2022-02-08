@@ -8,7 +8,6 @@
 static void reserveAllocation(nrs_t *nrs, dlong npt) {
   neknek_t *neknek = nrs->neknek;
   const dlong D = nrs->dim;
-  occa::device &device = platform_t::getInstance()->device.occaDevice();
 
   if(neknek->valInterp == nullptr || neknek->npt != npt) {
 
@@ -17,12 +16,11 @@ static void reserveAllocation(nrs_t *nrs, dlong npt) {
     neknek->valInterp = (dfloat *)calloc((D + neknek->Nscalar) * npt, sizeof(dfloat));
     neknek->pointMap = (dlong *)calloc(nrs->fieldOffset + 1, sizeof(dlong));
 
-    neknek->o_pointMap  = device.malloc(nrs->fieldOffset+1, occa::dtype::get<dlong>());
+    neknek->o_pointMap  = platform->device.malloc((nrs->fieldOffset+1) * sizeof(dfloat));
     if(npt > 0) {
-      neknek->o_valInterp = device.malloc((D+neknek->Nscalar)*npt, occa::dtype::get<dfloat>());
+      neknek->o_valInterp = platform->device.malloc((D+neknek->Nscalar)*npt * sizeof(dfloat));
     } else {
-      // OCCA can't give length 0 arrays to kernels
-      neknek->o_valInterp = device.malloc(1, occa::dtype::get<dfloat>());
+      neknek->o_valInterp = platform->device.malloc(1 * sizeof(dfloat));
     }
 
     neknek->npt = npt;
