@@ -6,37 +6,12 @@
 #include <stdio.h>
 #include <math.h>
 #include "udf.hpp"
-#include "pointInterpolation/particle.hpp"
+#include "lpm/historyParticle.hpp"
 
 #include "casedata.h"
 
-#define OUT_CHUNK_SIZE 100000 /* chunk size for outputing particles */
-#define USE_MPIIO      true
-
-struct extra_particle_data {
-  dfloat v_hist[2][3];
-  hlong  id;
-  dfloat color;
-
-  extra_particle_data()
-  {
-  }
-
-  extra_particle_data(dfloat v_hist_[2][3], dfloat color_, hlong id_)
-  {
-    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        v_hist[i][j] = v_hist_[i][j];
-      }
-    }
-    id = id_;
-    color = color_;
-  }
-};
-typedef particle_set<extra_particle_data> particles_t;
-
 /* Particle Functions */
-void particleInit(particles_t& particles) {
+void particleInit(historyParticles_t& particles) {
 
   static hlong gcount = 0; // total # particles emitted
 
@@ -52,7 +27,7 @@ void particleInit(particles_t& particles) {
         dfloat xp = dx*(ix+0.5), yp = dy*(iy+0.5), zp = dz*(iz+0.5);
 
         if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
-          particles_t::particle_t particle;
+          historyParticles_t::particle_t particle;
 
           particle.x[0] = xp;
           particle.x[1] = yp;
@@ -62,9 +37,7 @@ void particleInit(particles_t& particles) {
             particle.extra.v_hist[0][d] = 0.0;
             particle.extra.v_hist[1][d] = 0.0;
           }
-//        particle.extra.color = time;    // color by spawning timestep
           particle.extra.color = gcount;  // color by id
-//        particle.extra.color = xp;      // color by intial x position
 
           particles.push(particle);
         }
@@ -75,41 +48,9 @@ void particleInit(particles_t& particles) {
 }
 
 
-void particleUpdate(particles_t& particles, nrs_t* nrs, int tstep) {
-
-  particles.find();
-  particles.migrate();
-
-  dfloat *u1[3];
-  u1[0] = new dfloat[3*particles.size()];
-  u1[1] = u1[0] + particles.size();
-  u1[2] = u1[1] + particles.size();
-  occa::memory o_U = nrs->o_U.cast(occa::dtype::get<dfloat>());
-  particles.interpLocal(o_U, u1, 3);
-
-  double c1, c2, c3, dt = nrs->dt[0];
-  if (tstep == 0) { // AB1
-    c1 = 1.0;
-    c2 = 0.0;
-    c3 = 0.0;
-  } else if (tstep == 1) { // AB2
-    c1 =  3.0 / 2.0;
-    c2 = -1.0 / 2.0;
-    c3 =  0.0 / 2.0;
-  } else { // AB3
-    c1 =  23.0 / 12.0;
-    c2 = -16.0 / 12.0;
-    c3 =   5.0 / 12.0;
-  }
+void applyBounds(historyParticles_t& particles) {
 
   for (int i = 0; i < particles.size(); ++i) {
-    // Update particle position and velocity history
-    for (int k=0; k < 3; ++k) {
-       particles.x[k][i] += dt*(c1*u1[k][i] + c2*particles.extra[i].v_hist[0][k] + c3*particles.extra[i].v_hist[1][k]);
-       particles.extra[i].v_hist[1][k] = particles.extra[i].v_hist[0][k];
-       particles.extra[i].v_hist[0][k] = u1[k][i];
-    }
-
     // x and z have periodic boundaries
     if (particles.x[0][i] > 4) particles.x[0][i] -= 4;
     if (particles.x[0][i] < 0) particles.x[0][i] += 4;
@@ -118,32 +59,9 @@ void particleUpdate(particles_t& particles, nrs_t* nrs, int tstep) {
     // don't let particles enter the ground
     if (particles.x[1][i] < 0) particles.x[1][i] = 0;
   }
-
-  delete[] u1[0];
 }
 
-
-particles_t *particle_data;
-
-void particleStep(nrs_t *nrs, dfloat time, int tstep)
-{
-  // adjust to control when particles are generated
-  bool ifInit;
-//static dfloat last_new_time = 0.0;    // |
-//ifInit = time - last_new_time >= 0.5; // | every 0.5 seconds
-//if(ifInit) last_new_time = time;      // |
-//ifInit = tstep % 100 == 0;            // every 100 iterations
-//ifInit = nrs->isOutputStep;           // on the output steps
-  ifInit = tstep == 0;                  // only once at the begining
-
-  // Only output particles on output steps to ensure particles match the field files
-  bool ifOut = nrs->isOutputStep;
-
-  if (ifInit) particleInit  (*particle_data);
-              particleUpdate(*particle_data, nrs, tstep);
-  if (ifOut)  particleOut   (*particle_data);
-}
-
+historyParticles_t *particle_data;
 
 /* User Functions */
 
@@ -187,11 +105,22 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particle_data = new particles_t(nrs, 0);
+  particle_data = new historyParticles_t(nrs, 0);
   udf.uEqnSource = &userf;
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
-  particleStep(nrs, time, tstep);
+  const bool ifInit = tstep == 0; // only once at the begining
+
+  if (ifInit) {
+    particleInit  (*particle_data);
+  }
+
+  particleUpdate(*particle_data, nrs, tstep);
+  applyBounds(*particle_data);
+
+  if (nrs->isOutputStep)  {
+    particleOut   (*particle_data);
+  }
 }
