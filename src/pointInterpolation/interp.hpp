@@ -1,8 +1,10 @@
 #if !defined(nekrs_interp_hpp_)
 #define nekrs_interp_hpp_
 
-#include "nrs.hpp"
-#include "ogsFindpts.hpp"
+#include "nrssys.hpp"
+
+class nrs_t;
+class ogs_findpts_t;
 
 // Contains data for doing interpolations on a particular mesh
 struct interp_t {
@@ -61,24 +63,21 @@ struct interp_t {
                        dlong n);
 
   // Evaluates a field at the given points
-  template <typename fieldPtr>
-  void interpField(fieldPtr fields,
+  void interpField(dfloat* fields,
                    dlong nFields,
                    const dfloat *x[],
                    const dlong x_stride[],
                    dfloat *out[],
                    const dlong out_stride[],
-                   dlong n)
-  {
+                   dlong n);
 
-    auto *findPtsData = new ogs_findpts_data_t(n);
-
-    findPoints(x, x_stride, findPtsData, n);
-
-    evalPoints(fields, nFields, findPtsData, out, out_stride, n);
-
-    delete findPtsData;
-  }
+  void interpField(occa::memory fields,
+                   dlong nFields,
+                   const dfloat *x[],
+                   const dlong x_stride[],
+                   dfloat *out[],
+                   const dlong out_stride[],
+                   dlong n);
 };
 
 #endif

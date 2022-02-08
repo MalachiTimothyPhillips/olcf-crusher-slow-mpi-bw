@@ -4,6 +4,8 @@
 #include "platform.hpp"
 #include <vector>
 
+#include "ogsFindpts.hpp"
+
 #include "interp.hpp"
 
 interp_t::interp_t(nrs_t *nrs_, double newton_tol_) : nrs(nrs_), newton_tol(newton_tol_)
@@ -222,4 +224,40 @@ void interp_t::evalLocalPoints(occa::memory o_fields,
       }
     }
   }
+}
+
+void interp_t::interpField(dfloat* fields,
+                 dlong nFields,
+                 const dfloat *x[],
+                 const dlong x_stride[],
+                 dfloat *out[],
+                 const dlong out_stride[],
+                 dlong n);
+{
+
+  auto *findPtsData = new ogs_findpts_data_t(n);
+
+  findPoints(x, x_stride, findPtsData, n);
+
+  evalPoints(fields, nFields, findPtsData, out, out_stride, n);
+
+  delete findPtsData;
+}
+
+void interp_t::interpField(occa::memory fields,
+                 dlong nFields,
+                 const dfloat *x[],
+                 const dlong x_stride[],
+                 dfloat *out[],
+                 const dlong out_stride[],
+                 dlong n);
+{
+
+  auto *findPtsData = new ogs_findpts_data_t(n);
+
+  findPoints(x, x_stride, findPtsData, n);
+
+  evalPoints(fields, nFields, findPtsData, out, out_stride, n);
+
+  delete findPtsData;
 }
