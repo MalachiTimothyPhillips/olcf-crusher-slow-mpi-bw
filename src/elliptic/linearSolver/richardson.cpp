@@ -57,7 +57,11 @@ int richardson(elliptic_t *elliptic,
   }
 
   if (platform->comm.mpiRank == 0) {
-    printf("it,\tres,\tA,\tMinv,\tS_o,\tS_c,\tAcinv\n");
+    std::cout << "it";
+    for (auto &&entry : {"res", "A", "Minv", "S_o", "S_c", "Acinv"}) {
+      std::cout << "," << entry;
+    }
+    std::cout << std::endl;
   }
 
   int iter = 0;
@@ -100,7 +104,15 @@ int richardson(elliptic_t *elliptic,
       const auto S_o = observer->count("S_o");
       const auto S_c = observer->count("S_c");
       const auto Acinv = observer->count("Ac^{-1}");
-      printf("%d,\t%g,\t%d,\t%d,\t%d,\t%d,\t%d\n", iter, rdotr, A, Minv, S_o, S_c, Acinv);
+
+      std::cout << iter << ",";
+      std::cout << rdotr << ",";
+      std::cout << A << ",";
+      std::cout << Minv << ",";
+      std::cout << S_o << ",";
+      std::cout << S_c << ",";
+      std::cout << Acinv;
+      std::cout << std::endl;
     }
 
   } while (rdotr > tol && iter < MAXIT);
