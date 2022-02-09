@@ -6,8 +6,22 @@
 class nrs_t;
 class ogs_findpts_t;
 
+// TODO: correctly mark public/private
+
+// single field, no offset
+// multi field,  pass in offset
+// express this purpose *in* the interface
+
+// rename interp_t -> pointInterpolation_t
+// findPoints -> find
+// evalPoints -> eval
+
+// remove interpField
+// interpField ??? (find + eval)
+
 // Contains data for doing interpolations on a particular mesh
-struct interp_t {
+class interp_t {
+public:
   nrs_t *nrs;
   double newton_tol;
   ogs_findpts_t *findpts;
@@ -37,6 +51,7 @@ struct interp_t {
                   const dlong out_stride[],
                   dlong n);
 
+// TODO: mark as private
   // Evalutes points located on this process
   // Given a (code, proc, el, r) tuple computed by findPoints, proc must be this
   // process's rank, code must be 0 or 1, and el and r are passed to this function

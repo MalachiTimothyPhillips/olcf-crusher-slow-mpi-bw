@@ -21,6 +21,11 @@ public:
 
 using historyParticles_t = particle_set<historyData_t>;
 
+// make this resemble writeFld
+// make member functions of lpm class
+// hold onto a reference to nrs
+
+// tstep is the only argument for update
 
 void particleOut(const historyParticles_t& particles);
 void particleUpdate(historyParticles_t& particles, nrs_t* nrs, int tstep);

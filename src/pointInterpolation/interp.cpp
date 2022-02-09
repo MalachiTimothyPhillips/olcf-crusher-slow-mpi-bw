@@ -232,7 +232,7 @@ void interp_t::interpField(dfloat* fields,
                  const dlong x_stride[],
                  dfloat *out[],
                  const dlong out_stride[],
-                 dlong n);
+                 dlong n)
 {
 
   auto *findPtsData = new ogs_findpts_data_t(n);
@@ -250,7 +250,7 @@ void interp_t::interpField(occa::memory fields,
                  const dlong x_stride[],
                  dfloat *out[],
                  const dlong out_stride[],
-                 dlong n);
+                 dlong n)
 {
 
   auto *findPtsData = new ogs_findpts_data_t(n);

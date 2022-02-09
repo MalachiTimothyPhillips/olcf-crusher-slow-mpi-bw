@@ -61,7 +61,7 @@ void applyBounds(historyParticles_t& particles) {
   }
 }
 
-historyParticles_t *particle_data;
+historyParticles_t *particles;
 
 /* User Functions */
 
@@ -105,7 +105,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particle_data = new historyParticles_t(nrs, 0);
+  particles = new historyParticles_t(nrs, 0);
   udf.uEqnSource = &userf;
 }
 
@@ -114,13 +114,14 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   const bool ifInit = tstep == 0; // only once at the begining
 
   if (ifInit) {
-    particleInit  (*particle_data);
+    particleInit  (*particles);
   }
 
-  particleUpdate(*particle_data, nrs, tstep);
-  applyBounds(*particle_data);
+  particles->update(tstep);
+
+  applyBounds(*particles);
 
   if (nrs->isOutputStep)  {
-    particleOut   (*particle_data);
+    particles->write();
   }
 }
