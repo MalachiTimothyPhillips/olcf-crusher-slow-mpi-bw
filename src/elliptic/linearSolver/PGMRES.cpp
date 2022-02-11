@@ -27,6 +27,7 @@
 #include "elliptic.h"
 #include "timer.hpp"
 #include "linAlg.hpp"
+#include "observer.hpp"
 
 GmresData::GmresData(elliptic_t* elliptic)
 : nRestartVectors(
@@ -117,6 +118,9 @@ void gmresUpdate(elliptic_t* elliptic,
     );
   
     ellipticPreconditioner(elliptic, o_z, o_tmp);
+
+    observer_t::get()->increment("M^{-1}");
+
     platform->linAlg->axpbyMany(
       mesh->Nlocal,
       elliptic->Nfields,
@@ -134,6 +138,8 @@ void gmresUpdate(elliptic_t* elliptic,
 int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         const dfloat tol, const int MAXIT, dfloat &rdotr)
 {
+  
+  auto observer = observer_t::get();
 
   mesh_t* mesh = elliptic->mesh;
   linAlg_t& linAlg = *(platform->linAlg);
@@ -178,6 +184,14 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       printf("PGMRES ");
     printf("%s: initial res norm %.15e WE NEED TO GET TO %e \n", elliptic->name.c_str(), rdotr, tol);
   }
+  
+  if (platform->comm.mpiRank == 0) {
+    std::cout << "it";
+    for (auto &&entry : {"res", "A", "Minv", "S_o", "S_c", "Acinv"}) {
+      std::cout << "," << entry;
+    }
+    std::cout << std::endl;
+  }
 
   int iter=0;
 
@@ -201,9 +215,11 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       occa::memory& o_Mv = flexible ? o_Z.at(i) : o_Z.at(0);
       // z := M^{-1} V(:,i)
       ellipticPreconditioner(elliptic, o_V.at(i), o_Mv);
+      observer->increment("M^{-1}");
 
       // w := A z
       ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
+      observer->increment("A");
 
       linAlg.weightedInnerProdMulti(
         mesh->Nlocal,
@@ -285,6 +301,24 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       if (verbose && (platform->comm.mpiRank == 0))
         printf("it %d r norm %.15e\n", iter, rdotr);
 
+      if (platform->comm.mpiRank == 0) {
+
+        const auto A = observer->count("A");
+        const auto Minv = observer->count("M^{-1}");
+        const auto S_o = observer->count("S_o");
+        const auto S_c = observer->count("S_c");
+        const auto Acinv = observer->count("Ac^{-1}");
+
+        std::cout << iter << ",";
+        std::cout << rdotr << ",";
+        std::cout << A << ",";
+        std::cout << Minv << ",";
+        std::cout << S_o << ",";
+        std::cout << S_c << ",";
+        std::cout << Acinv;
+        std::cout << std::endl;
+      }
+
       if(error < TOL || iter==MAXIT) {
         //update approximation
         gmresUpdate(elliptic, o_x, i+1);
@@ -301,6 +335,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
     // nRestartVectors GMRES
     // compute A*x
     ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+    observer->increment("A");
 
     elliptic->fusedResidualAndNormKernel(
       Nblock,
