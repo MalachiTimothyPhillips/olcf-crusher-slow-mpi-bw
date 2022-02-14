@@ -578,7 +578,7 @@ void makef(
                                                  mesh->o_cubInterpT,
                                                  mesh->o_cubProjectT,
                                                  nrs->fieldOffset,
-                                                 std::max(nrs->fieldOffset, mesh->Nelements * mesh->cubNp),
+                                                 nrs->cubatureOffset,
                                                  nrs->o_U,
                                                  nrs->o_Urst,
                                                  platform->o_mempool.slice0);
