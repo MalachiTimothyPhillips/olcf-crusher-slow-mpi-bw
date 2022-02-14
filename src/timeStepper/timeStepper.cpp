@@ -445,7 +445,7 @@ void makeq(
                                                    mesh->o_cubProjectT,
                                                    cds->vFieldOffset,
                                                    isOffset,
-                                                   nrs->cubatureOffset,
+                                                   cds->vCubatureOffset,
                                                    cds->o_S,
                                                    cds->o_Urst,
                                                    cds->o_rho,
