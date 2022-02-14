@@ -8,14 +8,14 @@
 
 #include "interp.hpp"
 
-interp_t::interp_t(nrs_t *nrs_, double newton_tol_) : nrs(nrs_), newton_tol(newton_tol_)
+pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_)
+    : nrs(nrs_), newton_tol(newton_tol_)
 {
 
-  if (newton_tol < 5e-13) {
-    newton_tol = 5e-13;
-  }
-  int npt_max = 128;
-  int bb_tol = 0.01;
+  newton_tol = std::min(5e-13, newton_tol_);
+
+  const int npt_max = 128;
+  const dfloat bb_tol = 0.01;
 
   mesh_t *mesh = nrs->meshV;
 
@@ -31,7 +31,7 @@ interp_t::interp_t(nrs_t *nrs_, double newton_tol_) : nrs(nrs_), newton_tol(newt
   dlong m1[3] = {2 * n1[0], 2 * n1[1], 2 * n1[2]};
 
   // used for # of cells in hash tables
-  dlong hash_size = nelm * n1[0] * n1[1] * n1[2];
+  const dlong hash_size = nelm * n1[0] * n1[1] * n1[2];
 
   MPI_Comm comm = platform_t::getInstance()->comm.mpiComm;
 
@@ -49,13 +49,13 @@ interp_t::interp_t(nrs_t *nrs_, double newton_tol_) : nrs(nrs_), newton_tol(newt
                             &platform_t::getInstance()->device.occaDevice());
 }
 
-interp_t::~interp_t() { ogsFindptsFree(findpts); }
+pointInterpolation_t::~pointInterpolation_t() { ogsFindptsFree(findpts); }
 
-void interp_t::findPoints(const dfloat *const *x,
-                          const dlong xStride[],
-                          ogs_findpts_data_t *findPtsData,
-                          dlong n,
-                          bool printWarnings)
+void pointInterpolation_t::findPoints(const dfloat *const *x,
+                                      const dlong xStride[],
+                                      ogs_findpts_data_t *findPtsData,
+                                      dlong n,
+                                      bool printWarnings)
 {
   // findpts takes strides in terms of bytes, but findPoints takes strides in terms of elements
   dlong xStrideBytes[3] = {xStride[0] * sizeof(dfloat),
@@ -93,12 +93,12 @@ void interp_t::findPoints(const dfloat *const *x,
   }
 }
 
-void interp_t::evalPoints(const dfloat *fields,
-                          const dlong nFields,
-                          ogs_findpts_data_t *findPtsData,
-                          dfloat **out,
-                          const dlong outStride[],
-                          dlong n)
+void pointInterpolation_t::evalPoints(const dfloat *fields,
+                                      const dlong nFields,
+                                      ogs_findpts_data_t *findPtsData,
+                                      dfloat **out,
+                                      const dlong outStride[],
+                                      dlong n)
 {
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
@@ -106,27 +106,27 @@ void interp_t::evalPoints(const dfloat *fields,
   }
 }
 
-void interp_t::evalPoints(occa::memory fields,
-                          const dlong nFields,
-                          ogs_findpts_data_t *findPtsData,
-                          dfloat **out,
-                          const dlong outStride[],
-                          dlong n)
+void pointInterpolation_t::evalPoints(occa::memory fields,
+                                      const dlong nFields,
+                                      ogs_findpts_data_t *findPtsData,
+                                      dfloat **out,
+                                      const dlong outStride[],
+                                      dlong n)
 {
   for (int i = 0; i < nFields; ++i) {
     ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts);
   }
 }
 
-void interp_t::evalLocalPoints(const dfloat *fields,
-                               const dlong nFields,
-                               const dlong *el,
-                               const dlong elStride,
-                               const dfloat *r,
-                               const dlong rStride,
-                               dfloat **out,
-                               const dlong outStride[],
-                               dlong n)
+void pointInterpolation_t::evalLocalPoints(const dfloat *fields,
+                                           const dlong nFields,
+                                           const dlong *el,
+                                           const dlong elStride,
+                                           const dfloat *r,
+                                           const dlong rStride,
+                                           dfloat **out,
+                                           const dlong outStride[],
+                                           dlong n)
 {
   if (n == 0 || nFields == 0) {
     return;
@@ -145,15 +145,15 @@ void interp_t::evalLocalPoints(const dfloat *fields,
   }
 }
 
-void interp_t::evalLocalPoints(occa::memory o_fields,
-                               const dlong nFields,
-                               const dlong *el,
-                               const dlong elStride,
-                               const dfloat *r,
-                               const dlong rStride,
-                               dfloat **out,
-                               const dlong outStride[],
-                               dlong n)
+void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
+                                           const dlong nFields,
+                                           const dlong *el,
+                                           const dlong elStride,
+                                           const dfloat *r,
+                                           const dlong rStride,
+                                           dfloat **out,
+                                           const dlong outStride[],
+                                           dlong n)
 {
   if (n == 0 || nFields == 0) {
     return;
@@ -226,13 +226,13 @@ void interp_t::evalLocalPoints(occa::memory o_fields,
   }
 }
 
-void interp_t::interpField(dfloat* fields,
-                 dlong nFields,
-                 const dfloat *x[],
-                 const dlong x_stride[],
-                 dfloat *out[],
-                 const dlong out_stride[],
-                 dlong n)
+void pointInterpolation_t::interpField(dfloat *fields,
+                                       dlong nFields,
+                                       const dfloat *x[],
+                                       const dlong x_stride[],
+                                       dfloat *out[],
+                                       const dlong out_stride[],
+                                       dlong n)
 {
 
   auto *findPtsData = new ogs_findpts_data_t(n);
@@ -244,13 +244,13 @@ void interp_t::interpField(dfloat* fields,
   delete findPtsData;
 }
 
-void interp_t::interpField(occa::memory fields,
-                 dlong nFields,
-                 const dfloat *x[],
-                 const dlong x_stride[],
-                 dfloat *out[],
-                 const dlong out_stride[],
-                 dlong n)
+void pointInterpolation_t::interpField(occa::memory fields,
+                                       dlong nFields,
+                                       const dfloat *x[],
+                                       const dlong x_stride[],
+                                       dfloat *out[],
+                                       const dlong out_stride[],
+                                       dlong n)
 {
 
   auto *findPtsData = new ogs_findpts_data_t(n);

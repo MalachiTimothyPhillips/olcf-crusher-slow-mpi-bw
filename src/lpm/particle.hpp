@@ -33,7 +33,7 @@ template <class Extra = char> struct particle_set {
 
   };
 
-  std::shared_ptr<interp_t> interp_;
+  std::shared_ptr<pointInterpolation_t> interp_;
 
   std::vector<dfloat> x[3];
   std::vector<dlong> code;
@@ -42,7 +42,7 @@ template <class Extra = char> struct particle_set {
   std::vector<Extra> extra;
   std::vector<std::array<dfloat,3>> r;
 
-  particle_set(nrs_t *nrs_, double newton_tol_) : interp_(new interp_t(nrs_, newton_tol_)) {}
+  particle_set(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) {}
 
   particle_set(particle_set &set)
       : interp_(set.interp_), x(set.x), code(set.code), proc(set.proc), el(set.el), extra(set.extra), r(set.r)
@@ -173,7 +173,7 @@ template <class Extra = char> struct particle_set {
 
     ogs_findpts_data_t data(code.data(), proc.data(), el.data(), &(r.data()[0][0]), dist2);
 
-    interp_->findPoints(xBase, xStride, &data, size(), printWarnings);
+    interp_->find(xBase, xStride, &data, size(), printWarnings);
     if (dist2In == nullptr) {
       delete[] dist2;
     }
@@ -208,7 +208,7 @@ template <class Extra = char> struct particle_set {
       }
     }
 
-    sarray_transfer(particle_t, &transfer, proc, true, ogsCrystalRouter(interp_->findpts));
+    sarray_transfer(particle_t, &transfer, proc, true, ogsCrystalRouter(interp_->ptr()));
 
     reserve(size() + transfer.n);
     particle_t *transfer_ptr = (particle_t *)transfer.ptr;
@@ -229,7 +229,7 @@ template <class Extra = char> struct particle_set {
   {
     ogs_findpts_data_t data(code.data(), proc.data(), el.data(), &(r.data()[0][0]), nullptr);
 
-    interp_->evalPoints(field, nFields, &data, size());
+    interp_->eval(field, nFields, &data, size());
   }
 
   // Interpolates the fields at each particle with the assumption that all particles belong to local elements
