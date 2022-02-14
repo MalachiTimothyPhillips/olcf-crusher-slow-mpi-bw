@@ -234,7 +234,7 @@ set(SRC
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
     src/pointInterpolation/interp.cpp
-    src/lpm/historyParticle.cpp
+    src/lpm/particle.cpp
     src/neknek/neknek.cpp
     src/udf/udf.cpp
     src/udf/compileUDFKernels.cpp

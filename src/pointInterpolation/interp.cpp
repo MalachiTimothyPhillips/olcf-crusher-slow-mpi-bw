@@ -51,13 +51,13 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_)
 
 pointInterpolation_t::~pointInterpolation_t() { ogsFindptsFree(findpts); }
 
-void pointInterpolation_t::findPoints(const dfloat *const *x,
-                                      const dlong xStride[],
-                                      ogs_findpts_data_t *findPtsData,
-                                      dlong n,
-                                      bool printWarnings)
+void pointInterpolation_t::find(const dfloat *const *x,
+                                const dlong xStride[],
+                                ogs_findpts_data_t *findPtsData,
+                                dlong n,
+                                bool printWarnings)
 {
-  // findpts takes strides in terms of bytes, but findPoints takes strides in terms of elements
+  // findpts takes strides in terms of bytes, but find takes strides in terms of elements
   dlong xStrideBytes[3] = {xStride[0] * sizeof(dfloat),
                            xStride[1] * sizeof(dfloat),
                            xStride[2] * sizeof(dfloat)};
@@ -87,18 +87,18 @@ void pointInterpolation_t::findPoints(const dfloat *const *x,
     hlong counts[4] = {n, nFail, 0, 0};
     MPI_Reduce(counts, counts + 2, 2, MPI_HLONG, MPI_SUM, 0, platform_t::getInstance()->comm.mpiComm);
     if (platform_t::getInstance()->comm.mpiRank == 0 && counts[3] > 0) {
-      std::cout << "interp::findPoints - Total number of points = " << counts[2] << ", failed = " << counts[3]
+      std::cout << "interp::find - Total number of points = " << counts[2] << ", failed = " << counts[3]
                 << std::endl;
     }
   }
 }
 
-void pointInterpolation_t::evalPoints(const dfloat *fields,
-                                      const dlong nFields,
-                                      ogs_findpts_data_t *findPtsData,
-                                      dfloat **out,
-                                      const dlong outStride[],
-                                      dlong n)
+void pointInterpolation_t::eval(const dfloat *fields,
+                                const dlong nFields,
+                                ogs_findpts_data_t *findPtsData,
+                                dfloat **out,
+                                const dlong outStride[],
+                                dlong n)
 {
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
@@ -106,12 +106,12 @@ void pointInterpolation_t::evalPoints(const dfloat *fields,
   }
 }
 
-void pointInterpolation_t::evalPoints(occa::memory fields,
-                                      const dlong nFields,
-                                      ogs_findpts_data_t *findPtsData,
-                                      dfloat **out,
-                                      const dlong outStride[],
-                                      dlong n)
+void pointInterpolation_t::eval(occa::memory o_fields,
+                                const dlong nFields,
+                                ogs_findpts_data_t *findPtsData,
+                                dfloat **out,
+                                const dlong outStride[],
+                                dlong n)
 {
   for (int i = 0; i < nFields; ++i) {
     ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts);
@@ -237,9 +237,9 @@ void pointInterpolation_t::interpField(dfloat *fields,
 
   auto *findPtsData = new ogs_findpts_data_t(n);
 
-  findPoints(x, x_stride, findPtsData, n);
+  find(x, x_stride, findPtsData, n);
 
-  evalPoints(fields, nFields, findPtsData, out, out_stride, n);
+  eval(fields, nFields, findPtsData, out, out_stride, n);
 
   delete findPtsData;
 }
@@ -255,9 +255,9 @@ void pointInterpolation_t::interpField(occa::memory fields,
 
   auto *findPtsData = new ogs_findpts_data_t(n);
 
-  findPoints(x, x_stride, findPtsData, n);
+  find(x, x_stride, findPtsData, n);
 
-  evalPoints(fields, nFields, findPtsData, out, out_stride, n);
+  eval(fields, nFields, findPtsData, out, out_stride, n);
 
   delete findPtsData;
 }
