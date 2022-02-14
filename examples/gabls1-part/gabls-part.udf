@@ -6,17 +6,20 @@
 #include <stdio.h>
 #include <math.h>
 #include "udf.hpp"
-#include "lpm/historyParticle.hpp"
+#include "lpm/particle.hpp"
 
 #include "casedata.h"
 
+static particles_t *particles;
+static occa::kernel coriolisKernel;
+
 /* Particle Functions */
-void particleInit(historyParticles_t& particles) {
+void particleInit(particles_t& p) {
 
   static hlong gcount = 0; // total # particles emitted
 
-  int mpi_rank = platform_t::getInstance()->comm.mpiRank;
-  int mpi_size = platform_t::getInstance()->comm.mpiCommSize;
+  int mpi_rank = platform->comm.mpiRank;
+  int mpi_size = platform->comm.mpiCommSize;
 
   // evenly distribute 50^3 particles in (0.0, 4.0)x(0.0, 4.0)x(0.0, 4.0)
   for (int ix = 0; ix < 50; ++ix) {
@@ -27,7 +30,7 @@ void particleInit(historyParticles_t& particles) {
         dfloat xp = dx*(ix+0.5), yp = dy*(iy+0.5), zp = dz*(iz+0.5);
 
         if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
-          historyParticles_t::particle_t particle;
+          particle_t particle;
 
           particle.x[0] = xp;
           particle.x[1] = yp;
@@ -39,7 +42,7 @@ void particleInit(historyParticles_t& particles) {
           }
           particle.extra.color = gcount;  // color by id
 
-          particles.push(particle);
+          p.push(particle);
         }
         ++gcount; // Total count
       }
@@ -47,25 +50,18 @@ void particleInit(historyParticles_t& particles) {
   }
 }
 
+void applyBounds(particles_t& p) {
 
-void applyBounds(historyParticles_t& particles) {
-
-  for (int i = 0; i < particles.size(); ++i) {
+  for (int i = 0; i < p.size(); ++i) {
     // x and z have periodic boundaries
-    if (particles.x[0][i] > 4) particles.x[0][i] -= 4;
-    if (particles.x[0][i] < 0) particles.x[0][i] += 4;
-    if (particles.x[2][i] > 4) particles.x[2][i] -= 4;
-    if (particles.x[2][i] < 0) particles.x[2][i] += 4;
+    if (p.x[0][i] > 4) p.x[0][i] -= 4;
+    if (p.x[0][i] < 0) p.x[0][i] += 4;
+    if (p.x[2][i] > 4) p.x[2][i] -= 4;
+    if (p.x[2][i] < 0) p.x[2][i] += 4;
     // don't let particles enter the ground
-    if (particles.x[1][i] < 0) particles.x[1][i] = 0;
+    if (p.x[1][i] < 0) p.x[1][i] = 0;
   }
 }
-
-historyParticles_t *particles;
-
-/* User Functions */
-
-occa::kernel coriolisKernel;
 
 void userf(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
 {
@@ -78,9 +74,6 @@ void userf(nrs_t *nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
     nrs->o_U,
     o_FU);
 }
-
-
-/* UDF Functions */
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
@@ -105,7 +98,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particles = new historyParticles_t(nrs, 0);
+  particles = new particles_t(nrs, 0);
   udf.uEqnSource = &userf;
 }
 
@@ -117,7 +110,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     particleInit  (*particles);
   }
 
-  particles->update(tstep);
+  particles->update(nrs->o_U, nrs->dt, tstep);
 
   applyBounds(*particles);
 

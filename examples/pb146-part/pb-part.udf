@@ -5,17 +5,19 @@
 #include <math.h>
 #include "udf.hpp"
 
-#include "lpm/historyParticle.hpp"
+#include "lpm/particle.hpp"
 
 #include "casedata.h"
 
+particles_t *particles;
+
 /* Particle Functions */
-void particleInit(historyParticles_t& particles) {
+void particleInit(particles_t& p) {
 
   static hlong gcount = 0; // total # particles emitted
 
-  int mpi_rank = platform_t::getInstance()->comm.mpiRank;
-  int mpi_size = platform_t::getInstance()->comm.mpiCommSize;
+  int mpi_rank = platform->comm.mpiRank;
+  int mpi_size = platform->comm.mpiCommSize;
 
   // n particle sources at different radius's
   constexpr dlong nSources = 3;
@@ -29,7 +31,7 @@ void particleInit(historyParticles_t& particles) {
     dfloat zp = Z_MIN + 0.001;
 
     if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
-      historyParticles_t::particle_t particle;
+      particle_t particle;
 
       particle.x[0] = xp;
       particle.x[1] = yp;
@@ -44,28 +46,24 @@ void particleInit(historyParticles_t& particles) {
 //    particle.extra.color = xp;      // color by intial x position
       particle.extra.color = source;  // color by source
 
-      particles.push(particle);
+      p.push(particle);
     }
     ++gcount; // Total count
   }
 }
 
 
-void applyBounds(historyParticles_t& particles) {
+void applyBounds(particles_t& p) {
 
-  for (int i = 0; i < particles.size(); ++i) {
+  for (int i = 0; i < p.size(); ++i) {
 
     // remove particles at the outflow
-    if (particles.x[2][i] > Z_MAX) {
-      particles.remove(i);
+    if (p.x[2][i] > Z_MAX) {
+      p.remove(i);
       --i; // cancel out the for loop increment
     }
   }
 }
-
-historyParticles_t *particle_data;
-
-/* UDF Functions */                                                      
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
@@ -73,7 +71,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particle_data = new historyParticles_t(nrs, 0);
+  particles = new particles_t(nrs, 0);
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
@@ -81,13 +79,13 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   const bool ifInit = tstep % 100 == 0; // every 100 iterations
 
   if (ifInit) {
-    particleInit(*particle_data);
+    particleInit(*particles);
   }
 
-  particleUpdate(*particle_data, nrs, tstep);
-  applyBounds(*particle_data);
+  particles->update(nrs->o_U, nrs->dt, tstep);
+  applyBounds(*particles);
 
   if (nrs->isOutputStep) {
-    particleOut(*particle_data);
+    particles->write();
   }
 }
