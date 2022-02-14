@@ -1292,8 +1292,6 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
     occa::memory o_U,
     occa::memory o_S) {
   linAlg_t *linAlg = platform->linAlg;
-  dlong offset =
-      std::max(cds->vFieldOffset, cds->meshV->Nelements * cds->meshV->cubNp);
 
   // Solve for Each SubProblem
   for (int torder = (nEXT - 1); torder >= 0; torder--) {
@@ -1359,7 +1357,7 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
                 cds->meshV->o_cubDiffInterpT,
                 cds->meshV->o_cubInterpT,
                 cds->vFieldOffset,
-                offset,
+                cds->vCubatureOffset,
                 rk * cds->fieldOffset[is],
                 cds->mesh[0]->o_invLMM,
                 cds->mesh[0]->o_divU,
@@ -1406,7 +1404,7 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
                 cds->meshV->o_cubDiffInterpT,
                 cds->meshV->o_cubInterpT,
                 cds->vFieldOffset,
-                offset,
+                cds->vCubatureOffset,
                 rk * cds->fieldOffset[is],
                 cds->mesh[0]->o_invLMM,
                 cds->mesh[0]->o_divU,
