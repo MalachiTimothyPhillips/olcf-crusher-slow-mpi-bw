@@ -1,5 +1,7 @@
 #include "particle.hpp"
 #include "nekInterfaceAdapter.hpp" // for nek::coeffAB
+#include <iomanip>
+#include <iostream>
 
 namespace {
 std::array<dfloat, historyData_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
@@ -218,8 +220,19 @@ void particles_t::interpLocal(dfloat *field, dfloat *out[], dlong nFields)
   delete[] outOffset;
 }
 
-void particles_t::write()
+namespace{
+std::string lpm_vtu_data(std::string fieldName, int nComponent, int distance)
 {
+  return "<DataArray type=\"Float32\" Name=\"" + fieldName + "\" NumberOfComponents=\"" 
+    + std::to_string(nComponent) + "\" format=\"append\" offset=\""
+    + std::to_string(distance) + "\"/>\n";
+}
+}
+
+void particles_t::write(dfloat time)
+{
+  static_assert(sizeof(float) == 4, "Requires float be 32-bit");
+  static_assert(sizeof(int) == 4, "Requires int be 32-bit");
 
   static int out_step = 0;
   ++out_step;
@@ -228,36 +241,87 @@ void particles_t::write()
   int mpi_rank = platform->comm.mpiRank;
   int mpi_size = platform->comm.mpiCommSize;
   dlong npart = this->size();
+  
+  dlong global_npart = npart;
 
-  char fname[128];
-  sprintf(fname, "part%05d.3d", out_step);
+  MPI_Allreduce(MPI_IN_PLACE, &global_npart, 1, MPI_DLONG, MPI_SUM, platform->comm.mpiComm);
 
-  constexpr hlong p_size = 18 * 4;
+  std::ostringstream output;
+  output << "par" << std::setw(5) << std::setfill('0') << out_step << ".vtu";
+  std::string fname = output.str();
 
-  hlong p_offset = npart;
-  MPI_Exscan(MPI_IN_PLACE, &p_offset, 1, MPI_HLONG, MPI_SUM, mpi_comm);
-  hlong file_offset = p_offset * p_size + 12;
+  hlong p_offset = 0;
+  MPI_Exscan(&p_offset, &npart, 1, MPI_HLONG, MPI_SUM, mpi_comm);
+
+  std::cout << "p_offset = " << p_offset << "\n";
+
+  if(mpi_rank == 0){
+    std::ofstream file(fname, std::ios::trunc);
+    file.close();
+  }
 
   MPI_File file_out;
-  MPI_File_open(mpi_comm, fname, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file_out);
+  MPI_File_open(mpi_comm, fname.c_str(), MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &file_out);
+
+  std::string message = "<VTKFile type=\"UnstructuredGrid\" version=\"1.0\" byte_order=\"LittleEndian\">\n";
+  message += "\t<UnstructuredGrid>\n";
+  message += "\t\t<FieldData>\n";
+  message += "\t\t\t<DataArray type=\"Float32\" Name=\"TIME\" NumberOfTuples=\"1\" format=\"ascii\"> " + std::to_string(time) + " </DataArray>\n";
+  message += "\t\t\t<DataArray type=\"Int32\" Name=\"CYCLE\" NumberOfTuples=\"1\" format=\"ascii\"> " + std::to_string(out_step) + " </DataArray>\n";
+  message += "\t\t</FieldData>\n";
+  message += "\t\t<Piece NumberOfPoints=\"" + std::to_string(global_npart) + "\" NumberOfCells=\"0\">\n";
+  message += "\t\t\t<Points>\n";
+  message += "\t\t\t\t" + lpm_vtu_data("Position", 3, 0);
+  message += "\t\t\t</Points>\n";
+
+  // TODO: add once the ability to add arbitrary particle equations is finished
+  message += "\t\t\t<PointData>\n";
+  message += "\t\t\t</PointData>\n";
+
+  message += "\t\t\t<Cells>\n";
+  message += "\t\t\t\t<DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\"/>\n";
+  message += "\t\t\t\t<DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\"/>\n";
+  message += "\t\t\t\t<DataArray type=\"Int32\" Name=\"types\" format=\"ascii\"/>\n";
+  message += "\t\t\t</Cells>\n";
+  message += "\t\t</Piece>\n";
+  message += "\t</UnstructuredGrid>\n";
+  message += "\t<AppendedData encoding=\"raw\">\n";
+  message += "_";
+  message += std::to_string(3 * sizeof(float) * global_npart);
+
   if (mpi_rank == 0) {
-    MPI_File_write(file_out, "X Y Z Color\n", 12, MPI_CHAR, MPI_STATUS_IGNORE);
-  }
-  else {
-    MPI_File_seek(file_out, file_offset, MPI_SEEK_SET);
+    MPI_File_write(file_out, message.c_str(), message.length(), MPI_CHAR, MPI_STATUS_IGNORE);
   }
 
-  char *char_buffer = new char[npart * p_size + 1];
-  for (dlong ii = 0; ii < npart; ++ii) {
-    sprintf(char_buffer + ii * p_size,
-            "%17.9e %17.9e %17.9e %17.9e\n",
-            this->x[0][ii],
-            this->x[1][ii],
-            this->x[2][ii],
-            this->extra[ii].color);
+  // byte displacements
+  MPI_Offset position = message.length() + sizeof(float) * (3 * p_offset + 1);
+  int count_pos = 3 * npart;
+
+  MPI_File_set_view(file_out, position, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+
+  // buffer
+  std::vector<float> positions(3 * npart, 0.0);
+  std::ostringstream coords;
+  for(int particle = 0; particle < npart; ++particle){
+    positions[3 * particle + 0] = static_cast<float>(this->x[0][particle]);
+    positions[3 * particle + 1] = static_cast<float>(this->x[1][particle]);
+    positions[3 * particle + 2] = static_cast<float>(this->x[2][particle]);
   }
-  MPI_File_write_all(file_out, char_buffer, p_size * npart, MPI_CHAR, MPI_STATUS_IGNORE);
-  delete[] char_buffer;
+
+  // TODO:
+  // will need to output other fields than just position
+  MPI_File_write_all(file_out, positions.data(), positions.size(), MPI_FLOAT, MPI_STATUS_IGNORE);
+
+  MPI_File_get_size(file_out, &position);
+
+  MPI_File_set_view(file_out, position, MPI_BYTE, MPI_BYTE, "native", MPI_INFO_NULL);
+
+  if(mpi_rank == 0){
+    message = "";
+    message += "</AppendedData>\n";
+    message += "</VTKFile>";
+    MPI_File_write(file_out, message.c_str(), message.length(), MPI_CHAR, MPI_STATUS_IGNORE);
+  }
 
   MPI_File_close(&file_out);
 }

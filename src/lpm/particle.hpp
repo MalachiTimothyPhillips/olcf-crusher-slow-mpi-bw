@@ -120,7 +120,7 @@ struct particle_t {
     void interpLocal(occa::memory field, dfloat *out[], dlong nFields);
     void interpLocal(dfloat *field, dfloat *out[], dlong nFields);
 
-    void write();
+    void write(dfloat time);
 
     void update(occa::memory o_fld, dfloat *dt, int tstep);
   };
