@@ -90,6 +90,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   particles->update(nrs->o_U, nrs->dt, tstep);
 
   if (nrs->isOutputStep)  {
-    particles->write();
+    particles->write(time);
   }
 }

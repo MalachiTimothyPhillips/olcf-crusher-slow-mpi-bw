@@ -115,6 +115,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   applyBounds(*particles);
 
   if (nrs->isOutputStep)  {
-    particles->write();
+    particles->write(time);
   }
 }
