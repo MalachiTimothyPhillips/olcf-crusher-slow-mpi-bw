@@ -117,8 +117,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
   const dfloat Tfinal = Nstep * dt[0];
 
   // each particle should have migrated 1 unit in x, e.g., at initial position
-
-  for(int tstep = 1; tstep < Nstep; ++tstep){
+  for(int tstep = 1; tstep <= Nstep; ++tstep){
     particles->update(nrs->o_U, dt.data(), tstep);
     applyBounds(*particles);
   }
@@ -166,10 +165,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
   }
 
   std::cout << "Error in position: " << errPos << "\n";
-
-
-
-
 
   EXIT_AND_FINALIZE(0);
 }

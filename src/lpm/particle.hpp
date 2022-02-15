@@ -16,7 +16,15 @@ public:
   hlong id;
   dfloat color;
 
-  historyData_t() {}
+  historyData_t() {
+    for (int i = 0; i < integrationOrder - 1; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        v_hist[i][j] = 0.0;
+      }
+    }
+    id = 0;
+    color = 0;
+  }
 
   historyData_t(dfloat v_hist_[integrationOrder - 1][3], dfloat color_, hlong id_)
   {

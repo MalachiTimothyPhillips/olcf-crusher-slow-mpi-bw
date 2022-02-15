@@ -14,7 +14,7 @@ std::array<dfloat, historyData_t::integrationOrder> particleTimestepperCoeffs(df
     coeffs[i] *= dt[0];
   for (int i = integrationOrder; i > particleOrder; i--)
     coeffs[i - 1] = 0.0;
-
+  
   return coeffs;
 }
 } // namespace
@@ -253,8 +253,6 @@ void particles_t::write(dfloat time)
   hlong p_offset = 0;
   MPI_Exscan(&p_offset, &npart, 1, MPI_HLONG, MPI_SUM, mpi_comm);
 
-  std::cout << "p_offset = " << p_offset << "\n";
-
   if(mpi_rank == 0){
     std::ofstream file(fname, std::ios::trunc);
     file.close();
@@ -343,7 +341,7 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
     // Update particle position and velocity history
     for (int k = 0; k < 3; ++k) {
       this->x[k][i] += coeffs[0] * u1[k][i];
-      for (int j = 1; j < historyData_t::integrationOrder - 1; ++j) {
+      for (int j = 1; j < historyData_t::integrationOrder; ++j) {
         this->x[k][i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
       }
       this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
