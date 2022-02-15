@@ -1,9 +1,83 @@
 #include <math.h>
 #include <numeric>
 #include "udf.hpp"
+#include "lpm/particle.hpp"
 
 /* UDF Functions */                                                      
-static dfloat P_EPS;
+static int nParticles;
+static particles_t *particles;
+
+/* Particle Functions */
+void particleInit(particles_t& p) {
+
+  static hlong gcount = 0; // total # particles emitted
+
+  int mpi_rank = platform->comm.mpiRank;
+  int mpi_size = platform->comm.mpiCommSize;
+
+  // evenly distribute cubrt(nParticles)^3 particles in [0,1]^3
+
+  int nParticleDir = std::round(std::cubrt(nParticles));
+  nParticles = nParticleDir * nParticleDir * nParticleDir;
+
+  const dfloat Lx = 1.0;
+  const dfloat Ly = 1.0;
+  const dfloat Lz = 1.0;
+
+  const dfloat invNParticleDir = 1.0 / nParticleDir;
+
+  for (int ix = 0; ix < nParticleDir; ++ix) {
+    for (int iy = 0; iy < nParticleDir; ++iy) {
+      for (int iz = 0; iz < nParticleDir; ++iz) {
+
+        dfloat dx = Lx * invNParticleDir;
+        dfloat dy = Ly * invNParticleDir;
+        dfloat dz = Lz * invNParticleDir;
+
+        dfloat xp = dx*(ix+0.5);
+        dfloat yp = dy*(iy+0.5);
+        dfloat zp = dz*(iz+0.5);
+
+        if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
+          particle_t particle;
+
+          particle.x[0] = xp;
+          particle.x[1] = yp;
+          particle.x[2] = zp;
+          particle.extra.id = gcount;
+          for (int d = 0; d < 3; ++d) {
+            particle.extra.v_hist[0][d] = 0.0;
+            particle.extra.v_hist[1][d] = 0.0;
+          }
+          particle.extra.color = gcount;  // color by id
+
+          p.push(particle);
+        }
+        ++gcount; // Total count
+      }
+    }
+  }
+}
+
+// apply periodicity for particles on [0,1]^3
+void applyBounds(particles_t& p) {
+
+  const dfloat Lx = 1.0;
+  const dfloat Ly = 1.0;
+  const dfloat Lz = 1.0;
+
+  for (int i = 0; i < p.size(); ++i) {
+    // x and z have periodic boundaries
+    if (p.x[0][i] > Lx) p.x[0][i] -= Lx;
+    if (p.x[0][i] < 0) p.x[0][i] += Lx;
+
+    if (p.x[1][i] > Lx) p.x[0][i] -= Lx;
+    if (p.x[1][i] < 0) p.x[0][i] += Lx;
+
+    if (p.x[2][i] > Lz) p.x[2][i] -= Lz;
+    if (p.x[2][i] < 0) p.x[2][i] += Lz;
+  }
+}
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
@@ -11,93 +85,91 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
-  platform->par->extract("casedata", "p_eps", P_EPS);
-  if (platform->options.compareArgs("BUILD ONLY", "FALSE")) {
-    double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");
-    nek_cb_scnrs[0] = P_EPS;
+  if(platform->comm.mpiCommSize > 1){
+    printf("Particles test must be called with exactly 1 MPI rank.\n");
+    ABORT(1);
   }
+  platform->par->extract("casedata", "p_nparticles", nParticles);
 }
 
 void UDF_Setup(nrs_t *nrs)
 {
+  particles = new particles_t(nrs, 0);
 }
 
-void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 {
-  mesh_t* mesh = nrs->meshV;
+  auto * mesh = nrs->meshV;
 
-  for (int i = 0; i < mesh->Nlocal; i++) {
-    const dfloat lambda = 0; 
-    platform->mempool.slice0[i] = //drand48(); 
-      (3*M_PI*M_PI+lambda)*sin(M_PI*mesh->x[i])*sin(M_PI*mesh->y[i])*sin(M_PI*mesh->z[i]);
+  particleInit  (*particles);
+
+  constexpr int Nstep = 10;
+  std::array<dfloat, 3> dt = {1.0 / Nstep, 1.0 / Nstep, 1.0 / Nstep};
+
+  auto o_U_x = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_U_y = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_U_z = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
+
+  platform->linAlg->fill(mesh->Nlocal, 1.0, o_U_x);
+  platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_y);
+  platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_z);
+
+  const dfloat Tfinal = Nstep * dt[0];
+
+  // each particle should have migrated 1 unit in x, e.g., at initial position
+
+  for(int tstep = 1; tstep < Nstep; ++tstep){
+    particles->update(nrs->o_U, dt.data(), tstep);
+    applyBounds(*particles);
   }
-  platform->linAlg->fillKernel(mesh->Nlocal, 1.0, nrs->o_ellipticCoeff);
-  platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
 
-  for(std::string solverName : {"userSpecified", "jacobi"}){
+  int nParticleDir = std::round(std::cubrt(nParticles));
+  nParticles = nParticleDir * nParticleDir * nParticleDir;
 
-    if(solverName == "jacobi"){
-      nrs->pSolver->options.setArgs("PRECONDITIONER", "JACOBI");
-      nrs->pSolver->options.setArgs("KRYLOV SOLVER", "PCG");
-      ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
-    }
+  std::vector<dfloat> expectedX(nParticle, 0.0);
+  std::vector<dfloat> expectedY(nParticle, 0.0);
+  std::vector<dfloat> expectedZ(nParticle, 0.0);
+  
+  const dfloat Lx = 1.0;
+  const dfloat Ly = 1.0;
+  const dfloat Lz = 1.0;
 
-    // warm-up
-    ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
-    platform->timer.reset();
+  const dfloat invNParticleDir = 1.0 / nParticleDir;
 
-    std::vector<double> eTime; 
-    std::vector<double> precoTime; 
-    std::vector<double> smootherTime; 
-    std::vector<double> crsTime;
+  dlong particleCtr = 0.0;
+  for (int ix = 0; ix < nParticleDir; ++ix) {
+    for (int iy = 0; iy < nParticleDir; ++iy) {
+      for (int iz = 0; iz < nParticleDir; ++iz) {
 
-    const int Nrep = 50;
-    if(platform->comm.mpiRank == 0) printf("solving "); 
-    for (int i = 0; i < Nrep; i++) { 
-      platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
-      platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
+        dfloat dx = Lx * invNParticleDir;
+        dfloat dy = Ly * invNParticleDir;
+        dfloat dz = Lz * invNParticleDir;
 
-      platform->timer.tic("pressureSolve", 1);
-      ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
-      platform->timer.toc("pressureSolve");
+        dfloat xp = dx*(ix+0.5);
+        dfloat yp = dy*(iy+0.5);
+        dfloat zp = dz*(iz+0.5);
 
-      eTime.push_back(platform->timer.query("pressureSolve", "DEVICE:MAX"));
-      precoTime.push_back(platform->timer.query("pressure preconditioner", "DEVICE:MAX"));
-      smootherTime.push_back(platform->timer.query("pressure preconditioner smoother", "DEVICE:MAX"));
-      crsTime.push_back(platform->timer.query("coarseSolve", "DEVICE:MAX"));
- 
-      platform->timer.reset("pressureSolve");
-      platform->timer.reset("pressure preconditioner");
-      platform->timer.reset("pressure preconditioner smoother");
-      platform->timer.reset("coarseSolve");
-     
-      if(platform->comm.mpiRank == 0) {
-        printf(".");
-        fflush(stdout); 
+        expectedX[particleCtr] = xp;
+        expectedY[particleCtr] = yp;
+        expectedZ[particleCtr] = zp;
+        particleCtr++;
       }
     }
-    if(platform->comm.mpiRank == 0) printf("\n"); 
-
-    hlong Ntotal = mesh->Nelements * (mesh->N * mesh->N * mesh->N);
-    MPI_Allreduce(MPI_IN_PLACE, &Ntotal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
-
-    const auto minEntry = std::distance(eTime.begin(), std::min_element(eTime.begin(), eTime.end()));
-    const double solveTime = eTime.at(minEntry);
-    const double solveTimeMax = *std::max_element(eTime.begin(), eTime.end()); 
-    const double solveTimeAvg = std::accumulate(eTime.begin(), eTime.end(), 0.0) / Nrep; 
-    const double throughput = (double)Ntotal/solveTime;
-
-    if(platform->comm.mpiRank == 0) {
-      printf("repetitions: %d\n", Nrep);
-      printf("iterations: %d\n", nrs->pSolver->Niter);
-      printf("min solve time: %g s (avg: %g s, max: %g s)\n", solveTime, solveTimeAvg, solveTimeMax);
-      printf("  preconditioner %g s\n", precoTime.at(minEntry));
-      if(smootherTime.at(minEntry) > 0) printf("    smoother %g s\n", smootherTime.at(minEntry));
-      if(crsTime.at(minEntry) > 0) printf("    coarse grid %g s\n", crsTime.at(minEntry));
-      printf("aggregated throughput: %g DOF/s\n", throughput);
-      printf("aggregated throughput: %g (DOF x iter)/s\n", (double) nrs->pSolver->Niter * throughput);
-    }
   }
+
+  dfloat errPos = 0.0;
+
+  for(int i = 0; i < particles->size(); ++i){
+    errPost += std::abs(particles->x[0][i] - expectedX[i]);
+    errPost += std::abs(particles->x[1][i] - expectedY[i]);
+    errPost += std::abs(particles->x[2][i] - expectedZ[i]);
+  }
+
+  std::cout << "Error in position: " << errPos << "\n";
+
+
+
+
+
   EXIT_AND_FINALIZE(0);
-  
 }

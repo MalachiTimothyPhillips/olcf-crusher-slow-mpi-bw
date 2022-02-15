@@ -10,3 +10,6 @@ residualTol = 1e-4
 [VELOCITY]
 density = 1.0
 viscosity = 1.0
+
+[CASEDATA]
+p_nParticles = 1000 # must be a cube
