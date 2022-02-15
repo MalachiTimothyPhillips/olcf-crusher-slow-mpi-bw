@@ -1,0 +1,12 @@
+[GENERAL] 
+#verbose = true
+polynomialOrder = 7
+stopAt = numSteps
+numSteps = 0
+
+[PRESSURE]
+residualTol = 1e-4
+
+[VELOCITY]
+density = 1.0
+viscosity = 1.0
