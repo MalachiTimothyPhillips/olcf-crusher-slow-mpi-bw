@@ -12,7 +12,7 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_)
     : nrs(nrs_), newton_tol(newton_tol_)
 {
 
-  newton_tol = std::min(5e-13, newton_tol_);
+  newton_tol = std::max(5e-13, newton_tol_);
 
   const int npt_max = 128;
   const dfloat bb_tol = 0.01;
