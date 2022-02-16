@@ -5,7 +5,7 @@
 #include <cfloat>
 
 std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa::device device,
-                                                             dlong D, const dlong *n) {
+                                                             dlong D, dlong Nq) {
 
   occa::kernel findpts_local;
   occa::kernel findpts_local_eval;
@@ -18,9 +18,7 @@ std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa
   kernelInfo["include_paths"].asArray();
 
   kernelInfo["defines/p_D"]  = D;
-  kernelInfo["defines/p_NR"] = n[0];
-  kernelInfo["defines/p_NS"] = n[1];
-  kernelInfo["defines/p_NT"] = n[2];
+  kernelInfo["defines/p_Nq"] = Nq;
   kernelInfo["defines/dlong"] = dlongString;
   kernelInfo["defines/hlong"] = hlongString;
   kernelInfo["defines/dfloat"] = dfloatString;

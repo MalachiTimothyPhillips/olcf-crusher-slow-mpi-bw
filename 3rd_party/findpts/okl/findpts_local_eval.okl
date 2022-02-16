@@ -1,6 +1,3 @@
-
-#define INNER_SIZE (p_NR > p_NS ? (p_NR > p_NT ? p_NR : p_NT) : (p_NS > p_NT ? p_NS : p_NT))
-
 @kernel void findpts_local_eval(
               dfloat * const out_base,   const dlong out_stride,
         const dlong  * const el_base,    const dlong el_stride,
@@ -11,35 +8,35 @@
 
   for(dlong i=0;i<pn;++i;@outer){
 
-    @shared dfloat wtr[p_NR];
-    @shared dfloat wts[p_NS];
-    @shared dfloat wtt[p_NT];
-    @shared dfloat sums[p_NR];
+    @shared dfloat wtr[p_Nq];
+    @shared dfloat wts[p_Nq];
+    @shared dfloat wtt[p_Nq];
+    @shared dfloat sums[p_Nq];
 
     const dlong el = *CAT(dlong, el, i);
     const dfloat *in_el = in + el*in_stride;
 
     const dfloat * r = CAT(dfloat, r, i);
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
+    for(dlong j=0;j<p_Nq;++j;@inner){
 
-      lagrange_eval(wtr, fd->fed.lag_data[0], p_NR, 0, r[0], j);
-      lagrange_eval(wts, fd->fed.lag_data[1], p_NS, 0, r[1], j);
-      lagrange_eval(wtt, fd->fed.lag_data[2], p_NT, 0, r[2], j);
+      lagrange_eval(wtr, fd->fed.lag_data[0], p_Nq, 0, r[0], j);
+      lagrange_eval(wts, fd->fed.lag_data[1], p_Nq, 0, r[1], j);
+      lagrange_eval(wtt, fd->fed.lag_data[2], p_Nq, 0, r[2], j);
     }
     @barrier("local");
 
     // out[i] = sum_j sum_k sum_l wtr[j]*wts[k]*wtt[l]*in[j + k*nr + l*nr*ns]
     //        = sum_j wtr[j] * sum_k wts[k] * sum_l wtt[l]*in[j + k*nr + l*nr*ns]
-    for (dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<p_NR){
+    for (dlong j=0;j<p_Nq;++j;@inner){
+      if(j<p_Nq){
         dfloat sum_j = 0;
         const dfloat *in_el_j = in_el+j;
-        for(dlong k=0;k<p_NS;++k){
+        for(dlong k=0;k<p_Nq;++k){
           dfloat sum_k = 0;
-          const dfloat *in_el_jk = in_el_j+k*p_NR;
+          const dfloat *in_el_jk = in_el_j+k*p_Nq;
 
-          for(dlong l=0;l<p_NT;++l){
-            sum_k += in_el_jk[l*p_NR*p_NS] * wtt[l];
+          for(dlong l=0;l<p_Nq;++l){
+            sum_k += in_el_jk[l*p_Nq*p_Nq] * wtt[l];
           }
           sum_j += wts[k]*sum_k;
         }
@@ -50,66 +47,66 @@
     }
     @barrier("local");
     dfloat * out = AT(dfloat, out, i);
-// p_NR is assumed to be at most 256
-#if p_NR>128
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<128&&j<p_NR-128){
+// p_Nq is assumed to be at most 256
+#if p_Nq>128
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<128&&j<p_Nq-128){
         sums[j] += sums[j+128];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>64
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<64&&j<p_NR-64){
+#if p_Nq>64
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<64&&j<p_Nq-64){
         sums[j] += sums[j+64];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>32
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<32&&j<p_NR-32){
+#if p_Nq>32
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<32&&j<p_Nq-32){
         sums[j] += sums[j+32];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>16
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<16&&j<p_NR-16){
+#if p_Nq>16
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<16&&j<p_Nq-16){
         sums[j] += sums[j+16];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>8
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<8&&j<p_NR-8){
+#if p_Nq>8
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<8&&j<p_Nq-8){
         sums[j] += sums[j+8];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>4
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<4&&j<p_NR-4){
+#if p_Nq>4
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<4&&j<p_Nq-4){
         sums[j] += sums[j+4];
       }
     }
     @barrier("local");
 #endif
-#if p_NR>2
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
-      if(j<2&&j<p_NR-2){
+#if p_Nq>2
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<2&&j<p_Nq-2){
         sums[j] += sums[j+2];
       }
     }
     @barrier("local");
 #endif
-    for(dlong j=0;j<INNER_SIZE;++j;@inner){
+    for(dlong j=0;j<p_Nq;++j;@inner){
       if(j==0){
-        if(1<p_NR){
+        if(1<p_Nq){
           *out = sums[0] + sums[1];
         }else{
           *out = sums[0];

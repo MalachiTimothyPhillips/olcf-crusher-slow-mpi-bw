@@ -30,11 +30,10 @@ void compileKernels() {
 
     const int Nq = N+1;
 
-    const int points[3] = {Nq, Nq, Nq};
     const bool buildNodeLocal = useNodeLocalCache();
     const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
     auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
-    ogs::initFindptsKernel(communicator, platform->device.occaDevice(), 3, points);
+    ogs::initFindptsKernel(communicator, platform->device.occaDevice(), 3, Nq);
   }
 
   registerLinAlgKernels();

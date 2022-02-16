@@ -159,12 +159,12 @@ void neknekSetup(nrs_t *nrs)
     platform->options.getArgs("NEKNEK MAX NUM SESSIONS", maxSessions);
     if (maxSessions >= 2) {
       occa::device device = platform_t::getInstance()->device.occaDevice();
-      dlong n1[3] = {nrs->meshV->N+1, nrs->meshV->N+1, nrs->meshV->N+1};
+      dlong Nq = nrs->meshV->Nq;
       MPI_Comm comm = platform->comm.mpiComm;
 
       // precompile kernels
       // OCCA automatically garbage collections
-      std::pair<occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, device, 3, n1);
+      std::pair<occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, device, 3, Nq);
     }
     return;
   }
