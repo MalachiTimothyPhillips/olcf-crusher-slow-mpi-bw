@@ -187,6 +187,7 @@ inline void lagrange_eval(@restrict dfloat * p0,
                    dfloat x,
                    dlong i){
   dfloat p_i = (1 << (p_Nq-1));
+  #pragma unroll p_Nq
   for(dlong j=0;j<p_Nq;++j){
     dfloat d_j = x-z[j];
     p_i *= j==i ? 1 : d_j;
@@ -199,6 +200,7 @@ inline void lagrange_eval_first_derivative(@restrict dfloat * p0,
                    dfloat x,
                    dlong i){
   dfloat u0=1, u1=0;
+  #pragma unroll p_Nq
   for(dlong j=0;j<p_Nq;++j){
     if(i!=j){
       dfloat d_j = 2*(x-z[j]);
@@ -216,6 +218,7 @@ inline void lagrange_eval_second_derivative(@restrict dfloat * p0,
                    dfloat x,
                    dlong i){
   dfloat u0=1, u1=0, u2=0;
+  #pragma unroll p_Nq
   for(dlong j=0;j<p_Nq;++j){
     if(i!=j){
       dfloat d_j = 2*(x-z[j]);

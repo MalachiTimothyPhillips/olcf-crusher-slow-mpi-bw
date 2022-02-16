@@ -19,6 +19,7 @@ std::pair<occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa
 
   kernelInfo["defines/p_D"]  = D;
   kernelInfo["defines/p_Nq"] = Nq;
+  kernelInfo["defines/p_Nfp"] = Nq*Nq;
   kernelInfo["defines/dlong"] = dlongString;
   kernelInfo["defines/hlong"] = hlongString;
   kernelInfo["defines/dfloat"] = dfloatString;

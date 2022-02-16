@@ -158,31 +158,29 @@ static findpts_el_gface get_face(
   dlong j)
 {
   const dlong dn = fi>>1, d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
-  const dlong n1 = fd->n[d1], n2=fd->n[d2], nn=fd->n[dn];
-  const dlong n12 = n1*n2;
   const dlong side_n = fi&1;
   struct findpts_el_gface face;
   for(dlong d=0;d<p_D;++d){
-    face.x[d]    = workspace +    d *n12;
-    face.dxdn[d] = workspace + (3+d)*n12;
+    face.x[d]    = workspace +    d *p_Nfp;
+    face.dxdn[d] = workspace + (3+d)*p_Nfp;
   }
 
   const dlong mask = 1u<<(fi/2);
   if((side_init & mask)==0) {
     const dlong elx_stride[3] = {1, p_Nq, p_Nq*p_Nq};
     #define ELX(d, j, k, l) elx[d][j*elx_stride[d1]+k*elx_stride[d2]+l*elx_stride[dn]]
-    if (j < n1) {
+    if (j < p_Nq) {
       for(dlong d=0;d<p_D;++d){
-        for(dlong k=0;k<n2;++k){
+        for(dlong k=0;k<p_Nq;++k){
           // copy first/last entries in normal direction
-          face.x[d][j+k*n1] = ELX(d, j, k, side_n*(nn-1));
+          face.x[d][j+k*p_Nq] = ELX(d, j, k, side_n*(p_Nq-1));
 
           // tensor product between elx and the derivative in the normal direction
           dfloat sum_l = 0;
-          for(dlong l=0;l<nn;++l){
-            sum_l += fd->wtend[dn][nn+l]*ELX(d, j, k, l);
+          for(dlong l=0;l<p_Nq;++l){
+            sum_l += fd->wtend[dn][p_Nq+l]*ELX(d, j, k, l);
           }
-          face.dxdn[d][j+k*n1] = sum_l;
+          face.dxdn[d][j+k*p_Nq] = sum_l;
         }
       }
     }
@@ -200,22 +198,21 @@ static findpts_el_gedge get_edge(
   findpts_el_gedge edge;
   const dlong de = ei>>2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
   const dlong side_n1 = ei&1, side_n2 = (ei&2)>>1;
-  const dlong nn2 = fd->n[dn2];
-  const dlong n1 = fd->n[de], nn1 = fd->n[dn1];
-  const dlong in1 = side_n1*(nn1-1), in2 = side_n2*(nn2-1);
-  const dfloat *wt1 = fd->wtend[dn1]+side_n1*nn1*3;
-  const dfloat *wt2 = fd->wtend[dn2]+side_n2*nn2*3;
+
+  const dlong in1 = side_n1*(p_Nq-1), in2 = side_n2*(p_Nq-1);
+  const dfloat *wt1 = fd->wtend[dn1]+side_n1*p_Nq*3;
+  const dfloat *wt2 = fd->wtend[dn2]+side_n2*p_Nq*3;
   for(dlong d=0;d<p_D;++d){
-    edge.x[d]      = workspace +      d *n1;
-    edge.dxdn1[d]  = workspace + (p_D+d)*n1;
-    edge.dxdn2[d]  = workspace + (  6+d)*n1;
-    edge.d2xdn1[d] = workspace + (  7+d)*n1;
-    edge.d2xdn2[d] = workspace + (  8+d)*n1;
+    edge.x[d]      = workspace +      d *p_Nq;
+    edge.dxdn1[d]  = workspace + (p_D+d)*p_Nq;
+    edge.dxdn2[d]  = workspace + (  6+d)*p_Nq;
+    edge.d2xdn1[d] = workspace + (  7+d)*p_Nq;
+    edge.d2xdn2[d] = workspace + (  8+d)*p_Nq;
   }
 
   const dlong mask = 8u<<(ei/2);
   if((side_init & mask)==0) {
-    if (j < n1) {
+    if (j < p_Nq) {
       const dlong elx_stride[3] = {1, p_Nq, p_Nq*p_Nq};
       #define ELX(d, j, k, l) elx[d][j*elx_stride[de]+k*elx_stride[dn1]+l*elx_stride[dn2]]
       for(dlong d=0;d<p_D;++d){
@@ -224,18 +221,18 @@ static findpts_el_gedge get_edge(
         // tensor product between elx (w/ first/last entries in second direction)
         // and the derivatives in the first normal direction
         dfloat sums_k[2] = {0, 0};
-        for(dlong k=0;k<nn1;++k){
-          sums_k[0] += wt1[  nn1+k]*ELX(d, j, k,   in2);
-          sums_k[1] += wt1[2*nn1+k]*ELX(d, j, k,   in2);
+        for(dlong k=0;k<p_Nq;++k){
+          sums_k[0] += wt1[  p_Nq+k]*ELX(d, j, k,   in2);
+          sums_k[1] += wt1[2*p_Nq+k]*ELX(d, j, k,   in2);
         }
         edge.dxdn1[d][j]  = sums_k[0];
         edge.d2xdn1[d][j] = sums_k[1];
         // tensor product between elx (w/ first/last entries in first direction)
         // and the derivatives in the second normal direction
         sums_k[0] = 0, sums_k[1] = 0;
-        for(dlong k=0;k<nn2;++k){
-          sums_k[0] += wt2[  nn2+k]*ELX(d, j, in1, k);
-          sums_k[1] += wt2[2*nn2+k]*ELX(d, j, in1, k);
+        for(dlong k=0;k<p_Nq;++k){
+          sums_k[0] += wt2[  p_Nq+k]*ELX(d, j, in1, k);
+          sums_k[1] += wt2[2*p_Nq+k]*ELX(d, j, in1, k);
         }
         edge.dxdn2[d][j] = sums_k[0];
         edge.d2xdn2[d][j] = sums_k[1];
@@ -249,53 +246,52 @@ static findpts_el_gedge get_edge(
 static findpts_el_gpt get_pt(
   struct findpts_el_data *fd, const dfloat *elx[p_D], dlong pi)
 {
-  const dlong n1 = p_Nq, n2 = p_Nq, n3=p_Nq;
   const dlong side_n1 = pi&1, side_n2 = (pi>>1)&1, side_n3 = (pi>>2)&1;
-  const dlong in1 = side_n1*(n1-1), in2 = side_n2*(n2-1), in3 = side_n3*(n3-1);
+  const dlong in1 = side_n1*(p_Nq-1), in2 = side_n2*(p_Nq-1), in3 = side_n3*(p_Nq-1);
   const dlong hes_stride = (p_D+1)*p_D/2;
   findpts_el_gpt pt;
 
   #define ELX(d, j, k, l) elx[d][j+k*p_Nq+l*p_Nq*p_Nq]
   for(dlong d=0;d<p_D;++d){
-    pt.x[d] = ELX(d, side_n1*(n1-1), side_n2*(n2-1), side_n3*(n3-1));
+    pt.x[d] = ELX(d, side_n1*(p_Nq-1), side_n2*(p_Nq-1), side_n3*(p_Nq-1));
 
-    dfloat *wt1 = fd->wtend[0]+n1*(1+3*side_n1);
-    dfloat *wt2 = fd->wtend[1]+n2*(1+3*side_n2);
-    dfloat *wt3 = fd->wtend[2]+n3*(1+3*side_n3);
+    dfloat *wt1 = fd->wtend[0]+p_Nq*(1+3*side_n1);
+    dfloat *wt2 = fd->wtend[1]+p_Nq*(1+3*side_n2);
+    dfloat *wt3 = fd->wtend[2]+p_Nq*(1+3*side_n3);
 
     for(dlong i=0;i<p_D;++i) pt.jac[p_D*d+i] = 0;
     for(dlong i=0;i<hes_stride;++i) pt.hes[hes_stride*d+i] = 0;
 
-    for(dlong j=0;j<n1;++j){
+    for(dlong j=0;j<p_Nq;++j){
       pt.jac[p_D*d+0]      += wt1[   j]*ELX(d, j, in2, in3);
-      pt.hes[hes_stride*d] += wt1[n1+j]*ELX(d, j, in2, in3);
+      pt.hes[hes_stride*d] += wt1[p_Nq+j]*ELX(d, j, in2, in3);
     }
 
     const dlong hes_off = hes_stride*d+hes_stride/2;
-    for(dlong k=0;k<n2;++k){
+    for(dlong k=0;k<p_Nq;++k){
       pt.jac[p_D*d+1] += wt2[   k]*ELX(d, in1, k, in3);
-      pt.hes[hes_off] += wt2[n2+k]*ELX(d, in1, k, in3);
+      pt.hes[hes_off] += wt2[p_Nq+k]*ELX(d, in1, k, in3);
     }
 
-    for(dlong l=0;l<n3;++l){
+    for(dlong l=0;l<p_Nq;++l){
       pt.jac[p_D*d+2]        += wt3[   l]*ELX(d, in1, in2, l);
-      pt.hes[hes_stride*d+5] += wt3[n3+l]*ELX(d, in1, in2, l);
+      pt.hes[hes_stride*d+5] += wt3[p_Nq+l]*ELX(d, in1, in2, l);
     }
 
-    for(dlong l=0;l<n3;++l){
+    for(dlong l=0;l<p_Nq;++l){
       dfloat sum_k = 0, sum_j = 0;
-      for(dlong k=0;k<n2;++k){
+      for(dlong k=0;k<p_Nq;++k){
         sum_k += wt2[k]*ELX(d, in1, k, l);
       }
-      for(dlong j=0;j<n1;++j){
+      for(dlong j=0;j<p_Nq;++j){
         sum_j += wt1[j]*ELX(d, j, in2, l);
       }
       pt.hes[hes_stride*d+2] += wt3[l]*sum_j;
       pt.hes[hes_stride*d+4] += wt3[l]*sum_k;
     }
-    for(dlong k=0;k<n2;++k){
+    for(dlong k=0;k<p_Nq;++k){
       dfloat sum_j = 0;
-      for(dlong j=0;j<n1;++j){
+      for(dlong j=0;j<p_Nq;++j){
         sum_j += wt1[j]*ELX(d, j, k, in3);
       }
       pt.hes[hes_stride*d+1] += wt2[k]*sum_j;
@@ -736,8 +732,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
     }
     @barrier("local");
 
-    const dlong n[3] = {p_Nq, p_Nq, p_Nq};
-
     dfloat x_i[p_D];
     for(dlong d=0;d<p_D;++d){
         x_i[d] = (*CATD(dfloat, x, i, d));
@@ -860,15 +854,14 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   const dlong fi = face_index(tmp->flags & FLAG_MASK);
                   const dlong dn = fi>>1;
                   const dlong d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
-                  const dlong n1 = n[d1], n2 = n[d2];
 
                   dfloat *wt1 = r_workspace_ptr;
                   dfloat *wt2 = wt1 + 3*p_Nq;
                   dfloat *resid = wt2 + 3*p_Nq;
                   dfloat *jac   = resid + p_D;
                   dfloat *resid_temp = jac + p_D*p_D;
-                  dfloat *jac_temp   = resid_temp + p_D*n1;
-                  dfloat *hes      = jac_temp + p_D*p_D*n1;
+                  dfloat *jac_temp   = resid_temp + p_D*p_Nq;
+                  dfloat *hes      = jac_temp + p_D*p_D*p_Nq;
                   dfloat *hes_temp = hes + p_D;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if(j < p_Nq){
@@ -877,25 +870,25 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                   }
                   @barrier("local");
-                  dfloat *J1 = wt1, *D1 = wt1+n1;
-                  dfloat *J2 = wt2, *D2 = wt2+n2;
-                  dfloat *DD1 = D1+n1, *DD2 = D2+n2;
+                  dfloat *J1 = wt1, *D1 = wt1+p_Nq;
+                  dfloat *J2 = wt2, *D2 = wt2+p_Nq;
+                  dfloat *DD1 = D1+p_Nq, *DD2 = D2+p_Nq;
                   struct findpts_el_gface face;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     face = get_face(&fd->fed,elx,fi,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    if (j < n1) {
+                    if (j < p_Nq) {
                       for(dlong d=0;d<p_D;++d) {
                         const dfloat *u = face.x[d];
                         const dfloat *du = face.dxdn[d];
                         dfloat sums_k[4] = {0.0, 0.0, 0.0, 0.0};
-                        for(dlong k=0; k<n2;++k) {
-                          sums_k[0] +=  u[j+k*n1]*J2[k];
-                          sums_k[1] +=  u[j+k*n1]*D2[k];
-                          sums_k[2] +=  u[j+k*n1]*DD2[k];
-                          sums_k[3] += du[j+k*n1]*J2[k];
+                        for(dlong k=0; k<p_Nq;++k) {
+                          sums_k[0] +=  u[j+k*p_Nq]*J2[k];
+                          sums_k[1] +=  u[j+k*p_Nq]*D2[k];
+                          sums_k[2] +=  u[j+k*p_Nq]*DD2[k];
+                          sums_k[3] += du[j+k*p_Nq]*J2[k];
                         }
 
                         resid_temp[p_D*j+d] = sums_k[0]*J1[j];
@@ -913,15 +906,15 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   for(dlong l=0;l<INNER_SIZE;++l;@inner){
                     if(l<p_D){
                       resid[l] = fpt->x[l];
-                      for(dlong j=0;j<n1;++j) resid[l] -= resid_temp[l+j*p_D];
+                      for(dlong j=0;j<p_Nq;++j) resid[l] -= resid_temp[l+j*p_D];
                     }
                     if(l<p_D*p_D){
                       jac[l] = 0;
-                      for(dlong j=0;j<n1;++j) jac[l] += jac_temp[l+j*p_D*p_D];
+                      for(dlong j=0;j<p_Nq;++j) jac[l] += jac_temp[l+j*p_D*p_D];
                     }
                     if(l<p_D){
                       hes[l] = 0;
-                      for(dlong j=0;j<n1;++j) hes[l] += hes_temp[l+3*j];
+                      for(dlong j=0;j<p_Nq;++j) hes[l] += hes_temp[l+3*j];
                       hes[l] *= resid[l];
                     }
                   }
@@ -942,12 +935,11 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                 case 2:{ // findpt_edge
                   const dlong ei = edge_index(tmp->flags & FLAG_MASK);
                   const dlong de = ei>>2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
-                  const dlong n1 = n[de];
                   dlong d_j[3]; d_j[0] = de; d_j[1] = dn1; d_j[2] = dn2;
                   const dlong hes_count = 2*p_D-1; // p_D=3 ? 5 : 1;
 
                   dfloat *wt     = r_workspace_ptr;
-                  dfloat *resid = wt    + 3*n1;
+                  dfloat *resid = wt    + 3*p_Nq;
                   dfloat *jac   = resid + p_D;
                   dfloat *hes_T = jac   + p_D*p_D;
                   dfloat *hes   = hes_T + hes_count*p_D;
@@ -971,10 +963,10 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     if (j < (p_D+1)*p_D) {
                       // resid and jac_T
                       // [0, 1, 0, 0]
-                      dfloat *wt_j = wt + (row==1?n1:0);
+                      dfloat *wt_j = wt + (row==1?p_Nq:0);
                       const dfloat *x = e_x[row][d];
                       dfloat sum = 0.0;
-                      for(dlong k=0;k<n1;++k){
+                      for(dlong k=0;k<p_Nq;++k){
                         // resid+p_D == jac_T
                         sum += wt_j[k]*x[k];
                       }
@@ -989,10 +981,10 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 
                       // n1*[2, 1, 1, 0, 0]
                       // j==1 => wt_j = wt+n1
-                      dfloat *wt_j = wt + n1*(2-(row+1)/2);
+                      dfloat *wt_j = wt + p_Nq*(2-(row+1)/2);
                       const dfloat *x = e_x[row+1][d];
                       hes_T[j] = 0.0;
-                      for(dlong k=0;k<n1;++k){
+                      for(dlong k=0;k<p_Nq;++k){
                         hes_T[j] += wt_j[k]*x[k];
                       }
                     }
