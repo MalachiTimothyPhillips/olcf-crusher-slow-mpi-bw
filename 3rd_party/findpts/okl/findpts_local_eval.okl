@@ -18,10 +18,9 @@
 
     const dfloat * r = CAT(dfloat, r, i);
     for(dlong j=0;j<p_Nq;++j;@inner){
-
-      lagrange_eval(wtr, fd->fed.lag_data[0], p_Nq, 0, r[0], j);
-      lagrange_eval(wts, fd->fed.lag_data[1], p_Nq, 0, r[1], j);
-      lagrange_eval(wtt, fd->fed.lag_data[2], p_Nq, 0, r[2], j);
+      lagrange_eval(wtr, fd->fed.lag_data[0], r[0], j);
+      lagrange_eval(wts, fd->fed.lag_data[1], r[1], j);
+      lagrange_eval(wtt, fd->fed.lag_data[2], r[2], j);
     }
     @barrier("local");
 

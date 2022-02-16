@@ -816,10 +816,11 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   dfloat *jac_temp   = resid_temp + 3*p_Nq;
 
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    // need to compute 1st derivatives
-                    lagrange_eval(wtr, fd->fed.lag_data[0], p_Nq, 1, tmp->r[0], j);
-                    lagrange_eval(wts, fd->fed.lag_data[1], p_Nq, 1, tmp->r[1], j);
-                    lagrange_eval(wtt, fd->fed.lag_data[2], p_Nq, 1, tmp->r[2], j);
+                    if(j < p_Nq){
+                      lagrange_eval_first_derivative(wtr, fd->fed.lag_data[0], tmp->r[0], j);
+                      lagrange_eval_first_derivative(wts, fd->fed.lag_data[1], tmp->r[1], j);
+                      lagrange_eval_first_derivative(wtt, fd->fed.lag_data[2], tmp->r[2], j);
+                    }
                   }    
                   @barrier("local");
                   for (dlong j = 0; j < INNER_SIZE; ++j;@inner) {
@@ -860,20 +861,20 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   const dlong dn = fi>>1;
                   const dlong d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
                   const dlong n1 = n[d1], n2 = n[d2];
-                  const dlong der = p_D-1; // 2nd derivatives for p_D=3, 1st for p_D=2
 
                   dfloat *wt1 = r_workspace_ptr;
-                  dfloat *wt2 = wt1 + (der+1)*n1;
-                  dfloat *resid = wt2 + (der+1)*n2;
+                  dfloat *wt2 = wt1 + 3*p_Nq;
+                  dfloat *resid = wt2 + 3*p_Nq;
                   dfloat *jac   = resid + p_D;
                   dfloat *resid_temp = jac + p_D*p_D;
                   dfloat *jac_temp   = resid_temp + p_D*n1;
                   dfloat *hes      = jac_temp + p_D*p_D*n1;
                   dfloat *hes_temp = hes + p_D;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    // need to compute 1st derivatives
-                    lagrange_eval(wt1, fd->fed.lag_data[d1], n1, der, tmp->r[d1], j);
-                    lagrange_eval(wt2, fd->fed.lag_data[d2], n2, der, tmp->r[d2], j);
+                    if(j < p_Nq){
+                      lagrange_eval_second_derivative(wt1, fd->fed.lag_data[d1], tmp->r[d1], j);
+                      lagrange_eval_second_derivative(wt2, fd->fed.lag_data[d2], tmp->r[d2], j);
+                    }
                   }
                   @barrier("local");
                   dfloat *J1 = wt1, *D1 = wt1+n1;
@@ -958,7 +959,9 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   // TODO consider optimizing this using the internal structure of findpts_el_gedge
                   const dfloat* const* e_x[p_D+3] = {edge.x, edge.x, edge.dxdn1, edge.dxdn2, edge.d2xdn1, edge.d2xdn2};
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    lagrange_eval(wt, fd->fed.lag_data[de], n1, 2, tmp->r[de], j);
+                    if(j < p_Nq) {
+                      lagrange_eval_second_derivative(wt, fd->fed.lag_data[de], tmp->r[de], j);
+                    }
                   }
                   @barrier("local");
 
@@ -1110,7 +1113,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     newton_edge(fpt, jac,rh,resid, de,dn1,dn2,
                                 tmp->flags&(~(3u<<(2*de))), tmp, fd->tol);
                   } break;
-                  break;
                 }
               }
               if (fpt->flags & CONVERGED_FLAG){
