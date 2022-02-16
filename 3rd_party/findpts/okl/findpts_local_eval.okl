@@ -28,50 +28,20 @@
     // out[i] = sum_j sum_k sum_l wtr[j]*wts[k]*wtt[l]*in[j + k*nr + l*nr*ns]
     //        = sum_j wtr[j] * sum_k wts[k] * sum_l wtt[l]*in[j + k*nr + l*nr*ns]
     for (dlong j=0;j<p_Nq;++j;@inner){
-      if(j<p_Nq){
-        dfloat sum_j = 0;
-        const dfloat *in_el_j = in_el+j;
-        for(dlong k=0;k<p_Nq;++k){
-          dfloat sum_k = 0;
-          const dfloat *in_el_jk = in_el_j+k*p_Nq;
+      dfloat sum_j = 0;
+      const dfloat *in_el_j = in_el+j;
+      for(dlong k=0;k<p_Nq;++k){
+        dfloat sum_k = 0;
+        const dfloat *in_el_jk = in_el_j+k*p_Nq;
 
-          for(dlong l=0;l<p_Nq;++l){
-            sum_k += in_el_jk[l*p_Nq*p_Nq] * wtt[l];
-          }
-          sum_j += wts[k]*sum_k;
+        for(dlong l=0;l<p_Nq;++l){
+          sum_k += in_el_jk[l*p_Nq*p_Nq] * wtt[l];
         }
-        sums[j] = wtr[j]*sum_j;
-      }else{
-        sums[j] = 0.0;
+        sum_j += wts[k]*sum_k;
       }
+      sums[j] = wtr[j]*sum_j;
     }
     @barrier("local");
-    dfloat * out = AT(dfloat, out, i);
-// p_Nq is assumed to be at most 256
-#if p_Nq>128
-    for(dlong j=0;j<p_Nq;++j;@inner){
-      if(j<128&&j<p_Nq-128){
-        sums[j] += sums[j+128];
-      }
-    }
-    @barrier("local");
-#endif
-#if p_Nq>64
-    for(dlong j=0;j<p_Nq;++j;@inner){
-      if(j<64&&j<p_Nq-64){
-        sums[j] += sums[j+64];
-      }
-    }
-    @barrier("local");
-#endif
-#if p_Nq>32
-    for(dlong j=0;j<p_Nq;++j;@inner){
-      if(j<32&&j<p_Nq-32){
-        sums[j] += sums[j+32];
-      }
-    }
-    @barrier("local");
-#endif
 #if p_Nq>16
     for(dlong j=0;j<p_Nq;++j;@inner){
       if(j<16&&j<p_Nq-16){
@@ -106,11 +76,8 @@
 #endif
     for(dlong j=0;j<p_Nq;++j;@inner){
       if(j==0){
-        if(1<p_Nq){
-          *out = sums[0] + sums[1];
-        }else{
-          *out = sums[0];
-        }
+        dfloat * result = AT(dfloat, out, i);
+        *result = sums[0] + sums[1];
       }
     }
     @barrier("local");
