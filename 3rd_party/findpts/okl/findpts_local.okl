@@ -652,11 +652,12 @@ void seed_j(const dfloat *elx[p_D],
     for (dlong k = 0; k < p_Nq; ++k) {
       dfloat zs = z[1][k];
 
-      dlong jkl = j + k*p_Nq + l*p_Nq*p_Nq;
+      const dlong jkl = j + k*p_Nq + l*p_Nq*p_Nq;
       dfloat dx[p_D];
-      for(dlong d=0;d<p_D;++d) dx[d] = x[d]-elx[d][jkl];
+      for(dlong d=0;d<p_D;++d) {
+        dx[d] = x[d]-elx[d][jkl];
+      }
       const dfloat dist2_jkl = norm2(dx);
-      ++jkl;
       if (dist2[j] > dist2_jkl) {
         dist2[j] = dist2_jkl;
         r[0][j] = zr;
@@ -677,30 +678,26 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     const dfloat *u,
                     const dlong j)
 {
-  dfloat sum;
-  if (j < p_Nq) {
-    dfloat uJtJs = 0.0;
-    dfloat uDtJs = 0.0;
-    dfloat uJtDs = 0.0;
-    for(dlong k=0; k<p_Nq;++k) {
-      dfloat uJt = 0.0;
-      dfloat uDt = 0.0;
-      for(dlong l=0; l<p_Nq;++l) {
-        uJt += u[j+k*p_Nq+l*p_Nq*p_Nq]*Jt[l];
-        uDt += u[j+k*p_Nq+l*p_Nq*p_Nq]*Dt[l];
-      }
-
-      uJtJs += uJt*Js[k];
-      uJtDs += uJt*Ds[k];
-      uDtJs += uDt*Js[k];
+  dfloat uJtJs = 0.0;
+  dfloat uDtJs = 0.0;
+  dfloat uJtDs = 0.0;
+  for(dlong k=0; k<p_Nq;++k) {
+    dfloat uJt = 0.0;
+    dfloat uDt = 0.0;
+    for(dlong l=0; l<p_Nq;++l) {
+      uJt += u[j+k*p_Nq+l*p_Nq*p_Nq]*Jt[l];
+      uDt += u[j+k*p_Nq+l*p_Nq*p_Nq]*Dt[l];
     }
 
-    sum           = uJtJs*Jr[j];
-    g_partials[0] = uJtJs*Dr[j];
-    g_partials[1] = uJtDs*Jr[j];
-    g_partials[2] = uDtJs*Jr[j];
+    uJtJs += uJt*Js[k];
+    uJtDs += uJt*Ds[k];
+    uDtJs += uDt*Js[k];
   }
-  return sum;
+
+  g_partials[0] = uJtJs*Dr[j];
+  g_partials[1] = uJtDs*Jr[j];
+  g_partials[2] = uDtJs*Jr[j];
+  return uJtJs*Jr[j];
 }
 
 @kernel void ogs_findpts_local(
