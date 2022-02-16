@@ -365,7 +365,7 @@ void lagrange_eval(@restrict dfloat * p0,
   if(i<n){
     const dfloat *z, *w;
     w = data;
-    switch(n){
+    switch(p_Nq){
       case  2: z = gllz_02; break;
       case  3: z = gllz_03; break;
       case  4: z = gllz_04; break;
@@ -394,26 +394,26 @@ void lagrange_eval(@restrict dfloat * p0,
     if(der==0) {
       // for(j=0; j<n; ++j) if(i!=j) p_i *= 2*(x-z[j])
       dfloat p_i = (1 << (n-1));
-      for(dlong j=0;j<n;++j){
+      for(dlong j=0;j<p_Nq;++j){
         dfloat d_j = x-z[j];
         p_i *= j==i ? 1 : d_j;
       }
       p0[i] = w[i] * p_i;
     } else if(der==1) {
       dfloat u0=1, u1=0;
-      for(dlong j=0;j<n;++j){
+      for(dlong j=0;j<p_Nq;++j){
         if(i!=j){
           dfloat d_j = 2*(x-z[j]);
           u1 = d_j*u1+u0;
           u0 = d_j*u0;
         }
       }
-      dfloat *p1 = p0+n;
+      dfloat *p1 = p0+p_Nq;
       p0[i] =   w[i]*u0;
       p1[i] = 2*w[i]*u1;
     } else {
       dfloat u0=1, u1=0, u2=0;
-      for(dlong j=0;j<n;++j){
+      for(dlong j=0;j<p_Nq;++j){
         if(i!=j){
           dfloat d_j = 2*(x-z[j]);
           u2 = d_j*u2 + u1;
@@ -421,7 +421,7 @@ void lagrange_eval(@restrict dfloat * p0,
           u0 = d_j*u0;
         }
       }
-      dfloat *p1 = p0+n, *p2 = p0+2*n;
+      dfloat *p1 = p0+p_Nq, *p2 = p0+2*p_Nq;
       p0[i]=  w[i]*u0;
       p1[i]=2*w[i]*u1;
       p2[i]=8*w[i]*u2;
