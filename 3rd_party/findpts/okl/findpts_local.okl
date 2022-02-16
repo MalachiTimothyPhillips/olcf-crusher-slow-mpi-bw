@@ -709,7 +709,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
   const dlong npt, struct findpts_local_data *fd)
 {
   #define MAX_CONST(a,b) (((a)>(b))?(a):(b))
-  #define INNER_SIZE (MAX_CONST(p_Nq, (2*p_D-1)*p_D))  //findpt_edge
+  #define INNER_SIZE 32
 
   for (dlong i = 0; i < npt; ++i; @outer) {
     @shared dfloat r_workspace[MAX_CONST(4, p_Nq+1)*(p_D*p_D+2*p_D) + p_D*2*p_Nq];
@@ -788,8 +788,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
             for(dlong j = 0; j<INNER_SIZE;++j;@inner){
               if(j==0){
                 tmp->dist2=DBL_MAX; tmp->dist2p=0; tmp->tr=1; tmp->flags=0;
-                for(dlong d=0;d<p_D;++d){tmp->x[d]=fpt->x[d]; tmp->r[d]=fpt->r[d];}
               }
+              if(j<p_D){tmp->x[j]=fpt->x[j]; tmp->r[j]=fpt->r[j];}
             }
             @barrier("local");
 
@@ -815,15 +815,15 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   }    
                   @barrier("local");
                   for (dlong j = 0; j < INNER_SIZE; ++j;@inner) {
-                    if(j<p_Nq){
-                      for(dlong d=0;d<3;++d){
-                        resid_temp[d+j*3] = tensor_ig3_j(jac_temp+3*d+9*j,
-                                                         wtr, wtr+p_Nq,
-                                                         wts, wts+p_Nq,
-                                                         wtt, wtt+p_Nq,
-                                                         elx[d],
-                                                         j);
-                      }
+                    if(j<p_Nq*3){
+                      const int qp = j / 3;
+                      const int d = j % 3;
+                      resid_temp[d+qp*3] = tensor_ig3_j(jac_temp+3*d+9*qp,
+                                                       wtr, wtr+p_Nq,
+                                                       wts, wts+p_Nq,
+                                                       wtt, wtt+p_Nq,
+                                                       elx[d],
+                                                       qp);
                     }
                   }
                   @barrier("local");
@@ -876,26 +876,26 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   }
                   @barrier("local");
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    if (j < p_Nq) {
-                      for(dlong d=0;d<p_D;++d) {
-                        const dfloat *u = face.x[d];
-                        const dfloat *du = face.dxdn[d];
-                        dfloat sums_k[4] = {0.0, 0.0, 0.0, 0.0};
-                        for(dlong k=0; k<p_Nq;++k) {
-                          sums_k[0] +=  u[j+k*p_Nq]*J2[k];
-                          sums_k[1] +=  u[j+k*p_Nq]*D2[k];
-                          sums_k[2] +=  u[j+k*p_Nq]*DD2[k];
-                          sums_k[3] += du[j+k*p_Nq]*J2[k];
-                        }
-
-                        resid_temp[p_D*j+d] = sums_k[0]*J1[j];
-                        jac_temp[p_D*p_D*j+p_D*d+d1] = sums_k[0]*D1[j];
-                        jac_temp[p_D*p_D*j+p_D*d+d2] = sums_k[1]*J1[j];
-                        jac_temp[p_D*p_D*j+p_D*d+dn] = sums_k[3]*J1[j];
-                        hes_temp[p_D*j  ]   = sums_k[0]*DD1[j];
-                        hes_temp[p_D*j+1]   = sums_k[1]*D1[j];
-                        hes_temp[p_D*j+2]   = sums_k[2]*J1[j];
+                    if (j < p_Nq*3) {
+                      const int d = j % 3;
+                      const int qp = j / 3;
+                      const dfloat *u = face.x[d];
+                      const dfloat *du = face.dxdn[d];
+                      dfloat sums_k[4] = {0.0, 0.0, 0.0, 0.0};
+                      for(dlong k=0; k<p_Nq;++k) {
+                        sums_k[0] +=  u[qp+k*p_Nq]*J2[k];
+                        sums_k[1] +=  u[qp+k*p_Nq]*D2[k];
+                        sums_k[2] +=  u[qp+k*p_Nq]*DD2[k];
+                        sums_k[3] += du[qp+k*p_Nq]*J2[k];
                       }
+
+                      resid_temp[p_D*qp+d] = sums_k[0]*J1[qp];
+                      jac_temp[p_D*p_D*qp+p_D*d+d1] = sums_k[0]*D1[qp];
+                      jac_temp[p_D*p_D*qp+p_D*d+d2] = sums_k[1]*J1[qp];
+                      jac_temp[p_D*p_D*qp+p_D*d+dn] = sums_k[3]*J1[qp];
+                      hes_temp[p_D*qp  ]   = sums_k[0]*DD1[qp];
+                      hes_temp[p_D*qp+1]   = sums_k[1]*D1[qp];
+                      hes_temp[p_D*qp+2]   = sums_k[2]*J1[qp];
                     }
                   }
                   @barrier("local");
