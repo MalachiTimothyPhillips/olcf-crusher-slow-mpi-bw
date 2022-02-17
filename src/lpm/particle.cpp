@@ -21,9 +21,9 @@ std::array<dfloat, historyData_t::integrationOrder> particleTimestepperCoeffs(df
 
 void particles_t::reserve(int n)
 {
-  for (int i = 0; i < 3; ++i) {
-    x[i].reserve(n);
-  }
+  _x.reserve(n);
+  _y.reserve(n);
+  _z.reserve(n);
   code.reserve(n);
   proc.reserve(n);
   el.reserve(n);
@@ -32,9 +32,9 @@ void particles_t::reserve(int n)
 }
 void particles_t::push(particle_t particle)
 {
-  for (int j = 0; j < 3; ++j) {
-    x[j].push_back(particle.x[j]);
-  }
+  _x.push_back(particle.x);
+  _y.push_back(particle.y);
+  _z.push_back(particle.z);
   code.push_back(particle.code);
   proc.push_back(particle.proc);
   el.push_back(particle.el);
@@ -47,9 +47,14 @@ particle_t particles_t::remove(int i)
   particle_t part;
   if (i == size() - 1) {
     // just pop the last element
+    part.x = _x.back();
+    _x.pop_back();
+    part.y = _y.back();
+    _y.pop_back();
+    part.z = _z.back();
+    _z.pop_back();
+
     for (int j = 0; j < 3; ++j) {
-      part.x[j] = x[j].back();
-      x[j].pop_back();
       part.r[j] = r.back()[j];
     }
     r.pop_back();
@@ -64,10 +69,19 @@ particle_t particles_t::remove(int i)
   }
   else {
     // swap last element to i'th position
+    part.x = _x[i];
+    _x[i] = _x.back();
+    _x.pop_back();
+
+    part.y = _y[i];
+    _y[i] = _y.back();
+    _y.pop_back();
+
+    part.z = _z[i];
+    _z[i] = _z.back();
+    _z.pop_back();
+
     for (int j = 0; j < 3; ++j) {
-      part.x[j] = x[j][i];
-      x[j][i] = x[j].back();
-      x[j].pop_back();
       part.r[j] = r[i][j];
       r[i][j] = r.back()[j];
     }
@@ -93,10 +107,10 @@ void particles_t::swap(int i, int j)
   if (i == j)
     return;
 
-  for (int d = 0; d < 3; ++d) {
-    std::swap(x[d][i], x[d][j]);
-    std::swap(r[d][i], r[d][j]);
-  }
+  std::swap(_x[i], _x[j]);
+  std::swap(_y[i], _y[j]);
+  std::swap(_z[i], _z[j]);
+  std::swap(r[i], r[j]);
   std::swap(code[i], code[j]);
   std::swap(proc[i], proc[j]);
   std::swap(el[i], el[j]);
@@ -105,6 +119,9 @@ void particles_t::swap(int i, int j)
 
 void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
 {
+  if(profile){
+    platform->timer.tic("particles_t::find", 1);
+  }
   dlong n = size();
   dfloat *dist2;
   if (dist2In != nullptr) {
@@ -114,22 +131,24 @@ void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
     dist2 = new dfloat[n];
     dist2Stride = 1;
   }
-  dfloat *xBase[3];
-  dlong xStride[3];
-  for (int i = 0; i < 3; ++i) {
-    xBase[i] = x[i].data();
-    xStride[i] = 1;
-  }
+  dfloat *xBase[3] = {_x.data(), _y.data(), _z.data()};
+  dlong xStride[3] = {1, 1, 1};
 
-  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), &(r.data()[0][0]), dist2);
+  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2);
 
   interp_->find(xBase, xStride, &data, size(), printWarnings);
   if (dist2In == nullptr) {
     delete[] dist2;
   }
+  if(profile){
+    platform->timer.toc("particles_t::find");
+  }
 }
 void particles_t::migrate()
 {
+  if(profile){
+    platform->timer.tic("particles_t::migrate", 1);
+  }
   int mpi_rank = platform_t::getInstance()->comm.mpiRank;
 
   struct array transfer;
@@ -165,10 +184,17 @@ void particles_t::migrate()
   }
 
   array_free(&transfer);
+
+  if(profile){
+    platform->timer.tic("particles_t::migrate");
+  }
 }
 
 void particles_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
 {
+  if(profile){
+    platform->timer.tic("particles_t::interpLocal", 1);
+  }
   dlong pn = size();
   dlong offset = 0;
   while (offset < pn && code[offset] == 2)
@@ -192,6 +218,9 @@ void particles_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
                            outStride,
                            pn);
   delete[] outOffset;
+  if(profile){
+    platform->timer.toc("particles_t::interpLocal");
+  }
 }
 void particles_t::interpLocal(dfloat *field, dfloat *out[], dlong nFields)
 {
@@ -229,7 +258,7 @@ std::string lpm_vtu_data(std::string fieldName, int nComponent, int distance)
 }
 }
 
-void particles_t::write(dfloat time)
+void particles_t::write(dfloat time) const
 {
   static_assert(sizeof(float) == 4, "Requires float be 32-bit");
   static_assert(sizeof(int) == 4, "Requires int be 32-bit");
@@ -301,9 +330,9 @@ void particles_t::write(dfloat time)
   std::vector<float> positions(3 * npart, 0.0);
   std::ostringstream coords;
   for(int particle = 0; particle < npart; ++particle){
-    positions[3 * particle + 0] = static_cast<float>(this->x[0][particle]);
-    positions[3 * particle + 1] = static_cast<float>(this->x[1][particle]);
-    positions[3 * particle + 2] = static_cast<float>(this->x[2][particle]);
+    positions[3 * particle + 0] = static_cast<float>(this->_x[particle]);
+    positions[3 * particle + 1] = static_cast<float>(this->_y[particle]);
+    positions[3 * particle + 2] = static_cast<float>(this->_z[particle]);
   }
 
   // TODO:
@@ -325,6 +354,9 @@ void particles_t::write(dfloat time)
 }
 void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
 {
+  if(profile){
+    platform->timer.tic("particles_t::update", 1);
+  }
 
   this->find();
   this->migrate();
@@ -335,19 +367,47 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   u1[2] = u1[1] + this->size();
   this->interpLocal(o_fld, u1, 3);
 
+  if(profile){
+    platform->timer.tic("particles_t::advance", 1);
+  }
+
   auto coeffs = particleTimestepperCoeffs(dt, tstep);
 
   for (int i = 0; i < this->size(); ++i) {
     // Update particle position and velocity history
-    for (int k = 0; k < 3; ++k) {
-      this->x[k][i] += coeffs[0] * u1[k][i];
-      for (int j = 1; j < historyData_t::integrationOrder; ++j) {
-        this->x[k][i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
-      }
-      this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
-      this->extra[i].v_hist[0][k] = u1[k][i];
+
+    int k = 0;
+    this->_x[i] += coeffs[0] * u1[k][i];
+    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
+      this->_x[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
     }
+    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
+    this->extra[i].v_hist[0][k] = u1[k][i];
+
+    k++;
+    this->_y[i] += coeffs[0] * u1[k][i];
+    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
+      this->_y[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
+    }
+    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
+    this->extra[i].v_hist[0][k] = u1[k][i];
+
+    k++;
+    this->_z[i] += coeffs[0] * u1[k][i];
+    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
+      this->_z[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
+    }
+    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
+    this->extra[i].v_hist[0][k] = u1[k][i];
+  }
+
+  if(profile){
+    platform->timer.toc("particles_t::advance");
   }
 
   delete[] u1[0];
+
+  if(profile){
+    platform->timer.toc("particles_t::update");
+  }
 }

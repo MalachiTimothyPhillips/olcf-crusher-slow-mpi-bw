@@ -41,7 +41,7 @@ public:
 using Extra = historyData_t;
 
 struct particle_t {
-  std::array<dfloat, 3> x;
+  dfloat x, y, z;
   std::array<dfloat, 3> r;
   dlong code;
   dlong proc;
@@ -50,16 +50,15 @@ struct particle_t {
 
   particle_t() {}
 
-  particle_t(std::array<dfloat, 3> x_,
+  particle_t(dfloat x_, dfloat y_, dfloat z_, 
              dlong code_,
              dlong proc_,
              dlong el_,
              std::array<dfloat, 3> r_,
              Extra extra_)
-      : code(code_), proc(proc_), el(el_), extra(extra_)
+      : code(code_), proc(proc_), el(el_), extra(extra_), x(x_), y(y_), z(z_)
   {
     for (int i = 0; i < 3; ++i) {
-      x[i] = x_[i];
       r[i] = r_[i];
     }
   }
@@ -69,47 +68,60 @@ struct particle_t {
   // Contains a set of particles and the information needed to interpolate on the mesh
   class particles_t {
   public:
-    // helper class to pass components of a single particle
-    std::shared_ptr<pointInterpolation_t> interp_;
-
-    std::vector<dfloat> x[3];
-    std::vector<dlong> code;
-    std::vector<dlong> proc;
-    std::vector<dlong> el;
-    std::vector<Extra> extra;
-    std::vector<std::array<dfloat, 3>> r;
 
     particles_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) {}
 
-    particles_t(particles_t &set)
-        : interp_(set.interp_), x(set.x), code(set.code), proc(set.proc), el(set.el), extra(set.extra),
-          r(set.r)
-    {
-    }
+    particles_t(particles_t &set) = delete;
 
     ~particles_t() {}
+
+    particle_t operator[](int i) const
+    {
+      const dfloat xp = x(i);
+      const dfloat yp = y(i);
+      const dfloat zp = z(i);
+      return particle_t(xp, yp, zp, code[i], proc[i], el[i], r[i], extra[i]);
+    }
+
+    dlong size() const { return _x.size(); }
 
     //// Set management ////
     void reserve(int n);
 
-    dlong size() const { return x[0].size(); }
-
-    dlong capacity() const { return x[0].capacity(); }
-
-    particle_t operator[](int i)
-    {
-      std::array<dfloat, 3> x_;
-      for (int j = 0; j < 3; ++j) {
-        x_[j] = x[j][i];
-      }
-      return particle_t(x_, code[i], proc[i], el[i], r[i], extra[i]);
-    }
+    dlong capacity() const { return _x.capacity(); }
 
     void push(particle_t particle);
 
     particle_t remove(int i);
 
     void swap(int i, int j);
+
+    void write(dfloat time) const;
+    void update(occa::memory o_fld, dfloat *dt, int tstep);
+
+    dfloat& x(int i) { return _x[i]; }
+    const dfloat& x(int i) const { return _x[i]; }
+    dfloat& y(int i) { return _y[i]; }
+    const dfloat& y(int i) const { return _y[i]; }
+    dfloat& z(int i) { return _z[i]; }
+    const dfloat& z(int i) const { return _z[i]; }
+
+  private:
+
+    static constexpr bool profile = true; // toggle for timing blocks
+
+    // helper class to pass components of a single particle
+    std::shared_ptr<pointInterpolation_t> interp_;
+
+    std::vector<dfloat> _x;
+    std::vector<dfloat> _y;
+    std::vector<dfloat> _z;
+
+    std::vector<dlong> code;
+    std::vector<dlong> proc;
+    std::vector<dlong> el;
+    std::vector<Extra> extra;
+    std::vector<std::array<dfloat, 3>> r;
 
     //// particle operations ////
 
@@ -128,9 +140,6 @@ struct particle_t {
     void interpLocal(occa::memory field, dfloat *out[], dlong nFields);
     void interpLocal(dfloat *field, dfloat *out[], dlong nFields);
 
-    void write(dfloat time);
-
-    void update(occa::memory o_fld, dfloat *dt, int tstep);
   };
 
 #endif

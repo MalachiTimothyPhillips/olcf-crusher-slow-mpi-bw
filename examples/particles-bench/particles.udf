@@ -42,9 +42,9 @@ void particleInit(particles_t& p) {
         if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
           particle_t particle;
 
-          particle.x[0] = xp;
-          particle.x[1] = yp;
-          particle.x[2] = zp;
+          particle.x = xp;
+          particle.y = yp;
+          particle.z = zp;
           particle.extra.id = gcount;
           for (int d = 0; d < 3; ++d) {
             particle.extra.v_hist[0][d] = 0.0;
@@ -69,14 +69,24 @@ void applyBounds(particles_t& p) {
 
   for (int i = 0; i < p.size(); ++i) {
     // x and z have periodic boundaries
-    if (p.x[0][i] > Lx) p.x[0][i] -= Lx;
-    if (p.x[0][i] < 0) p.x[0][i] += Lx;
-
-    if (p.x[1][i] > Lx) p.x[0][i] -= Lx;
-    if (p.x[1][i] < 0) p.x[0][i] += Lx;
-
-    if (p.x[2][i] > Lz) p.x[2][i] -= Lz;
-    if (p.x[2][i] < 0) p.x[2][i] += Lz;
+    if (p.x(i) > Lx) {
+      p.x(i) -= Lx;
+    }
+    if (p.x(i) < 0) {
+      p.x(i) += Lx;
+    }
+    if (p.y(i) > Lx) {
+      p.y(i) -= Lx;
+    }
+    if (p.y(i) < 0) {
+      p.y(i) += Lx;
+    }
+    if (p.z(i) > Lz) {
+      p.z(i) -= Lz;
+    }
+    if (p.z(i) < 0) {
+      p.z(i) += Lz;
+    }
   }
 }
 
@@ -171,9 +181,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
   dfloat errPos = 0.0;
 
   for(int i = 0; i < particles->size(); ++i){
-    errPos += std::abs(particles->x[0][i] - expectedX[i]);
-    errPos += std::abs(particles->x[1][i] - expectedY[i]);
-    errPos += std::abs(particles->x[2][i] - expectedZ[i]);
+    errPos += std::abs(particles->x(i) - expectedX[i]);
+    errPos += std::abs(particles->y(i) - expectedY[i]);
+    errPos += std::abs(particles->z(i) - expectedZ[i]);
   }
 
   errPos /= nParticles;
@@ -214,6 +224,17 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
               << " GParticles/s=" << particleThroughput
               << "\n";
   }
+
+  const double tUpdate      = platform->timer.query("particles_t::update", "DEVICE:MAX");
+  const double tFind        = platform->timer.query("particles_t::find", "DEVICE:MAX");
+  const double tMigrate     = platform->timer.query("particles_t::migrate", "DEVICE:MAX");
+  const double tInterpLocal = platform->timer.query("particles_t::interpLocal", "DEVICE:MAX");
+  const double tAdvance     = platform->timer.query("particles_t::advance", "DEVICE:MAX");
+  std::cout <<   "particles_t::update           " << tUpdate << "s\n";
+  std::cout <<   "  particles_t::find           " << tFind << "s\n";
+  std::cout <<   "  particles_t::migrate        " << tMigrate << "s\n";
+  std::cout <<   "  particles_t::interpLocal    " << tInterpLocal << "s\n";
+  std::cout <<   "  particles_t::advance        " << tAdvance << "s\n";
 
   EXIT_AND_FINALIZE(0);
 }
