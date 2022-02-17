@@ -233,7 +233,7 @@ set(SRC
     src/plugins/velRecycling.cpp
     src/plugins/RANSktau.cpp
     src/plugins/lowMach.cpp
-    src/pointInterpolation/interp.cpp
+    src/pointInterpolation/pointInterpolation.cpp
     src/lpm/particle.cpp
     src/neknek/neknek.cpp
     src/udf/udf.cpp

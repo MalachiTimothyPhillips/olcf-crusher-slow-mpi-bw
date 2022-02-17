@@ -6,7 +6,7 @@
 
 #include "ogsFindpts.hpp"
 
-#include "interp.hpp"
+#include "pointInterpolation.hpp"
 
 pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_)
     : nrs(nrs_), newton_tol(newton_tol_)

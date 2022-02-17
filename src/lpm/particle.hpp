@@ -7,7 +7,7 @@
 #include "gslib.h"
 #include "ogsFindpts.hpp"
 
-#include "interp.hpp"
+#include "pointInterpolation.hpp"
 
 class historyData_t {
 public:
