@@ -4,9 +4,9 @@
 #include <iostream>
 
 namespace {
-std::array<dfloat, historyData_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
+std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
 {
-  constexpr int integrationOrder = historyData_t::integrationOrder;
+  constexpr int integrationOrder = particle_t::integrationOrder;
   std::array<dfloat, integrationOrder> coeffs;
   const int particleOrder = mymin(tstep, integrationOrder);
   nek::coeffAB(coeffs.data(), dt, particleOrder);
@@ -28,7 +28,7 @@ void particles_t::reserve(int n)
   proc.reserve(n);
   el.reserve(n);
   r.reserve(n);
-  extra.reserve(n);
+  v.reserve(n);
 }
 void particles_t::push(particle_t particle)
 {
@@ -39,7 +39,7 @@ void particles_t::push(particle_t particle)
   proc.push_back(particle.proc);
   el.push_back(particle.el);
   r.push_back(particle.r);
-  extra.push_back(particle.extra);
+  v.push_back(particle.v);
 }
 
 particle_t particles_t::remove(int i)
@@ -64,8 +64,8 @@ particle_t particles_t::remove(int i)
     proc.pop_back();
     part.el = el.back();
     el.pop_back();
-    part.extra = extra.back();
-    extra.pop_back();
+    part.v = v.back();
+    v.pop_back();
   }
   else {
     // swap last element to i'th position
@@ -95,9 +95,9 @@ particle_t particles_t::remove(int i)
     part.el = el[i];
     el[i] = el.back();
     el.pop_back();
-    part.extra = extra[i];
-    extra[i] = extra.back();
-    extra.pop_back();
+    part.v = v[i];
+    v[i] = v.back();
+    v.pop_back();
   }
   return part;
 }
@@ -114,7 +114,7 @@ void particles_t::swap(int i, int j)
   std::swap(code[i], code[j]);
   std::swap(proc[i], proc[j]);
   std::swap(el[i], el[j]);
-  std::swap(extra[i], extra[j]);
+  std::swap(v[i], v[j]);
 }
 
 void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
@@ -376,29 +376,33 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   for (int i = 0; i < this->size(); ++i) {
     // Update particle position and velocity history
 
+    this->v[i][0] = u1[0][i];
+    this->v[i][1] = u1[1][i];
+    this->v[i][2] = u1[2][i];
+
     int k = 0;
-    this->_x[i] += coeffs[0] * u1[k][i];
-    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
-      this->_x[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
+    this->_x[i] += coeffs[0] * this->v[i][k];
+    for (int j = 1; j < particle_t::integrationOrder; ++j) {
+      this->_x[i] += coeffs[j] * this->v[i][3*j + k];
     }
-    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
-    this->extra[i].v_hist[0][k] = u1[k][i];
+    this->v[i][2*3 + k] = this->v[i][1*3 + k];
+    this->v[i][1*3 + k] = this->v[i][0*3 + k];
 
     k++;
-    this->_y[i] += coeffs[0] * u1[k][i];
-    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
-      this->_y[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
+    this->_y[i] += coeffs[0] * this->v[i][k];
+    for (int j = 1; j < particle_t::integrationOrder; ++j) {
+      this->_y[i] += coeffs[j] * this->v[i][3*j + k];
     }
-    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
-    this->extra[i].v_hist[0][k] = u1[k][i];
+    this->v[i][2*3 + k] = this->v[i][1*3 + k];
+    this->v[i][1*3 + k] = this->v[i][0*3 + k];
 
     k++;
-    this->_z[i] += coeffs[0] * u1[k][i];
-    for (int j = 1; j < historyData_t::integrationOrder; ++j) {
-      this->_z[i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
+    this->_z[i] += coeffs[0] * this->v[i][k];
+    for (int j = 1; j < particle_t::integrationOrder; ++j) {
+      this->_z[i] += coeffs[j] * this->v[i][3*j + k];
     }
-    this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
-    this->extra[i].v_hist[0][k] = u1[k][i];
+    this->v[i][2*3 + k] = this->v[i][1*3 + k];
+    this->v[i][1*3 + k] = this->v[i][0*3 + k];
   }
 
   if(profile){

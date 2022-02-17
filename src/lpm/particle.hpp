@@ -9,44 +9,14 @@
 
 #include "pointInterpolation.hpp"
 
-class historyData_t {
-public:
-  static constexpr int integrationOrder{3};
-  dfloat v_hist[integrationOrder - 1][3];
-  hlong id;
-  dfloat color;
-
-  historyData_t() {
-    for (int i = 0; i < integrationOrder - 1; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        v_hist[i][j] = 0.0;
-      }
-    }
-    id = 0;
-    color = 0;
-  }
-
-  historyData_t(dfloat v_hist_[integrationOrder - 1][3], dfloat color_, hlong id_)
-  {
-    for (int i = 0; i < integrationOrder - 1; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        v_hist[i][j] = v_hist_[i][j];
-      }
-    }
-    id = id_;
-    color = color_;
-  }
-};
-
-using Extra = historyData_t;
-
 struct particle_t {
+  static constexpr int integrationOrder{3};
   dfloat x, y, z;
   std::array<dfloat, 3> r;
   dlong code;
   dlong proc;
   dlong el;
-  Extra extra;
+  std::array<dfloat, 3 * integrationOrder> v;
 
   particle_t() {}
 
@@ -55,12 +25,9 @@ struct particle_t {
              dlong proc_,
              dlong el_,
              std::array<dfloat, 3> r_,
-             Extra extra_)
-      : code(code_), proc(proc_), el(el_), extra(extra_), x(x_), y(y_), z(z_)
+             std::array<dfloat, 3 * integrationOrder> v_)
+      : code(code_), proc(proc_), el(el_), v(v_), x(x_), y(y_), z(z_), r(r_)
   {
-    for (int i = 0; i < 3; ++i) {
-      r[i] = r_[i];
-    }
   }
 
   };
@@ -80,7 +47,7 @@ struct particle_t {
       const dfloat xp = x(i);
       const dfloat yp = y(i);
       const dfloat zp = z(i);
-      return particle_t(xp, yp, zp, code[i], proc[i], el[i], r[i], extra[i]);
+      return particle_t(xp, yp, zp, code[i], proc[i], el[i], r[i], v[i]);
     }
 
     dlong size() const { return _x.size(); }
@@ -120,7 +87,7 @@ struct particle_t {
     std::vector<dlong> code;
     std::vector<dlong> proc;
     std::vector<dlong> el;
-    std::vector<Extra> extra;
+    std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
     std::vector<std::array<dfloat, 3>> r;
 
     //// particle operations ////

@@ -45,12 +45,12 @@ void particleInit(particles_t& p) {
           particle.x = xp;
           particle.y = yp;
           particle.z = zp;
-          particle.extra.id = gcount;
-          for (int d = 0; d < 3; ++d) {
-            particle.extra.v_hist[0][d] = 0.0;
-            particle.extra.v_hist[1][d] = 0.0;
-          }
-          particle.extra.color = gcount;  // color by id
+          //particle.extra.id = gcount;
+          //for (int d = 0; d < 3; ++d) {
+          //  particle.extra.v_hist[0][d] = 0.0;
+          //  particle.extra.v_hist[1][d] = 0.0;
+          //}
+          //particle.extra.color = gcount;  // color by id
 
           p.push(particle);
         }
