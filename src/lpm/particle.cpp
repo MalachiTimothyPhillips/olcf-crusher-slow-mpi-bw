@@ -4,9 +4,9 @@
 #include <iostream>
 
 namespace {
-std::array<dfloat, particles_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
+std::array<dfloat, historyData_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
 {
-  constexpr int integrationOrder = particles_t::integrationOrder;
+  constexpr int integrationOrder = historyData_t::integrationOrder;
   std::array<dfloat, integrationOrder> coeffs;
   const int particleOrder = mymin(tstep, integrationOrder);
   nek::coeffAB(coeffs.data(), dt, particleOrder);
@@ -28,8 +28,7 @@ void particles_t::reserve(int n)
   proc.reserve(n);
   el.reserve(n);
   r.reserve(n);
-  id.reserve(n);
-  v.reserve(n);
+  extra.reserve(n);
 }
 void particles_t::push(particle_t particle)
 {
@@ -40,9 +39,7 @@ void particles_t::push(particle_t particle)
   proc.push_back(particle.proc);
   el.push_back(particle.el);
   r.push_back(particle.r);
-  //extra.push_back(particle.extra);
-  id.push_back(particle.id);
-  v.push_back(particle.v);
+  extra.push_back(particle.extra);
 }
 
 particle_t particles_t::remove(int i)
@@ -62,12 +59,8 @@ particle_t particles_t::remove(int i)
     proc.pop_back();
     part.el = el.back();
     el.pop_back();
-    //part.extra = extra.back();
-    //extra.pop_back();
-    part.id = id.back();
-    id.pop_back();
-    part.v = v.back();
-    v.pop_back();
+    part.extra = extra.back();
+    extra.pop_back();
   }
   else {
     // swap last element to i'th position
@@ -88,15 +81,9 @@ particle_t particles_t::remove(int i)
     part.el = el[i];
     el[i] = el.back();
     el.pop_back();
-    //part.extra = extra[i];
-    //extra[i] = extra.back();
-    //extra.pop_back();
-    part.id = id[i];
-    id[i] = id.back();
-    id.pop_back();
-    part.v = v[i];
-    v[i] = v.back();
-    v.pop_back();
+    part.extra = extra[i];
+    extra[i] = extra.back();
+    extra.pop_back();
   }
   return part;
 }
@@ -106,7 +93,6 @@ void particles_t::swap(int i, int j)
   if (i == j)
     return;
 
-  // TODO: I think I can just swap the arrays directly?
   for (int d = 0; d < 3; ++d) {
     std::swap(x[d][i], x[d][j]);
     std::swap(r[d][i], r[d][j]);
@@ -114,8 +100,7 @@ void particles_t::swap(int i, int j)
   std::swap(code[i], code[j]);
   std::swap(proc[i], proc[j]);
   std::swap(el[i], el[j]);
-  std::swap(id[i], id[j]);
-  std::swap(v[i], v[j]);
+  std::swap(extra[i], extra[j]);
 }
 
 void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
@@ -357,13 +342,10 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
     for (int k = 0; k < 3; ++k) {
       this->x[k][i] += coeffs[0] * u1[k][i];
       for (int j = 1; j < historyData_t::integrationOrder; ++j) {
-        //this->x[k][i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
-        this->x[k][i] += coeffs[j] * this->v[i][j - 1][k];
+        this->x[k][i] += coeffs[j] * this->extra[i].v_hist[j - 1][k];
       }
-      //this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
-      //this->extra[i].v_hist[0][k] = u1[k][i];
-      this->v[i][1][k] = this->v[i][0][k];
-      this->v[i][0][k] = u1[k][i];
+      this->extra[i].v_hist[1][k] = this->extra[i].v_hist[0][k];
+      this->extra[i].v_hist[0][k] = u1[k][i];
     }
   }
 
