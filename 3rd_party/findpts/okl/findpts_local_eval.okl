@@ -3,7 +3,7 @@
         const dlong  * const el_base,    const dlong el_stride,
         const dfloat * const r_base,     const dlong r_stride,
         const dlong  pn,
-        @restrict const dfloat * const in, const dlong in_stride,
+        @restrict const dfloat * const in, const dlong NOOP,
         struct findpts_local_data *fd){
 
   for(dlong i=0;i<pn;++i;@outer){
@@ -14,7 +14,7 @@
     @shared dfloat sums[p_Nq];
 
     const dlong el = *CAT(dlong, el, i);
-    const dfloat *in_el = in + el*in_stride;
+    const dfloat *in_el = in + el*p_Np;
 
     const dfloat * r = CAT(dfloat, r, i);
     for(dlong j=0;j<p_Nq;++j;@inner){

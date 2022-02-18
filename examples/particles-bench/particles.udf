@@ -232,7 +232,9 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
 
-  auto pn = particles.size();
+  const auto Np = nrs->meshV->Np;
+
+  const auto pn = particles.size();
 
   dfloat *out[3];
   out[0] = new dfloat[3 * pn];
@@ -254,19 +256,12 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     r[p] = particle.r;
   }
 
-  dlong offset = 0;
-  while (offset < pn && code[offset] == 2)
-    ++offset;
-  pn -= offset;
-
-  std::cout << "offset = " << offset << "\n";
-
   constexpr int nFields = 3;
 
   dfloat **outOffset = new dfloat *[nFields];
   dlong *outStride = new dlong[nFields];
   for (dlong i = 0; i < nFields; ++i) {
-    outOffset[i] = out[i] + offset;
+    outOffset[i] = out[i];
     outStride[i] = 1;
   }
   
@@ -294,8 +289,8 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   workspace += pn * rStrideBytes;
   occa::memory o_el = workspace;
   workspace += pn * elStrideBytes;
-  o_r.copyFrom(&(r.data()[offset][0]), rStrideBytes * pn);
-  o_el.copyFrom(el.data() + offset, elStrideBytes * pn);
+  o_r.copyFrom(&(r.data()[0][0]), rStrideBytes * pn);
+  o_el.copyFrom(el.data(), elStrideBytes * pn);
 
   dlong fieldOffset = nrs->fieldOffset;
 
@@ -309,31 +304,28 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   auto* findpts = particles.interp().ptr();
 
-  // can't do this...
-  //auto ntot = ((findpts_data_3 *)findpts->findpts_data)->ntot;
-  auto ntot = pn;
-
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
+      // TODO: make multi-field version available
       findpts->local_eval_kernel(o_outx, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Ux, ntot,
+                                pn, o_Ux, Np,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(o_outy, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Uy, ntot,
+                                pn, o_Uy, Np,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(o_outz, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Uz, ntot,
+                                pn, o_Uz, Np,
                                 findpts->o_fd_local);
     }
   }
