@@ -231,74 +231,110 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
 double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
-  const auto pn = particles.size();
 
-  std::vector<dfloat> dist2(pn, 0.0);
-  std::vector<dfloat> x(pn, 0.0);
-  std::vector<dfloat> y(pn, 0.0);
-  std::vector<dfloat> z(pn, 0.0);
+  auto pn = particles.size();
+
+  dfloat *out[3];
+  out[0] = new dfloat[3 * pn];
+  out[1] = out[0] + pn;
+  out[2] = out[1] + pn;
+
+
+  std::vector<std::array<dfloat, 3>> r(pn, {0.0, 0.0, 0.0});
 
   std::vector<dlong> code(pn, 0);
   std::vector<dlong> proc(pn, 0);
   std::vector<dlong> el(pn, 0);
-  std::vector<dfloat> r(3*pn, 0.0);
 
-  for(int p = 0; p < particles.size(); ++p){
-    x[p] = particles.x(p);
-    y[p] = particles.y(p);
-    z[p] = particles.z(p);
+  for(int p = 0; p < pn; ++p){
+    auto particle = particles[p];
+    code[p] = particle.code;
+    proc[p] = particle.proc;
+    el[p] = particle.el;
+    r[p] = particle.r;
   }
 
-  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+  dlong offset = 0;
+  while (offset < pn && code[offset] == 2)
+    ++offset;
+  pn -= offset;
 
-  const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
+  std::cout << "offset = " << offset << "\n";
 
-  const dlong code_stride = sizeof(dlong);
-  const dlong proc_stride = sizeof(dlong);
-  const dlong el_stride = sizeof(dlong);
-  const dlong r_stride = 3 * sizeof(dfloat);
-  const dlong dist2_stride = sizeof(dfloat);
+  constexpr int nFields = 3;
 
-  auto findpts = particles.interp().ptr();
+  dfloat **outOffset = new dfloat *[nFields];
+  dlong *outStride = new dlong[nFields];
+  for (dlong i = 0; i < nFields; ++i) {
+    outOffset[i] = out[i] + offset;
+    outStride[i] = 1;
+  }
+  
+  const dlong elStrideBytes = sizeof(dlong);
+  const dlong rStrideBytes = 3 * sizeof(dfloat);
 
-  const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
-                   +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
-  const dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
+  dlong outBytes = 0;
+  for (dlong i = 0; i < nFields; ++i) {
+    outBytes += outStride[i];
+  }
+  outBytes *= sizeof(dfloat);
+
+  dlong allocSize = (nFields * outBytes + rStrideBytes + elStrideBytes) * pn;
   occa::memory workspace;
   occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if(alloc_size < mempool.size()) {
+  if (allocSize < mempool.size()) {
     workspace = mempool.cast(occa::dtype::byte);
-  } else {
-    workspace = platform->device.occaDevice().malloc(alloc_size, occa::dtype::byte);
   }
-  occa::memory  d_code_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory    d_el_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory     d_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
-  occa::memory d_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
-  occa::memory     d_x_base = workspace; workspace += 3*sizeof(dfloat*);
-  occa::memory    d_x0_base = workspace; workspace +=  xStrideBytes[0]*pn;
-  occa::memory    d_x1_base = workspace; workspace +=  xStrideBytes[1]*pn;
-  occa::memory    d_x2_base = workspace; workspace +=  xStrideBytes[2]*pn;
-  occa::memory   d_x_stride = workspace; workspace += 3*sizeof(dlong);
+  else {
+    workspace = platform->device.occaDevice().malloc(allocSize, occa::dtype::byte);
+  }
+  occa::memory o_out = workspace;
+  workspace += pn * nFields * sizeof(dfloat);
+  occa::memory o_r = workspace;
+  workspace += pn * rStrideBytes;
+  occa::memory o_el = workspace;
+  workspace += pn * elStrideBytes;
+  o_r.copyFrom(&(r.data()[offset][0]), rStrideBytes * pn);
+  o_el.copyFrom(el.data() + offset, elStrideBytes * pn);
 
-  dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
-  d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
-  d_x0_base.copyFrom(x.data(), xStrideBytes[0]*pn);
-  d_x1_base.copyFrom(y.data(), xStrideBytes[1]*pn);
-  d_x2_base.copyFrom(z.data(), xStrideBytes[2]*pn);
-  d_x_stride.copyFrom(xStrideBytes.data(), 3*sizeof(dlong));
+  dlong fieldOffset = nrs->fieldOffset;
+
+  auto o_Ux = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_Uy = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_Uz = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
+
+  auto o_outx = o_out + 0 * pn * sizeof(dfloat);
+  auto o_outy = o_out + 1 * pn * sizeof(dfloat);
+  auto o_outz = o_out + 2 * pn * sizeof(dfloat);
+
+  auto* findpts = particles.interp().ptr();
+
+  // can't do this...
+  //auto ntot = ((findpts_data_3 *)findpts->findpts_data)->ntot;
+  auto ntot = pn;
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      findpts->local_kernel( d_code_base, (dlong)sizeof(dlong),
-                              d_el_base, (dlong)sizeof(dlong),
-                               d_r_base, (dlong)(3*sizeof(dfloat)),
-                           d_dist2_base, (dlong)sizeof(dfloat),
-                               d_x_base, d_x_stride,
-                           pn, findpts->o_fd_local);
+      findpts->local_eval_kernel(o_outx, sizeof(dfloat),
+                                o_el,  elStrideBytes,
+                                o_r,   rStrideBytes,
+                                pn, o_Ux, ntot,
+                                findpts->o_fd_local);
+
+      findpts->local_eval_kernel(o_outy, sizeof(dfloat),
+                                o_el,  elStrideBytes,
+                                o_r,   rStrideBytes,
+                                pn, o_Uy, ntot,
+                                findpts->o_fd_local);
+
+      findpts->local_eval_kernel(o_outz, sizeof(dfloat),
+                                o_el,  elStrideBytes,
+                                o_r,   rStrideBytes,
+                                pn, o_Uz, ntot,
+                                findpts->o_fd_local);
     }
   }
   platform->device.finish();
@@ -339,6 +375,40 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     }
 
     EXIT_AND_FINALIZE(0);
+  }
+
+  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL_EVAL)
+  {
+    // set up data for findpts_local_eval call
+    std::array<dfloat, 3> dt = {0.1, 0.1, 0.1};
+    particles->update(nrs->o_U, dt.data(), 1);
+
+    double elapsed = run_findpts_local_eval_bench(nrs, *particles, 10);
+    const int elapsedTarget = 10;
+    const int Ntests = elapsedTarget / elapsed;
+    elapsed = run_findpts_local_eval_bench(nrs, *particles, Ntests);
+
+    const auto nParticles = particles->size();
+
+    double particleThroughput = (nParticles / elapsed) / 1.e9;
+
+    const int Nthreads =  omp_get_max_threads();
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "findpts_local_eval kernel:\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << mesh->N
+                << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles
+                << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput
+                << "\n";
+    }
+
+    EXIT_AND_FINALIZE(0);
+
   }
 
   if(benchmarkMode == BENCHMARK::PARTICLE_UPDATE)
