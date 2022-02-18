@@ -8,6 +8,31 @@
 static int nParticles;
 static particles_t *particles;
 
+enum class BENCHMARK{
+  FINDPTS_LOCAL,
+  FINDPTS_LOCAL_EVAL,
+  PARTICLE_UPDATE,
+  INVALID,
+};
+
+BENCHMARK benchmarkMode;
+
+BENCHMARK ciModeToBenchmark(dlong mode)
+{
+  if(mode == 1){
+    return BENCHMARK::FINDPTS_LOCAL;
+  }
+  if(mode == 2){
+    return BENCHMARK::FINDPTS_LOCAL_EVAL;
+  }
+  if(mode == 3){
+    return BENCHMARK::PARTICLE_UPDATE;
+  }
+
+  return BENCHMARK::INVALID;
+}
+
+
 /* Particle Functions */
 void particleInit(particles_t& p) {
 
@@ -45,13 +70,6 @@ void particleInit(particles_t& p) {
           particle.x = xp;
           particle.y = yp;
           particle.z = zp;
-          //particle.extra.id = gcount;
-          //for (int d = 0; d < 3; ++d) {
-          //  particle.extra.v_hist[0][d] = 0.0;
-          //  particle.extra.v_hist[1][d] = 0.0;
-          //}
-          //particle.extra.color = gcount;  // color by id
-
           p.push(particle);
         }
         ++gcount; // Total count
@@ -101,6 +119,15 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
     ABORT(1);
   }
   platform->par->extract("casedata", "p_nparticles", nParticles);
+
+  int ciMode;
+  options.getArgs("CI-MODE", ciMode);
+  benchmarkMode = ciModeToBenchmark(ciMode);
+
+  if(benchmarkMode == BENCHMARK::INVALID){
+    printf("Invalid benchmark mode specified!\n");
+    ABORT(1);
+  }
 }
 
 void UDF_Setup(nrs_t *nrs)
@@ -108,7 +135,7 @@ void UDF_Setup(nrs_t *nrs)
   particles = new particles_t(nrs, 0);
 }
 
-double run(nrs_t* nrs, particles_t& particles, int Ntrials, std::array<dfloat, 3>& dt)
+double run_particle_update(nrs_t* nrs, particles_t& particles, int Ntrials, std::array<dfloat, 3>& dt)
 {
   platform->device.finish();
   MPI_Barrier(platform->comm.mpiComm);
@@ -124,117 +151,301 @@ double run(nrs_t* nrs, particles_t& particles, int Ntrials, std::array<dfloat, 3
   return (MPI_Wtime() - start) / Ntrials;
 }
 
+double run_findpts_local_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
+{
+  const auto pn = particles.size();
+
+  std::vector<dfloat> dist2(pn, 0.0);
+  std::vector<dfloat> x(pn, 0.0);
+  std::vector<dfloat> y(pn, 0.0);
+  std::vector<dfloat> z(pn, 0.0);
+
+  std::vector<dlong> code(pn, 0);
+  std::vector<dlong> proc(pn, 0);
+  std::vector<dlong> el(pn, 0);
+  std::vector<dfloat> r(3*pn, 0.0);
+
+  for(int p = 0; p < particles.size(); ++p){
+    x[p] = particles.x(p);
+    y[p] = particles.y(p);
+    z[p] = particles.z(p);
+  }
+
+  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+
+  const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
+
+  const dlong code_stride = sizeof(dlong);
+  const dlong proc_stride = sizeof(dlong);
+  const dlong el_stride = sizeof(dlong);
+  const dlong r_stride = 3 * sizeof(dfloat);
+  const dlong dist2_stride = sizeof(dfloat);
+
+  auto findpts = particles.interp_->ptr();
+
+  const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
+                   +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
+  const dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
+  occa::memory workspace;
+  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
+  if(alloc_size < mempool.size()) {
+    workspace = mempool.cast(occa::dtype::byte);
+  } else {
+    workspace = platform->device.occaDevice().malloc(alloc_size, occa::dtype::byte);
+  }
+  occa::memory  d_code_base = workspace; workspace +=   sizeof(dlong) *pn;
+  occa::memory    d_el_base = workspace; workspace +=   sizeof(dlong) *pn;
+  occa::memory     d_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
+  occa::memory d_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
+  occa::memory     d_x_base = workspace; workspace += 3*sizeof(dfloat*);
+  occa::memory    d_x0_base = workspace; workspace +=  xStrideBytes[0]*pn;
+  occa::memory    d_x1_base = workspace; workspace +=  xStrideBytes[1]*pn;
+  occa::memory    d_x2_base = workspace; workspace +=  xStrideBytes[2]*pn;
+  occa::memory   d_x_stride = workspace; workspace += 3*sizeof(dlong);
+
+  dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
+  d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
+  d_x0_base.copyFrom(x.data(), xStrideBytes[0]*pn);
+  d_x1_base.copyFrom(y.data(), xStrideBytes[1]*pn);
+  d_x2_base.copyFrom(z.data(), xStrideBytes[2]*pn);
+  d_x_stride.copyFrom(xStrideBytes.data(), 3*sizeof(dlong));
+
+  platform->device.finish();
+  MPI_Barrier(MPI_COMM_WORLD);
+  const auto start = MPI_Wtime();
+  {
+    for(int i = 0; i < Ntrials; ++i){
+      findpts->local_kernel( d_code_base, (dlong)sizeof(dlong),
+                              d_el_base, (dlong)sizeof(dlong),
+                               d_r_base, (dlong)(3*sizeof(dfloat)),
+                           d_dist2_base, (dlong)sizeof(dfloat),
+                               d_x_base, d_x_stride,
+                           pn, findpts->o_fd_local);
+    }
+  }
+  platform->device.finish();
+  MPI_Barrier(MPI_COMM_WORLD);
+  return (MPI_Wtime() - start) / Ntrials;
+}
+
+double run_findpts_local_eval_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
+{
+  const auto pn = particles.size();
+
+  std::vector<dfloat> dist2(pn, 0.0);
+  std::vector<dfloat> x(pn, 0.0);
+  std::vector<dfloat> y(pn, 0.0);
+  std::vector<dfloat> z(pn, 0.0);
+
+  std::vector<dlong> code(pn, 0);
+  std::vector<dlong> proc(pn, 0);
+  std::vector<dlong> el(pn, 0);
+  std::vector<dfloat> r(3*pn, 0.0);
+
+  for(int p = 0; p < particles.size(); ++p){
+    x[p] = particles.x(p);
+    y[p] = particles.y(p);
+    z[p] = particles.z(p);
+  }
+
+  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+
+  const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
+
+  const dlong code_stride = sizeof(dlong);
+  const dlong proc_stride = sizeof(dlong);
+  const dlong el_stride = sizeof(dlong);
+  const dlong r_stride = 3 * sizeof(dfloat);
+  const dlong dist2_stride = sizeof(dfloat);
+
+  auto findpts = particles.interp_->ptr();
+
+  const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
+                   +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
+  const dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
+  occa::memory workspace;
+  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
+  if(alloc_size < mempool.size()) {
+    workspace = mempool.cast(occa::dtype::byte);
+  } else {
+    workspace = platform->device.occaDevice().malloc(alloc_size, occa::dtype::byte);
+  }
+  occa::memory  d_code_base = workspace; workspace +=   sizeof(dlong) *pn;
+  occa::memory    d_el_base = workspace; workspace +=   sizeof(dlong) *pn;
+  occa::memory     d_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
+  occa::memory d_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
+  occa::memory     d_x_base = workspace; workspace += 3*sizeof(dfloat*);
+  occa::memory    d_x0_base = workspace; workspace +=  xStrideBytes[0]*pn;
+  occa::memory    d_x1_base = workspace; workspace +=  xStrideBytes[1]*pn;
+  occa::memory    d_x2_base = workspace; workspace +=  xStrideBytes[2]*pn;
+  occa::memory   d_x_stride = workspace; workspace += 3*sizeof(dlong);
+
+  dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
+  d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
+  d_x0_base.copyFrom(x.data(), xStrideBytes[0]*pn);
+  d_x1_base.copyFrom(y.data(), xStrideBytes[1]*pn);
+  d_x2_base.copyFrom(z.data(), xStrideBytes[2]*pn);
+  d_x_stride.copyFrom(xStrideBytes.data(), 3*sizeof(dlong));
+
+  platform->device.finish();
+  MPI_Barrier(MPI_COMM_WORLD);
+  const auto start = MPI_Wtime();
+  {
+    for(int i = 0; i < Ntrials; ++i){
+      findpts->local_kernel( d_code_base, (dlong)sizeof(dlong),
+                              d_el_base, (dlong)sizeof(dlong),
+                               d_r_base, (dlong)(3*sizeof(dfloat)),
+                           d_dist2_base, (dlong)sizeof(dfloat),
+                               d_x_base, d_x_stride,
+                           pn, findpts->o_fd_local);
+    }
+  }
+  platform->device.finish();
+  MPI_Barrier(MPI_COMM_WORLD);
+  return (MPI_Wtime() - start) / Ntrials;
+}
+
 void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 {
   auto * mesh = nrs->meshV;
 
   particleInit  (*particles);
 
-  int Nstep = 10;
-  std::array<dfloat, 3> dt = {1.0 / Nstep, 1.0 / Nstep, 1.0 / Nstep};
+  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL)
+  {
+    double elapsed = run_findpts_local_bench(nrs, *particles, 10);
+    const int elapsedTarget = 10;
+    const int Ntests = elapsedTarget / elapsed;
+    elapsed = run_findpts_local_bench(nrs, *particles, Ntests);
 
-  auto o_U_x = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
-  auto o_U_y = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
-  auto o_U_z = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
+    const auto nParticles = particles->size();
 
-  platform->linAlg->fill(mesh->Nlocal, 1.0, o_U_x);
-  platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_y);
-  platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_z);
+    double particleThroughput = (nParticles / elapsed) / 1.e9;
 
-  // will integrate for 1 time unit -- puts particles back at original location
-  double elapsed = run(nrs, *particles, 10, dt);
+    const int Nthreads =  omp_get_max_threads();
 
-  int nParticleDir = std::round(std::cbrt(nParticles));
-  nParticles = nParticleDir * nParticleDir * nParticleDir;
+    if(platform->comm.mpiRank == 0){
+      std::cout << "findpts_local kernel:\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << mesh->N
+                << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles
+                << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput
+                << "\n";
+    }
 
-  std::vector<dfloat> expectedX(nParticles, 0.0);
-  std::vector<dfloat> expectedY(nParticles, 0.0);
-  std::vector<dfloat> expectedZ(nParticles, 0.0);
+    EXIT_AND_FINALIZE(0);
+  }
+
+  if(benchmarkMode == BENCHMARK::PARTICLE_UPDATE)
+  {
+    int Nstep = 10;
+    std::array<dfloat, 3> dt = {1.0 / Nstep, 1.0 / Nstep, 1.0 / Nstep};
+
+    auto o_U_x = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
+    auto o_U_y = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
+    auto o_U_z = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
+
+    platform->linAlg->fill(mesh->Nlocal, 1.0, o_U_x);
+    platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_y);
+    platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_z);
+
+    // will integrate for 1 time unit -- puts particles back at original location
+    double elapsed = run_particle_update(nrs, *particles, 10, dt);
+
+    int nParticleDir = std::round(std::cbrt(nParticles));
+    nParticles = nParticleDir * nParticleDir * nParticleDir;
+
+    std::vector<dfloat> expectedX(nParticles, 0.0);
+    std::vector<dfloat> expectedY(nParticles, 0.0);
+    std::vector<dfloat> expectedZ(nParticles, 0.0);
   
-  const dfloat Lx = 1.0;
-  const dfloat Ly = 1.0;
-  const dfloat Lz = 1.0;
+    const dfloat Lx = 1.0;
+    const dfloat Ly = 1.0;
+    const dfloat Lz = 1.0;
 
-  const dfloat invNParticleDir = 1.0 / nParticleDir;
+    const dfloat invNParticleDir = 1.0 / nParticleDir;
 
-  dlong particleCtr = 0.0;
-  for (int ix = 0; ix < nParticleDir; ++ix) {
-    for (int iy = 0; iy < nParticleDir; ++iy) {
-      for (int iz = 0; iz < nParticleDir; ++iz) {
+    dlong particleCtr = 0.0;
+    for (int ix = 0; ix < nParticleDir; ++ix) {
+      for (int iy = 0; iy < nParticleDir; ++iy) {
+        for (int iz = 0; iz < nParticleDir; ++iz) {
 
-        dfloat dx = Lx * invNParticleDir;
-        dfloat dy = Ly * invNParticleDir;
-        dfloat dz = Lz * invNParticleDir;
+          dfloat dx = Lx * invNParticleDir;
+          dfloat dy = Ly * invNParticleDir;
+          dfloat dz = Lz * invNParticleDir;
 
-        dfloat xp = dx*(ix+0.5);
-        dfloat yp = dy*(iy+0.5);
-        dfloat zp = dz*(iz+0.5);
+          dfloat xp = dx*(ix+0.5);
+          dfloat yp = dy*(iy+0.5);
+          dfloat zp = dz*(iz+0.5);
 
-        expectedX[particleCtr] = xp;
-        expectedY[particleCtr] = yp;
-        expectedZ[particleCtr] = zp;
-        particleCtr++;
+          expectedX[particleCtr] = xp;
+          expectedY[particleCtr] = yp;
+          expectedZ[particleCtr] = zp;
+          particleCtr++;
+        }
       }
     }
+
+    dfloat errPos = 0.0;
+
+    for(int i = 0; i < particles->size(); ++i){
+      errPos += std::abs(particles->x(i) - expectedX[i]);
+      errPos += std::abs(particles->y(i) - expectedY[i]);
+      errPos += std::abs(particles->z(i) - expectedZ[i]);
+    }
+
+    errPos /= nParticles;
+
+    std::cout << "Error in position: " << errPos << "\n";
+
+    const dfloat testTol = 1e-12;
+
+    if(errPos > testTol){
+      std::cout << "Error too large. Failing test!\n";
+      MPI_Finalize();
+      exit(2);
+    }
+
+    // done with correctness check...
+
+    // Now the benchmark:
+    const int elapsedTarget = 10;
+    const int Ntests = elapsedTarget / elapsed;
+
+    elapsed = run_particle_update(nrs, *particles, Ntests, dt);
+
+    double particleThroughput = (nParticles / elapsed) / 1.e9;
+
+    const int Nthreads =  omp_get_max_threads();
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "particle update:\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << mesh->N
+                << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles
+                << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput
+                << "\n";
+    }
+
+    const double tUpdate      = platform->timer.query("particles_t::update", "DEVICE:MAX");
+    const double tFind        = platform->timer.query("particles_t::find", "DEVICE:MAX");
+    const double tMigrate     = platform->timer.query("particles_t::migrate", "DEVICE:MAX");
+    const double tInterpLocal = platform->timer.query("particles_t::interpLocal", "DEVICE:MAX");
+    const double tAdvance     = platform->timer.query("particles_t::advance", "DEVICE:MAX");
+    std::cout <<   "particles_t::update           " << tUpdate << "s\n";
+    std::cout <<   "  particles_t::find           " << tFind << "s\n";
+    std::cout <<   "  particles_t::migrate        " << tMigrate << "s\n";
+    std::cout <<   "  particles_t::interpLocal    " << tInterpLocal << "s\n";
+    std::cout <<   "  particles_t::advance        " << tAdvance << "s\n";
+
+    EXIT_AND_FINALIZE(0);
   }
-
-  dfloat errPos = 0.0;
-
-  for(int i = 0; i < particles->size(); ++i){
-    errPos += std::abs(particles->x(i) - expectedX[i]);
-    errPos += std::abs(particles->y(i) - expectedY[i]);
-    errPos += std::abs(particles->z(i) - expectedZ[i]);
-  }
-
-  errPos /= nParticles;
-
-  std::cout << "Error in position: " << errPos << "\n";
-
-  const dfloat testTol = 1e-12;
-
-  if(errPos > testTol){
-    std::cout << "Error too large. Failing test!\n";
-    MPI_Finalize();
-    exit(2);
-  }
-
-  // done with correctness check...
-
-  // Now the benchmark:
-  const int elapsedTarget = 10;
-  const int Ntests = elapsedTarget / elapsed;
-
-  elapsed = run(nrs, *particles, Ntests, dt);
-
-  double particleThroughput = (nParticles / elapsed) / 1.e9;
-
-  const int Nthreads =  omp_get_max_threads();
-
-  dlong globalElements = mesh->Nelements;
-
-  MPI_Allreduce(MPI_IN_PLACE, &globalElements, 1, MPI_DLONG, MPI_SUM, platform->comm.mpiComm);
-
-  if(platform->comm.mpiRank == 0){
-    std::cout << "MPItasks=" << platform->comm.mpiCommSize
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << mesh->N
-              << " Nelements=" << globalElements
-              << " elapsed time=" << elapsed
-              << " GParticles/s=" << particleThroughput
-              << "\n";
-  }
-
-  const double tUpdate      = platform->timer.query("particles_t::update", "DEVICE:MAX");
-  const double tFind        = platform->timer.query("particles_t::find", "DEVICE:MAX");
-  const double tMigrate     = platform->timer.query("particles_t::migrate", "DEVICE:MAX");
-  const double tInterpLocal = platform->timer.query("particles_t::interpLocal", "DEVICE:MAX");
-  const double tAdvance     = platform->timer.query("particles_t::advance", "DEVICE:MAX");
-  std::cout <<   "particles_t::update           " << tUpdate << "s\n";
-  std::cout <<   "  particles_t::find           " << tFind << "s\n";
-  std::cout <<   "  particles_t::migrate        " << tMigrate << "s\n";
-  std::cout <<   "  particles_t::interpLocal    " << tInterpLocal << "s\n";
-  std::cout <<   "  particles_t::advance        " << tAdvance << "s\n";
-
-  EXIT_AND_FINALIZE(0);
 }
