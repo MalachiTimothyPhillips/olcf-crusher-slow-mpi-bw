@@ -73,11 +73,12 @@ struct particle_t {
     dfloat& z(int i) { return _z[i]; }
     const dfloat& z(int i) const { return _z[i]; }
 
+    pointInterpolation_t& interp() { return *interp_; }
+
   private:
 
     static constexpr bool profile = true; // toggle for timing blocks
 
-    // helper class to pass components of a single particle
     std::shared_ptr<pointInterpolation_t> interp_;
 
     std::vector<dfloat> _x;
