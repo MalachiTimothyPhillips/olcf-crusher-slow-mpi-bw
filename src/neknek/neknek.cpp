@@ -3,7 +3,7 @@
 #include "neknek.hpp"
 #include "nrs.hpp"
 #include "nekInterfaceAdapter.hpp"
-#include "ogsKernelsFindpts.hpp"
+#include "findptsKernels.hpp"
 
 static void reserveAllocation(nrs_t *nrs, dlong npt) {
   neknek_t *neknek = nrs->neknek;
@@ -58,18 +58,18 @@ static void findInterpPoints(nrs_t* nrs){
   dfloat *elx     [3] = {mesh->x, mesh->y, mesh->z};
 
   if (neknek->ogsHandle != nullptr) {
-    ogsFindptsFree(neknek->ogsHandle);
+    findptsFree(neknek->ogsHandle);
   }
 
-  ogs_findpts_t **ogsHandles = new ogs_findpts_t*[nsessions];
+  findpts_t **ogsHandles = new findpts_t*[nsessions];
   for(dlong i = 0; i < nsessions; ++i) {
-    ogsHandles[i] = ogsFindptsSetup(D, globalComm,
+    ogsHandles[i] = findptsSetup(D, globalComm,
                                     (i == sessionID ? elx : elx_null),
                                     n1, (i == sessionID ? nelm : 0),
                                     nf1, bb_tol, ntot, ntot, npt_max, tol,
                                     &device);
   }
-  neknek->ogsHandle = ogsFindptsSetup(D, globalComm, elx, n1, nelm,
+  neknek->ogsHandle = findptsSetup(D, globalComm, elx, n1, nelm,
                                       nf1, bb_tol, ntot, ntot, npt_max, tol,
                                       &device);
 
@@ -108,14 +108,14 @@ static void findInterpPoints(nrs_t* nrs){
   neknek->pointMap[nrs->fieldOffset] = neknek->npt;
   neknek->o_pointMap.copyFrom(neknek->pointMap);
 
-  auto findPtsData = new ogs_findpts_data_t(npt);
+  auto findPtsData = new findpts_data_t(npt);
   neknek->findPtsData = findPtsData;
 
   dfloat *interpX_3[3] = {interpX, interpX+npt, interpX+2*npt};
   dfloat *nullptr_3[3] = {nullptr, nullptr, nullptr};
   dlong interpXStride[3] = {1*sizeof(dfloat), 1*sizeof(dfloat), 1*sizeof(dfloat)};
   for(dlong sess = 0; sess < nsessions; ++sess) {
-    ogsFindpts(findPtsData,
+    findpts(findPtsData,
                (sess == sessionID) ? nullptr_3 : interpX_3,
                interpXStride,
                (sess == sessionID) ? 0 : npt,
@@ -125,7 +125,7 @@ static void findInterpPoints(nrs_t* nrs){
 
 
   for(dlong i = 0; i < nsessions; ++i) {
-    ogsFindptsFree(ogsHandles[i]);
+    findptsFree(ogsHandles[i]);
   }
 
   delete[] interpX;
@@ -164,7 +164,7 @@ void neknekSetup(nrs_t *nrs)
 
       // precompile kernels
       // OCCA automatically garbage collections
-      std::tuple<occa::kernel, occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, device, 3, Nq);
+      initFindptsKernels(comm, device, 3, Nq);
     }
     return;
   }
@@ -212,7 +212,7 @@ static void fieldEval(nrs_t *nrs, dlong field, occa::memory in) {
   const dlong D = nrs->dim;
   dfloat *out = neknek->valInterp+field*neknek->npt;
 
-  ogsFindptsEval(out, neknek->findPtsData, neknek->npt, in, neknek->ogsHandle);
+  findptsEval(out, neknek->findPtsData, neknek->npt, in, neknek->ogsHandle);
 }
 
 void neknekUpdateBoundary(nrs_t *nrs)

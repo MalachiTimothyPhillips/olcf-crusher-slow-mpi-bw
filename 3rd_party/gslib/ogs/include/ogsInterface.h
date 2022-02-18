@@ -24,8 +24,8 @@ SOFTWARE.
 
 */
 
-#ifndef OGS_INTERFACE_H
-#define OGS_INTERFACE_H 1
+#ifndef INTERFACE_H
+#define INTERFACE_H 1
 
 extern "C"
 {

@@ -1,11 +1,12 @@
-#ifndef OGS_FINDPTS_HPP
-#define OGS_FINDPTS_HPP
+#ifndef FINDPTS_HPP
+#define FINDPTS_HPP
 
-#include "ogs.hpp"
-#include "ogstypes.h"
+#include "occa.hpp"
+#include <mpi.h>
+#include "ogstypes.h" // for dfloat, dlong
 #include <limits>
 
-struct ogs_findpts_t {
+struct findpts_t {
   int D;
   void *findpts_data;
   occa::device *device;
@@ -15,7 +16,7 @@ struct ogs_findpts_t {
   occa::memory o_fd_local;
 };
 
-struct ogs_findpts_data_t {
+struct findpts_data_t {
   bool owned;
   dlong *code_base;
   dlong *proc_base;
@@ -23,9 +24,9 @@ struct ogs_findpts_data_t {
   dfloat *r_base;
   dfloat *dist2_base;
 
-  ogs_findpts_data_t() { owned = false; }
+  findpts_data_t() { owned = false; }
 
-  ogs_findpts_data_t(dlong *_code_base,
+  findpts_data_t(dlong *_code_base,
                      dlong *_proc_base,
                      dlong *_el_base,
                      dfloat *_r_base,
@@ -36,7 +37,7 @@ struct ogs_findpts_data_t {
     owned = false;
   }
 
-  ogs_findpts_data_t(int npt)
+  findpts_data_t(int npt)
   {
     code_base = (dlong *)calloc(npt, sizeof(dlong));
     proc_base = (dlong *)calloc(npt, sizeof(dlong));
@@ -51,7 +52,7 @@ struct ogs_findpts_data_t {
     owned = true;
   }
 
-  ~ogs_findpts_data_t()
+  ~findpts_data_t()
   {
     if (owned) {
       free(code_base);
@@ -63,7 +64,7 @@ struct ogs_findpts_data_t {
   }
 };
 
-ogs_findpts_t *ogsFindptsSetup(
+findpts_t *findptsSetup(
   const dlong D, MPI_Comm comm,
   const dfloat *const elx[],
   const dlong n[], const dlong nel,
@@ -71,38 +72,37 @@ ogs_findpts_t *ogsFindptsSetup(
   const hlong local_hash_size, const hlong global_hash_size,
   const dlong npt_max, const dfloat newt_tol,
   occa::device *device = nullptr);
-void ogsFindptsFree(ogs_findpts_t *fd);
-void ogsFindpts(ogs_findpts_data_t *findPtsData,
+void findptsFree(findpts_t *fd);
+void findpts(findpts_data_t *findPtsData,
                 const dfloat *const x_base[],
                 const dlong x_stride[],
                 const dlong npt,
-                ogs_findpts_t *const fd,
-                const bool use_legacy_findpts = false);
-void ogsFindptsEval(dfloat *const out_base,
-                    ogs_findpts_data_t *findPtsData,
+                findpts_t *const fd);
+void findptsEval(dfloat *const out_base,
+                    findpts_data_t *findPtsData,
                     const dlong npt,
                     const dfloat *const in,
-                    ogs_findpts_t *const fd);
+                    findpts_t *const fd);
 
-void ogsFindptsEval(dfloat *const out_base,
-                    ogs_findpts_data_t *findPtsData,
+void findptsEval(dfloat *const out_base,
+                    findpts_data_t *findPtsData,
                     const dlong npt,
                     occa::memory d_in,
-                    ogs_findpts_t *const fd);
+                    findpts_t *const fd);
 
-void ogsFindptsLocalEval(
+void findptsLocalEval(
         dfloat *const  out_base, const dlong  out_stride,
   const dlong  *const   el_base, const dlong   el_stride,
   const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat *const in, ogs_findpts_t *const fd);
+  const dlong npt, const dfloat *const in, findpts_t *const fd);
 
-void ogsFindptsLocalEval(
+void findptsLocalEval(
   occa::memory out_base, const dlong  out_stride,
   occa::memory  el_base, const dlong   el_stride,
   occa::memory   r_base, const dlong    r_stride,
-  const dlong npt, occa::memory d_in, ogs_findpts_t *const fd);
+  const dlong npt, occa::memory d_in, findpts_t *const fd);
 
 struct crystal;
-crystal* ogsCrystalRouter(ogs_findpts_t *const fd);
+crystal* crystalRouter(findpts_t *const fd);
 
 #endif

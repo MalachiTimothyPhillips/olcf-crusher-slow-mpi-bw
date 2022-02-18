@@ -33,9 +33,9 @@ SOFTWARE.
 #include <string.h>
 
 #include "gslib.h"
-#include "ogsFindpts.h"
+#include "internal_findpts.h"
 
-#include "ogstypes.h"
+#include "ogstypes.h" // for dfloat
 
 // need to access internals of findpts_data structs
 struct hash_data_3 {
@@ -50,49 +50,49 @@ struct findpts_data_3 {
   struct hash_data_3 hash;
 };
 
-void ogsDevFindpts(      dlong  *const  code_base   , const dlong  code_stride   ,
+void devFindpts(      dlong  *const  code_base   , const dlong  code_stride   ,
                            dlong  *const  proc_base   , const dlong  proc_stride   ,
                            dlong  *const    el_base   , const dlong    el_stride   ,
                            dfloat *const     r_base   , const dlong     r_stride   ,
                            dfloat *const dist2_base   , const dlong dist2_stride   ,
                      const dfloat *const     x_base[3], const dlong     x_stride[3],
                      const dlong npt, struct findpts_data_3 *const fd,
-                     const void *const ogs_fd) {
-  ogs_findpts( code_base,  code_stride,
+                     const void *const findptsData) {
+  findpts( code_base,  code_stride,
                  proc_base,  proc_stride,
                    el_base,    el_stride,
                     r_base,     r_stride,
                 dist2_base, dist2_stride,
                     x_base,     x_stride,
-                npt, fd, ogs_fd);
+                npt, fd, findptsData);
 }
 
-void ogsDevFindptsEval(
+void devFindptsEval(
         dfloat *const  out_base, const dlong  out_stride,
   const dlong  *const code_base, const dlong code_stride,
   const dlong  *const proc_base, const dlong proc_stride,
   const dlong  *const   el_base, const dlong   el_stride,
   const dfloat *const    r_base, const dlong    r_stride,
   const dlong npt, void *const in, struct findpts_data_3 *const fd,
-  const void *const ogs_fd) {
+  const void *const findptsData) {
 
-  ogs_findpts_eval( out_base,  out_stride,
+  findpts_eval( out_base,  out_stride,
                      code_base, code_stride,
                      proc_base, proc_stride,
                        el_base,   el_stride,
                         r_base,    r_stride,
-                     npt, in, fd, ogs_fd);
+                     npt, in, fd, findptsData);
 }
 
-void ogsDevFindptsLocalEval(
+void devFindptsLocalEval(
         void *const  out_base, const dlong  out_stride,
   const void *const   el_base, const dlong   el_stride,
   const void *const    r_base, const dlong    r_stride,
   const dlong npt, void *const in, struct findpts_data_3 *const fd,
-  const void *const ogs_fd) {
+  const void *const findptsData) {
 
-  ogs_findpts_local_eval(out_base,  out_stride,
+  findpts_local_eval(out_base,  out_stride,
                             el_base,   el_stride,
                              r_base,    r_stride,
-                           npt, in, &fd->local, ogs_fd);
+                           npt, in, &fd->local, findptsData);
 }

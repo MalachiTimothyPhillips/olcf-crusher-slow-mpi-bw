@@ -22,7 +22,7 @@
 #include "findpts_local.h"
 #include "findpts.h"
 
-#include "ogsFindpts.h"
+#include "internal_findpts.h"
 
 #define CODE_INTERNAL 0
 #define CODE_BORDER 1
@@ -71,7 +71,7 @@ struct out_pt_3 {
   uint index, code, el, proc;
 };
 
-void ogs_findpts(uint *const code_base,
+void findpts(uint *const code_base,
                    const unsigned code_stride,
                    uint *const proc_base,
                    const unsigned proc_stride,
@@ -85,13 +85,13 @@ void ogs_findpts(uint *const code_base,
                    const unsigned x_stride[D],
                    const uint npt,
                    struct findpts_data_3 *const fd,
-                   const void *const ogs_fd)
+                   const void *const findptsData)
 {
   const uint np = fd->cr.comm.np, id=fd->cr.comm.id;
   struct array hash_pt, src_pt_3, out_pt_3;
   /* look locally first */
   if (npt)
-    ogs_findpts_local(code_base,
+    findpts_local(code_base,
                         code_stride,
                         el_base,
                         el_stride,
@@ -102,7 +102,7 @@ void ogs_findpts(uint *const code_base,
                         x_base,
                         x_stride,
                         npt,
-                        ogs_fd);
+                        findptsData);
   /* send unfound and border points to global hash cells */
   {
     uint index;
@@ -174,7 +174,7 @@ void ogs_findpts(uint *const code_base,
       const double *spt_x_base[D]; unsigned spt_x_stride[D];
       unsigned d; for(d=0;d<D;++d)
         spt_x_base[d] = spt[0].x + d, spt_x_stride[d] = sizeof(struct src_pt_3);
-      ogs_findpts_local(&opt[0].code,
+      findpts_local(&opt[0].code,
                           sizeof(struct out_pt_3),
                           &opt[0].el,
                           sizeof(struct out_pt_3),
@@ -185,7 +185,7 @@ void ogs_findpts(uint *const code_base,
                           spt_x_base,
                           spt_x_stride,
                           src_pt_3.n,
-                          ogs_fd);
+                          findptsData);
     }
     array_free(&src_pt_3);
     /* group by code to eliminate unfound points */
@@ -224,7 +224,7 @@ void ogs_findpts(uint *const code_base,
   }
 }
 
-void ogs_findpts_eval(double *const out_base,
+void findpts_eval(double *const out_base,
                         const unsigned out_stride,
                         const uint *const code_base,
                         const unsigned code_stride,
@@ -237,7 +237,7 @@ void ogs_findpts_eval(double *const out_base,
                         const uint npt,
                         const void *const in,
                         struct findpts_data_3 *const fd,
-                        const void *const ogs_fd)
+                        const void *const findptsData)
 {
   struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
@@ -273,7 +273,7 @@ void ogs_findpts_eval(double *const out_base,
     sarray_sort(struct eval_src_pt_3, src.ptr, n, el, 0, &fd->cr.data);
     array_init(struct eval_out_pt_3, &outpt, n), outpt.n = n;
     spt=src.ptr, opt=outpt.ptr;
-    ogs_findpts_local_eval_internal(opt, spt, src.n, in, &fd->local, ogs_fd);
+    findpts_local_eval_internal(opt, spt, src.n, in, &fd->local, findptsData);
     spt=src.ptr, opt=outpt.ptr;
     for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
     array_free(&src);

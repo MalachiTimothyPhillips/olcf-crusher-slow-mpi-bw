@@ -4,7 +4,7 @@
 #include "nrssys.hpp"
 
 class nrs_t;
-class ogs_findpts_t;
+class findpts_t;
 
 class pointInterpolation_t {
 public:
@@ -14,21 +14,21 @@ public:
   // Finds the process, element, and reference coordinates of the given points
   void find(const dfloat *const *x,
             const dlong xStride[],
-            ogs_findpts_data_t *findPtsData,
+            findpts_data_t *findPtsData,
             dlong n,
             bool printWarnings = true);
 
   // Evaluates the points using the (code, proc, el, r) tuples computed by findPoints
   void eval(const dfloat *fields,
             const dlong nFields,
-            ogs_findpts_data_t *findPtsData,
+            findpts_data_t *findPtsData,
             dfloat **out,
             const dlong out_stride[],
             dlong n);
   // Evaluates the points using the (code, proc, el, r) tuples computed by findPoints
   void eval(occa::memory fields,
             dlong nFields,
-            ogs_findpts_data_t *findPtsData,
+            findpts_data_t *findPtsData,
             dfloat **out,
             const dlong out_stride[],
             dlong n);
@@ -50,12 +50,12 @@ public:
                    const dlong out_stride[],
                    dlong n);
 
-  auto *ptr() { return findpts; }
+  auto *ptr() { return findpts_; }
 
 private:
   nrs_t *nrs;
   double newton_tol;
-  ogs_findpts_t *findpts;
+  findpts_t *findpts_;
   bool profile;
 
 public:

@@ -1,13 +1,13 @@
 
-#ifndef OGS_INTERFACE_FINDPTS_H
-#define OGS_INTERFACE_FINDPTS_H
+#ifndef INTERFACE_FINDPTS_H
+#define INTERFACE_FINDPTS_H
 
-#include "ogsInterface.h"
+#include "ogstypes.h"
 
 extern "C" {
 struct findpts_data_3;
 
-struct findpts_data_3 *ogsLegacyFindptsSetup(MPI_Comm comm,
+struct findpts_data_3 *legacyFindptsSetup(MPI_Comm comm,
                                              const dfloat *const elx[3],
                                              const dlong n[3],
                                              const dlong nel,
@@ -18,11 +18,11 @@ struct findpts_data_3 *ogsLegacyFindptsSetup(MPI_Comm comm,
                                              const dlong npt_max,
                                              const dfloat newt_tol);
 
-void ogsLegacyFindptsFree(struct findpts_data_3 *fd);
+void legacyFindptsFree(struct findpts_data_3 *fd);
 
-void ogsLegacyFindptsLagData(struct findpts_data_3 *const fd, dfloat **lag_data, dlong *lag_data_size);
+void legacyFindptsLagData(struct findpts_data_3 *const fd, dfloat **lag_data, dlong *lag_data_size);
 
-void ogsLegacyFindpts(dlong *const code_base,
+void legacyFindpts(dlong *const code_base,
                       const dlong code_stride,
                       dlong *const proc_base,
                       const dlong proc_stride,
@@ -37,7 +37,7 @@ void ogsLegacyFindpts(dlong *const code_base,
                       const dfloat npt,
                       struct findpts_data_3 *const fd);
 
-void ogsLegacyFindptsEval(dfloat *const out_base,
+void legacyFindptsEval(dfloat *const out_base,
                           const dlong out_stride,
                           const dlong *const code_base,
                           const dlong code_stride,
@@ -51,7 +51,7 @@ void ogsLegacyFindptsEval(dfloat *const out_base,
                           const dfloat *const in,
                           struct findpts_data_3 *const fd);
 
-void ogsDevFindpts(dlong *const code_base,
+void devFindpts(dlong *const code_base,
                      const dlong code_stride,
                      dlong *const proc_base,
                      const dlong proc_stride,
@@ -65,9 +65,9 @@ void ogsDevFindpts(dlong *const code_base,
                      const dlong x_stride[3],
                      const dlong npt,
                      struct findpts_data_3 *const fd,
-                     const void *const ogs_fd);
+                     const void *const findptsData);
 
-void ogsDevFindptsEval(dfloat *const out_base,
+void devFindptsEval(dfloat *const out_base,
                          const dlong out_stride,
                          const dlong *const code_base,
                          const dlong code_stride,
@@ -80,9 +80,9 @@ void ogsDevFindptsEval(dfloat *const out_base,
                          const dlong npt,
                          void *const in,
                          struct findpts_data_3 *const fd,
-                         const void *const ogs_fd);
+                         const void *const findptsData);
 
-void ogsLegacyFindptsLocalEval(dfloat *const out_base,
+void legacyFindptsLocalEval(dfloat *const out_base,
                                const dlong out_stride,
                                const dlong *const el_base,
                                const dlong el_stride,
@@ -92,7 +92,7 @@ void ogsLegacyFindptsLocalEval(dfloat *const out_base,
                                const dfloat *const in,
                                struct findpts_data_3 *const fd);
 
-void ogsDevFindptsLocalEval(void *const out_base,
+void devFindptsLocalEval(void *const out_base,
                               const dlong out_stride,
                               const void *const el_base,
                               const dlong el_stride,
@@ -101,7 +101,7 @@ void ogsDevFindptsLocalEval(void *const out_base,
                               const dlong npt,
                               void *const in,
                               struct findpts_data_3 *const fd,
-                              const void *const ogs_fd);
+                              const void *const findptsData);
 }
 
 #endif

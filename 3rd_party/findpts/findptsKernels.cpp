@@ -1,11 +1,11 @@
 
 #include "ogstypes.h"
-#include "ogsFindpts.hpp"
-#include "ogsKernelsFindpts.hpp"
+#include "findpts.hpp"
+#include "findptsKernels.hpp"
 #include <cfloat>
 #include <tuple>
 
-std::tuple<occa::kernel, occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_Comm comm, occa::device device,
+std::tuple<occa::kernel, occa::kernel, occa::kernel> initFindptsKernel(MPI_Comm comm, occa::device device,
                                                              dlong D, dlong Nq) {
 
   occa::kernel findpts_local;
@@ -37,7 +37,7 @@ std::tuple<occa::kernel, occa::kernel, occa::kernel> ogs::initFindptsKernel(MPI_
 
   for (int r=0;r<2;r++){
     if ((r==0 && rank==0) || (r==1 && rank>0)) {
-      findpts_local = device.buildKernel(DFINDPTS "/okl/findpts_local.okl", "ogs_findpts_local", kernelInfo);
+      findpts_local = device.buildKernel(DFINDPTS "/okl/findpts_local.okl", "findpts_local", kernelInfo);
       findpts_local_eval =
           device.buildKernel(DFINDPTS "/okl/findpts_local_eval.okl", "findpts_local_eval", kernelInfo);
       findpts_local_eval_vector =

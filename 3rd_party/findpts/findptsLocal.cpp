@@ -1,13 +1,13 @@
 
 #include <type_traits>
 #include "ogstypes.h"
-#include "ogsFindpts.hpp"
+#include "findpts.hpp"
 #include "platform.hpp"
 
 extern "C" {
 
 #include "gslib.h"
-#include "ogsFindpts.h"
+#include "internal_findpts.h"
 
 #define   AT(T,var,i)   \
         (T*)(      (char*)var##_base   +(i)*var##_stride   )
@@ -16,20 +16,20 @@ extern "C" {
 #define CATD(T,var,i,d) \
   (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])
 
-static_assert(std::is_same<dfloat, double>::value, "OGS dfloat is not compatible with GSLIB double");
-static_assert(sizeof(dlong) == sizeof(uint), "OGS dlong is not compatible with GSLIB uint");
+static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
+static_assert(sizeof(dlong) == sizeof(uint), "findpts dlong is not compatible with GSLIB uint");
 
-void ogs_findpts_local(    uint   *const  code_base   , const unsigned  code_stride   ,
+void findpts_local(    uint   *const  code_base   , const unsigned  code_stride   ,
                              uint   *const    el_base   , const unsigned    el_stride   ,
                              double *const     r_base   , const unsigned     r_stride   ,
                              double *const dist2_base   , const unsigned dist2_stride   ,
                        const double *const     x_base[3], const unsigned     x_stride[3],
-                       const uint pn, const void *const ogs_fd_void)
+                       const uint pn, const void *const findptsData_void)
 {
   if (pn == 0) return;
 
-  ogs_findpts_t *ogs_fd = (ogs_findpts_t*)ogs_fd_void;
-  occa::device device = *ogs_fd->device;
+  findpts_t *findptsData = (findpts_t*)findptsData_void;
+  occa::device device = *findptsData->device;
 
   dlong worksize = code_stride+el_stride+r_stride+dist2_stride
                    +x_stride[0]+x_stride[1]+x_stride[2];
@@ -58,12 +58,12 @@ void ogs_findpts_local(    uint   *const  code_base   , const unsigned  code_str
   d_x2_base.copyFrom(x_base[2], x_stride[2]*pn);
   d_x_stride.copyFrom(x_stride, 3*sizeof(dlong));
 
-  ogs_fd->local_kernel( d_code_base, (dlong)sizeof(dlong),
+  findptsData->local_kernel( d_code_base, (dlong)sizeof(dlong),
                           d_el_base, (dlong)sizeof(dlong),
                            d_r_base, (dlong)(3*sizeof(dfloat)),
                        d_dist2_base, (dlong)sizeof(dfloat),
                            d_x_base, d_x_stride,
-                       pn, ogs_fd->o_fd_local);
+                       pn, findptsData->o_fd_local);
 
   if( code_stride == sizeof(dlong)) {
      d_code_base.copyTo( code_base, sizeof(dlong) *pn);
@@ -101,15 +101,15 @@ void ogs_findpts_local(    uint   *const  code_base   , const unsigned  code_str
   }
 }
 
-void ogs_findpts_local_eval_internal(
+void findpts_local_eval_internal(
     struct eval_out_pt_3 *opt, const struct eval_src_pt_3 *spt,
     const uint pn, const void *const in,
-    struct findpts_local_data_3 *const gs_fd, const void *const ogs_fd_void)
+    struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
 {
   if (pn == 0) return;
 
-  ogs_findpts_t *ogs_fd = (ogs_findpts_t*)ogs_fd_void;
-  occa::device device = *ogs_fd->device;
+  findpts_t *findptsData = (findpts_t*)findptsData_void;
+  occa::device device = *findptsData->device;
   occa::memory d_in = *(occa::memory*)in;
 
   dlong alloc_size = (sizeof(struct eval_out_pt_3)+sizeof(struct eval_src_pt_3))*pn;
@@ -131,35 +131,35 @@ void ogs_findpts_local_eval_internal(
   dlong out_stride = sizeof(struct eval_out_pt_3);
   dlong src_stride = sizeof(struct eval_src_pt_3);
 
-  ogs_fd->local_eval_kernel(1, 0, 0, d_out_base,   out_stride,
+  findptsData->local_eval_kernel(1, 0, 0, d_out_base,   out_stride,
                             d_el_base,    src_stride,
                             d_r_base,     src_stride,
                             pn, d_in,
-                            ogs_fd->o_fd_local);
+                            findptsData->o_fd_local);
 
   d_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
 }
 
-void ogs_findpts_local_eval(
+void findpts_local_eval(
           void * const out_base, const uint out_stride,
     const void * const el_base,  const uint el_stride,
     const void * const r_base,   const uint r_stride,
     const uint pn, const void *const in,
-    struct findpts_local_data_3 *const gs_fd, const void *const ogs_fd_void)
+    struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
 {
   if (pn == 0) return;
 
-  ogs_findpts_t *ogs_fd = (ogs_findpts_t*)ogs_fd_void;
+  findpts_t *findptsData = (findpts_t*)findptsData_void;
   occa::memory d_out_base = *(occa::memory*)out_base;
   occa::memory d_el_base  = *(occa::memory*) el_base;
   occa::memory d_r_base   = *(occa::memory*)  r_base;
   occa::memory d_in       = *(occa::memory*)in;
 
-  ogs_fd->local_eval_kernel(1, 0, 0, d_out_base, out_stride,
+  findptsData->local_eval_kernel(1, 0, 0, d_out_base, out_stride,
                             d_el_base,  el_stride,
                             d_r_base,   r_stride,
                             pn, d_in,
-                            ogs_fd->o_fd_local);
+                            findptsData->o_fd_local);
 
 }
 

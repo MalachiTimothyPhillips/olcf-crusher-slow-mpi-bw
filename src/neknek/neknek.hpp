@@ -3,7 +3,7 @@
 
 #include <mpi.h>
 #include "nrssys.hpp"
-#include "ogsFindpts.hpp"
+#include "findpts.hpp"
 
 struct nrs_t;
 
@@ -24,7 +24,7 @@ struct neknek_t {
 
   dlong Nscalar;
   bool globalMovingMesh;
-  ogs_findpts_t *ogsHandle = nullptr;
+  findpts_t *ogsHandle = nullptr;
   dlong npt;
 
   dlong *pointMap;
@@ -33,7 +33,7 @@ struct neknek_t {
   dfloat *valInterp = nullptr;
   occa::memory o_valInterp;
 
-  ogs_findpts_data_t *findPtsData;
+  findpts_data_t *findPtsData;
   neknek_t(nrs_t *nrs, const session_data_t &session);
 };
 

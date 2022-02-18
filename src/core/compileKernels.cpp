@@ -6,7 +6,7 @@
 #include "udf.hpp"
 #include <vector>
 #include <tuple>
-#include "ogsKernelsFindpts.hpp"
+#include "findptsKernels.hpp"
 
 std::string createOptionsPrefix(std::string section) {
   std::string prefix = section + std::string(" ");
@@ -33,7 +33,7 @@ void compileKernels() {
     const bool buildNodeLocal = useNodeLocalCache();
     const bool buildOnly = platform->options.compareArgs("BUILD ONLY", "TRUE");
     auto communicator = buildNodeLocal ? platform->comm.mpiCommLocal : platform->comm.mpiComm;
-    ogs::initFindptsKernel(communicator, platform->device.occaDevice(), 3, Nq);
+    initFindptsKernels(communicator, platform->device.occaDevice(), 3, Nq);
   }
 
   registerLinAlgKernels();

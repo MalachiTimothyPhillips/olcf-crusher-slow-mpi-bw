@@ -249,7 +249,7 @@ void set_usr_handles(const char* session_in,int verbose)
 
   // check if we need to append an underscore
   char us[2] = "";
-  char func[20];
+  char func[32];
   usrdat_ptr = (void (*)(void))dlsym(handle, "usrdat_");
   if (usrdat_ptr) strcpy(us,"_");
   dlerror();

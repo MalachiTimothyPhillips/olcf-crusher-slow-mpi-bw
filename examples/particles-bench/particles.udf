@@ -171,7 +171,7 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     z[p] = particles.z(p);
   }
 
-  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+  findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
 
   const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
 

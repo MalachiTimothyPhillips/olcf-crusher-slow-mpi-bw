@@ -134,7 +134,7 @@ void lpm_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
   dfloat *xBase[3] = {_x.data(), _y.data(), _z.data()};
   dlong xStride[3] = {1, 1, 1};
 
-  ogs_findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2);
+  findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2);
 
   interp_->find(xBase, xStride, &data, size(), printWarnings);
   if (dist2In == nullptr) {
@@ -174,7 +174,7 @@ void lpm_t::migrate()
     }
   }
 
-  sarray_transfer(particle_t, &transfer, proc, true, ogsCrystalRouter(interp_->ptr()));
+  sarray_transfer(particle_t, &transfer, proc, true, crystalRouter(interp_->ptr()));
 
   reserve(size() + transfer.n);
   particle_t *transfer_ptr = (particle_t *)transfer.ptr;

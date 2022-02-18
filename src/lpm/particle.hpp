@@ -5,7 +5,7 @@
 
 #include "nrs.hpp"
 #include "gslib.h"
-#include "ogsFindpts.hpp"
+#include "findpts.hpp"
 
 #include "pointInterpolation.hpp"
 

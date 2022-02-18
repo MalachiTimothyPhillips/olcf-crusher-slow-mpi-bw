@@ -4,7 +4,7 @@
 #include "platform.hpp"
 #include <vector>
 
-#include "ogsFindpts.hpp"
+#include "findpts.hpp"
 
 #include "pointInterpolation.hpp"
 
@@ -35,7 +35,7 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool
 
   MPI_Comm comm = platform_t::getInstance()->comm.mpiComm;
 
-  findpts = ogsFindptsSetup(3,
+  findpts_ = findptsSetup(3,
                             comm,
                             elx,
                             n1,
@@ -49,11 +49,11 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool
                             &platform_t::getInstance()->device.occaDevice());
 }
 
-pointInterpolation_t::~pointInterpolation_t() { ogsFindptsFree(findpts); }
+pointInterpolation_t::~pointInterpolation_t() { findptsFree(findpts_); }
 
 void pointInterpolation_t::find(const dfloat *const *x,
                                 const dlong xStride[],
-                                ogs_findpts_data_t *findPtsData,
+                                findpts_data_t *findPtsData,
                                 dlong n,
                                 bool printWarnings)
 {
@@ -65,7 +65,7 @@ void pointInterpolation_t::find(const dfloat *const *x,
                            xStride[1] * sizeof(dfloat),
                            xStride[2] * sizeof(dfloat)};
 
-  ogsFindpts(findPtsData, x, xStrideBytes, n, findpts);
+  findpts(findPtsData, x, xStrideBytes, n, findpts_);
 
   if (printWarnings) {
     dlong nFail = 0;
@@ -102,7 +102,7 @@ void pointInterpolation_t::find(const dfloat *const *x,
 
 void pointInterpolation_t::eval(const dfloat *fields,
                                 const dlong nFields,
-                                ogs_findpts_data_t *findPtsData,
+                                findpts_data_t *findPtsData,
                                 dfloat **out,
                                 const dlong outStride[],
                                 dlong n)
@@ -112,7 +112,7 @@ void pointInterpolation_t::eval(const dfloat *fields,
   }
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsEval(out[i], findPtsData, n, fields + i * nrs->fieldOffset, findpts);
+    findptsEval(out[i], findPtsData, n, fields + i * nrs->fieldOffset, findpts_);
   }
   if(profile){
     platform->timer.toc("pointInterpolation_t::eval");
@@ -121,7 +121,7 @@ void pointInterpolation_t::eval(const dfloat *fields,
 
 void pointInterpolation_t::eval(occa::memory o_fields,
                                 const dlong nFields,
-                                ogs_findpts_data_t *findPtsData,
+                                findpts_data_t *findPtsData,
                                 dfloat **out,
                                 const dlong outStride[],
                                 dlong n)
@@ -130,7 +130,7 @@ void pointInterpolation_t::eval(occa::memory o_fields,
     platform->timer.tic("pointInterpolation_t::eval", 1);
   }
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts);
+    findptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
   }
   if(profile){
     platform->timer.toc("pointInterpolation_t::eval");
@@ -152,7 +152,7 @@ void pointInterpolation_t::evalLocalPoints(const dfloat *fields,
   }
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
-    ogsFindptsLocalEval(out[i],
+    findptsLocalEval(out[i],
                         outStride[i] * sizeof(dfloat),
                         el,
                         elStride * sizeof(dlong),
@@ -160,7 +160,7 @@ void pointInterpolation_t::evalLocalPoints(const dfloat *fields,
                         rStride * sizeof(dfloat),
                         n,
                         fields + i * fieldOffset,
-                        findpts);
+                        findpts_);
   }
 }
 
@@ -189,7 +189,7 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
   }
   outBytes *= sizeof(dfloat);
 
-  occa::device device = *findpts->device;
+  occa::device device = *findpts_->device;
   dlong allocSize = (nFields * outBytes + rStrideBytes + elStrideBytes) * n;
   occa::memory workspace;
   occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
@@ -211,7 +211,7 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
     occa::memory o_out_i = o_out.slice(i * sizeof(dfloat) * n, sizeof(dfloat) * n);
-    ogsFindptsLocalEval(o_out_i,
+    findptsLocalEval(o_out_i,
                         sizeof(dfloat),
                         o_el,
                         elStrideBytes,
@@ -219,7 +219,7 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
                         rStrideBytes,
                         n,
                         o_fields + i * fieldOffset * sizeof(dfloat),
-                        findpts);
+                        findpts_);
   }
   if (unitOutStride) {
     // combine d->h copies where able
@@ -254,7 +254,7 @@ void pointInterpolation_t::interpField(dfloat *fields,
                                        dlong n)
 {
 
-  auto *findPtsData = new ogs_findpts_data_t(n);
+  auto *findPtsData = new findpts_data_t(n);
 
   find(x, x_stride, findPtsData, n);
 
@@ -272,7 +272,7 @@ void pointInterpolation_t::interpField(occa::memory fields,
                                        dlong n)
 {
 
-  auto *findPtsData = new ogs_findpts_data_t(n);
+  auto *findPtsData = new findpts_data_t(n);
 
   find(x, x_stride, findPtsData, n);
 
