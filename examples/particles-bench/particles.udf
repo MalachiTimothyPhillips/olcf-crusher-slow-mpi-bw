@@ -181,7 +181,7 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const dlong r_stride = 3 * sizeof(dfloat);
   const dlong dist2_stride = sizeof(dfloat);
 
-  auto findpts = particles.interp_->ptr();
+  auto findpts = particles.interp().ptr();
 
   // TODO: clean up these allocations -- there's no need to emulate findpts
   const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
@@ -259,7 +259,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const dlong r_stride = 3 * sizeof(dfloat);
   const dlong dist2_stride = sizeof(dfloat);
 
-  auto findpts = particles.interp_->ptr();
+  auto findpts = particles.interp().ptr();
 
   const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
                    +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
