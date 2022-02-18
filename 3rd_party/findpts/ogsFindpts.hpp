@@ -10,6 +10,7 @@ struct ogs_findpts_t {
   void *findpts_data;
   occa::device *device;
   occa::kernel local_eval_kernel;
+  occa::kernel local_eval_vector_kernel;
   occa::kernel local_kernel;
   occa::memory o_fd_local;
 };

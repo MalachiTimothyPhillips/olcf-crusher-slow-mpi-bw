@@ -1,0 +1,118 @@
+@kernel void findpts_local_eval_vector(
+              const dlong outputOffset,
+              const dlong fieldOffset,
+              dfloat * const out_base,   const dlong out_stride,
+        const dlong  * const el_base,    const dlong el_stride,
+        const dfloat * const r_base,     const dlong r_stride,
+        const dlong  pn,
+        @restrict const dfloat * const in,
+        struct findpts_local_data *fd){
+
+  for(dlong i=0;i<pn;++i;@outer){
+
+    @shared dfloat wtr[p_Nq];
+    @shared dfloat wts[p_Nq];
+    @shared dfloat wtt[p_Nq];
+
+    @shared dfloat sumsx[p_Nq];
+    @shared dfloat sumsy[p_Nq];
+    @shared dfloat sumsz[p_Nq];
+
+    const dfloat * r = CAT(dfloat, r, i);
+
+    const dlong el = *CAT(dlong, el, i);
+    const dfloat *in_elx = in + el*p_Np + 0 * fieldOffset;
+    const dfloat *in_ely = in + el*p_Np + 1 * fieldOffset;
+    const dfloat *in_elz = in + el*p_Np + 2 * fieldOffset;
+
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      lagrange_eval(wtr, fd->fed.lag_data[0], r[0], j);
+      lagrange_eval(wts, fd->fed.lag_data[1], r[1], j);
+      lagrange_eval(wtt, fd->fed.lag_data[2], r[2], j);
+    }
+    @barrier("local");
+
+    // out[i] = sum_j sum_k sum_l wtr[j]*wts[k]*wtt[l]*in[j + k*nr + l*nr*ns]
+    //        = sum_j wtr[j] * sum_k wts[k] * sum_l wtt[l]*in[j + k*nr + l*nr*ns]
+    for (dlong j=0;j<p_Nq;++j;@inner){
+      dfloat sum_jx = 0;
+      dfloat sum_jy = 0;
+      dfloat sum_jz = 0;
+      const dfloat *in_el_jx = in_elx+j;
+      const dfloat *in_el_jy = in_ely+j;
+      const dfloat *in_el_jz = in_elz+j;
+      for(dlong k=0;k<p_Nq;++k){
+        dfloat sum_kx = 0;
+        dfloat sum_ky = 0;
+        dfloat sum_kz = 0;
+        const dfloat *in_el_jkx = in_el_jx+k*p_Nq;
+        const dfloat *in_el_jky = in_el_jy+k*p_Nq;
+        const dfloat *in_el_jkz = in_el_jz+k*p_Nq;
+
+        for(dlong l=0;l<p_Nq;++l){
+          sum_kx += in_el_jkx[l*p_Nq*p_Nq] * wtt[l];
+          sum_ky += in_el_jky[l*p_Nq*p_Nq] * wtt[l];
+          sum_kz += in_el_jkz[l*p_Nq*p_Nq] * wtt[l];
+        }
+        sum_jx += wts[k]*sum_kx;
+        sum_jy += wts[k]*sum_ky;
+        sum_jz += wts[k]*sum_kz;
+      }
+      sumsx[j] = wtr[j]*sum_jx;
+      sumsy[j] = wtr[j]*sum_jy;
+      sumsz[j] = wtr[j]*sum_jz;
+    }
+    @barrier("local");
+#if p_Nq>16
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<16&&j<p_Nq-16){
+        sumsx[j] += sumsx[j+16];
+        sumsy[j] += sumsy[j+16];
+        sumsz[j] += sumsz[j+16];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>8
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<8&&j<p_Nq-8){
+        sumsx[j] += sumsx[j+8];
+        sumsy[j] += sumsy[j+8];
+        sumsz[j] += sumsz[j+8];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>4
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<4&&j<p_Nq-4){
+        sumsx[j] += sumsx[j+4];
+        sumsy[j] += sumsy[j+4];
+        sumsz[j] += sumsz[j+4];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>2
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<2&&j<p_Nq-2){
+        sumsx[j] += sumsx[j+2];
+        sumsy[j] += sumsy[j+2];
+        sumsz[j] += sumsz[j+2];
+      }
+    }
+    @barrier("local");
+#endif
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j==0){
+        dfloat * resultx = AT(dfloat, out, i) + 0 * outputOffset;
+        dfloat * resulty = AT(dfloat, out, i) + 1 * outputOffset;
+        dfloat * resultz = AT(dfloat, out, i) + 2 * outputOffset;
+        *resultx = sumsx[0] + sumsx[1];
+        *resulty = sumsy[0] + sumsy[1];
+        *resultz = sumsz[0] + sumsz[1];
+      }
+    }
+    @barrier("local");
+  }
+}

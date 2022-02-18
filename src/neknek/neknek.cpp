@@ -164,7 +164,7 @@ void neknekSetup(nrs_t *nrs)
 
       // precompile kernels
       // OCCA automatically garbage collections
-      std::pair<occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, device, 3, Nq);
+      std::tuple<occa::kernel, occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, device, 3, Nq);
     }
     return;
   }

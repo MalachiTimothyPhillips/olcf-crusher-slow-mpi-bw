@@ -11,23 +11,24 @@
 
   for(dlong i=0;i<pn;++i;@outer){
 
-    for(int fld = 0; fld < Nfields; ++fld){
-
     @shared dfloat wtr[p_Nq];
     @shared dfloat wts[p_Nq];
     @shared dfloat wtt[p_Nq];
     @shared dfloat sums[p_Nq];
 
-    const dlong el = *CAT(dlong, el, i);
-    const dfloat *in_el = in + el*p_Np + fld * fieldOffset;
-
     const dfloat * r = CAT(dfloat, r, i);
+
     for(dlong j=0;j<p_Nq;++j;@inner){
       lagrange_eval(wtr, fd->fed.lag_data[0], r[0], j);
       lagrange_eval(wts, fd->fed.lag_data[1], r[1], j);
       lagrange_eval(wtt, fd->fed.lag_data[2], r[2], j);
     }
     @barrier("local");
+
+    for(int fld = 0; fld < Nfields; ++fld){
+
+    const dlong el = *CAT(dlong, el, i);
+    const dfloat *in_el = in + el*p_Np + fld * fieldOffset;
 
     // out[i] = sum_j sum_k sum_l wtr[j]*wts[k]*wtt[l]*in[j + k*nr + l*nr*ns]
     //        = sum_j wtr[j] * sum_k wts[k] * sum_l wtt[l]*in[j + k*nr + l*nr*ns]
