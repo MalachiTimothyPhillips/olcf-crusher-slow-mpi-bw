@@ -260,6 +260,9 @@ std::string lpm_vtu_data(std::string fieldName, int nComponent, int distance)
 
 void particles_t::write(dfloat time) const
 {
+  if(profile){
+    platform->timer.tic("particles_t::write", 1);
+  }
   static_assert(sizeof(float) == 4, "Requires float be 32-bit");
   static_assert(sizeof(int) == 4, "Requires int be 32-bit");
 
@@ -351,6 +354,9 @@ void particles_t::write(dfloat time) const
   }
 
   MPI_File_close(&file_out);
+  if(profile){
+    platform->timer.toc("particles_t::write");
+  }
 }
 void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
 {

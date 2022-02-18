@@ -8,8 +8,8 @@
 
 #include "pointInterpolation.hpp"
 
-pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_)
-    : nrs(nrs_), newton_tol(newton_tol_)
+pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool profile_)
+    : nrs(nrs_), newton_tol(newton_tol_), profile(profile_)
 {
 
   newton_tol = std::max(5e-13, newton_tol_);
@@ -57,6 +57,9 @@ void pointInterpolation_t::find(const dfloat *const *x,
                                 dlong n,
                                 bool printWarnings)
 {
+  if(profile){
+    platform->timer.tic("pointInterpolation_t::find", 1);
+  }
   // findpts takes strides in terms of bytes, but find takes strides in terms of elements
   dlong xStrideBytes[3] = {xStride[0] * sizeof(dfloat),
                            xStride[1] * sizeof(dfloat),
@@ -91,6 +94,10 @@ void pointInterpolation_t::find(const dfloat *const *x,
                 << std::endl;
     }
   }
+
+  if(profile){
+    platform->timer.toc("pointInterpolation_t::find");
+  }
 }
 
 void pointInterpolation_t::eval(const dfloat *fields,
@@ -100,9 +107,15 @@ void pointInterpolation_t::eval(const dfloat *fields,
                                 const dlong outStride[],
                                 dlong n)
 {
+  if(profile){
+    platform->timer.tic("pointInterpolation_t::eval", 1);
+  }
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
     ogsFindptsEval(out[i], findPtsData, n, fields + i * nrs->fieldOffset, findpts);
+  }
+  if(profile){
+    platform->timer.toc("pointInterpolation_t::eval");
   }
 }
 
@@ -113,8 +126,14 @@ void pointInterpolation_t::eval(occa::memory o_fields,
                                 const dlong outStride[],
                                 dlong n)
 {
+  if(profile){
+    platform->timer.tic("pointInterpolation_t::eval", 1);
+  }
   for (int i = 0; i < nFields; ++i) {
     ogsFindptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts);
+  }
+  if(profile){
+    platform->timer.toc("pointInterpolation_t::eval");
   }
 }
 

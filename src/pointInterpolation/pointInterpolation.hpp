@@ -8,7 +8,7 @@ class ogs_findpts_t;
 
 class pointInterpolation_t {
 public:
-  pointInterpolation_t(nrs_t *nrs_, dfloat newton_tol_ = 0);
+  pointInterpolation_t(nrs_t *nrs_, dfloat newton_tol_ = 0, bool profile_ = false);
   ~pointInterpolation_t();
 
   // Finds the process, element, and reference coordinates of the given points
@@ -56,6 +56,7 @@ private:
   nrs_t *nrs;
   double newton_tol;
   ogs_findpts_t *findpts;
+  bool profile;
 
 public:
   // Evalutes points located on this process
