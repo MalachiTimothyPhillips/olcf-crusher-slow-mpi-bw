@@ -313,19 +313,19 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
       findpts->local_eval_kernel(o_outx, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Ux, Np,
+                                pn, o_Ux,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(o_outy, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Uy, Np,
+                                pn, o_Uy,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(o_outz, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
-                                pn, o_Uz, Np,
+                                pn, o_Uz,
                                 findpts->o_fd_local);
     }
   }

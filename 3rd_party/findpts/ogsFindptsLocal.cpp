@@ -134,7 +134,7 @@ void ogs_findpts_local_eval_internal(
   ogs_fd->local_eval_kernel(d_out_base,   out_stride,
                             d_el_base,    src_stride,
                             d_r_base,     src_stride,
-                            pn, d_in, gs_fd->ntot,
+                            pn, d_in,
                             ogs_fd->o_fd_local);
 
   d_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
@@ -158,7 +158,7 @@ void ogs_findpts_local_eval(
   ogs_fd->local_eval_kernel(d_out_base, out_stride,
                             d_el_base,  el_stride,
                             d_r_base,   r_stride,
-                            pn, d_in, gs_fd->ntot,
+                            pn, d_in,
                             ogs_fd->o_fd_local);
 
 }
