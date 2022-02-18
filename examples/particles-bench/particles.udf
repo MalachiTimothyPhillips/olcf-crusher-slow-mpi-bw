@@ -175,34 +175,17 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
 
-  const dlong code_stride = sizeof(dlong);
-  const dlong proc_stride = sizeof(dlong);
-  const dlong el_stride = sizeof(dlong);
-  const dlong r_stride = 3 * sizeof(dfloat);
-  const dlong dist2_stride = sizeof(dfloat);
-
   auto findpts = particles.interp().ptr();
 
-  // TODO: clean up these allocations -- there's no need to emulate findpts
-  const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
-                   +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
-  const dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
-  occa::memory workspace;
-  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if(alloc_size < mempool.size()) {
-    workspace = mempool.cast(occa::dtype::byte);
-  } else {
-    workspace = platform->device.occaDevice().malloc(alloc_size, occa::dtype::byte);
-  }
-  occa::memory  d_code_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory    d_el_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory     d_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
-  occa::memory d_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
-  occa::memory     d_x_base = workspace; workspace += 3*sizeof(dfloat*);
-  occa::memory    d_x0_base = workspace; workspace +=  xStrideBytes[0]*pn;
-  occa::memory    d_x1_base = workspace; workspace +=  xStrideBytes[1]*pn;
-  occa::memory    d_x2_base = workspace; workspace +=  xStrideBytes[2]*pn;
-  occa::memory   d_x_stride = workspace; workspace += 3*sizeof(dlong);
+  occa::memory  d_code_base = platform->device.malloc(  sizeof(dlong) *pn);
+  occa::memory    d_el_base = platform->device.malloc(  sizeof(dlong) *pn);
+  occa::memory     d_r_base = platform->device.malloc(3*sizeof(dfloat)*pn);
+  occa::memory d_dist2_base = platform->device.malloc(  sizeof(dfloat)*pn);
+  occa::memory     d_x_base = platform->device.malloc(3*sizeof(dfloat*)  );
+  occa::memory    d_x0_base = platform->device.malloc( xStrideBytes[0]*pn);
+  occa::memory    d_x1_base = platform->device.malloc( xStrideBytes[1]*pn);
+  occa::memory    d_x2_base = platform->device.malloc( xStrideBytes[2]*pn);
+  occa::memory   d_x_stride = platform->device.malloc(3*sizeof(dlong)    );
 
   dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
   d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
@@ -216,17 +199,29 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      findpts->local_kernel( d_code_base, (dlong)sizeof(dlong),
-                              d_el_base, (dlong)sizeof(dlong),
-                               d_r_base, (dlong)(3*sizeof(dfloat)),
-                           d_dist2_base, (dlong)sizeof(dfloat),
+      findpts->local_kernel( d_code_base,sizeof(dlong),
+                              d_el_base, sizeof(dlong),
+                               d_r_base, 3*sizeof(dfloat),
+                           d_dist2_base, sizeof(dfloat),
                                d_x_base, d_x_stride,
                            pn, findpts->o_fd_local);
     }
   }
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
-  return (MPI_Wtime() - start) / Ntrials;
+  const auto end = MPI_Wtime();
+
+  d_code_base.free();
+  d_el_base.free();
+  d_r_base.free();
+  d_dist2_base.free();
+  d_x_base.free();
+  d_x0_base.free();
+  d_x1_base.free();
+  d_x2_base.free();
+  d_x_stride.free();
+
+  return (end - start) / Ntrials;
 }
 
 double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
@@ -236,14 +231,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   const auto pn = particles.size();
 
-  dfloat *out[3];
-  out[0] = new dfloat[3 * pn];
-  out[1] = out[0] + pn;
-  out[2] = out[1] + pn;
-
-
   std::vector<std::array<dfloat, 3>> r(pn, {0.0, 0.0, 0.0});
-
   std::vector<dlong> code(pn, 0);
   std::vector<dlong> proc(pn, 0);
   std::vector<dlong> el(pn, 0);
@@ -258,41 +246,12 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   constexpr int nFields = 3;
 
-  dfloat **outOffset = new dfloat *[nFields];
-  dlong *outStride = new dlong[nFields];
-  for (dlong i = 0; i < nFields; ++i) {
-    outOffset[i] = out[i];
-    outStride[i] = 1;
-  }
-  
-  const dlong elStrideBytes = sizeof(dlong);
-  const dlong rStrideBytes = 3 * sizeof(dfloat);
+  occa::memory o_out = platform->device.malloc(nFields * pn * sizeof(dfloat));
+  occa::memory o_r   = platform->device.malloc(3 * pn * sizeof(dfloat));
+  occa::memory o_el =  platform->device.malloc(pn * sizeof(dlong));
 
-  dlong outBytes = 0;
-  for (dlong i = 0; i < nFields; ++i) {
-    outBytes += outStride[i];
-  }
-  outBytes *= sizeof(dfloat);
-
-  dlong allocSize = (nFields * outBytes + rStrideBytes + elStrideBytes) * pn;
-  occa::memory workspace;
-  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if (allocSize < mempool.size()) {
-    workspace = mempool.cast(occa::dtype::byte);
-  }
-  else {
-    workspace = platform->device.occaDevice().malloc(allocSize, occa::dtype::byte);
-  }
-  occa::memory o_out = workspace;
-  workspace += pn * nFields * sizeof(dfloat);
-  occa::memory o_r = workspace;
-  workspace += pn * rStrideBytes;
-  occa::memory o_el = workspace;
-  workspace += pn * elStrideBytes;
-  o_r.copyFrom(&(r.data()[0][0]), rStrideBytes * pn);
-  o_el.copyFrom(el.data(), elStrideBytes * pn);
-
-  dlong fieldOffset = nrs->fieldOffset;
+  o_r.copyFrom(&(r.data()[0][0]), 3 * pn * sizeof(dfloat));
+  o_el.copyFrom(el.data(), pn * sizeof(dlong));
 
   auto o_Ux = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
   auto o_Uy = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
@@ -309,44 +268,50 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      // TODO: make multi-field version available
-      #define VERSION 2
-      #if VERSION == 1
+#define VERSION 3
+#if VERSION == 1
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
-                                o_el,  elStrideBytes,
-                                o_r,   rStrideBytes,
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
                                 pn, o_Ux,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(1, 0, 0, o_outy, sizeof(dfloat),
-                                o_el,  elStrideBytes,
-                                o_r,   rStrideBytes,
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
                                 pn, o_Uy,
                                 findpts->o_fd_local);
 
       findpts->local_eval_kernel(1, 0, 0, o_outz, sizeof(dfloat),
-                                o_el,  elStrideBytes,
-                                o_r,   rStrideBytes,
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
                                 pn, o_Uz,
                                 findpts->o_fd_local);
-      #elif VERSION == 2
+#elif VERSION == 2
       findpts->local_eval_kernel(3, pn, nrs->fieldOffset, o_out, sizeof(dfloat),
-                                o_el,  elStrideBytes,
-                                o_r,   rStrideBytes,
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
                                 pn, nrs->o_U,
                                 findpts->o_fd_local);
-      #elif VERSION == 3
+#elif VERSION == 3
       findpts->local_eval_vector_kernel(pn, nrs->fieldOffset, o_out, sizeof(dfloat),
-                                o_el,  elStrideBytes,
-                                o_r,   rStrideBytes,
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
                                 pn, nrs->o_U,
                                 findpts->o_fd_local);
-      #endif
+#endif
     }
   }
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
-  return (MPI_Wtime() - start) / Ntrials;
+
+  const auto end = MPI_Wtime();
+
+  o_out.free();
+  o_r.free();
+  o_el.free();
+
+  return (end - start) / Ntrials;
 }
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
