@@ -488,8 +488,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
       exit(2);
     }
 
-    EXIT_AND_FINALIZE(0);
-
     // done with correctness check...
 
     // Now the benchmark:
