@@ -19,7 +19,7 @@ std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloa
 }
 } // namespace
 
-void particles_t::reserve(int n)
+void lpm_t::reserve(int n)
 {
   _x.reserve(n);
   _y.reserve(n);
@@ -30,7 +30,7 @@ void particles_t::reserve(int n)
   r.reserve(n);
   v.reserve(n);
 }
-void particles_t::push(particle_t particle)
+void lpm_t::push(particle_t particle)
 {
   _x.push_back(particle.x);
   _y.push_back(particle.y);
@@ -42,7 +42,7 @@ void particles_t::push(particle_t particle)
   v.push_back(particle.v);
 }
 
-particle_t particles_t::remove(int i)
+particle_t lpm_t::remove(int i)
 {
   particle_t part;
   if (i == size() - 1) {
@@ -102,7 +102,7 @@ particle_t particles_t::remove(int i)
   return part;
 }
 
-void particles_t::swap(int i, int j)
+void lpm_t::swap(int i, int j)
 {
   if (i == j)
     return;
@@ -117,10 +117,10 @@ void particles_t::swap(int i, int j)
   std::swap(v[i], v[j]);
 }
 
-void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
+void lpm_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
 {
   if(profile){
-    platform->timer.tic("particles_t::find", 1);
+    platform->timer.tic("lpm_t::find", 1);
   }
   dlong n = size();
   dfloat *dist2;
@@ -141,13 +141,13 @@ void particles_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
     delete[] dist2;
   }
   if(profile){
-    platform->timer.toc("particles_t::find");
+    platform->timer.toc("lpm_t::find");
   }
 }
-void particles_t::migrate()
+void lpm_t::migrate()
 {
   if(profile){
-    platform->timer.tic("particles_t::migrate", 1);
+    platform->timer.tic("lpm_t::migrate", 1);
   }
   int mpi_rank = platform_t::getInstance()->comm.mpiRank;
 
@@ -186,14 +186,14 @@ void particles_t::migrate()
   array_free(&transfer);
 
   if(profile){
-    platform->timer.tic("particles_t::migrate");
+    platform->timer.tic("lpm_t::migrate");
   }
 }
 
-void particles_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
+void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
 {
   if(profile){
-    platform->timer.tic("particles_t::interpLocal", 1);
+    platform->timer.tic("lpm_t::interpLocal", 1);
   }
   dlong pn = size();
   dlong offset = 0;
@@ -219,10 +219,10 @@ void particles_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
                            pn);
   delete[] outOffset;
   if(profile){
-    platform->timer.toc("particles_t::interpLocal");
+    platform->timer.toc("lpm_t::interpLocal");
   }
 }
-void particles_t::interpLocal(dfloat *field, dfloat *out[], dlong nFields)
+void lpm_t::interpLocal(dfloat *field, dfloat *out[], dlong nFields)
 {
   dlong pn = size();
   dlong offset = 0;
@@ -258,10 +258,10 @@ std::string lpm_vtu_data(std::string fieldName, int nComponent, int distance)
 }
 }
 
-void particles_t::write(dfloat time) const
+void lpm_t::write(dfloat time) const
 {
   if(profile){
-    platform->timer.tic("particles_t::write", 1);
+    platform->timer.tic("lpm_t::write", 1);
   }
   static_assert(sizeof(float) == 4, "Requires float be 32-bit");
   static_assert(sizeof(int) == 4, "Requires int be 32-bit");
@@ -355,13 +355,13 @@ void particles_t::write(dfloat time) const
 
   MPI_File_close(&file_out);
   if(profile){
-    platform->timer.toc("particles_t::write");
+    platform->timer.toc("lpm_t::write");
   }
 }
-void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
+void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
 {
   if(profile){
-    platform->timer.tic("particles_t::update", 1);
+    platform->timer.tic("lpm_t::update", 1);
   }
 
   this->find();
@@ -374,7 +374,7 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   this->interpLocal(o_fld, u1, 3);
 
   if(profile){
-    platform->timer.tic("particles_t::advance", 1);
+    platform->timer.tic("lpm_t::advance", 1);
   }
 
   auto coeffs = particleTimestepperCoeffs(dt, tstep);
@@ -412,12 +412,12 @@ void particles_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   }
 
   if(profile){
-    platform->timer.toc("particles_t::advance");
+    platform->timer.toc("lpm_t::advance");
   }
 
   delete[] u1[0];
 
   if(profile){
-    platform->timer.toc("particles_t::update");
+    platform->timer.toc("lpm_t::update");
   }
 }

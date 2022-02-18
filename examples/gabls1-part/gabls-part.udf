@@ -10,11 +10,11 @@
 
 #include "casedata.h"
 
-static particles_t *particles;
+static lpm_t *particles;
 static occa::kernel coriolisKernel;
 
 /* Particle Functions */
-void particleInit(particles_t& p) {
+void particleInit(lpm_t& p) {
 
   static hlong gcount = 0; // total # particles emitted
 
@@ -50,7 +50,7 @@ void particleInit(particles_t& p) {
   }
 }
 
-void applyBounds(particles_t& p) {
+void applyBounds(lpm_t& p) {
 
   for (int i = 0; i < p.size(); ++i) {
     // x and z have periodic boundaries
@@ -98,7 +98,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particles = new particles_t(nrs, 0);
+  particles = new lpm_t(nrs, 0);
   udf.uEqnSource = &userf;
 }
 

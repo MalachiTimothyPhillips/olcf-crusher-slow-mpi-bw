@@ -6,7 +6,7 @@
 
 /* UDF Functions */                                                      
 static int nParticles;
-static particles_t *particles;
+static lpm_t *particles;
 
 enum class BENCHMARK{
   FINDPTS_LOCAL,
@@ -34,7 +34,7 @@ BENCHMARK ciModeToBenchmark(dlong mode)
 
 
 /* Particle Functions */
-void particleInit(particles_t& p) {
+void particleInit(lpm_t& p) {
 
   static hlong gcount = 0; // total # particles emitted
 
@@ -79,7 +79,7 @@ void particleInit(particles_t& p) {
 }
 
 // apply periodicity for particles on [0,1]^3
-void applyBounds(particles_t& p) {
+void applyBounds(lpm_t& p) {
 
   const dfloat Lx = 1.0;
   const dfloat Ly = 1.0;
@@ -132,10 +132,10 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 
 void UDF_Setup(nrs_t *nrs)
 {
-  particles = new particles_t(nrs, 0);
+  particles = new lpm_t(nrs, 0);
 }
 
-double run_particle_update(nrs_t* nrs, particles_t& particles, int Ntrials, std::array<dfloat, 3>& dt)
+double run_particle_update(nrs_t* nrs, lpm_t& particles, int Ntrials, std::array<dfloat, 3>& dt)
 {
   platform->device.finish();
   MPI_Barrier(platform->comm.mpiComm);
@@ -151,7 +151,7 @@ double run_particle_update(nrs_t* nrs, particles_t& particles, int Ntrials, std:
   return (MPI_Wtime() - start) / Ntrials;
 }
 
-double run_findpts_local_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
+double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
   const auto pn = particles.size();
 
@@ -183,6 +183,7 @@ double run_findpts_local_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
 
   auto findpts = particles.interp_->ptr();
 
+  // TODO: clean up these allocations -- there's no need to emulate findpts
   const dlong worksize = code_stride+el_stride+r_stride+dist2_stride
                    +xStrideBytes[0]+xStrideBytes[1]+xStrideBytes[2];
   const dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
@@ -228,7 +229,7 @@ double run_findpts_local_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
   return (MPI_Wtime() - start) / Ntrials;
 }
 
-double run_findpts_local_eval_bench(nrs_t* nrs, particles_t& particles, int Ntrials)
+double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
   const auto pn = particles.size();
 
@@ -435,16 +436,16 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
                 << "\n";
     }
 
-    const double tUpdate      = platform->timer.query("particles_t::update", "DEVICE:MAX");
-    const double tFind        = platform->timer.query("particles_t::find", "DEVICE:MAX");
-    const double tMigrate     = platform->timer.query("particles_t::migrate", "DEVICE:MAX");
-    const double tInterpLocal = platform->timer.query("particles_t::interpLocal", "DEVICE:MAX");
-    const double tAdvance     = platform->timer.query("particles_t::advance", "DEVICE:MAX");
-    std::cout <<   "particles_t::update           " << tUpdate << "s\n";
-    std::cout <<   "  particles_t::find           " << tFind << "s\n";
-    std::cout <<   "  particles_t::migrate        " << tMigrate << "s\n";
-    std::cout <<   "  particles_t::interpLocal    " << tInterpLocal << "s\n";
-    std::cout <<   "  particles_t::advance        " << tAdvance << "s\n";
+    const double tUpdate      = platform->timer.query("lpm_t::update", "DEVICE:MAX");
+    const double tFind        = platform->timer.query("lpm_t::find", "DEVICE:MAX");
+    const double tMigrate     = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
+    const double tInterpLocal = platform->timer.query("lpm_t::interpLocal", "DEVICE:MAX");
+    const double tAdvance     = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
+    std::cout <<   "lpm_t::update           " << tUpdate << "s\n";
+    std::cout <<   "  lpm_t::find           " << tFind << "s\n";
+    std::cout <<   "  lpm_t::migrate        " << tMigrate << "s\n";
+    std::cout <<   "  lpm_t::interpLocal    " << tInterpLocal << "s\n";
+    std::cout <<   "  lpm_t::advance        " << tAdvance << "s\n";
 
     EXIT_AND_FINALIZE(0);
   }

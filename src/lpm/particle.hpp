@@ -33,14 +33,14 @@ struct particle_t {
   };
 
   // Contains a set of particles and the information needed to interpolate on the mesh
-  class particles_t {
+  class lpm_t {
   public:
 
-    particles_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) {}
+    lpm_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) {}
 
-    particles_t(particles_t &set) = delete;
+    lpm_t(lpm_t &set) = delete;
 
-    ~particles_t() {}
+    ~lpm_t() {}
 
     particle_t operator[](int i) const
     {
