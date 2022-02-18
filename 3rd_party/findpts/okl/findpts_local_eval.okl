@@ -1,4 +1,7 @@
 @kernel void findpts_local_eval(
+              const dlong Nfields,
+              const dlong outputOffset,
+              const dlong fieldOffset,
               dfloat * const out_base,   const dlong out_stride,
         const dlong  * const el_base,    const dlong el_stride,
         const dfloat * const r_base,     const dlong r_stride,
@@ -8,13 +11,15 @@
 
   for(dlong i=0;i<pn;++i;@outer){
 
+    for(int fld = 0; fld < Nfields; ++fld){
+
     @shared dfloat wtr[p_Nq];
     @shared dfloat wts[p_Nq];
     @shared dfloat wtt[p_Nq];
     @shared dfloat sums[p_Nq];
 
     const dlong el = *CAT(dlong, el, i);
-    const dfloat *in_el = in + el*p_Np;
+    const dfloat *in_el = in + el*p_Np + fld * fieldOffset;
 
     const dfloat * r = CAT(dfloat, r, i);
     for(dlong j=0;j<p_Nq;++j;@inner){
@@ -75,10 +80,11 @@
 #endif
     for(dlong j=0;j<p_Nq;++j;@inner){
       if(j==0){
-        dfloat * result = AT(dfloat, out, i);
+        dfloat * result = AT(dfloat, out, i) + fld * outputOffset;
         *result = sums[0] + sums[1];
       }
     }
     @barrier("local");
+  }
   }
 }

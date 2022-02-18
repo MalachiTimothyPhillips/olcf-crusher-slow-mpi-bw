@@ -310,23 +310,31 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   {
     for(int i = 0; i < Ntrials; ++i){
       // TODO: make multi-field version available
-      findpts->local_eval_kernel(o_outx, sizeof(dfloat),
+      #if 0
+      findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
                                 pn, o_Ux,
                                 findpts->o_fd_local);
 
-      findpts->local_eval_kernel(o_outy, sizeof(dfloat),
+      findpts->local_eval_kernel(1, 0, 0, o_outy, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
                                 pn, o_Uy,
                                 findpts->o_fd_local);
 
-      findpts->local_eval_kernel(o_outz, sizeof(dfloat),
+      findpts->local_eval_kernel(1, 0, 0, o_outz, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
                                 pn, o_Uz,
                                 findpts->o_fd_local);
+      #else
+      findpts->local_eval_kernel(3, pn, nrs->fieldOffset, o_out, sizeof(dfloat),
+                                o_el,  elStrideBytes,
+                                o_r,   rStrideBytes,
+                                pn, nrs->o_U,
+                                findpts->o_fd_local);
+      #endif
     }
   }
   platform->device.finish();
