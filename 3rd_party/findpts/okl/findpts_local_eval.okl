@@ -30,17 +30,13 @@
     const dlong el = *CAT(dlong, el, i);
     const dfloat *in_el = in + el*p_Np + fld * fieldOffset;
 
-    // out[i] = sum_j sum_k sum_l wtr[j]*wts[k]*wtt[l]*in[j + k*nr + l*nr*ns]
-    //        = sum_j wtr[j] * sum_k wts[k] * sum_l wtt[l]*in[j + k*nr + l*nr*ns]
     for (dlong j=0;j<p_Nq;++j;@inner){
       dfloat sum_j = 0;
-      const dfloat *in_el_j = in_el+j;
       for(dlong k=0;k<p_Nq;++k){
         dfloat sum_k = 0;
-        const dfloat *in_el_jk = in_el_j+k*p_Nq;
 
         for(dlong l=0;l<p_Nq;++l){
-          sum_k += in_el_jk[l*p_Nq*p_Nq] * wtt[l];
+          sum_k += in_el[j + k*p_Nq + l*p_Nq*p_Nq] * wtt[l];
         }
         sum_j += wts[k]*sum_k;
       }
