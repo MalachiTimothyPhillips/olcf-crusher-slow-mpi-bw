@@ -310,7 +310,8 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   {
     for(int i = 0; i < Ntrials; ++i){
       // TODO: make multi-field version available
-      #if 0
+      #define VERSION 2
+      #if VERSION == 1
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
@@ -328,8 +329,14 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
                                 o_r,   rStrideBytes,
                                 pn, o_Uz,
                                 findpts->o_fd_local);
-      #else
+      #elif VERSION == 2
       findpts->local_eval_kernel(3, pn, nrs->fieldOffset, o_out, sizeof(dfloat),
+                                o_el,  elStrideBytes,
+                                o_r,   rStrideBytes,
+                                pn, nrs->o_U,
+                                findpts->o_fd_local);
+      #elif VERSION == 3
+      findpts->local_eval_vector_kernel(pn, nrs->fieldOffset, o_out, sizeof(dfloat),
                                 o_el,  elStrideBytes,
                                 o_r,   rStrideBytes,
                                 pn, nrs->o_U,

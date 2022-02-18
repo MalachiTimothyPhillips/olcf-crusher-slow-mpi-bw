@@ -138,9 +138,10 @@ ogs_findpts_t* ogsFindptsSetup(
 
   if (device != nullptr) {
     ogs_handle->device = device;
-    std::pair<occa::kernel, occa::kernel> kernels = ogs::initFindptsKernel(comm, *device, D, n[0]);
-    ogs_handle->local_eval_kernel = std::get<0>(kernels);
-    ogs_handle->local_kernel = std::get<1>(kernels);
+    auto kernels = ogs::initFindptsKernel(comm, *device, D, n[0]);
+    ogs_handle->local_eval_vector_kernel = std::get<0>(kernels);
+    ogs_handle->local_eval_kernel = std::get<1>(kernels);
+    ogs_handle->local_kernel = std::get<2>(kernels);
 
     // Need to copy findpts data to the
     ogs_handle->o_fd_local = ogsFindptsCopyData_3((struct findpts_data_3 *)ogs_handle->findpts_data,
