@@ -29,7 +29,6 @@ SOFTWARE.
 #include "ogstypes.h"
 #include "findpts.hpp"
 #include "interfaceFindpts.h"
-#include "findptsKernels.hpp"
 #include "gslib.h"
 
 struct hash_data_3 {

@@ -5,6 +5,7 @@
 #include <mpi.h>
 #include "ogstypes.h" // for dfloat, dlong
 #include <limits>
+#include <tuple>
 
 struct findpts_t {
   int D;
@@ -104,5 +105,8 @@ void findptsLocalEval(
 
 struct crystal;
 crystal* crystalRouter(findpts_t *const fd);
+
+std::tuple<occa::kernel, occa::kernel, occa::kernel> initFindptsKernels(
+      MPI_Comm comm, occa::device device, dlong D, dlong Nq);
 
 #endif

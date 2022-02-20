@@ -6,7 +6,7 @@
 #include "udf.hpp"
 #include <vector>
 #include <tuple>
-#include "findptsKernels.hpp"
+#include "findpts.hpp"
 
 std::string createOptionsPrefix(std::string section) {
   std::string prefix = section + std::string(" ");

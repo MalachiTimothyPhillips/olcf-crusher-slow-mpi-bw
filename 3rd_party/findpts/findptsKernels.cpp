@@ -1,7 +1,6 @@
 
 #include "ogstypes.h"
 #include "findpts.hpp"
-#include "findptsKernels.hpp"
 #include <cfloat>
 #include <tuple>
 
