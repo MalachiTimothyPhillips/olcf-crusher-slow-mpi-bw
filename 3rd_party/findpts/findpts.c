@@ -71,7 +71,7 @@ struct out_pt_3 {
   uint index, code, el, proc;
 };
 
-void findpts(uint *const code_base,
+void findpts_impl(uint *const code_base,
                    const unsigned code_stride,
                    uint *const proc_base,
                    const unsigned proc_stride,
@@ -224,7 +224,7 @@ void findpts(uint *const code_base,
   }
 }
 
-void findpts_eval(double *const out_base,
+void findpts_eval_impl(double *const out_base,
                         const unsigned out_stride,
                         const uint *const code_base,
                         const unsigned code_stride,

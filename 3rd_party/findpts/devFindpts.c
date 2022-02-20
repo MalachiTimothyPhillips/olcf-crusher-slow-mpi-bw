@@ -58,7 +58,7 @@ void devFindpts(      dlong  *const  code_base   , const dlong  code_stride   ,
                      const dfloat *const     x_base[3], const dlong     x_stride[3],
                      const dlong npt, struct findpts_data_3 *const fd,
                      const void *const findptsData) {
-  findpts( code_base,  code_stride,
+  findpts_impl( code_base,  code_stride,
                  proc_base,  proc_stride,
                    el_base,    el_stride,
                     r_base,     r_stride,
@@ -76,7 +76,7 @@ void devFindptsEval(
   const dlong npt, void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData) {
 
-  findpts_eval( out_base,  out_stride,
+  findpts_eval_impl( out_base,  out_stride,
                      code_base, code_stride,
                      proc_base, proc_stride,
                        el_base,   el_stride,

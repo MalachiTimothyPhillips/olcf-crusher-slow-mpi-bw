@@ -17,7 +17,7 @@ void findpts_local(uint *const code_base,
                          const unsigned x_stride[3],
                          const uint npt,
                          const void *const findptsData);
-void findpts(    uint   *const  code_base   , const unsigned  code_stride   ,
+void findpts_impl(    uint   *const  code_base   , const unsigned  code_stride   ,
                        uint   *const  proc_base   , const unsigned  proc_stride   ,
                        uint   *const    el_base   , const unsigned    el_stride   ,
                        double *const     r_base   , const unsigned     r_stride   ,
@@ -47,7 +47,7 @@ void findpts_local_eval(
   const uint pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
-void findpts_eval(
+void findpts_eval_impl(
         double *const  out_base, const unsigned  out_stride,
   const uint   *const code_base, const unsigned code_stride,
   const uint   *const proc_base, const unsigned proc_stride,
