@@ -12,11 +12,7 @@ public:
   ~pointInterpolation_t();
 
   // Finds the process, element, and reference coordinates of the given points
-  void find(const dfloat *const *x,
-            const dlong xStride[],
-            findpts_data_t *findPtsData,
-            dlong n,
-            bool printWarnings = true);
+  void find(bool printWarnings = true);
 
   // Evaluates the points using the (code, proc, el, r) tuples computed by findPoints
   void eval(const dfloat *fields,
@@ -34,12 +30,31 @@ public:
             dlong n);
 
   auto *ptr() { return findpts_; }
+  auto &data() {return data_;}
+
+  void addPoints(int n, dfloat* x, dfloat* y, dfloat *z);
 
 private:
   nrs_t *nrs;
   double newton_tol;
   findpts_t *findpts_;
+  findpts_data_t data_;
   bool profile;
+
+  int nPoints;
+
+  //std::vector<dfloat> _x;
+  //std::vector<dfloat> _y;
+  //std::vector<dfloat> _z;
+  dfloat * _x;
+  dfloat * _y;
+  dfloat * _z;
+
+  std::vector<dlong> code;
+  std::vector<dlong> proc;
+  std::vector<dlong> el;
+  std::vector<dfloat> dist2;
+  std::vector<dfloat> r;
 
 public:
   // Evalutes points located on this process

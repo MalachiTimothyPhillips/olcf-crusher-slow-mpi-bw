@@ -2,6 +2,7 @@
 #include "nekInterfaceAdapter.hpp" // for nek::coeffAB
 #include <iomanip>
 #include <iostream>
+#include <algorithm>
 
 namespace {
 std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
@@ -124,15 +125,17 @@ void lpm_t::find(bool printWarnings)
   }
   dlong n = size();
 
-  std::vector<dfloat> dist2(n, 0.0);
+  interp_->addPoints(n, _x.data(), _y.data(), _z.data());
 
-  const dfloat dist2Stride = 1;
-  dfloat *xBase[3] = {_x.data(), _y.data(), _z.data()};
-  dlong xStride[3] = {1, 1, 1};
+  interp_->find(printWarnings);
 
-  findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2.data());
+  // copy results
 
-  interp_->find(xBase, xStride, &data, size(), printWarnings);
+  auto & data = interp_->data();
+  std::copy(data.code_base, data.code_base + n, code.data());
+  std::copy(data.el_base, data.el_base + n, el.data());
+  std::copy(data.proc_base, data.proc_base + n, proc.data());
+  std::copy(data.r_base, data.r_base + 3 * n, r[0].data());
 
   if(profile){
     platform->timer.toc("lpm_t::find");
@@ -143,6 +146,7 @@ void lpm_t::migrate()
   if(profile){
     platform->timer.tic("lpm_t::migrate", 1);
   }
+  auto & data = interp_->data();
   int mpi_rank = platform_t::getInstance()->comm.mpiRank;
 
   struct array transfer;
@@ -151,12 +155,12 @@ void lpm_t::migrate()
   int index = 0;
   int unfound_count = 0;
   while (index < size()) {
-    if (code[index] == 2) {
+    if (data.code_base[index] == 2) {
       swap(index, unfound_count);
       ++unfound_count;
       ++index;
     }
-    else if (proc[index] != mpi_rank) {
+    else if (data.proc_base[index] != mpi_rank) {
       // remove index'th element and move the last point to index'th storage
       array_reserve(particle_t, &transfer, transfer.n + 1);
       ((particle_t *)transfer.ptr)[transfer.n] = remove(index);
@@ -189,9 +193,12 @@ void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
   if(profile){
     platform->timer.tic("lpm_t::interpLocal", 1);
   }
+
+  auto & data = interp_->data();
+
   dlong pn = size();
   dlong offset = 0;
-  while (offset < pn && code[offset] == 2)
+  while (offset < pn && data.code_base[offset] == 2)
     ++offset;
   pn -= offset;
 
@@ -202,11 +209,12 @@ void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
     outStride[i] = 1;
   }
 
+
   interp_->evalLocalPoints(field,
                            nFields,
-                           el.data() + offset,
+                           data.el_base + offset,
                            1,
-                           &(r.data()[offset][0]),
+                           data.r_base + 3 * offset,
                            3,
                            outOffset,
                            outStride,
@@ -215,32 +223,6 @@ void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
   if(profile){
     platform->timer.toc("lpm_t::interpLocal");
   }
-}
-void lpm_t::interpLocal(dfloat *field, dfloat *out[], dlong nFields)
-{
-  dlong pn = size();
-  dlong offset = 0;
-  while (offset < pn && code[offset] == 2)
-    ++offset;
-  pn -= offset;
-
-  dfloat **outOffset = new dfloat *[nFields];
-  dlong *outStride = new dlong[nFields];
-  for (dlong i = 0; i < nFields; ++i) {
-    outOffset[i] = out[i] + offset;
-    outStride[i] = 1;
-  }
-
-  interp_->evalLocalPoints(field,
-                           nFields,
-                           el.data() + offset,
-                           1,
-                           &(r.data()[offset][0]),
-                           3,
-                           outOffset,
-                           outStride,
-                           pn);
-  delete[] outOffset;
 }
 
 namespace{

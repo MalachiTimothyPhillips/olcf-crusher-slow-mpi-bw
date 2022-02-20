@@ -88,6 +88,8 @@ struct particle_t {
     std::vector<dlong> code;
     std::vector<dlong> proc;
     std::vector<dlong> el;
+
+    // TODO: avoid vector<array<...>>
     std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
     std::vector<std::array<dfloat, 3>> r;
 
@@ -106,7 +108,6 @@ struct particle_t {
     //   out            ... array of pointers to the output arrays (dfloat[n][3])
     //   nfld           ... number of fields
     void interpLocal(occa::memory field, dfloat *out[], dlong nFields);
-    void interpLocal(dfloat *field, dfloat *out[], dlong nFields);
 
   };
 

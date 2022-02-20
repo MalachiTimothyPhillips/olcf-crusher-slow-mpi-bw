@@ -7,9 +7,10 @@
 #include "findpts.hpp"
 
 #include "pointInterpolation.hpp"
+#include <algorithm>
 
 pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool profile_)
-    : nrs(nrs_), newton_tol(newton_tol_), profile(profile_)
+    : nrs(nrs_), newton_tol(newton_tol_), profile(profile_), nPoints(0)
 {
 
   newton_tol = std::max(5e-13, newton_tol_);
@@ -51,35 +52,34 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool
 
 pointInterpolation_t::~pointInterpolation_t() { findptsFree(findpts_); }
 
-void pointInterpolation_t::find(const dfloat *const *x,
-                                const dlong xStride[],
-                                findpts_data_t *findPtsData,
-                                dlong n,
-                                bool printWarnings)
+void pointInterpolation_t::find(bool printWarnings)
 {
   if(profile){
     platform->timer.tic("pointInterpolation_t::find", 1);
   }
-  // findpts takes strides in terms of bytes, but find takes strides in terms of elements
-  dlong xStrideBytes[3] = {xStride[0] * sizeof(dfloat),
-                           xStride[1] * sizeof(dfloat),
-                           xStride[2] * sizeof(dfloat)};
 
-  findpts(findPtsData, x, xStrideBytes, n, findpts_);
+  dfloat * x[3] = {_x, _y, _z};
+  const auto n = nPoints;
+
+  dlong xStrideBytes[3] = {sizeof(dfloat),
+                           sizeof(dfloat),
+                           sizeof(dfloat)};
+
+  findpts(&data_, x, xStrideBytes, n, findpts_);
 
   if (printWarnings) {
     dlong nFail = 0;
     for (int in = 0; in < n; ++in) {
-      if (findPtsData->code_base[in] == 1) {
-        if (findPtsData->dist2_base[in] > 10 * newton_tol) {
+      if (data_.code_base[in] == 1) {
+        if (data_.dist2_base[in] > 10 * newton_tol) {
           nFail += 1;
           if (nFail < 5) {
             std::cerr << " WARNING: point on boundary or outside the mesh xy[z]d^2: " << x[0][in] << ","
-                      << x[1][in] << ", " << x[2][in] << ", " << findPtsData->dist2_base[in] << std::endl;
+                      << x[1][in] << ", " << x[2][in] << ", " << data_.dist2_base[in] << std::endl;
           }
         }
       }
-      else if (findPtsData->code_base[in] == 2) {
+      else if (data_.code_base[in] == 2) {
         nFail += 1;
         if (nFail < 5) {
           std::cerr << " WARNING: point not within mesh xy[z]: " << x[0][in] << "," << x[1][in] << ", "
@@ -102,7 +102,7 @@ void pointInterpolation_t::find(const dfloat *const *x,
 
 void pointInterpolation_t::eval(const dfloat *fields,
                                 const dlong nFields,
-                                findpts_data_t *findPtsData,
+                                findpts_data_t *findPtsdata_,
                                 dfloat **out,
                                 const dlong outStride[],
                                 dlong n)
@@ -112,7 +112,7 @@ void pointInterpolation_t::eval(const dfloat *fields,
   }
   dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
-    findptsEval(out[i], findPtsData, n, fields + i * nrs->fieldOffset, findpts_);
+    findptsEval(out[i], findPtsdata_, n, fields + i * nrs->fieldOffset, findpts_);
   }
   if(profile){
     platform->timer.toc("pointInterpolation_t::eval");
@@ -121,7 +121,7 @@ void pointInterpolation_t::eval(const dfloat *fields,
 
 void pointInterpolation_t::eval(occa::memory o_fields,
                                 const dlong nFields,
-                                findpts_data_t *findPtsData,
+                                findpts_data_t *findPtsdata_,
                                 dfloat **out,
                                 const dlong outStride[],
                                 dlong n)
@@ -130,7 +130,7 @@ void pointInterpolation_t::eval(occa::memory o_fields,
     platform->timer.tic("pointInterpolation_t::eval", 1);
   }
   for (int i = 0; i < nFields; ++i) {
-    findptsEval(out[i], findPtsData, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
+    findptsEval(out[i], findPtsdata_, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
   }
   if(profile){
     platform->timer.toc("pointInterpolation_t::eval");
@@ -243,4 +243,27 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
       }
     }
   }
+}
+
+void pointInterpolation_t::addPoints(int n, dfloat * x, dfloat * y, dfloat * z)
+{
+
+  if(n > nPoints){
+    
+    dist2.resize(n, 0.0);
+    r.resize(3*n, 0.0);
+
+    code.resize(n, 0);
+    el.resize(n, 0);
+    proc.resize(n, 0);
+
+    data_ = findpts_data_t(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+  }
+
+  nPoints = n;
+
+  _x = x;
+  _y = y;
+  _z = z;
+
 }
