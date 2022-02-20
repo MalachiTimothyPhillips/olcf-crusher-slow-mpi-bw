@@ -244,39 +244,3 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
     }
   }
 }
-
-void pointInterpolation_t::interpField(dfloat *fields,
-                                       dlong nFields,
-                                       const dfloat *x[],
-                                       const dlong x_stride[],
-                                       dfloat *out[],
-                                       const dlong out_stride[],
-                                       dlong n)
-{
-
-  auto *findPtsData = new findpts_data_t(n);
-
-  find(x, x_stride, findPtsData, n);
-
-  eval(fields, nFields, findPtsData, out, out_stride, n);
-
-  delete findPtsData;
-}
-
-void pointInterpolation_t::interpField(occa::memory fields,
-                                       dlong nFields,
-                                       const dfloat *x[],
-                                       const dlong x_stride[],
-                                       dfloat *out[],
-                                       const dlong out_stride[],
-                                       dlong n)
-{
-
-  auto *findPtsData = new findpts_data_t(n);
-
-  find(x, x_stride, findPtsData, n);
-
-  eval(fields, nFields, findPtsData, out, out_stride, n);
-
-  delete findPtsData;
-}

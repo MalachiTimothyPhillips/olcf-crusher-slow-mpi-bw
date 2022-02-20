@@ -33,23 +33,6 @@ public:
             const dlong out_stride[],
             dlong n);
 
-  // Evaluates a field at the given points
-  void interpField(dfloat *fields,
-                   dlong nFields,
-                   const dfloat *x[],
-                   const dlong x_stride[],
-                   dfloat *out[],
-                   const dlong out_stride[],
-                   dlong n);
-
-  void interpField(occa::memory fields,
-                   dlong nFields,
-                   const dfloat *x[],
-                   const dlong x_stride[],
-                   dfloat *out[],
-                   const dlong out_stride[],
-                   dlong n);
-
   auto *ptr() { return findpts_; }
 
 private:
