@@ -117,29 +117,23 @@ void lpm_t::swap(int i, int j)
   std::swap(v[i], v[j]);
 }
 
-void lpm_t::find(bool printWarnings, dfloat *dist2In, dlong dist2Stride)
+void lpm_t::find(bool printWarnings)
 {
   if(profile){
     platform->timer.tic("lpm_t::find", 1);
   }
   dlong n = size();
-  dfloat *dist2;
-  if (dist2In != nullptr) {
-    dist2 = dist2In;
-  }
-  else {
-    dist2 = new dfloat[n];
-    dist2Stride = 1;
-  }
+
+  std::vector<dfloat> dist2(n, 0.0);
+
+  const dfloat dist2Stride = 1;
   dfloat *xBase[3] = {_x.data(), _y.data(), _z.data()};
   dlong xStride[3] = {1, 1, 1};
 
-  findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2);
+  findpts_data_t data(code.data(), proc.data(), el.data(), r[0].data(), dist2.data());
 
   interp_->find(xBase, xStride, &data, size(), printWarnings);
-  if (dist2In == nullptr) {
-    delete[] dist2;
-  }
+
   if(profile){
     platform->timer.toc("lpm_t::find");
   }

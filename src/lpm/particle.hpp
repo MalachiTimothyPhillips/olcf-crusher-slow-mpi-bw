@@ -94,7 +94,7 @@ struct particle_t {
     //// particle operations ////
 
     // Locates the element and process for each particle
-    void find(bool printWarnings = true, dfloat *dist2In = nullptr, dlong dist2Stride = 1);
+    void find(bool printWarnings = true);
 
     // Moves each particle to the process that owns it's current element
     // this->find must have been called since the last change in position
