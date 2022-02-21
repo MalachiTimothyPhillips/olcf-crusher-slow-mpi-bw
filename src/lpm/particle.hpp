@@ -110,6 +110,9 @@ struct particle_t {
     // elements this->migrate must have been called since the last change in position
     void interpLocal(occa::memory field, occa::memory o_out, dlong nFields);
 
+    // Perform integration
+    void advance(dfloat *dt, int tstep);
+
   };
 
 #endif

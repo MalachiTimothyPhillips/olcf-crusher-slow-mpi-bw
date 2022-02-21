@@ -498,11 +498,13 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     const double tMigrate     = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
     const double tInterpLocal = platform->timer.query("lpm_t::interpLocal", "DEVICE:MAX");
     const double tAdvance     = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
-    std::cout <<   "lpm_t::update           " << tUpdate << "s\n";
-    std::cout <<   "  lpm_t::find           " << tFind << "s\n";
-    std::cout <<   "  lpm_t::migrate        " << tMigrate << "s\n";
-    std::cout <<   "  lpm_t::interpLocal    " << tInterpLocal << "s\n";
-    std::cout <<   "  lpm_t::advance        " << tAdvance << "s\n";
+    const double tAlloc       = platform->timer.query("lpm_t::re-alloc buffer", "DEVICE:MAX");
+    std::cout <<   "lpm_t::update             " << tUpdate << "s\n";
+    std::cout <<   "  lpm_t::find             " << tFind << "s\n";
+    std::cout <<   "  lpm_t::migrate          " << tMigrate << "s\n";
+    std::cout <<   "  lpm_t::interpLocal      " << tInterpLocal << "s\n";
+    std::cout <<   "  lpm_t::advance          " << tAdvance << "s\n";
+    std::cout <<   "  lpm_t::re-alloc buffer  " << tAlloc << "s\n";
 
     EXIT_AND_FINALIZE(0);
   }

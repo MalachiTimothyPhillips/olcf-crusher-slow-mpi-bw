@@ -5,6 +5,7 @@
 #include <algorithm>
 
 namespace {
+
 std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
 {
   constexpr int integrationOrder = particle_t::integrationOrder;
@@ -178,7 +179,7 @@ void lpm_t::migrate()
   array_free(&transfer);
 
   if(profile){
-    platform->timer.tic("lpm_t::migrate");
+    platform->timer.toc("lpm_t::migrate");
   }
 }
 
@@ -318,30 +319,15 @@ void lpm_t::write(dfloat time) const
     platform->timer.toc("lpm_t::write");
   }
 }
-void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
+
+void lpm_t::advance(dfloat * dt, int tstep)
 {
-  if(profile){
-    platform->timer.tic("lpm_t::update", 1);
-  }
-
-  this->find();
-  this->migrate();
-
-  if(o_Uinterp.size() < 3 * this->size() * sizeof(dfloat)){
-    o_Uinterp.free();
-
-    // TODO: consider padding by some amount to prevent multiple re-allocations?
-    o_Uinterp = platform->device.malloc(3 * this->size() * sizeof(dfloat));
-  }
-
-  this->interpLocal(o_fld, o_Uinterp, 3);
-
-  std::vector<dfloat> u1(3 * this->size() * sizeof(dfloat));
-  o_Uinterp.copyTo(u1.data(), 3 * this->size() * sizeof(dfloat));
-
   if(profile){
     platform->timer.tic("lpm_t::advance", 1);
   }
+
+  std::vector<dfloat> u1(3 * this->size() * sizeof(dfloat));
+  o_Uinterp.copyTo(u1.data(), 3 * this->size() * sizeof(dfloat));
 
   auto coeffs = particleTimestepperCoeffs(dt, tstep);
 
@@ -380,6 +366,36 @@ void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   if(profile){
     platform->timer.toc("lpm_t::advance");
   }
+
+}
+
+void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
+{
+  if(profile){
+    platform->timer.tic("lpm_t::update", 1);
+  }
+
+  this->find();
+  this->migrate();
+
+  if(o_Uinterp.size() < 3 * this->size() * sizeof(dfloat)){
+    if(profile){
+      platform->timer.tic("lpm_t::re-alloc buffer", 1);
+    }
+
+    o_Uinterp.free();
+
+    // TODO: consider padding by some amount to prevent multiple re-allocations?
+    o_Uinterp = platform->device.malloc(3 * this->size() * sizeof(dfloat));
+
+    if(profile){
+      platform->timer.toc("lpm_t::re-alloc buffer");
+    }
+  }
+
+  this->interpLocal(o_fld, o_Uinterp, 3);
+
+  this->advance(dt, tstep);
 
   if(profile){
     platform->timer.toc("lpm_t::update");
