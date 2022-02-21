@@ -153,8 +153,10 @@ option(EXTERNAL_OCCA "Use an external OCCA build" OFF)
 if(EXTERNAL_OCCA)
   message("-- Using external OCCA ...")
   find_package(occa REQUIRED)
+  set(OCCA_TARGET OCCA::libocca)
 else()
   include(config/occa.cmake)
+  set(OCCA_TARGET libocca)
   set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
   set(ENABLE_HIP ${OCCA_HIP_ENABLED})
   set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
@@ -188,7 +190,16 @@ include(config/nek5000.cmake)
 include(config/mesh.cmake)
 include(config/elliptic.cmake)
 include(config/gslib.cmake)
-include(config/blaslapack.cmake)
+
+option(EXTERNAL_BLASLAPACK "Use an external/vendor-provided Blas/Lapack library" OFF)
+if(EXTERNAL_BLASLAPACK)
+  find_package(BLAS REQUIRED)
+  find_package(LAPACK REQUIRED)
+  set(BLASLAPACK_TARGETS BLAS::BLAS LAPACK::LAPACK)
+else()
+  include(config/blaslapack.cmake)
+  set(BLASLAPACK_TARGETS BLAS LAPACK)
+endif()
 
 ###############################################################################
 # Build NekRS
@@ -243,7 +254,6 @@ set(SRC
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
     ${ELLIPTIC_SOURCES}
-    ${BLASLAPACK_SOURCES}
     ${OGS_SOURCES}
 )
 
