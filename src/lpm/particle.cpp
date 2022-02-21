@@ -21,6 +21,25 @@ std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloa
 }
 } // namespace
 
+lpm_t::lpm_t(nrs_t *nrs_, double newton_tol_) {
+
+  interp_ = std::make_shared<pointInterpolation_t>(nrs_, newton_tol_);
+  needsSync = false;
+
+  std::string path;
+  int rank = platform->comm.mpiRank;
+  path.assign(getenv("NEKRS_INSTALL_DIR"));
+  path += "/okl/core/";
+  std::string kernelName, fileName;
+  const std::string extension = ".okl";
+
+  kernelName = "nStagesSumVector";
+  fileName = path + kernelName + extension;
+  nStagesSumVectorKernel = platform->device.buildKernel(fileName, platform->kernelInfo, true);
+
+  o_coeffAB = platform->device.malloc(particle_t::integrationOrder * sizeof(dfloat));
+}
+
 void lpm_t::reserve(int n)
 {
   _x.reserve(n);
@@ -373,14 +392,13 @@ void lpm_t::syncToDevice()
 
     o_Uinterp.copyFrom(velocity.data(),
       Nbyte,
-      state * Nbyte,
-      0);
+      state * Nbyte);
   }
 
 
 
   if(profile){
-    platform->timer.toc("lpm_t::syncToDevice", 1);
+    platform->timer.toc("lpm_t::syncToDevice");
   }
 }
 
@@ -390,11 +408,43 @@ void lpm_t::advance(dfloat * dt, int tstep)
     platform->timer.tic("lpm_t::advance", 1);
   }
 
-  std::vector<dfloat> u1(3 * this->size() * sizeof(dfloat));
-  o_Uinterp.copyTo(u1.data(), 3 * this->size() * sizeof(dfloat));
-
   auto coeffs = particleTimestepperCoeffs(dt, tstep);
+  o_coeffAB.copyFrom(coeffs.data(), particle_t::integrationOrder * sizeof(dfloat));
 
+  const auto n = this->size();
+
+#if 1
+  nStagesSumVectorKernel(n, n, particle_t::integrationOrder, o_Uinterp, o_x, o_y, o_z);
+
+  // lag velocity states
+  const dlong Nbyte = 3 * n * sizeof(dfloat);
+  for (int s = particle_t::integrationOrder; s > 1; s--) {
+    o_Uinterp.copyFrom(
+        o_Uinterp, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
+  }
+
+  // copy position results back
+  o_x.copyTo(_x.data(), n * sizeof(dfloat));
+  o_y.copyTo(_y.data(), n * sizeof(dfloat));
+  o_z.copyTo(_z.data(), n * sizeof(dfloat));
+
+  // copy lagged velocity state back
+  std::vector<dfloat> velocity(3*n, 0.0);
+  for(int state = 0; state < particle_t::integrationOrder; ++state)
+  {
+    o_Uinterp.copyTo(velocity.data(),
+      Nbyte,
+      state * Nbyte);
+
+    for(int i = 0; i < this->size(); ++i){
+      v[i][3*state + 0] = velocity[i + this->size() * 0];
+      v[i][3*state + 1] = velocity[i + this->size() * 1];
+      v[i][3*state + 2] = velocity[i + this->size() * 2];
+    }
+
+  }
+
+#else
   for (int i = 0; i < this->size(); ++i) {
     // Update particle position and velocity history
 
@@ -426,6 +476,7 @@ void lpm_t::advance(dfloat * dt, int tstep)
     this->v[i][2*3 + k] = this->v[i][1*3 + k];
     this->v[i][1*3 + k] = this->v[i][0*3 + k];
   }
+#endif
 
   if(profile){
     platform->timer.toc("lpm_t::advance");

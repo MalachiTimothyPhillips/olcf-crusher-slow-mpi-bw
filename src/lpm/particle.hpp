@@ -40,7 +40,7 @@ struct particle_t {
   class lpm_t {
   public:
 
-    lpm_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) { needsSync = false; }
+    lpm_t(nrs_t *nrs_, double newton_tol_);
 
     lpm_t(lpm_t &set) = delete;
 
@@ -104,6 +104,7 @@ struct particle_t {
     occa::memory o_y;
     occa::memory o_z;
 
+    occa::memory o_coeffAB;
 
     //// particle operations ////
 
@@ -122,6 +123,8 @@ struct particle_t {
     void advance(dfloat *dt, int tstep);
 
     void syncToDevice();
+
+    occa::kernel nStagesSumVectorKernel;
 
   };
 
