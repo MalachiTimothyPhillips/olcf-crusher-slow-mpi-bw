@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 #include "udf.hpp"
-#include "lpm/particle.hpp"
+#include "plugins/particle.hpp"
 
 #include "casedata.h"
 
