@@ -9,8 +9,10 @@ namespace {
 inline dlong pageAlignedOffset(dlong npts)
 {
   dlong offset = npts;
+#if 0
   const int pageW = ALIGN_SIZE / sizeof(dfloat);
   if (offset % pageW) offset = (offset / pageW + 1) * pageW;
+#endif
   return offset;
 }
 
