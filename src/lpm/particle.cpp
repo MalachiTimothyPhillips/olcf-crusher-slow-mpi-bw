@@ -38,6 +38,7 @@ void lpm_t::reserve(int n)
 }
 void lpm_t::push(particle_t particle)
 {
+  needsSync = true;
   _x.push_back(particle.x);
   _y.push_back(particle.y);
   _z.push_back(particle.z);
@@ -57,6 +58,7 @@ void lpm_t::push(particle_t particle)
 
 particle_t lpm_t::remove(int i)
 {
+  needsSync = true;
   auto& data = interp_->data();
   particle_t part;
   if (i == size() - 1) {
@@ -104,6 +106,8 @@ void lpm_t::swap(int i, int j)
 {
   if (i == j)
     return;
+
+  needsSync = true;
 
   auto& data = interp_->data();
 
@@ -320,6 +324,66 @@ void lpm_t::write(dfloat time) const
   }
 }
 
+void lpm_t::syncToDevice()
+{
+  if(!needsSync) return;
+
+  needsSync = false;
+
+  const auto n = this->size();
+
+  if(profile){
+    platform->timer.tic("lpm_t::syncToDevice", 1);
+  }
+
+  if(o_Uinterp.size() < 3 * particle_t::integrationOrder * this->size() * sizeof(dfloat)){
+
+    o_Uinterp.free();
+
+    o_Uinterp = platform->device.malloc(3 * particle_t::integrationOrder * this->size() * sizeof(dfloat));
+
+  }
+
+  if(o_x.size() < 3 * this->size() * sizeof(dfloat)){
+
+    o_x.free();
+    o_y.free();
+    o_z.free();
+
+    o_x = platform->device.malloc(this->size() * sizeof(dfloat));
+    o_y = platform->device.malloc(this->size() * sizeof(dfloat));
+    o_z = platform->device.malloc(this->size() * sizeof(dfloat));
+
+  }
+
+  o_x.copyFrom(_x.data(), this->size() * sizeof(dfloat));
+  o_y.copyFrom(_y.data(), this->size() * sizeof(dfloat));
+  o_z.copyFrom(_z.data(), this->size() * sizeof(dfloat));
+
+  // copy lagged states
+  const dlong Nbyte = 3 * n * sizeof(dfloat);
+  std::vector<dfloat> velocity(3*n, 0.0);
+  for(int state = 1; state < particle_t::integrationOrder; ++state)
+  {
+    for(int i = 0; i < this->size(); ++i){
+      velocity[i + this->size() * 0] = v[i][3*state + 0];
+      velocity[i + this->size() * 1] = v[i][3*state + 1];
+      velocity[i + this->size() * 2] = v[i][3*state + 2];
+    }
+
+    o_Uinterp.copyFrom(velocity.data(),
+      Nbyte,
+      state * Nbyte,
+      0);
+  }
+
+
+
+  if(profile){
+    platform->timer.toc("lpm_t::syncToDevice", 1);
+  }
+}
+
 void lpm_t::advance(dfloat * dt, int tstep)
 {
   if(profile){
@@ -378,20 +442,7 @@ void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   this->find();
   this->migrate();
 
-  if(o_Uinterp.size() < 3 * this->size() * sizeof(dfloat)){
-    if(profile){
-      platform->timer.tic("lpm_t::re-alloc buffer", 1);
-    }
-
-    o_Uinterp.free();
-
-    // TODO: consider padding by some amount to prevent multiple re-allocations?
-    o_Uinterp = platform->device.malloc(3 * this->size() * sizeof(dfloat));
-
-    if(profile){
-      platform->timer.toc("lpm_t::re-alloc buffer");
-    }
-  }
+  this->syncToDevice();
 
   this->interpLocal(o_fld, o_Uinterp, 3);
 

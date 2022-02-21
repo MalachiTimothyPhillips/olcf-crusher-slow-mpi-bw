@@ -9,6 +9,8 @@
 
 #include "pointInterpolation.hpp"
 
+// TODO: need to page align occa::memory objects...
+
 struct particle_t {
   static constexpr int integrationOrder{3};
   dfloat x, y, z;
@@ -38,7 +40,7 @@ struct particle_t {
   class lpm_t {
   public:
 
-    lpm_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) {}
+    lpm_t(nrs_t *nrs_, double newton_tol_) : interp_(new pointInterpolation_t(nrs_, newton_tol_)) { needsSync = false; }
 
     lpm_t(lpm_t &set) = delete;
 
@@ -80,6 +82,7 @@ struct particle_t {
     const dlong& particleIndex(int i) const { return id[i]; }
 
     pointInterpolation_t& interp() { return *interp_; }
+    bool needsSync;
 
   private:
 
@@ -95,7 +98,12 @@ struct particle_t {
     // TODO: avoid vector<array<...>>
     std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
 
-    occa::memory o_Uinterp; // interpolated fluid velocity
+    occa::memory o_Uinterp; // interpolated fluid velocity, including lagged states!
+
+    occa::memory o_x;
+    occa::memory o_y;
+    occa::memory o_z;
+
 
     //// particle operations ////
 
@@ -112,6 +120,8 @@ struct particle_t {
 
     // Perform integration
     void advance(dfloat *dt, int tstep);
+
+    void syncToDevice();
 
   };
 

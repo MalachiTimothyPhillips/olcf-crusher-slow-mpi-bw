@@ -401,7 +401,12 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_z);
 
     // will integrate for 1 time unit -- puts particles back at original location
+    particles->needsSync = false;
     double elapsed = run_particle_update(nrs, *particles, 10, dt);
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "particles->neesSync = " << std::boolalpha << particles->needsSync << "\n";
+    }
 
     int nParticleDir = std::round(std::cbrt(nParticles));
     nParticles = nParticleDir * nParticleDir * nParticleDir;
@@ -498,13 +503,13 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     const double tMigrate     = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
     const double tInterpLocal = platform->timer.query("lpm_t::interpLocal", "DEVICE:MAX");
     const double tAdvance     = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
-    const double tAlloc       = platform->timer.query("lpm_t::re-alloc buffer", "DEVICE:MAX");
+    const double tSync        = platform->timer.query("lpm_t::sync", "DEVICE:MAX");
     std::cout <<   "lpm_t::update             " << tUpdate << "s\n";
     std::cout <<   "  lpm_t::find             " << tFind << "s\n";
     std::cout <<   "  lpm_t::migrate          " << tMigrate << "s\n";
     std::cout <<   "  lpm_t::interpLocal      " << tInterpLocal << "s\n";
     std::cout <<   "  lpm_t::advance          " << tAdvance << "s\n";
-    std::cout <<   "  lpm_t::re-alloc buffer  " << tAlloc << "s\n";
+    std::cout <<   "  lpm_t::sync             " << tSync << "s\n";
 
     EXIT_AND_FINALIZE(0);
   }
