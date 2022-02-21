@@ -22,7 +22,9 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/occa/lib")
+if(NOT EXTERNAL_OCCA)
+  set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/occa/lib")
+endif()
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/elliptic")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/amgSolver/parAlmond")
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/libparanumal")
@@ -143,10 +145,16 @@ endif()
 ###############################################################################
 # Build OCCA                                                                  #
 ###############################################################################
-include(config/occa.cmake)
-set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
-set(ENABLE_HIP ${OCCA_HIP_ENABLED})
-set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
+option(EXTERNAL_OCCA "Use an external OCCA build" OFF)
+if(EXTERNAL_OCCA)
+  message("-- Using external OCCA ...")
+  find_package(occa REQUIRED)
+else()
+  include(config/occa.cmake)
+  set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
+  set(ENABLE_HIP ${OCCA_HIP_ENABLED})
+  set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
+endif()
 
 ###############################################################################
 # Build AMGX                                                                  #

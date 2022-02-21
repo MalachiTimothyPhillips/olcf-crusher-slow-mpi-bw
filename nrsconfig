@@ -10,6 +10,7 @@ set -e -a
 
 : ${NEKRS_GPU_MPI:=1}
 
+: ${EXTERNAL_OCCA:="OFF"}
 : ${OCCA_CXX:="g++"}
 : ${OCCA_CXXFLAGS:="-O3 -g -march=native -mtune=native"}
 : ${OCCA_CUDA_COMPILER_FLAGS:="-O3 --fmad=true -lineinfo"}
@@ -47,6 +48,7 @@ cmake -Wno-dev \
       -DCMAKE_C_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
       -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
       -DCMAKE_INSTALL_PREFIX="${NEKRS_INSTALL_DIR}" \
+      -DEXTERNAL_OCCA=${EXTERNAL_OCCA} \
       -DOCCA_CXX="${OCCA_CXX}" \
       -DOCCA_CXXFLAGS="${OCCA_CXXFLAGS}" \
       -DOCCA_CUDA_COMPILER_FLAGS="${OCCA_CUDA_COMPILER_FLAGS}" \
