@@ -39,13 +39,13 @@ lpm_t::lpm_t(nrs_t *nrs_, double newton_tol_) {
   std::string path;
   int rank = platform->comm.mpiRank;
   path.assign(getenv("NEKRS_INSTALL_DIR"));
-  path += "/okl/core/";
+  path += "/okl/plugins/";
   std::string kernelName, fileName;
   const std::string extension = ".okl";
 
-  kernelName = "nStagesSumVector";
+  kernelName = "advanceParticles";
   fileName = path + kernelName + extension;
-  nStagesSumVectorKernel = platform->device.buildKernel(fileName, platform->kernelInfo, true);
+  advanceParticlesKernel = platform->device.buildKernel(fileName, platform->kernelInfo, true);
 
   o_coeffAB = platform->device.malloc(particle_t::integrationOrder * sizeof(dfloat));
 }
@@ -374,12 +374,15 @@ void lpm_t::syncToDevice()
     platform->timer.tic("lpm_t::syncToDevice", 1);
   }
 
-  const auto Nbytes = 3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat);
+  const auto Nbytes = 3 * fieldOffset * sizeof(dfloat);
   if(o_Uinterp.size() < Nbytes){
 
     o_Uinterp.free();
 
+    o_Ulag.free();
+
     o_Uinterp = platform->device.malloc(Nbytes);
+    o_Ulag = platform->device.malloc(particle_t::integrationOrder * Nbytes);
 
     h_scratch_v = platform->device.mallocHost(Nbytes);
     scratch_v = (dfloat*) h_scratch_v.ptr();
@@ -402,24 +405,8 @@ void lpm_t::syncToDevice()
   o_y.copyFrom(_y.data(), this->size() * sizeof(dfloat));
   o_z.copyFrom(_z.data(), this->size() * sizeof(dfloat));
 
-  // copy lagged states
-  const dlong NbyteOffset = 3 * fieldOffset * sizeof(dfloat);
-  const dlong Nbyte = 3 * n * sizeof(dfloat);
-  std::vector<dfloat> velocity(3*n, 0.0);
-  for(int state = 1; state < particle_t::integrationOrder; ++state)
-  {
-    for(int i = 0; i < this->size(); ++i){
-      velocity[i + this->size() * 0] = v[i][3*state + 0];
-      velocity[i + this->size() * 1] = v[i][3*state + 1];
-      velocity[i + this->size() * 2] = v[i][3*state + 2];
-    }
-
-    o_Uinterp.copyFrom(velocity.data(),
-      Nbyte,
-      state * NbyteOffset);
-  }
-
-
+  o_Ulag.copyFrom(&(v[0][0]),
+    3 * fieldOffset * particle_t::integrationOrder * sizeof(dfloat));
 
   if(profile){
     platform->timer.toc("lpm_t::syncToDevice");
@@ -443,7 +430,8 @@ void lpm_t::advance(dfloat * dt, int tstep)
   const auto n = this->size();
   const auto fieldOffset = offset();
 
-  nStagesSumVectorKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
+  //nStagesSumVectorKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
+  advanceParticlesKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_Ulag, o_x, o_y, o_z);
 
   if(profile){
     platform->timer.tic("lpm_t::advance::postIntegrationWork", 1);
@@ -462,31 +450,13 @@ void lpm_t::advance(dfloat * dt, int tstep)
     platform->timer.tic("lpm_t::advance::copyBackToHost", 1);
   }
 
-  // lag velocity states
-  const dlong NbyteOffset = 3 * fieldOffset * sizeof(dfloat);
-  const dlong Nbyte = 3 * n * sizeof(dfloat);
-  for (int s = particle_t::integrationOrder; s > 1; s--) {
-    o_Uinterp.copyFrom(
-        o_Uinterp, NbyteOffset, (s - 1) * NbyteOffset, (s - 2) * NbyteOffset);
-  }
-
   // copy position results back
   o_x.copyTo(_x.data(), n * sizeof(dfloat));
   o_y.copyTo(_y.data(), n * sizeof(dfloat));
   o_z.copyTo(_z.data(), n * sizeof(dfloat));
 
-  // copy lagged velocity state back
-  o_Uinterp.copyTo(scratch_v,
+  o_Ulag.copyTo(&(v[0][0]),
     3 * fieldOffset * particle_t::integrationOrder * sizeof(dfloat));
-
-  for(int state = 0; state < particle_t::integrationOrder; ++state)
-  {
-    for(int i = 0; i < this->size(); ++i){
-      v[i][3*state + 0] = scratch_v[i + 0 * fieldOffset + state * 3 * fieldOffset];
-      v[i][3*state + 1] = scratch_v[i + 1 * fieldOffset + state * 3 * fieldOffset];
-      v[i][3*state + 2] = scratch_v[i + 2 * fieldOffset + state * 3 * fieldOffset];
-    }
-  }
 
   if(profile){
     platform->timer.toc("lpm_t::advance::copyBackToHost");

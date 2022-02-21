@@ -112,7 +112,8 @@ struct particle_t {
     dfloat* scratch_v;
     occa::memory h_scratch_v;
 
-    occa::memory o_Uinterp; // interpolated fluid velocity, including lagged states!
+    occa::memory o_Uinterp; // interpolated fluid velocity
+    occa::memory o_Ulag; // lagged velocity states
 
     occa::memory o_x;
     occa::memory o_y;
@@ -139,6 +140,7 @@ struct particle_t {
     void syncToDevice();
 
     occa::kernel nStagesSumVectorKernel;
+    occa::kernel advanceParticlesKernel;
 
   };
 
