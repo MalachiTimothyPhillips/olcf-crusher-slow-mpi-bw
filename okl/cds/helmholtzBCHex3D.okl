@@ -93,7 +93,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     // face 0
     for(int j = 0; j < p_Nq; ++j; @inner(1))
@@ -103,7 +103,7 @@
           r_rhsU[0] += s_ndU[j][i];
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 5
     for(int j = 0; j < p_Nq; ++j; @inner(1))
@@ -112,7 +112,7 @@
         surfaceTerms(sk5,5,i,j);
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 5
     for(int j = 0; j < p_Nq; ++j; @inner(1))
@@ -122,7 +122,7 @@
           r_rhsU[p_Nq - 1] += s_ndU[j][i];
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 1
     for(int k = 0; k < p_Nq; ++k; @inner(1))
@@ -131,7 +131,7 @@
         surfaceTerms(sk1,1,i,k);
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 1
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
@@ -146,7 +146,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     // face 3
     for(int k = 0; k < p_Nq; ++k; @inner(1))
@@ -155,7 +155,7 @@
         surfaceTerms(sk3,3,i,k);
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 3
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
@@ -170,7 +170,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     // face 2
     for(int k = 0; k < p_Nq; ++k; @inner(1))
@@ -179,7 +179,7 @@
         surfaceTerms(sk2,2,j,k);
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 2
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
@@ -194,7 +194,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     // face 4
     for(int k = 0; k < p_Nq; ++k; @inner(1))
@@ -203,7 +203,7 @@
         surfaceTerms(sk4,4,j,k);
       }
 
-    @barrier("local");
+    @barrier;
 
     // face 4
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
@@ -218,7 +218,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for(int j = 0; j < p_Nq; ++j; @inner(1)) {
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {

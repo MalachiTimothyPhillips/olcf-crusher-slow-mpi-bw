@@ -70,7 +70,7 @@
           UH[idM + 2 * offset] = 0.0;
         }
       }
-      @barrier("global");
+      @barrier;
     }
 
     for(int f = 0; f < p_Nfaces; f++) {
@@ -84,7 +84,7 @@
           UH[idM + 2 * offset] = U[idM + 2 * offset];
         }
       }
-      @barrier("global");
+      @barrier;
     }
 
     for(int f = 0; f < p_Nfaces; f++) {
@@ -98,7 +98,7 @@
           UH[idM + 2 * offset] = 0.0;
         }
       }
-      @barrier("global");
+      @barrier;
     }
   }
 }

@@ -28,7 +28,7 @@
     @exclusive dlong element;
 
     for(int k = 0; k < p_Nq_e; ++k) {
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq_e; ++j; @inner) {
         for(int i = 0; i < p_Nq_e; ++i; @inner) {
 #if p_overlap
@@ -42,7 +42,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -54,7 +54,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
@@ -66,7 +66,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -78,7 +78,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int i = 0; i < p_Nq_e; i++; @inner){
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         const int ij = j + i * p_Nq_e;
@@ -90,7 +90,7 @@
         S_z_eT[j][i] = S_z_e[i][j];
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -103,7 +103,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -116,9 +116,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
@@ -130,7 +130,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -143,7 +143,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -156,9 +156,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           pfloat value = 0.0;
@@ -176,7 +176,7 @@
       }
     }
 #if (!p_restrict)
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -187,7 +187,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
@@ -198,7 +198,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -209,9 +209,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k){
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner) {
           const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
@@ -222,9 +222,9 @@
     }
 
 #else  /* if (!p_restrict) */
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq; ++k){
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner){
           if(i < p_Nq && j < p_Nq) {

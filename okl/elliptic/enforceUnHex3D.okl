@@ -45,7 +45,7 @@
           U[idM + 2 * offset] = outputType(Rtn1 * t1z + Rtn2 * t2z);
         }
       }
-      @barrier("global");
+      @barrier;
     }
 
   }
