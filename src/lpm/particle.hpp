@@ -12,10 +12,11 @@
 struct particle_t {
   static constexpr int integrationOrder{3};
   dfloat x, y, z;
-  std::array<dfloat, 3> r;
+  dfloat r, s, t;
   dlong code;
   dlong proc;
   dlong el;
+  dlong id;
   std::array<dfloat, 3 * integrationOrder> v;
 
   particle_t() {}
@@ -24,9 +25,10 @@ struct particle_t {
              dlong code_,
              dlong proc_,
              dlong el_,
-             std::array<dfloat, 3> r_,
+             dlong id_,
+             dfloat r_, dfloat s_, dfloat t_,
              std::array<dfloat, 3 * integrationOrder> v_)
-      : code(code_), proc(proc_), el(el_), v(v_), x(x_), y(y_), z(z_), r(r_)
+      : code(code_), proc(proc_), el(el_), id(id_), v(v_), x(x_), y(y_), z(z_), r(r_), s(s_), t(t_)
   {
   }
 
@@ -44,10 +46,11 @@ struct particle_t {
 
     particle_t operator[](int i) const
     {
+      auto& data = interp_->data();
       const dfloat xp = x(i);
       const dfloat yp = y(i);
       const dfloat zp = z(i);
-      return particle_t(xp, yp, zp, code[i], proc[i], el[i], r[i], v[i]);
+      return particle_t(xp, yp, zp, data.code[i], data.proc[i], data.el[i], id[i], data.r[3*i+0], data.r[3*i+1], data.r[3*i+2], v[i]);
     }
 
     dlong size() const { return _x.size(); }
@@ -73,6 +76,9 @@ struct particle_t {
     dfloat& z(int i) { return _z[i]; }
     const dfloat& z(int i) const { return _z[i]; }
 
+    dlong& particleIndex(int i) { return id[i]; }
+    const dlong& particleIndex(int i) const { return id[i]; }
+
     pointInterpolation_t& interp() { return *interp_; }
 
   private:
@@ -84,14 +90,12 @@ struct particle_t {
     std::vector<dfloat> _x;
     std::vector<dfloat> _y;
     std::vector<dfloat> _z;
-
-    std::vector<dlong> code;
-    std::vector<dlong> proc;
-    std::vector<dlong> el;
+    std::vector<dlong> id;
 
     // TODO: avoid vector<array<...>>
     std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
-    std::vector<std::array<dfloat, 3>> r;
+
+    occa::memory o_Uinterp; // interpolated fluid velocity
 
     //// particle operations ////
 
@@ -104,10 +108,7 @@ struct particle_t {
 
     // Interpolates the fields at each particle with the assumption that all particles belong to local
     // elements this->migrate must have been called since the last change in position
-    //   fld            ... source field(s)
-    //   out            ... array of pointers to the output arrays (dfloat[n][3])
-    //   nfld           ... number of fields
-    void interpLocal(occa::memory field, dfloat *out[], dlong nFields);
+    void interpLocal(occa::memory field, occa::memory o_out, dlong nFields);
 
   };
 

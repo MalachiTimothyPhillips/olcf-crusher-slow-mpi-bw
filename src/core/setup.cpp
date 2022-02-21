@@ -447,9 +447,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->o_EToBMesh = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToBMesh);
   }
 
-  std::cout << "Options are\n";
-  std::cout << platform->options << "\n";
-
   if(platform->options.compareArgs("VELOCITY REGULARIZATION METHOD", "RELAXATION")){
 
     nrs->filterNc = -1;

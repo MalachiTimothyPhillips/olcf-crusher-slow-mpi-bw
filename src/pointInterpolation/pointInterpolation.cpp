@@ -100,148 +100,58 @@ void pointInterpolation_t::find(bool printWarnings)
   }
 }
 
-void pointInterpolation_t::eval(const dfloat *fields,
-                                const dlong nFields,
-                                findpts_data_t *findPtsdata_,
-                                dfloat **out,
-                                const dlong outStride[],
-                                dlong n)
-{
-  if(profile){
-    platform->timer.tic("pointInterpolation_t::eval", 1);
-  }
-  dlong fieldOffset = nrs->fieldOffset;
-  for (int i = 0; i < nFields; ++i) {
-    findptsEval(out[i], findPtsdata_, n, fields + i * nrs->fieldOffset, findpts_);
-  }
-  if(profile){
-    platform->timer.toc("pointInterpolation_t::eval");
-  }
-}
-
 void pointInterpolation_t::eval(occa::memory o_fields,
                                 const dlong nFields,
-                                findpts_data_t *findPtsdata_,
-                                dfloat **out,
-                                const dlong outStride[],
-                                dlong n)
+                                dfloat *out)
 {
   if(profile){
     platform->timer.tic("pointInterpolation_t::eval", 1);
   }
+  
+  const auto n = data_.code.size();
   for (int i = 0; i < nFields; ++i) {
-    findptsEval(out[i], findPtsdata_, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
+    findptsEval(out + i * n, &data_, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
   }
+
   if(profile){
     platform->timer.toc("pointInterpolation_t::eval");
-  }
-}
-
-void pointInterpolation_t::evalLocalPoints(const dfloat *fields,
-                                           const dlong nFields,
-                                           const dlong *el,
-                                           const dlong elStride,
-                                           const dfloat *r,
-                                           const dlong rStride,
-                                           dfloat **out,
-                                           const dlong outStride[],
-                                           dlong n)
-{
-  if (n == 0 || nFields == 0) {
-    return;
-  }
-  dlong fieldOffset = nrs->fieldOffset;
-  for (int i = 0; i < nFields; ++i) {
-    findptsLocalEval(out[i],
-                        outStride[i] * sizeof(dfloat),
-                        el,
-                        elStride * sizeof(dlong),
-                        r,
-                        rStride * sizeof(dfloat),
-                        n,
-                        fields + i * fieldOffset,
-                        findpts_);
   }
 }
 
 void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
                                            const dlong nFields,
                                            const dlong *el,
-                                           const dlong elStride,
                                            const dfloat *r,
-                                           const dlong rStride,
-                                           dfloat **out,
-                                           const dlong outStride[],
+                                           occa::memory o_out,
                                            dlong n)
 {
   if (n == 0 || nFields == 0) {
     return;
   }
 
-  dlong elStrideBytes = elStride * sizeof(dlong);
-  dlong rStrideBytes = rStride * sizeof(dfloat);
+  // re-allocate
+  if ( n * sizeof(dlong) > o_el.size()){
+    o_r.free();
+    o_el.free();
 
-  dlong outBytes = 0;
-  bool unitOutStride = true;
-  for (dlong i = 0; i < nFields; ++i) {
-    unitOutStride &= outStride[i] == 1;
-    outBytes += outStride[i];
+    o_el = platform->device.malloc(n * sizeof(dlong));
+    o_r = platform->device.malloc(3 * n * sizeof(dfloat));
   }
-  outBytes *= sizeof(dfloat);
 
-  occa::device device = *findpts_->device;
-  dlong allocSize = (nFields * outBytes + rStrideBytes + elStrideBytes) * n;
-  occa::memory workspace;
-  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if (allocSize < mempool.size()) {
-    workspace = mempool.cast(occa::dtype::byte);
-  }
-  else {
-    workspace = device.malloc(allocSize, occa::dtype::byte);
-  }
-  occa::memory o_out = workspace;
-  workspace += n * nFields * sizeof(dfloat);
-  occa::memory o_r = workspace;
-  workspace += n * rStrideBytes;
-  occa::memory o_el = workspace;
-  workspace += n * elStrideBytes;
-  o_r.copyFrom(r, rStrideBytes * n);
-  o_el.copyFrom(el, elStrideBytes * n);
+  o_r.copyFrom(r, 3 * n * sizeof(dfloat));
+  o_el.copyFrom(el, n * sizeof(dlong));
 
-  dlong fieldOffset = nrs->fieldOffset;
   for (int i = 0; i < nFields; ++i) {
-    occa::memory o_out_i = o_out.slice(i * sizeof(dfloat) * n, sizeof(dfloat) * n);
+    occa::memory o_out_i = o_out + i * n * sizeof(dfloat);
     findptsLocalEval(o_out_i,
                         sizeof(dfloat),
                         o_el,
-                        elStrideBytes,
+                        sizeof(dlong),
                         o_r,
-                        rStrideBytes,
+                        3 * sizeof(dfloat),
                         n,
-                        o_fields + i * fieldOffset * sizeof(dfloat),
+                        o_fields + i * nrs->fieldOffset * sizeof(dfloat),
                         findpts_);
-  }
-  if (unitOutStride) {
-    // combine d->h copies where able
-    dlong i = 0;
-    while (i < nFields) {
-      dfloat *start = out[i];
-      dlong j = 0;
-      while (i + j < nFields && out[i + j] == start + j * n) {
-        ++j;
-      }
-      o_out.copyTo(start, j * n * sizeof(dfloat));
-      i += j;
-    }
-  }
-  else {
-    dfloat *outTemp = new dfloat[nFields * sizeof(dfloat) * n];
-    o_out.copyTo(outTemp, nFields * sizeof(dfloat) * n);
-    for (dlong i = 0; i < nFields; ++i) {
-      for (dlong j = 0; j < n; ++j) {
-        out[i][j * outStride[i]] = outTemp[i * n + j];
-      }
-    }
   }
 }
 
@@ -249,15 +159,7 @@ void pointInterpolation_t::addPoints(int n, dfloat * x, dfloat * y, dfloat * z)
 {
 
   if(n > nPoints){
-    
-    dist2.resize(n, 0.0);
-    r.resize(3*n, 0.0);
-
-    code.resize(n, 0);
-    el.resize(n, 0);
-    proc.resize(n, 0);
-
-    data_ = findpts_data_t(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+    data_ = findpts_data_t(n);
   }
 
   nPoints = n;

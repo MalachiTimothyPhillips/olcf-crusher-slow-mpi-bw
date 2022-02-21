@@ -25,26 +25,38 @@ void lpm_t::reserve(int n)
   _x.reserve(n);
   _y.reserve(n);
   _z.reserve(n);
-  code.reserve(n);
-  proc.reserve(n);
-  el.reserve(n);
-  r.reserve(n);
   v.reserve(n);
+  id.reserve(n);
+
+  auto& data = interp_->data();
+
+  data.code.reserve(n);
+  data.proc.reserve(n);
+  data.el.reserve(n);
+  data.r.reserve(3*n);
 }
 void lpm_t::push(particle_t particle)
 {
   _x.push_back(particle.x);
   _y.push_back(particle.y);
   _z.push_back(particle.z);
-  code.push_back(particle.code);
-  proc.push_back(particle.proc);
-  el.push_back(particle.el);
-  r.push_back(particle.r);
   v.push_back(particle.v);
+  id.push_back(particle.id);
+
+  auto& data = interp_->data();
+
+  data.code.push_back(particle.code);
+  data.proc.push_back(particle.proc);
+  data.el.push_back(particle.el);
+
+  data.r.push_back(particle.r);
+  data.r.push_back(particle.s);
+  data.r.push_back(particle.t);
 }
 
 particle_t lpm_t::remove(int i)
 {
+  auto& data = interp_->data();
   particle_t part;
   if (i == size() - 1) {
     // just pop the last element
@@ -55,50 +67,34 @@ particle_t lpm_t::remove(int i)
     part.z = _z.back();
     _z.pop_back();
 
-    for (int j = 0; j < 3; ++j) {
-      part.r[j] = r.back()[j];
-    }
-    r.pop_back();
-    part.code = code.back();
-    code.pop_back();
-    part.proc = proc.back();
-    proc.pop_back();
-    part.el = el.back();
-    el.pop_back();
+    part.id = id.back();
+    id.pop_back();
+
     part.v = v.back();
     v.pop_back();
+
+    part.r = data.r[3 * i + 0];
+    part.s = data.r[3 * i + 1];
+    part.t = data.r[3 * i + 2];
+
+    data.r.pop_back(); // each coordinate
+    data.r.pop_back();
+    data.r.pop_back();
+
+    part.code = data.code.back();
+    data.code.pop_back();
+    part.proc = data.proc.back();
+    data.proc.pop_back();
+    part.el = data.el.back();
+    data.el.pop_back();
   }
   else {
+
     // swap last element to i'th position
-    part.x = _x[i];
-    _x[i] = _x.back();
-    _x.pop_back();
+    swap(i, size() - 1);
 
-    part.y = _y[i];
-    _y[i] = _y.back();
-    _y.pop_back();
-
-    part.z = _z[i];
-    _z[i] = _z.back();
-    _z.pop_back();
-
-    for (int j = 0; j < 3; ++j) {
-      part.r[j] = r[i][j];
-      r[i][j] = r.back()[j];
-    }
-    r.pop_back();
-    part.code = code[i];
-    code[i] = code.back();
-    code.pop_back();
-    part.proc = proc[i];
-    proc[i] = proc.back();
-    proc.pop_back();
-    part.el = el[i];
-    el[i] = el.back();
-    el.pop_back();
-    part.v = v[i];
-    v[i] = v.back();
-    v.pop_back();
+    // remove last element
+    part = remove(size() - 1);
   }
   return part;
 }
@@ -108,14 +104,20 @@ void lpm_t::swap(int i, int j)
   if (i == j)
     return;
 
+  auto& data = interp_->data();
+
   std::swap(_x[i], _x[j]);
   std::swap(_y[i], _y[j]);
   std::swap(_z[i], _z[j]);
-  std::swap(r[i], r[j]);
-  std::swap(code[i], code[j]);
-  std::swap(proc[i], proc[j]);
-  std::swap(el[i], el[j]);
+  std::swap(id[i], id[j]);
   std::swap(v[i], v[j]);
+
+  std::swap(data.r[3*i + 0], data.r[3*j + 0]);
+  std::swap(data.r[3*i + 1], data.r[3*j + 1]);
+  std::swap(data.r[3*i + 2], data.r[3*j + 2]);
+  std::swap(data.code[i], data.code[j]);
+  std::swap(data.proc[i], data.proc[j]);
+  std::swap(data.el[i]  , data.el[j]);
 }
 
 void lpm_t::find(bool printWarnings)
@@ -128,14 +130,6 @@ void lpm_t::find(bool printWarnings)
   interp_->addPoints(n, _x.data(), _y.data(), _z.data());
 
   interp_->find(printWarnings);
-
-  // copy results
-
-  auto & data = interp_->data();
-  std::copy(data.code_base, data.code_base + n, code.data());
-  std::copy(data.el_base, data.el_base + n, el.data());
-  std::copy(data.proc_base, data.proc_base + n, proc.data());
-  std::copy(data.r_base, data.r_base + 3 * n, r[0].data());
 
   if(profile){
     platform->timer.toc("lpm_t::find");
@@ -155,12 +149,12 @@ void lpm_t::migrate()
   int index = 0;
   int unfound_count = 0;
   while (index < size()) {
-    if (data.code_base[index] == 2) {
+    if (data.code[index] == 2) {
       swap(index, unfound_count);
       ++unfound_count;
       ++index;
     }
-    else if (data.proc_base[index] != mpi_rank) {
+    else if (data.proc[index] != mpi_rank) {
       // remove index'th element and move the last point to index'th storage
       array_reserve(particle_t, &transfer, transfer.n + 1);
       ((particle_t *)transfer.ptr)[transfer.n] = remove(index);
@@ -188,7 +182,7 @@ void lpm_t::migrate()
   }
 }
 
-void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
+void lpm_t::interpLocal(occa::memory field, occa::memory o_out, dlong nFields)
 {
   if(profile){
     platform->timer.tic("lpm_t::interpLocal", 1);
@@ -198,28 +192,18 @@ void lpm_t::interpLocal(occa::memory field, dfloat *out[], dlong nFields)
 
   dlong pn = size();
   dlong offset = 0;
-  while (offset < pn && data.code_base[offset] == 2)
+  while (offset < pn && data.code[offset] == 2)
     ++offset;
+
+  // TODO: is the offset ever non-zero??? If so, this would be much simpler.
   pn -= offset;
-
-  dfloat **outOffset = new dfloat *[nFields];
-  dlong *outStride = new dlong[nFields];
-  for (dlong i = 0; i < nFields; ++i) {
-    outOffset[i] = out[i] + offset;
-    outStride[i] = 1;
-  }
-
 
   interp_->evalLocalPoints(field,
                            nFields,
-                           data.el_base + offset,
-                           1,
-                           data.r_base + 3 * offset,
-                           3,
-                           outOffset,
-                           outStride,
+                           data.el.data() + offset,
+                           data.r.data() + 3 * offset,
+                           o_out,
                            pn);
-  delete[] outOffset;
   if(profile){
     platform->timer.toc("lpm_t::interpLocal");
   }
@@ -343,11 +327,17 @@ void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   this->find();
   this->migrate();
 
-  dfloat *u1[3];
-  u1[0] = new dfloat[3 * this->size()];
-  u1[1] = u1[0] + this->size();
-  u1[2] = u1[1] + this->size();
-  this->interpLocal(o_fld, u1, 3);
+  if(o_Uinterp.size() < 3 * this->size() * sizeof(dfloat)){
+    o_Uinterp.free();
+
+    // TODO: consider padding by some amount to prevent multiple re-allocations?
+    o_Uinterp = platform->device.malloc(3 * this->size() * sizeof(dfloat));
+  }
+
+  this->interpLocal(o_fld, o_Uinterp, 3);
+
+  std::vector<dfloat> u1(3 * this->size() * sizeof(dfloat));
+  o_Uinterp.copyTo(u1.data(), 3 * this->size() * sizeof(dfloat));
 
   if(profile){
     platform->timer.tic("lpm_t::advance", 1);
@@ -358,9 +348,9 @@ void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   for (int i = 0; i < this->size(); ++i) {
     // Update particle position and velocity history
 
-    this->v[i][0] = u1[0][i];
-    this->v[i][1] = u1[1][i];
-    this->v[i][2] = u1[2][i];
+    this->v[i][0] = u1[0 * this->size() + i];
+    this->v[i][1] = u1[1 * this->size() + i];
+    this->v[i][2] = u1[2 * this->size() + i];
 
     int k = 0;
     this->_x[i] += coeffs[0] * this->v[i][k];
@@ -390,8 +380,6 @@ void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
   if(profile){
     platform->timer.toc("lpm_t::advance");
   }
-
-  delete[] u1[0];
 
   if(profile){
     platform->timer.toc("lpm_t::update");

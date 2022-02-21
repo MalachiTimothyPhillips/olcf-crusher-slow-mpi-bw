@@ -6,6 +6,7 @@
 #include "ogstypes.h" // for dfloat, dlong
 #include <limits>
 #include <tuple>
+#include <vector>
 
 struct findpts_t {
   int D;
@@ -18,51 +19,40 @@ struct findpts_t {
 };
 
 struct findpts_data_t {
-  bool owned;
+  std::vector<dlong> code;
+  std::vector<dlong> proc;
+  std::vector<dlong> el;
+  std::vector<dfloat> r;
+  std::vector<dfloat> dist2;
+
   dlong *code_base;
   dlong *proc_base;
   dlong *el_base;
   dfloat *r_base;
   dfloat *dist2_base;
 
-  findpts_data_t() { owned = false; }
-
-  findpts_data_t(dlong *_code_base,
-                     dlong *_proc_base,
-                     dlong *_el_base,
-                     dfloat *_r_base,
-                     dfloat *_dist2_base)
-      : code_base(_code_base), proc_base(_proc_base), el_base(_el_base), r_base(_r_base),
-        dist2_base(_dist2_base)
-  {
-    owned = false;
-  }
+  findpts_data_t(){}
 
   findpts_data_t(int npt)
   {
-    code_base = (dlong *)calloc(npt, sizeof(dlong));
-    proc_base = (dlong *)calloc(npt, sizeof(dlong));
-    el_base = (dlong *)calloc(npt, sizeof(dlong));
-    r_base = (dfloat *)calloc(3 * npt, sizeof(dfloat));
-    dist2_base = (dfloat *)calloc(npt, sizeof(dfloat));
+    code = std::vector<dlong>(npt, 0);
+    proc = std::vector<dlong>(npt, 0);
+    el = std::vector<dlong>(npt, 0);
+    r = std::vector<dfloat>(3*npt, 0);
+    dist2 = std::vector<dfloat>(npt, 0);
+
+    code_base = code.data();
+    proc_base = proc.data();
+    el_base = el.data();
+    r_base = r.data();
+    dist2_base = dist2.data();
 
     for (dlong i = 0; i < npt; ++i) {
       dist2_base[i] = std::numeric_limits<dfloat>::max();
       code_base[i] = 2;
     }
-    owned = true;
   }
 
-  ~findpts_data_t()
-  {
-    if (owned) {
-      free(code_base);
-      free(proc_base);
-      free(el_base);
-      free(r_base);
-      free(dist2_base);
-    }
-  }
 };
 
 findpts_t *findptsSetup(

@@ -4,6 +4,10 @@
 #include "lpm/particle.hpp"
 #include <omp.h>
 
+#include <vector>
+#include <array>
+#include <algorithm>
+
 /* UDF Functions */                                                      
 static int nParticles;
 static lpm_t *particles;
@@ -70,6 +74,7 @@ void particleInit(lpm_t& p) {
           particle.x = xp;
           particle.y = yp;
           particle.z = zp;
+          particle.id = gcount;
           p.push(particle);
         }
         ++gcount; // Total count
@@ -114,10 +119,6 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
-  if(platform->comm.mpiCommSize > 1){
-    printf("Particles test must be called with exactly 1 MPI rank.\n");
-    ABORT(1);
-  }
   platform->par->extract("casedata", "p_nparticles", nParticles);
 
   int ciMode;
@@ -155,15 +156,15 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
   const auto pn = particles.size();
 
-  std::vector<dfloat> dist2(pn, 0.0);
   std::vector<dfloat> x(pn, 0.0);
   std::vector<dfloat> y(pn, 0.0);
   std::vector<dfloat> z(pn, 0.0);
 
-  std::vector<dlong> code(pn, 0);
-  std::vector<dlong> proc(pn, 0);
-  std::vector<dlong> el(pn, 0);
-  std::vector<dfloat> r(3*pn, 0.0);
+  //std::vector<dfloat> dist2(pn, 0.0);
+  //std::vector<dlong> code(pn, 0);
+  //std::vector<dlong> proc(pn, 0);
+  //std::vector<dlong> el(pn, 0);
+  //std::vector<dfloat> r(3*pn, 0.0);
 
   for(int p = 0; p < particles.size(); ++p){
     x[p] = particles.x(p);
@@ -171,7 +172,8 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     z[p] = particles.z(p);
   }
 
-  findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+  //findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
+  findpts_data_t data(pn);
 
   const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
 
@@ -231,7 +233,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   const auto pn = particles.size();
 
-  std::vector<std::array<dfloat, 3>> r(pn, {0.0, 0.0, 0.0});
+  std::vector<dfloat> r(3*pn, 0.0);
   std::vector<dlong> code(pn, 0);
   std::vector<dlong> proc(pn, 0);
   std::vector<dlong> el(pn, 0);
@@ -241,7 +243,9 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     code[p] = particle.code;
     proc[p] = particle.proc;
     el[p] = particle.el;
-    r[p] = particle.r;
+    r[3*p + 0] = particle.r;
+    r[3*p + 1] = particle.s;
+    r[3*p + 2] = particle.t;
   }
 
   constexpr int nFields = 3;
@@ -250,7 +254,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   occa::memory o_r   = platform->device.malloc(3 * pn * sizeof(dfloat));
   occa::memory o_el =  platform->device.malloc(pn * sizeof(dlong));
 
-  o_r.copyFrom(&(r.data()[0][0]), 3 * pn * sizeof(dfloat));
+  o_r.copyFrom(r.data(), 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el.data(), pn * sizeof(dlong));
 
   auto o_Ux = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
@@ -405,6 +409,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     std::vector<dfloat> expectedX(nParticles, 0.0);
     std::vector<dfloat> expectedY(nParticles, 0.0);
     std::vector<dfloat> expectedZ(nParticles, 0.0);
+    std::vector<dlong> particleIds(nParticles, 0);
   
     const dfloat Lx = 1.0;
     const dfloat Ly = 1.0;
@@ -428,6 +433,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
           expectedX[particleCtr] = xp;
           expectedY[particleCtr] = yp;
           expectedZ[particleCtr] = zp;
+          particleIds[particleCtr] = particleCtr;
           particleCtr++;
         }
       }
@@ -436,19 +442,28 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     dfloat errPos = 0.0;
 
     for(int i = 0; i < particles->size(); ++i){
-      errPos += std::abs(particles->x(i) - expectedX[i]);
-      errPos += std::abs(particles->y(i) - expectedY[i]);
-      errPos += std::abs(particles->z(i) - expectedZ[i]);
+      // find "global" index of particle to get expected coordinate
+      auto found = std::lower_bound(particleIds.begin(), particleIds.end(), particles->particleIndex(i));
+      auto globalIndex = *found;
+      errPos += std::abs(particles->x(i) - expectedX[globalIndex]);
+      errPos += std::abs(particles->y(i) - expectedY[globalIndex]);
+      errPos += std::abs(particles->z(i) - expectedZ[globalIndex]);
     }
+
+    MPI_Allreduce(MPI_IN_PLACE, &errPos, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
 
     errPos /= nParticles;
 
-    std::cout << "Error in position: " << errPos << "\n";
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Error in position: " << errPos << "\n";
+    }
 
     const dfloat testTol = 1e-12;
 
     if(errPos > testTol){
-      std::cout << "Error too large. Failing test!\n";
+      if(platform->comm.mpiRank == 0){
+        std::cout << "Error too large. Failing test!\n";
+      }
       MPI_Finalize();
       exit(2);
     }
