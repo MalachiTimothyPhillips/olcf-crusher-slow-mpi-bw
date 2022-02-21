@@ -120,6 +120,7 @@ void pointInterpolation_t::eval(occa::memory o_fields,
 
 void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
                                            const dlong nFields,
+                                           const dlong offset,
                                            const dlong *el,
                                            const dfloat *r,
                                            occa::memory o_out,
@@ -142,7 +143,7 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
   o_el.copyFrom(el, n * sizeof(dlong));
 
   for (int i = 0; i < nFields; ++i) {
-    occa::memory o_out_i = o_out + i * n * sizeof(dfloat);
+    occa::memory o_out_i = o_out + i * offset * sizeof(dfloat);
     findptsLocalEval(o_out_i,
                         sizeof(dfloat),
                         o_el,

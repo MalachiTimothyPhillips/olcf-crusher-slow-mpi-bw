@@ -141,12 +141,6 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   std::vector<dfloat> y(pn, 0.0);
   std::vector<dfloat> z(pn, 0.0);
 
-  //std::vector<dfloat> dist2(pn, 0.0);
-  //std::vector<dlong> code(pn, 0);
-  //std::vector<dlong> proc(pn, 0);
-  //std::vector<dlong> el(pn, 0);
-  //std::vector<dfloat> r(3*pn, 0.0);
-
   for(int p = 0; p < particles.size(); ++p){
     x[p] = particles.x(p);
     y[p] = particles.y(p);
@@ -482,13 +476,17 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     const double tMigrate     = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
     const double tInterpLocal = platform->timer.query("lpm_t::interpLocal", "DEVICE:MAX");
     const double tAdvance     = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
-    const double tSync        = platform->timer.query("lpm_t::sync", "DEVICE:MAX");
-    std::cout <<   "lpm_t::update             " << tUpdate << "s\n";
-    std::cout <<   "  lpm_t::find             " << tFind << "s\n";
-    std::cout <<   "  lpm_t::migrate          " << tMigrate << "s\n";
-    std::cout <<   "  lpm_t::interpLocal      " << tInterpLocal << "s\n";
-    std::cout <<   "  lpm_t::advance          " << tAdvance << "s\n";
-    std::cout <<   "  lpm_t::sync             " << tSync << "s\n";
+    const double tSync        = platform->timer.query("lpm_t::syncToDevice", "DEVICE:MAX");
+    const double tPostIntegrationWork = platform->timer.query("lpm_t::advance::postIntegrationWork", "DEVICE:MAX");
+    const double tCopyBackToHost = platform->timer.query("lpm_t::advance::copyBackToHost", "DEVICE:MAX");
+    std::cout <<   "lpm_t::update                            " << tUpdate << "s\n";
+    std::cout <<   "  lpm_t::find                            " << tFind << "s\n";
+    std::cout <<   "  lpm_t::migrate                         " << tMigrate << "s\n";
+    std::cout <<   "  lpm_t::interpLocal                     " << tInterpLocal << "s\n";
+    std::cout <<   "  lpm_t::advance                         " << tAdvance << "s\n";
+    std::cout <<   "    lpm_t::advance::postIntegrationWork  " << tPostIntegrationWork << "s\n";
+    std::cout <<   "    lpm_t::advance::copyBackToHost       " << tCopyBackToHost << "s\n";
+    std::cout <<   "  lpm_t::syncToDevice     " << tSync << "s\n";
 
     EXIT_AND_FINALIZE(0);
   }

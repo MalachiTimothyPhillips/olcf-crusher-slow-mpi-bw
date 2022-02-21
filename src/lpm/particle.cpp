@@ -6,6 +6,14 @@
 
 namespace {
 
+inline dlong pageAlignedOffset(dlong npts)
+{
+  dlong offset = npts;
+  const int pageW = ALIGN_SIZE / sizeof(dfloat);
+  if (offset % pageW) offset = (offset / pageW + 1) * pageW;
+  return offset;
+}
+
 std::array<dfloat, particle_t::integrationOrder> particleTimestepperCoeffs(dfloat *dt, int tstep)
 {
   constexpr int integrationOrder = particle_t::integrationOrder;
@@ -144,6 +152,11 @@ void lpm_t::swap(int i, int j)
   std::swap(data.el[i]  , data.el[j]);
 }
 
+dlong lpm_t::offset() const
+{
+  return pageAlignedOffset(size());
+}
+
 void lpm_t::find(bool printWarnings)
 {
   if(profile){
@@ -215,17 +228,20 @@ void lpm_t::interpLocal(occa::memory field, occa::memory o_out, dlong nFields)
   auto & data = interp_->data();
 
   dlong pn = size();
-  dlong offset = 0;
-  while (offset < pn && data.code[offset] == 2)
-    ++offset;
+  dlong nRemoved = 0;
+  while (nRemoved < pn && data.code[nRemoved] == 2)
+    ++nRemoved;
 
-  // TODO: is the offset ever non-zero??? If so, this would be much simpler.
-  pn -= offset;
+  // TODO: is nRemoved ever non-zero??? If so, this would be much simpler.
+  pn -= nRemoved;
+
+  const auto fieldOffset = offset();
 
   interp_->evalLocalPoints(field,
                            nFields,
-                           data.el.data() + offset,
-                           data.r.data() + 3 * offset,
+                           fieldOffset,
+                           data.el.data() + nRemoved,
+                           data.r.data() + 3 * nRemoved,
                            o_out,
                            pn);
   if(profile){
@@ -350,16 +366,17 @@ void lpm_t::syncToDevice()
   needsSync = false;
 
   const auto n = this->size();
+  const auto fieldOffset = this->offset();
 
   if(profile){
     platform->timer.tic("lpm_t::syncToDevice", 1);
   }
 
-  if(o_Uinterp.size() < 3 * particle_t::integrationOrder * this->size() * sizeof(dfloat)){
+  if(o_Uinterp.size() < 3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat)){
 
     o_Uinterp.free();
 
-    o_Uinterp = platform->device.malloc(3 * particle_t::integrationOrder * this->size() * sizeof(dfloat));
+    o_Uinterp = platform->device.malloc(3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat));
 
   }
 
@@ -380,6 +397,7 @@ void lpm_t::syncToDevice()
   o_z.copyFrom(_z.data(), this->size() * sizeof(dfloat));
 
   // copy lagged states
+  const dlong NbyteOffset = 3 * fieldOffset * sizeof(dfloat);
   const dlong Nbyte = 3 * n * sizeof(dfloat);
   std::vector<dfloat> velocity(3*n, 0.0);
   for(int state = 1; state < particle_t::integrationOrder; ++state)
@@ -392,7 +410,7 @@ void lpm_t::syncToDevice()
 
     o_Uinterp.copyFrom(velocity.data(),
       Nbyte,
-      state * Nbyte);
+      state * NbyteOffset);
   }
 
 
@@ -417,20 +435,33 @@ void lpm_t::advance(dfloat * dt, int tstep)
   o_coeffAB.copyFrom(coeffs.data(), particle_t::integrationOrder * sizeof(dfloat));
 
   const auto n = this->size();
+  const auto fieldOffset = offset();
 
-#if 1
-  nStagesSumVectorKernel(n, n, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
+  nStagesSumVectorKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
+
+  if(profile){
+    platform->timer.tic("lpm_t::advance::postIntegrationWork", 1);
+  }
 
   for(auto&& work : postIntegrationWork)
   {
     work(*this);
   }
 
+  if(profile){
+    platform->timer.toc("lpm_t::advance::postIntegrationWork");
+  }
+
+  if(profile){
+    platform->timer.tic("lpm_t::advance::copyBackToHost", 1);
+  }
+
   // lag velocity states
+  const dlong NbyteOffset = 3 * fieldOffset * sizeof(dfloat);
   const dlong Nbyte = 3 * n * sizeof(dfloat);
   for (int s = particle_t::integrationOrder; s > 1; s--) {
     o_Uinterp.copyFrom(
-        o_Uinterp, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
+        o_Uinterp, NbyteOffset, (s - 1) * NbyteOffset, (s - 2) * NbyteOffset);
   }
 
   // copy position results back
@@ -444,7 +475,7 @@ void lpm_t::advance(dfloat * dt, int tstep)
   {
     o_Uinterp.copyTo(velocity.data(),
       Nbyte,
-      state * Nbyte);
+      state * NbyteOffset);
 
     for(int i = 0; i < this->size(); ++i){
       v[i][3*state + 0] = velocity[i + this->size() * 0];
@@ -454,39 +485,9 @@ void lpm_t::advance(dfloat * dt, int tstep)
 
   }
 
-#else
-  for (int i = 0; i < this->size(); ++i) {
-    // Update particle position and velocity history
-
-    this->v[i][0] = u1[0 * this->size() + i];
-    this->v[i][1] = u1[1 * this->size() + i];
-    this->v[i][2] = u1[2 * this->size() + i];
-
-    int k = 0;
-    this->_x[i] += coeffs[0] * this->v[i][k];
-    for (int j = 1; j < particle_t::integrationOrder; ++j) {
-      this->_x[i] += coeffs[j] * this->v[i][3*j + k];
-    }
-    this->v[i][2*3 + k] = this->v[i][1*3 + k];
-    this->v[i][1*3 + k] = this->v[i][0*3 + k];
-
-    k++;
-    this->_y[i] += coeffs[0] * this->v[i][k];
-    for (int j = 1; j < particle_t::integrationOrder; ++j) {
-      this->_y[i] += coeffs[j] * this->v[i][3*j + k];
-    }
-    this->v[i][2*3 + k] = this->v[i][1*3 + k];
-    this->v[i][1*3 + k] = this->v[i][0*3 + k];
-
-    k++;
-    this->_z[i] += coeffs[0] * this->v[i][k];
-    for (int j = 1; j < particle_t::integrationOrder; ++j) {
-      this->_z[i] += coeffs[j] * this->v[i][3*j + k];
-    }
-    this->v[i][2*3 + k] = this->v[i][1*3 + k];
-    this->v[i][1*3 + k] = this->v[i][0*3 + k];
+  if(profile){
+    platform->timer.toc("lpm_t::advance::copyBackToHost");
   }
-#endif
 
   if(profile){
     platform->timer.toc("lpm_t::advance");

@@ -49,6 +49,7 @@ private:
   // process's rank, code must be 0 or 1, and el and r are passed to this function
   void evalLocalPoints(occa::memory fields,
                        const dlong nFields,
+                       const dlong offset,
                        const dlong *el,
                        const dfloat *r,
                        occa::memory o_out,
