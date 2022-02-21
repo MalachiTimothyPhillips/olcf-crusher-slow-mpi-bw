@@ -46,6 +46,7 @@ set(OCCA_CXXFLAGS "-O2 -ftree-vectorize -funroll-loops -march=native -mtune=nati
 set(OCCA_CUDA_COMPILER_FLAGS "-O3 --fmad=true" CACHE STRING "CUDA flags for OCCA JIT compile")
 set(OCCA_HIP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "HIP flags for OCCA JIT compile")
 set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros" CACHE STRING "OPENCL flags for OCCA JIT compile")
+set(OCCA_DPCPP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "DPCPP flags for OCCA JIT compile")
 
 # From OCCA's CMakeLists. All default to ON, but are verified in config tests
 #   - ENABLE_OPENMP
@@ -157,10 +158,12 @@ if(EXTERNAL_OCCA)
 else()
   include(config/occa.cmake)
   set(OCCA_TARGET libocca)
-  set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
-  set(ENABLE_HIP ${OCCA_HIP_ENABLED})
-  set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
 endif()
+  
+set(ENABLE_CUDA ${OCCA_CUDA_ENABLED})
+set(ENABLE_HIP ${OCCA_HIP_ENABLED})
+set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
+set(ENABLE_DPCPP ${OCCA_DPCPP_ENABLED})
 
 ###############################################################################
 # Build AMGX                                                                  #
@@ -388,6 +391,9 @@ if(ENABLE_HIP)
 endif()
 if(ENABLE_OPENCL) 
   message(NOTICE "OPENCL backend enabled (flags: ${OCCA_OPENCL_COMPILER_FLAGS})")
+endif()
+if(ENABLE_DPCPP) 
+  message(NOTICE "DPCPP backend enabled (flags: ${OCCA_DPCPP_COMPILER_FLAGS})")
 endif()
 if(GPU_MPI)
   message(NOTICE "GPU aware MPI support enabled")

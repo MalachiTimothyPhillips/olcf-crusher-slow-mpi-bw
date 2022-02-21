@@ -131,6 +131,13 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
     kernelInfo["compiler_flags"] += " -ffast-math ";
   }
 
+  if(device.mode() == "DPCPP" && !getenv("OCCA_DPCPP_COMPILER_FLAGS")) {
+    kernelInfo["compiler_flags"] += " -O3 ";
+    kernelInfo["compiler_flags"] += " -ffp-contract=fast ";
+    kernelInfo["compiler_flags"] += " -funsafe-math-optimizations ";
+    kernelInfo["compiler_flags"] += " -ffast-math ";
+  }
+
   serial = device.mode() == "Serial" ||
            device.mode() == "OpenMP";
   
