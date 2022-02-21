@@ -12,6 +12,8 @@
 static int nParticles;
 static lpm_t *particles;
 
+occa::kernel applyPeriodicityKernel;
+
 enum class BENCHMARK{
   FINDPTS_LOCAL,
   FINDPTS_LOCAL_EVAL,
@@ -85,36 +87,15 @@ void particleInit(lpm_t& p) {
 
 // apply periodicity for particles on [0,1]^3
 void applyBounds(lpm_t& p) {
-
-  const dfloat Lx = 1.0;
-  const dfloat Ly = 1.0;
-  const dfloat Lz = 1.0;
-
-  for (int i = 0; i < p.size(); ++i) {
-    // x and z have periodic boundaries
-    if (p.x(i) > Lx) {
-      p.x(i) -= Lx;
-    }
-    if (p.x(i) < 0) {
-      p.x(i) += Lx;
-    }
-    if (p.y(i) > Lx) {
-      p.y(i) -= Lx;
-    }
-    if (p.y(i) < 0) {
-      p.y(i) += Lx;
-    }
-    if (p.z(i) > Lz) {
-      p.z(i) -= Lz;
-    }
-    if (p.z(i) < 0) {
-      p.z(i) += Lz;
-    }
-  }
+  applyPeriodicityKernel(p.size(),
+    p.device_x(),
+    p.device_y(),
+    p.device_z());
 }
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
+  applyPeriodicityKernel = oudfBuildKernel(kernelInfo, "applyPeriodicity");
 }
 
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
@@ -324,6 +305,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
   particleInit  (*particles);
 
+  // required to apply periodic applyBounds
+  particles->addPostIntegrationWork(applyBounds);
+
   if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL)
   {
     double elapsed = run_findpts_local_bench(nrs, *particles, 10);
@@ -401,12 +385,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     platform->linAlg->fill(mesh->Nlocal, 0.0, o_U_z);
 
     // will integrate for 1 time unit -- puts particles back at original location
-    particles->needsSync = false;
     double elapsed = run_particle_update(nrs, *particles, 10, dt);
-
-    if(platform->comm.mpiRank == 0){
-      std::cout << "particles->neesSync = " << std::boolalpha << particles->needsSync << "\n";
-    }
 
     int nParticleDir = std::round(std::cbrt(nParticles));
     nParticles = nParticleDir * nParticleDir * nParticleDir;

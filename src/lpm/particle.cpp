@@ -402,6 +402,11 @@ void lpm_t::syncToDevice()
   }
 }
 
+void lpm_t::addPostIntegrationWork(std::function<void(lpm_t&)> work)
+{
+  postIntegrationWork.push_back(work);
+}
+
 void lpm_t::advance(dfloat * dt, int tstep)
 {
   if(profile){
@@ -414,7 +419,12 @@ void lpm_t::advance(dfloat * dt, int tstep)
   const auto n = this->size();
 
 #if 1
-  nStagesSumVectorKernel(n, n, particle_t::integrationOrder, o_Uinterp, o_x, o_y, o_z);
+  nStagesSumVectorKernel(n, n, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
+
+  for(auto&& work : postIntegrationWork)
+  {
+    work(*this);
+  }
 
   // lag velocity states
   const dlong Nbyte = 3 * n * sizeof(dfloat);

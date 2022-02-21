@@ -8,8 +8,10 @@
 #include "findpts.hpp"
 
 #include "pointInterpolation.hpp"
+#include <functional>
 
 // TODO: need to page align occa::memory objects...
+// TODO: ask Stefan about adding function ptr
 
 struct particle_t {
   static constexpr int integrationOrder{3};
@@ -82,10 +84,16 @@ struct particle_t {
     const dlong& particleIndex(int i) const { return id[i]; }
 
     pointInterpolation_t& interp() { return *interp_; }
-    bool needsSync;
+
+    void addPostIntegrationWork(std::function<void(lpm_t&)> work);
+
+    occa::memory& device_x() { return o_x; }
+    occa::memory& device_y() { return o_y; }
+    occa::memory& device_z() { return o_z; }
 
   private:
 
+    bool needsSync;
     static constexpr bool profile = true; // toggle for timing blocks
 
     std::shared_ptr<pointInterpolation_t> interp_;
@@ -94,6 +102,8 @@ struct particle_t {
     std::vector<dfloat> _y;
     std::vector<dfloat> _z;
     std::vector<dlong> id;
+
+    std::vector<std::function<void(lpm_t&)>> postIntegrationWork;
 
     // TODO: avoid vector<array<...>>
     std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;

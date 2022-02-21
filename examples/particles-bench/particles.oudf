@@ -4,3 +4,26 @@ void velocityDirichletConditions(bcData *bc)
   bc->v = 0.0;
   bc->w = 0.0;
 }
+
+@kernel void applyPeriodicity(const dlong N,
+  @restrict dfloat * x,
+  @restrict dfloat * y,
+  @restrict dfloat * z)
+{
+  for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
+    if(n < N){
+      const dfloat Lx = 1.0;
+      const dfloat Ly = 1.0;
+      const dfloat Lz = 1.0;
+
+      if(x[n] > Lx) x[n] -= Lx;
+      if(x[n] < 0)  x[n] += Lx;
+
+      if(y[n] > Ly) y[n] -= Ly;
+      if(y[n] < 0)  y[n] += Ly;
+
+      if(z[n] > Lz) z[n] -= Lz;
+      if(z[n] < 0)  z[n] += Lz;
+    }
+  }
+}
