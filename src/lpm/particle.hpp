@@ -109,6 +109,9 @@ struct particle_t {
     // TODO: avoid vector<array<...>>
     std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
 
+    dfloat* scratch_v;
+    occa::memory h_scratch_v;
+
     occa::memory o_Uinterp; // interpolated fluid velocity, including lagged states!
 
     occa::memory o_x;

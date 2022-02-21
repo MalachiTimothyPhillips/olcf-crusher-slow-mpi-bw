@@ -372,11 +372,15 @@ void lpm_t::syncToDevice()
     platform->timer.tic("lpm_t::syncToDevice", 1);
   }
 
-  if(o_Uinterp.size() < 3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat)){
+  const auto Nbytes = 3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat);
+  if(o_Uinterp.size() < Nbytes){
 
     o_Uinterp.free();
 
-    o_Uinterp = platform->device.malloc(3 * particle_t::integrationOrder * fieldOffset * sizeof(dfloat));
+    o_Uinterp = platform->device.malloc(Nbytes);
+
+    h_scratch_v = platform->device.mallocHost(Nbytes);
+    scratch_v = (dfloat*) h_scratch_v.ptr();
 
   }
 
@@ -470,19 +474,16 @@ void lpm_t::advance(dfloat * dt, int tstep)
   o_z.copyTo(_z.data(), n * sizeof(dfloat));
 
   // copy lagged velocity state back
-  std::vector<dfloat> velocity(3*n, 0.0);
+  o_Uinterp.copyTo(scratch_v,
+    3 * fieldOffset * particle_t::integrationOrder * sizeof(dfloat));
+
   for(int state = 0; state < particle_t::integrationOrder; ++state)
   {
-    o_Uinterp.copyTo(velocity.data(),
-      Nbyte,
-      state * NbyteOffset);
-
     for(int i = 0; i < this->size(); ++i){
-      v[i][3*state + 0] = velocity[i + this->size() * 0];
-      v[i][3*state + 1] = velocity[i + this->size() * 1];
-      v[i][3*state + 2] = velocity[i + this->size() * 2];
+      v[i][3*state + 0] = scratch_v[i + 0 * fieldOffset + state * 3 * fieldOffset];
+      v[i][3*state + 1] = scratch_v[i + 1 * fieldOffset + state * 3 * fieldOffset];
+      v[i][3*state + 2] = scratch_v[i + 2 * fieldOffset + state * 3 * fieldOffset];
     }
-
   }
 
   if(profile){
