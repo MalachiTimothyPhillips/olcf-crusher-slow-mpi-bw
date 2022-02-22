@@ -9,7 +9,7 @@ namespace {
 inline dlong pageAlignedOffset(dlong npts)
 {
   dlong offset = npts;
-#if 0
+#if 1
   const int pageW = ALIGN_SIZE / sizeof(dfloat);
   if (offset % pageW) offset = (offset / pageW + 1) * pageW;
 #endif
@@ -383,9 +383,6 @@ void lpm_t::syncToDevice()
 
     o_Uinterp = platform->device.malloc(Nbytes);
     o_Ulag = platform->device.malloc(particle_t::integrationOrder * Nbytes);
-
-    h_scratch_v = platform->device.mallocHost(Nbytes);
-    scratch_v = (dfloat*) h_scratch_v.ptr();
 
   }
 
