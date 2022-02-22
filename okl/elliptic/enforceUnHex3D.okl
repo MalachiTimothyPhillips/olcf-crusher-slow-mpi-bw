@@ -40,9 +40,9 @@
           const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
           const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
 
-          U[idM + 0 * offset] = outputType(Rtn1 * t1x + Rtn2 * t2x);
-          U[idM + 1 * offset] = outputType(Rtn1 * t1y + Rtn2 * t2y);
-          U[idM + 2 * offset] = outputType(Rtn1 * t1z + Rtn2 * t2z);
+          U[idM + 0 * offset] = (Rtn1 * t1x + Rtn2 * t2x);
+          U[idM + 1 * offset] = (Rtn1 * t1y + Rtn2 * t2y);
+          U[idM + 2 * offset] = (Rtn1 * t1z + Rtn2 * t2z);
         }
       }
       @barrier;
