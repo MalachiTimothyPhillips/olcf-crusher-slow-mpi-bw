@@ -284,7 +284,7 @@ dfloat MGLevel::maxEigSmoothAx()
 
   // allocate memory for basis
   dfloat* Vx = (dfloat*) calloc(M, sizeof(dfloat));
-  occa::memory* o_V = new occa::memory[k + 1];
+  std::vector<occa::memory> o_V(k+1);
 
   size_t offset = 0;
   const size_t vectorSize = ((M * sizeof(dfloat))/ALIGN_SIZE + 1) * ALIGN_SIZE ;
@@ -431,13 +431,6 @@ dfloat MGLevel::maxEigSmoothAx()
   free(WI);
 
   free(Vx);
-  o_Vx.free();
-  o_AVx.free();
-  o_AVxPfloat.free();
-  o_VxPfloat.free();
-
-  for(int i = 0; i <= k; i++) o_V[i].free();
-  delete[] o_V;
 
   MPI_Barrier(platform->comm.mpiComm);
   if(platform->comm.mpiRank == 0)  printf("%g done (%gs)\n", rho, MPI_Wtime() - tStart); fflush(stdout);
