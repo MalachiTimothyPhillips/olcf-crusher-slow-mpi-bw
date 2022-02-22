@@ -9,10 +9,8 @@ namespace {
 inline dlong pageAlignedOffset(dlong npts)
 {
   dlong offset = npts;
-#if 1
   const int pageW = ALIGN_SIZE / sizeof(dfloat);
   if (offset % pageW) offset = (offset / pageW + 1) * pageW;
-#endif
   return offset;
 }
 
@@ -35,6 +33,7 @@ lpm_t::lpm_t(nrs_t *nrs_, double newton_tol_) {
 
   interp_ = std::make_shared<pointInterpolation_t>(nrs_, newton_tol_);
   needsSync = false;
+  needsSyncToHost = false;
 
   std::string path;
   int rank = platform->comm.mpiRank;
@@ -52,6 +51,7 @@ lpm_t::lpm_t(nrs_t *nrs_, double newton_tol_) {
 
 void lpm_t::reserve(int n)
 {
+  syncToHost();
   _x.reserve(n);
   _y.reserve(n);
   _z.reserve(n);
@@ -67,6 +67,7 @@ void lpm_t::reserve(int n)
 }
 void lpm_t::push(particle_t particle)
 {
+  syncToHost();
   needsSync = true;
   _x.push_back(particle.x);
   _y.push_back(particle.y);
@@ -87,6 +88,8 @@ void lpm_t::push(particle_t particle)
 
 particle_t lpm_t::remove(int i)
 {
+  syncToHost();
+
   needsSync = true;
   auto& data = interp_->data();
   particle_t part;
@@ -135,6 +138,8 @@ void lpm_t::swap(int i, int j)
 {
   if (i == j)
     return;
+  
+  syncToHost();
 
   needsSync = true;
 
@@ -427,7 +432,6 @@ void lpm_t::advance(dfloat * dt, int tstep)
   const auto n = this->size();
   const auto fieldOffset = offset();
 
-  //nStagesSumVectorKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_x, o_y, o_z);
   advanceParticlesKernel(n, fieldOffset, particle_t::integrationOrder, o_coeffAB, o_Uinterp, o_Ulag, o_x, o_y, o_z);
 
   if(profile){
@@ -452,8 +456,8 @@ void lpm_t::advance(dfloat * dt, int tstep)
   o_y.copyTo(_y.data(), n * sizeof(dfloat));
   o_z.copyTo(_z.data(), n * sizeof(dfloat));
 
-  o_Ulag.copyTo(&(v[0][0]),
-    3 * fieldOffset * particle_t::integrationOrder * sizeof(dfloat));
+  // only copy velocity data when needed
+  needsSyncToHost = true;
 
   if(profile){
     platform->timer.toc("lpm_t::advance::copyBackToHost");
@@ -464,6 +468,19 @@ void lpm_t::advance(dfloat * dt, int tstep)
   }
 
 }
+
+void lpm_t::syncToHost(){
+
+  if(!needsSyncToHost) return;
+
+  const auto fieldOffset = this->offset();
+
+  needsSyncToHost = false;
+  o_Ulag.copyTo(&(v[0][0]),
+    3 * fieldOffset * particle_t::integrationOrder * sizeof(dfloat));
+
+}
+
 
 void lpm_t::update(occa::memory o_fld, dfloat *dt, int tstep)
 {

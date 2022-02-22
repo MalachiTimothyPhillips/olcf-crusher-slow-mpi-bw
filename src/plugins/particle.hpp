@@ -48,8 +48,9 @@ struct particle_t {
 
     ~lpm_t() {}
 
-    particle_t operator[](int i) const
+    particle_t operator[](int i)
     {
+      syncToHost();
       auto& data = interp_->data();
       const dfloat xp = x(i);
       const dfloat yp = y(i);
@@ -94,7 +95,8 @@ struct particle_t {
 
   private:
 
-    bool needsSync;
+    mutable bool needsSyncToHost;
+    mutable bool needsSync;
     static constexpr bool profile = true; // toggle for timing blocks
 
     std::shared_ptr<pointInterpolation_t> interp_;
@@ -107,10 +109,10 @@ struct particle_t {
     std::vector<std::function<void(lpm_t&)>> postIntegrationWork;
 
     // TODO: avoid vector<array<...>>
-    std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
+    mutable std::vector<std::array<dfloat, 3*particle_t::integrationOrder>> v;
 
     occa::memory o_Uinterp; // interpolated fluid velocity
-    occa::memory o_Ulag; // lagged velocity states
+    mutable occa::memory o_Ulag; // lagged velocity states
 
     occa::memory o_x;
     occa::memory o_y;
@@ -135,8 +137,8 @@ struct particle_t {
     void advance(dfloat *dt, int tstep);
 
     void syncToDevice();
+    void syncToHost();
 
-    occa::kernel nStagesSumVectorKernel;
     occa::kernel advanceParticlesKernel;
 
   };
