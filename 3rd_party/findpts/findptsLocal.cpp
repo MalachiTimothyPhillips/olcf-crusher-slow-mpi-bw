@@ -134,8 +134,7 @@ void findpts_local_eval_internal(
   findptsData->local_eval_kernel(1, 0, 0, d_out_base,   out_stride,
                             d_el_base,    src_stride,
                             d_r_base,     src_stride,
-                            pn, d_in,
-                            findptsData->o_fd_local);
+                            pn, d_in);
 
   d_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
 }
@@ -158,8 +157,7 @@ void findpts_local_eval(
   findptsData->local_eval_kernel(1, 0, 0, d_out_base, out_stride,
                             d_el_base,  el_stride,
                             d_r_base,   r_stride,
-                            pn, d_in,
-                            findptsData->o_fd_local);
+                            pn, d_in);
 
 }
 

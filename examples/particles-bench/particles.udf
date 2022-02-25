@@ -147,7 +147,6 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     z[p] = particles.z(p);
   }
 
-  //findpts_data_t data(code.data(), proc.data(), el.data(), r.data(), dist2.data());
   findpts_data_t data(pn);
 
   const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
@@ -252,32 +251,27 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
-                                pn, o_Ux,
-                                findpts->o_fd_local);
+                                pn, o_Ux);
 
       findpts->local_eval_kernel(1, 0, 0, o_outy, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
-                                pn, o_Uy,
-                                findpts->o_fd_local);
+                                pn, o_Uy);
 
       findpts->local_eval_kernel(1, 0, 0, o_outz, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
-                                pn, o_Uz,
-                                findpts->o_fd_local);
+                                pn, o_Uz);
 #elif VERSION == 2
       findpts->local_eval_kernel(3, pn, nrs->fieldOffset, o_out, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
-                                pn, nrs->o_U,
-                                findpts->o_fd_local);
+                                pn, nrs->o_U);
 #elif VERSION == 3
       findpts->local_eval_vector_kernel(pn, nrs->fieldOffset, o_out, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
-                                pn, nrs->o_U,
-                                findpts->o_fd_local);
+                                pn, nrs->o_U);
 #endif
     }
   }

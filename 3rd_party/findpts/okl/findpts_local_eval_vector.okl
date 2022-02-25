@@ -5,9 +5,8 @@
         const dlong  * const el_base,    const dlong el_stride,
         const dfloat * const r_base,     const dlong r_stride,
         const dlong  pn,
-        @restrict const dfloat * const in,
-        struct findpts_local_data *fd){
-
+        @restrict const dfloat * const in)
+{
   for(dlong i=0;i<pn;++i;@outer){
 
     @shared dfloat wtr[p_Nq];
@@ -20,9 +19,9 @@
     for(dlong fld = 0; fld < 3; ++fld; @inner(1)){
       for(dlong j=0;j<p_Nq;++j;@inner(0)){
         if(fld == 0){
-          lagrange_eval(wtr, fd->fed.lag_data[0], r[0], j);
-          lagrange_eval(wts, fd->fed.lag_data[1], r[1], j);
-          lagrange_eval(wtt, fd->fed.lag_data[2], r[2], j);
+          lagrange_eval(wtr, r[0], j);
+          lagrange_eval(wts, r[1], j);
+          lagrange_eval(wtt, r[2], j);
         }
       }
     }

@@ -808,9 +808,9 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if(j < p_Nq){
-                      lagrange_eval_first_derivative(wtr, fd->fed.lag_data[0], tmp->r[0], j);
-                      lagrange_eval_first_derivative(wts, fd->fed.lag_data[1], tmp->r[1], j);
-                      lagrange_eval_first_derivative(wtt, fd->fed.lag_data[2], tmp->r[2], j);
+                      lagrange_eval_first_derivative(wtr, tmp->r[0], j);
+                      lagrange_eval_first_derivative(wts, tmp->r[1], j);
+                      lagrange_eval_first_derivative(wtt, tmp->r[2], j);
                     }
                   }    
                   @barrier("local");
@@ -862,8 +862,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   dfloat *hes_temp = hes + p_D;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if(j < p_Nq){
-                      lagrange_eval_second_derivative(wt1, fd->fed.lag_data[d1], tmp->r[d1], j);
-                      lagrange_eval_second_derivative(wt2, fd->fed.lag_data[d2], tmp->r[d2], j);
+                      lagrange_eval_second_derivative(wt1, tmp->r[d1], j);
+                      lagrange_eval_second_derivative(wt2, tmp->r[d2], j);
                     }
                   }
                   @barrier("local");
@@ -949,7 +949,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   const dfloat* const* e_x[p_D+3] = {edge.x, edge.x, edge.dxdn1, edge.dxdn2, edge.d2xdn1, edge.d2xdn2};
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if(j < p_Nq) {
-                      lagrange_eval_second_derivative(wt, fd->fed.lag_data[de], tmp->r[de], j);
+                      lagrange_eval_second_derivative(wt, tmp->r[de], j);
                     }
                   }
                   @barrier("local");
