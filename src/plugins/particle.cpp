@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <algorithm>
+#include <numeric>
 
 namespace {
 
@@ -47,6 +48,75 @@ lpm_t::lpm_t(nrs_t *nrs_, double newton_tol_) {
   advanceParticlesKernel = platform->device.buildKernel(fileName, platform->kernelInfo, true);
 
   o_coeffAB = platform->device.malloc(particle_t::integrationOrder * sizeof(dfloat));
+}
+
+namespace{
+template<typename T>
+std::vector<int> sortIndices(const std::vector<T>& v)
+{
+  std::vector<int> idx(v.size());
+  std::iota(idx.begin(), idx.end(), 0);
+  std::stable_sort(idx.begin(), idx.end(),
+    [&v](auto i, auto j){
+      return v[i] < v[j];
+    });
+}
+}
+
+void lpm_t::sort()
+{
+  // argsort particles by element
+  auto& data = interp_->data();
+
+  auto indices = sortIndices(data.el);
+
+  const auto npt = size();
+
+  // temporary arrays
+  auto code = std::vector<dlong>(npt, 0);
+  auto proc = std::vector<dlong>(npt, 0);
+  auto el = std::vector<dlong>(npt, 0);
+  auto r = std::vector<dfloat>(3*npt, 0);
+  auto dist2 = std::vector<dfloat>(npt, 0);
+
+  auto tmp_id = std::vector<dlong>(npt, 0);
+  auto xtmp = std::vector<dfloat>(npt, 0);
+  auto ytmp = std::vector<dfloat>(npt, 0);
+  auto ztmp = std::vector<dfloat>(npt, 0);
+  auto vtmp = std::vector<std::array<dfloat, 3*particle_t::integrationOrder>>(npt);
+
+  // copy into temporary arrays
+  std::copy(data.code.begin(), data.code.end(), code.begin());
+  std::copy(data.proc.begin(), data.proc.end(), proc.begin());
+  std::copy(data.el.begin(), data.el.end(), el.begin());
+  std::copy(data.r.begin(), data.r.end(), r.begin());
+  std::copy(data.dist2.begin(), data.dist2.end(), dist2.begin());
+
+  std::copy(id.begin(), id.end(), tmp_id.begin());
+  std::copy(_x.begin(), _x.end(), xtmp.begin());
+  std::copy(_y.begin(), _y.end(), ytmp.begin());
+  std::copy(_z.begin(), _z.end(), ztmp.begin());
+  std::copy(v.begin(), v.end(), vtmp.begin());
+
+  // argsort
+  unsigned ctr = 0;
+  for(auto&& i : indices){
+    data.code[ctr] = code[i];
+    data.proc[ctr] = proc[i];
+    data.el[ctr] = el[i];
+    data.r[3*ctr + 0] = r[3*i + 0];
+    data.r[3*ctr + 1] = r[3*i + 1];
+    data.r[3*ctr + 2] = r[3*i + 2];
+    data.dist2[ctr] = dist2[i];
+
+    id[ctr] = tmp_id[i];
+    _x[ctr] = xtmp[i];
+    _y[ctr] = ytmp[i];
+    _z[ctr] = ztmp[i];
+    v[ctr] = vtmp[i];
+    ctr++;
+  }
+
 }
 
 void lpm_t::reserve(int n)

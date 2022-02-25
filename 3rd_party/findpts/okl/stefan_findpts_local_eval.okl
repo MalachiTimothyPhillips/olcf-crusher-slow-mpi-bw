@@ -1,0 +1,133 @@
+// assumed p_blockSize >= p_Nq * p_Nq
+// TODO: strides will be problematic without using the AT/CAT kludge
+@kernel void stefan_findpts_local_eval(
+        dfloat * const out_base, const dlong out_stride,
+        const dlong  * const el_base, const dlong el_stride,
+        const dfloat * const _r_base, const dlong r_stride,
+        const dlong nElements,
+        const dlong * startPointIdx, const dlong * counts,
+        @restrict const dfloat * const in)
+{
+  for (int e = 0; e < nElements; e++; @outer(0)) { // loop over elements with particles
+    const int iel = *(el_base + startPointIdx[e]);
+    //const int nptsElement = endPointIdx[e] - startPointIdx[e] + 1;
+    const int nptsElement = counts[e];
+    const dfloat *const r_base = _r_base + 3*startPointIdx[e];
+    const dfloat *fld = in + iel*p_Np;
+    dfloat *out = out_base + startPointIdx[e];
+
+    @shared dfloat s_L [p_nptsElementMax][p_blockSize];
+    @shared dfloat s_lj[p_nptsElementMax][3*p_Nq];
+
+    @exclusive dfloat f[p_Nq];
+
+    @exclusive dfloat gllm, wm;
+
+    for(int pt=0; pt < nptsElement; pt += p_nptsElementMax){
+
+      for (int i = 0; i < p_nptsElementMax; i++) {
+        for(int t=0;t<p_blockSize;++t;@inner(0)) {
+          if(t < p_Nq * p_Nq)
+          {
+
+            const int l = t / p_Nq;
+            const int m = t % p_Nq;
+
+            gllm = z[m];
+            wm = lagrangeCoeff[m];
+
+            const int id = i + pt;
+            s_L[i][m + l*p_Nq] = 0; 
+
+            if(id < nptsElement){
+              if(i == 0 && pt == 0){
+                for(int k = 0; k < p_Nq; ++k){
+                  f[k] = fld[m + l*p_Nq + k*p_Nq*p_Nq]; 
+                }
+              }
+              if (l == 0) {
+                const dfloat r = *(0 + id*3 + r_base);
+                const dfloat s = *(1 + id*3 + r_base);
+                const dfloat t = *(2 + id*3 + r_base);
+                dfloat wrk1 = 1;
+                dfloat wrk2 = 1;
+                dfloat wrk3 = 1;
+                for (int k = 0; k < p_Nq; k++) {      
+                  const dfloat zk = z[k];
+                  wrk1 *= r - zk;
+                  wrk2 *= s - zk;
+                  wrk3 *= t - zk;
+                }
+                s_lj[i][m + 0*p_Nq] = wrk1 * wm / (r - gllm);
+                s_lj[i][m + 1*p_Nq] = wrk2 * wm / (s - gllm);
+                s_lj[i][m + 2*p_Nq] = wrk3 * wm / (t - gllm);
+              }
+            }
+          }
+        }
+        @barrier("local");
+      }
+
+      for (int i = 0; i < p_nptsElementMax; i++) { 
+        const int id = i + pt;
+        if(id < nptsElement){
+          for (int k = 0; k < p_Nq; k++) {
+            for(int t=0;t<p_blockSize;++t;@inner(0)) {
+              if( t < p_Nq * p_Nq )
+              {
+                const int l = t / p_Nq;
+                const int m = t % p_Nq;
+                if(i + pt < nptsElement){
+                  s_L[i][m + l*p_Nq] += s_lj[i][k + 2*p_Nq] * s_lj[i][l + 1*p_Nq] * s_lj[i][m + 0*p_Nq] * f[k]; 
+                }
+              }
+            }
+            @barrier("local");
+          }
+        }
+      }
+
+      // reduce across block 
+      @barrier("local");
+      for (int i = 0; i < p_nptsElementMax; i++) {
+        const int id = i + pt;
+        if(id < nptsElement){
+#if p_blockSize>512
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<512) s_L[i][t] += s_L[i][t+512];
+        @barrier("local");
+#endif
+#if p_blockSize>256
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<256) s_L[i][t] += s_L[i][t+256];
+        @barrier("local");
+#endif
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<128) s_L[i][t] += s_L[i][t+128];
+        @barrier("local");
+
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t< 64) s_L[i][t] += s_L[i][t+ 64];
+        @barrier("local");
+ 
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t< 32) s_L[i][t] += s_L[i][t+ 32];
+        @barrier("local");
+
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t< 16) s_L[i][t] += s_L[i][t+ 16];
+        @barrier("local");
+  
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<  8) s_L[i][t] += s_L[i][t+  8];
+        @barrier("local");
+ 
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<  4) s_L[i][t] += s_L[i][t+  4];
+        @barrier("local");
+  
+        for(int t=0;t<p_blockSize;++t;@inner(0)) if(t<  2) s_L[i][t] += s_L[i][t+  2];
+        @barrier("local");
+  
+        for(int t=0;t<p_blockSize;++t;@inner(0)) {
+          if(t<  1) {
+            out[id] = s_L[i][0] + s_L[i][1];
+          }
+        }
+      }
+      }
+    }
+  }
+}

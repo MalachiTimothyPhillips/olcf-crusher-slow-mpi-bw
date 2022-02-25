@@ -13,6 +13,7 @@ static int nParticles;
 static lpm_t *particles;
 
 occa::kernel applyPeriodicityKernel;
+occa::kernel localEvalKernel;
 
 enum class BENCHMARK{
   FINDPTS_LOCAL,
@@ -114,6 +115,30 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 
 void UDF_Setup(nrs_t *nrs)
 {
+  auto * mesh = nrs->meshV;
+  auto kernelInfo = platform->kernelInfo;
+  kernelInfo["defines"].asObject();
+  kernelInfo["includes"].asArray();
+  kernelInfo["header"].asArray();
+  kernelInfo["flags"].asObject();
+  kernelInfo["include_paths"].asArray();
+
+
+  kernelInfo["defines/p_nptsElementMax"] = 10;
+  kernelInfo["defines/p_D"] = 3;
+  kernelInfo["defines/p_Nq"] = mesh->Nq;
+  kernelInfo["defines/p_Np"] = mesh->Np;
+
+  int rank = platform->comm.mpiRank;
+  std::string path;
+  path.assign(getenv("NEKRS_INSTALL_DIR"));
+  path += "/findpts/okl/";
+  const std::string extension = ".okl";
+  kernelInfo["includes"] += path + "/findpts.okl.hpp";
+  kernelInfo["includes"] += path + "/poly.okl.hpp";
+  const std::string kernelName = "stefan_findpts_local_eval";
+  const std::string fileName = path + kernelName + extension;
+  localEvalKernel = platform->device.buildKernel(fileName, kernelInfo, true);
   particles = new lpm_t(nrs, 0);
 }
 
@@ -203,6 +228,9 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 {
 
+  // sort particle entries by element
+  particles.sort();
+
   const auto Np = nrs->meshV->Np;
 
   const auto pn = particles.size();
@@ -211,16 +239,44 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   std::vector<dlong> code(pn, 0);
   std::vector<dlong> proc(pn, 0);
   std::vector<dlong> el(pn, 0);
+  std::vector<dlong> eltmp(pn, 0); // for std::unique
 
   for(int p = 0; p < pn; ++p){
     auto particle = particles[p];
     code[p] = particle.code;
     proc[p] = particle.proc;
     el[p] = particle.el;
+    eltmp[p] = particle.el;
     r[3*p + 0] = particle.r;
     r[3*p + 1] = particle.s;
     r[3*p + 2] = particle.t;
   }
+
+  auto last = std::unique(eltmp.begin(), eltmp.end());
+  eltmp.erase(last, eltmp.end());
+
+  const auto NelemP = eltmp.size();
+
+  std::vector<dlong> particlesInElem(NelemP, 0);
+  int index = 0;
+  auto lastElem = eltmp[0];
+  for(int p = 0; p < pn; ++p){
+    auto elem = el[p];
+    if(lastElem != elem){
+      lastElem = elem;
+      index++;
+    }
+    particlesInElem[index] += 1;
+  }
+
+  std::vector<dlong> startPointIdx(NelemP, 0);
+  startPointIdx[0] = 0;
+  for(int el = 1; el < NelemP; ++el){
+    startPointIdx[el] = startPointIdx[el-1] + particlesInElem[el-1];
+  }
+
+  occa::memory o_starts = platform->device.malloc(NelemP * sizeof(dlong), startPointIdx.data());
+  occa::memory o_counts = platform->device.malloc(NelemP * sizeof(dlong), particlesInElem.data());
 
   constexpr int nFields = 3;
 
@@ -246,7 +302,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-#define VERSION 3
+#define VERSION 4
 #if VERSION == 1
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
@@ -272,6 +328,25 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
                                 pn, nrs->o_U);
+#elif VERSION == 4
+      localEvalKernel(o_out, sizeof(dfloat),
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Ux);
+      localEvalKernel(o_out, sizeof(dfloat),
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uy);
+      localEvalKernel(o_out, sizeof(dfloat),
+                                o_el,  sizeof(dlong),
+                                o_r,   3 * sizeof(dfloat),
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uz);
 #endif
     }
   }

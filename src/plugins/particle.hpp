@@ -61,6 +61,8 @@ struct particle_t {
     dlong size() const { return _x.size(); }
     dlong offset() const;
 
+    void sort();
+
     //// Set management ////
     void reserve(int n);
 
