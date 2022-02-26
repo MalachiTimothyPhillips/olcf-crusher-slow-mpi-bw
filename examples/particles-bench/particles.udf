@@ -352,7 +352,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-#define VERSION 6
+#define VERSION 5
 #if VERSION == 1
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
