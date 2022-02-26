@@ -60,6 +60,7 @@ std::vector<int> sortIndices(const std::vector<T>& v)
     [&v](auto i, auto j){
       return v[i] < v[j];
     });
+  return idx;
 }
 }
 
@@ -116,7 +117,6 @@ void lpm_t::sort()
     v[ctr] = vtmp[i];
     ctr++;
   }
-
 }
 
 void lpm_t::reserve(int n)

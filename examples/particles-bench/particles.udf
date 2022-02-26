@@ -126,7 +126,7 @@ void UDF_Setup(nrs_t *nrs)
   kernelInfo["include_paths"].asArray();
 
 
-  kernelInfo["defines/p_nptsElementMax"] = 1;
+  kernelInfo["defines/p_nptsElementMax"] = 8;
   kernelInfo["defines/p_blockSize"] = 64;
   kernelInfo["defines/p_D"] = 3;
   kernelInfo["defines/p_Nq"] = mesh->Nq;
@@ -243,6 +243,8 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   // sort particle entries by element
   particles.sort();
 
+  auto* mesh = nrs->meshV;
+
   const auto Np = nrs->meshV->Np;
 
   const auto pn = particles.size();
@@ -253,6 +255,10 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   std::vector<dlong> el(pn, 0);
   std::vector<dlong> eltmp(pn, 0); // for std::unique
 
+  bool sorted = true;
+
+  auto prev = particles[0].el;
+
   for(int p = 0; p < pn; ++p){
     auto particle = particles[p];
     code[p] = particle.code;
@@ -262,6 +268,15 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     r[3*p + 0] = particle.r;
     r[3*p + 1] = particle.s;
     r[3*p + 2] = particle.t;
+
+    auto currElem = particle.el;
+    sorted&= prev <= currElem;
+    prev = currElem;
+  }
+
+  if(!sorted){
+    std::cout << "Not sorted! Bailing!\n";
+    ABORT(1);
   }
 
   auto last = std::unique(eltmp.begin(), eltmp.end());
@@ -278,7 +293,27 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
       lastElem = elem;
       index++;
     }
+    if(index >= NelemP){
+      std::cout << "Index too large! Failing\n";
+      ABORT(1);
+    }
     particlesInElem[index] += 1;
+  }
+
+  if(index!= (NelemP - 1)){
+    std::cout << "Index is incorrect! Failing\n";
+    ABORT(1);
+  }
+
+  // sanity check: sum of particlesInElem must match number particles
+  int sumP = 0;
+  for(auto&& count : particlesInElem){
+    sumP += count;
+  }
+
+  if(sumP != pn){
+    std::cout << "Different number of particles than expected!\n";
+    ABORT(1);
   }
 
   std::vector<dlong> startPointIdx(NelemP, 0);
@@ -287,8 +322,11 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
     startPointIdx[el] = startPointIdx[el-1] + particlesInElem[el-1];
   }
 
-  occa::memory o_starts = platform->device.malloc(NelemP * sizeof(dlong), startPointIdx.data());
-  occa::memory o_counts = platform->device.malloc(NelemP * sizeof(dlong), particlesInElem.data());
+  occa::memory o_starts = platform->device.malloc(NelemP * sizeof(dlong));
+  occa::memory o_counts = platform->device.malloc(NelemP * sizeof(dlong));
+
+  o_starts.copyFrom(startPointIdx.data(), NelemP * sizeof(dlong));
+  o_counts.copyFrom(particlesInElem.data(), NelemP * sizeof(dlong));
 
   constexpr int nFields = 3;
 
