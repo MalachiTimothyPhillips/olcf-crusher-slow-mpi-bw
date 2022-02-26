@@ -14,6 +14,8 @@ static lpm_t *particles;
 
 occa::kernel applyPeriodicityKernel;
 occa::kernel localEvalKernel;
+occa::kernel localEvalKernelV2;
+occa::kernel localEvalKernelV3;
 
 enum class BENCHMARK{
   FINDPTS_LOCAL,
@@ -124,7 +126,8 @@ void UDF_Setup(nrs_t *nrs)
   kernelInfo["include_paths"].asArray();
 
 
-  kernelInfo["defines/p_nptsElementMax"] = 10;
+  kernelInfo["defines/p_nptsElementMax"] = 1;
+  kernelInfo["defines/p_blockSize"] = 64;
   kernelInfo["defines/p_D"] = 3;
   kernelInfo["defines/p_Nq"] = mesh->Nq;
   kernelInfo["defines/p_Np"] = mesh->Np;
@@ -136,9 +139,18 @@ void UDF_Setup(nrs_t *nrs)
   const std::string extension = ".okl";
   kernelInfo["includes"] += path + "/findpts.okl.hpp";
   kernelInfo["includes"] += path + "/poly.okl.hpp";
-  const std::string kernelName = "stefan_findpts_local_eval";
-  const std::string fileName = path + kernelName + extension;
+  std::string kernelName = "stefan_findpts_local_eval";
+  std::string fileName = path + kernelName + extension;
   localEvalKernel = platform->device.buildKernel(fileName, kernelInfo, true);
+
+  kernelName = "stefan_findpts_local_eval_v2";
+  fileName = path + kernelName + extension;
+  localEvalKernelV2 = platform->device.buildKernel(fileName, kernelInfo, true);
+
+  kernelName = "stefan_findpts_local_eval_v3";
+  fileName = path + kernelName + extension;
+  localEvalKernelV3 = platform->device.buildKernel(fileName, kernelInfo, true);
+
   particles = new lpm_t(nrs, 0);
 }
 
@@ -302,7 +314,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-#define VERSION 4
+#define VERSION 6
 #if VERSION == 1
       findpts->local_eval_kernel(1, 0, 0, o_outx, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
@@ -344,6 +356,44 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
       localEvalKernel(o_out, sizeof(dfloat),
                                 o_el,  sizeof(dlong),
                                 o_r,   3 * sizeof(dfloat),
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uz);
+#elif VERSION == 5
+      localEvalKernelV2(o_out,
+                                o_el,
+                                o_r,
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Ux);
+      localEvalKernelV2(o_out,
+                                o_el,
+                                o_r,
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uy);
+      localEvalKernelV2(o_out,
+                                o_el,
+                                o_r,
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uz);
+#elif VERSION == 6
+      localEvalKernelV3(o_out,
+                                o_el,
+                                o_r,
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Ux);
+      localEvalKernelV3(o_out,
+                                o_el,
+                                o_r,
+                                NelemP,
+                                o_starts, o_counts,
+                                o_Uy);
+      localEvalKernelV3(o_out,
+                                o_el,
+                                o_r,
                                 NelemP,
                                 o_starts, o_counts,
                                 o_Uz);
