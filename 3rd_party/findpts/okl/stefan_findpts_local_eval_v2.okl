@@ -19,15 +19,23 @@
     @shared dfloat s_lj[p_nptsElementMax][3*p_Nq];
     @shared dfloat s_rst[p_nptsElementMax][3];
 
-    //@exclusive dfloat f[p_Nq];
+    @exclusive dfloat f[p_Nq];
 
     for(int pt=0; pt < nptsElement; pt += p_nptsElementMax){
+
       for (int i = 0; i < p_nptsElementMax; i++) {
         for(int t = 0; t < p_blockSize ; ++t; @inner(0)) {
           if(t < p_Nq * p_Nq) {
             const int l = t / p_Nq;
             const int m = t % p_Nq;
             const int idp = i + pt;
+
+            //// load field data into GMEM
+            if(idp == 0){
+              #pragma unroll
+              for(int k = 0; k < p_Nq; ++k)
+                f[k] = flde[m + l*p_Nq + k*p_Nq*p_Nq]; 
+            }
 
             s_L[i][m + l*p_Nq] = 0; 
 
@@ -37,33 +45,22 @@
               const int m = t % p_nptsElementMax;
               const int id = m + (l+idp)*3;
               if(id < 3*nptsElement) s_rst[m][l] =  *(id + r_base);
-            } 
+            }
 
-            //// load field data into GMEM
-            //if(idp == 0){
-            //  #pragma unroll
-            //  for(int k = 0; k < p_Nq; ++k)
-            //    f[k] = flde[m + l*p_Nq + k*p_Nq*p_Nq]; 
-            //}
-
+            @barrier("local");
             if(idp < nptsElement) {
               // compute Lagrangian basis functions
-              if (l == 0) {
-                dfloat wrk[3] = {1, 1, 1};
-                const dfloat r = s_rst[i][0];
-                const dfloat s = s_rst[i][1];
-                const dfloat t = s_rst[i][2];
+              if (l < 3) {
+                dfloat wrk = 1;
+                const dfloat r = s_rst[i][l];
                 #pragma unroll
                 for (int k = 0; k < p_Nq; k++) {      
                   const dfloat zk = z[k];
-                  wrk[0] *= r - zk;
-                  wrk[1] *= s - zk;
-                  wrk[2] *= t - zk;
+                  wrk *= r - zk;
                 }
+
                 const dfloat wm = lagrangeCoeff[m];
-                s_lj[i][m + 0*p_Nq] = wrk[0] * wm; 
-                s_lj[i][m + 1*p_Nq] = wrk[1] * wm;
-                s_lj[i][m + 2*p_Nq] = wrk[2] * wm;
+                s_lj[i][m + l*p_Nq] = wrk * wm; 
               }
             }
           }
@@ -71,24 +68,25 @@
         @barrier("local");
       }
 
-      int i = 0;
-      while(i < p_nptsElementMax && i+pt < nptsElement) {
-        #pragma unroll
-        for (int k = 0; k < p_Nq; k++) {
+      for (int i = 0; i < p_nptsElementMax; i++) {
+        if(i+pt < nptsElement) {
           for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
-            if( t < p_Nq * p_Nq ) {
+            if(t < p_Nq * p_Nq) {
               const int l = t / p_Nq;
               const int m = t % p_Nq;
-              s_L[i][m + l*p_Nq] += s_lj[i][k + 2*p_Nq] * 
-                                    s_lj[i][l + 1*p_Nq] * 
-                                    s_lj[i][m + 0*p_Nq] * 
-                                    flde[m + l*p_Nq + k*p_Nq*p_Nq]; 
+              dfloat sum = 0;
+              #pragma unroll
+              for (int k = 0; k < p_Nq; k++) {
+                sum += s_lj[i][k + 2*p_Nq] * 
+                       s_lj[i][l + 1*p_Nq] * 
+                       s_lj[i][m + 0*p_Nq] *
+                       f[k]; 
+              }
+              s_L[i][m + l*p_Nq] = sum;
             }
           }
           @barrier("local");
         }
-        @barrier("local");
-        i++;
       }
 
       for(int s = p_blockSize/2; s >=2; s >>= 1) {
@@ -105,8 +103,9 @@
 
       // write out
       for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
-        if(t < p_nptsElementMax && t+pt < nptsElement)
+        if(t < p_nptsElementMax && t+pt < nptsElement) {
           out[t+pt] = s_L[t][0] + s_L[t][1];
+        }
       }
 
     }
