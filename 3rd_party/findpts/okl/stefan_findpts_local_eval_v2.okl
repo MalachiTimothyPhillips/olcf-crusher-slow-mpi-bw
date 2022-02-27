@@ -23,12 +23,20 @@
 
     for(int pt=0; pt < nptsElement; pt += p_nptsElementMax){
 
-      for (int i = 0; i < p_nptsElementMax; i++) {
-        for(int t = 0; t < p_blockSize ; ++t; @inner(0)) {
+      for(int t = 0; t < p_blockSize ; ++t; @inner(0)) {
+        #pragma unroll
+        for (int i = 0; i < p_nptsElementMax; i++) {
+          const int idp = i + pt;
+          if(t < 3*p_nptsElementMax && i == 0) {
+            const int l = t / p_nptsElementMax;
+            const int m = t % p_nptsElementMax;
+            const int id = m + l*p_nptsElementMax + idp*3;
+            if(id < 3*nptsElement) s_rst[m][l] =  *(id + r_base);
+          }
+
           if(t < p_Nq * p_Nq) {
             const int l = t / p_Nq;
             const int m = t % p_Nq;
-            const int idp = i + pt;
 
             // load field data into GMEM
             if(idp == 0){
@@ -38,14 +46,6 @@
             }
 
             s_L[i][m + l*p_Nq] = 0; 
-
-            // load rst coord of particle block into SMEM
-            if(t < 3*p_nptsElementMax && i == 0) {
-              const int l = t / p_nptsElementMax;
-              const int m = t % p_nptsElementMax;
-              const int id = m + (l+idp)*3;
-              if(id < 3*nptsElement) s_rst[m][l] =  *(id + r_base);
-            }
 
             @barrier("local");
             if(idp < nptsElement) {
@@ -65,8 +65,8 @@
             }
           }
         }
-        @barrier("local");
       }
+      @barrier("local");
 
       for (int i = 0; i < p_nptsElementMax; i++) {
         if(i+pt < nptsElement) {
@@ -82,9 +82,9 @@
               s_L[i][m + l*p_Nq] = sum * s_lj[i][l + 1*p_Nq] * s_lj[i][m + 0*p_Nq];
             }
           }
-          @barrier("local");
         }
       }
+      @barrier("local");
 
       for(int s = p_blockSize/2; s >=2; s >>= 1) {
         for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
