@@ -68,9 +68,10 @@
       }
       @barrier("local");
 
-      for (int i = 0; i < p_nptsElementMax; i++) {
-        if(i+pt < nptsElement) {
-          for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
+      for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
+        #pragma unroll
+        for (int i = 0; i < p_nptsElementMax; i++) {
+          if(i+pt < nptsElement) {
             if(t < p_Nq * p_Nq) {
               const int l = t / p_Nq;
               const int m = t % p_Nq;
