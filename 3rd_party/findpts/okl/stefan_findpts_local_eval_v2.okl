@@ -15,7 +15,7 @@
     const dfloat *flde = fld + iel*p_Np;
     dfloat *out = out_base + startPointIdx[e];
 
-    @shared volatile dfloat s_L [p_nptsElementMax][p_blockSize];
+    @shared volatile dfloat s_L [p_nptsElementMax][p_blockSize+1];
     @shared dfloat s_lj[p_nptsElementMax][3*p_Nq];
     @shared dfloat s_rst[p_nptsElementMax][3];
 
@@ -30,7 +30,7 @@
             const int m = t % p_Nq;
             const int idp = i + pt;
 
-            //// load field data into GMEM
+            // load field data into GMEM
             if(idp == 0){
               #pragma unroll
               for(int k = 0; k < p_Nq; ++k)
@@ -77,12 +77,9 @@
               dfloat sum = 0;
               #pragma unroll
               for (int k = 0; k < p_Nq; k++) {
-                sum += s_lj[i][k + 2*p_Nq] * 
-                       s_lj[i][l + 1*p_Nq] * 
-                       s_lj[i][m + 0*p_Nq] *
-                       f[k]; 
+                sum += s_lj[i][k + 2*p_Nq] * f[k]; 
               }
-              s_L[i][m + l*p_Nq] = sum;
+              s_L[i][m + l*p_Nq] = sum * s_lj[i][l + 1*p_Nq] * s_lj[i][m + 0*p_Nq];
             }
           }
           @barrier("local");
@@ -103,9 +100,8 @@
 
       // write out
       for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
-        if(t < p_nptsElementMax && t+pt < nptsElement) {
+        if(t < p_nptsElementMax && t+pt < nptsElement)
           out[t+pt] = s_L[t][0] + s_L[t][1];
-        }
       }
 
     }
