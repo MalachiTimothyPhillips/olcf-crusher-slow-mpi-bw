@@ -12,11 +12,11 @@
     const int nptsElement = counts[e];
 
     const dfloat *const r_base = _r_base + 3*startPointIdx[e];
-    const dfloat *flde = fld + iel*p_Np;
+    const dfloat *fld_e = fld + iel*p_Np;
     dfloat *out = out_base + startPointIdx[e];
 
-    @shared volatile dfloat s_L [p_nptsElementMax][p_blockSize+1];
-    @shared dfloat s_lj[p_nptsElementMax][3*p_Nq];
+    @shared volatile dfloat s_L[p_nptsElementMax][p_blockSize+1];
+    @shared dfloat s_lj[p_nptsElementMax][3][p_Nq];
     @shared dfloat s_rst[p_nptsElementMax][3];
 
     @exclusive dfloat f[p_Nq];
@@ -24,64 +24,52 @@
     for(int pt=0; pt < nptsElement; pt += p_nptsElementMax){
 
       for(int t = 0; t < p_blockSize ; ++t; @inner(0)) {
+        const int l = t / p_Nq;
+        const int m = t % p_Nq;
+
+        if(t < 3*p_nptsElementMax) {
+          const int l = t / p_nptsElementMax;
+          const int m = t % p_nptsElementMax;
+          const int id = m + l*p_nptsElementMax + pt*3;
+          if(id < 3*nptsElement) s_rst[m][l] =  *(id + r_base);
+        }
+
+        if(pt == 0) {
+          #pragma unroll
+          for(int k = 0; k < p_Nq; ++k)
+            f[k] = fld_e[m + l*p_Nq + k*p_Nq*p_Nq]; 
+        }
+
+        @barrier("local"); // waiting for s_rst
         #pragma unroll
         for (int i = 0; i < p_nptsElementMax; i++) {
-          const int idp = i + pt;
-          if(t < 3*p_nptsElementMax && i == 0) {
-            const int l = t / p_nptsElementMax;
-            const int m = t % p_nptsElementMax;
-            const int id = m + l*p_nptsElementMax + idp*3;
-            if(id < 3*nptsElement) s_rst[m][l] =  *(id + r_base);
-          }
+          // compute Lagrangian basis in each direction
+          if(i+pt < nptsElement && l < 3) {
+            const dfloat r = s_rst[i][l];
+            dfloat prod = 1;
+            #pragma unroll
+            for (int k = 0; k < p_Nq; k++)
+              prod *= r - z[k];
 
-          if(t < p_Nq * p_Nq) {
-            const int l = t / p_Nq;
-            const int m = t % p_Nq;
-
-            // load field data into GMEM
-            if(idp == 0){
-              #pragma unroll
-              for(int k = 0; k < p_Nq; ++k)
-                f[k] = flde[m + l*p_Nq + k*p_Nq*p_Nq]; 
-            }
-
-            s_L[i][m + l*p_Nq] = 0; 
-
-            @barrier("local");
-            if(idp < nptsElement) {
-              // compute Lagrangian basis functions
-              if (l < 3) {
-                dfloat wrk = 1;
-                const dfloat r = s_rst[i][l];
-                #pragma unroll
-                for (int k = 0; k < p_Nq; k++) {      
-                  const dfloat zk = z[k];
-                  wrk *= r - zk;
-                }
-
-                const dfloat wm = lagrangeCoeff[m];
-                s_lj[i][m + l*p_Nq] = wrk * wm; 
-              }
-            }
+            s_lj[i][l][m] = prod * lagrangeCoeff[m]; 
           }
         }
       }
       @barrier("local");
 
       for(int t = 0; t < p_blockSize; ++t; @inner(0)) {
+        const int l = t / p_Nq;
+        const int m = t % p_Nq;
         #pragma unroll
         for (int i = 0; i < p_nptsElementMax; i++) {
           if(i+pt < nptsElement) {
-            if(t < p_Nq * p_Nq) {
-              const int l = t / p_Nq;
-              const int m = t % p_Nq;
-              dfloat sum = 0;
-              #pragma unroll
-              for (int k = 0; k < p_Nq; k++) {
-                sum += s_lj[i][k + 2*p_Nq] * f[k]; 
-              }
-              s_L[i][m + l*p_Nq] = sum * s_lj[i][l + 1*p_Nq] * s_lj[i][m + 0*p_Nq];
+            const dfloat lj_lm = s_lj[i][1][l] * s_lj[i][0][m];
+            dfloat sum = 0;
+            #pragma unroll
+            for (int k = 0; k < p_Nq; k++) {
+              sum += s_lj[i][2][k] * f[k]; 
             }
+            s_L[i][m + l*p_Nq] = sum * lj_lm;
           }
         }
       }
