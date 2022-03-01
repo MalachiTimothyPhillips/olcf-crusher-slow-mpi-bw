@@ -131,10 +131,12 @@ void findpts_local_eval_internal(
   dlong out_stride = sizeof(struct eval_out_pt_3);
   dlong src_stride = sizeof(struct eval_src_pt_3);
 
+#if 0
   findptsData->local_eval_kernel(1, 0, 0, d_out_base,   out_stride,
                             d_el_base,    src_stride,
                             d_r_base,     src_stride,
                             pn, d_in);
+#endif
 
   d_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
 }
@@ -154,10 +156,12 @@ void findpts_local_eval(
   occa::memory d_r_base   = *(occa::memory*)  r_base;
   occa::memory d_in       = *(occa::memory*)in;
 
+#if 0
   findptsData->local_eval_kernel(1, 0, 0, d_out_base, out_stride,
                             d_el_base,  el_stride,
                             d_r_base,   r_stride,
                             pn, d_in);
+#endif
 
 }
 

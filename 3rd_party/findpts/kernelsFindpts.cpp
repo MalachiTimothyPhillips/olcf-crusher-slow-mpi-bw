@@ -20,8 +20,10 @@ std::tuple<occa::kernel, occa::kernel, occa::kernel> initFindptsKernels(MPI_Comm
 
   kernelInfo["defines/p_D"]  = D;
   kernelInfo["defines/p_Nq"] = Nq;
-  kernelInfo["defines/p_Nfp"] = Nq*Nq;
   kernelInfo["defines/p_Np"] = Nq*Nq*Nq;
+  kernelInfo["defines/p_nptsBlock"] = 4;
+  kernelInfo["defines/p_blockSize"] = Nq*Nq;
+  kernelInfo["defines/p_Nfp"] = Nq*Nq;
   kernelInfo["defines/dlong"] = dlongString;
   kernelInfo["defines/hlong"] = hlongString;
   kernelInfo["defines/dfloat"] = dfloatString;
