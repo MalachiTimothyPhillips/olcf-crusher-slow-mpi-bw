@@ -1,5 +1,6 @@
-
-
+// TODO: defined through kernel props
+#define p_elementsPerBlock 2
+#define NOT_AN_ELEMENT (-1)
 @kernel void fusedFDM(
   const dlong Nelements,
 #if p_overlap
@@ -16,29 +17,38 @@
   @restrict pfloat* u
   )
 {
-  for (dlong my_elem = 0; my_elem < Nelements; ++my_elem; @outer) {
-    @shared pfloat S_x_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_y_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_z_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_x_eT[p_Nq_e][p_Nq_e];
-    @shared pfloat S_y_eT[p_Nq_e][p_Nq_e];
-    @shared pfloat S_z_eT[p_Nq_e][p_Nq_e];
-    @shared pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e];
-    @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e];
-    @exclusive dlong element;
+  //for (dlong my_elem = 0; my_elem < Nelements; ++my_elem; @outer) {
+  for (dlong eb = 0; eb < (Nelements+p_elementsPerBlock-1)/p_elementsPerBlock; ++eb; @outer) {
+    @shared pfloat S_x_e[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat S_y_e[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat S_z_e[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat S_x_eT[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat S_y_eT[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat S_z_eT[p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e][p_elementsPerBlock];
+    @exclusive dlong element[p_elementsPerBlock];
 
     for(int k = 0; k < p_Nq_e; ++k) {
       @barrier("local");
       for(int j = 0; j < p_Nq_e; ++j; @inner) {
         for(int i = 0; i < p_Nq_e; ++i; @inner) {
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            const int my_elem = e + eb;
+            if(my_elem < Nelements){
 #if p_overlap
-          element = elementList[my_elem];
+              element[e] = elementList[my_elem];
 #else
-          element = my_elem;
+              element[e] = my_elem;
 #endif
-          const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
-          const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
-          work1[k][j][i] = u[idx];
+              const dlong elem_offset = element[e] * p_Nq_e * p_Nq_e * p_Nq_e;
+              const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+              work1[k][j][i][e] = u[idx];
+            } else {
+              element[e] = NOT_AN_ELEMENT;
+            }
+          }
         }
       }
     }
@@ -46,11 +56,16 @@
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 2;
-          work1[l1][j][k] = work1[l1][j][k] - work1[l2][j][k];
-          work1[p_Nq_e - l1 - 1][j][k] = work1[p_Nq_e - l1 - 1][j][k] -
-                                         work1[p_Nq_e - l2 - 1][j][k];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 2;
+              work1[l1][j][k][e] = work1[l1][j][k][e] - work1[l2][j][k][e];
+              work1[p_Nq_e - l1 - 1][j][k][e] = work1[p_Nq_e - l1 - 1][j][k][e] -
+                                         work1[p_Nq_e - l2 - 1][j][k][e];
+            }
+          }
         }
       }
     }
@@ -58,11 +73,16 @@
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 2;
-          work1[i][l1][k] = work1[i][l1][k] - work1[i][l2][k];
-          work1[i][p_Nq_e - l1 - 1][k] = work1[i][p_Nq_e - l1 - 1][k] -
-                                         work1[i][p_Nq_e - l2 - 1][k];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 2;
+              work1[i][l1][k][e] = work1[i][l1][k][e] - work1[i][l2][k][e];
+              work1[i][p_Nq_e - l1 - 1][k][e] = work1[i][p_Nq_e - l1 - 1][k][e] -
+                                             work1[i][p_Nq_e - l2 - 1][k][e];
+            }
+          }
         }
       }
     }
@@ -70,49 +90,69 @@
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 2;
-          work1[i][j][l1] = work1[i][j][l1] - work1[i][j][l2];
-          work1[i][j][p_Nq_e - l1 - 1] = work1[i][j][p_Nq_e - l1 - 1] -
-                                         work1[i][j][p_Nq_e - l2 - 1];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 2;
+              work1[i][j][l1][e] = work1[i][j][l1][e] - work1[i][j][l2][e];
+              work1[i][j][p_Nq_e - l1 - 1][e] = work1[i][j][p_Nq_e - l1 - 1][e] -
+                                             work1[i][j][p_Nq_e - l2 - 1][e];
+            }
+          }
         }
       }
     }
     @barrier("local");
     for (int i = 0; i < p_Nq_e; i++; @inner){
       for (int j = 0; j < p_Nq_e; j++; @inner) {
-        const int ij = j + i * p_Nq_e;
-        S_x_e[i][j] = S_x[ij + element * p_Nq_e * p_Nq_e];
-        S_y_e[i][j] = S_y[ij + element * p_Nq_e * p_Nq_e];
-        S_z_e[i][j] = S_z[ij + element * p_Nq_e * p_Nq_e];
-        S_x_eT[j][i] = S_x_e[i][j];
-        S_y_eT[j][i] = S_y_e[i][j];
-        S_z_eT[j][i] = S_z_e[i][j];
-      }
-    }
-    @barrier("local");
-    for (int k = 0; k < p_Nq_e; k++; @inner) {
-      for (int j = 0; j < p_Nq_e; j++; @inner) {
-#pragma unroll
-        for (int i = 0; i < p_Nq_e; i++) {
-          pfloat value = 0.0;
-#pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_x_eT[j][l] * work1[k][i][l];
-          work2[k][j][i] = value;
+        #pragma unroll
+        for(int e = 0; e < p_elementsPerBlock; ++e){
+          if(element[e] != NOT_AN_ELEMENT){
+            const int ij = j + i * p_Nq_e;
+            S_x_e[i][j][e] = S_x[ij + element[e] * p_Nq_e * p_Nq_e];
+            S_y_e[i][j][e] = S_y[ij + element[e] * p_Nq_e * p_Nq_e];
+            S_z_e[i][j][e] = S_z[ij + element[e] * p_Nq_e * p_Nq_e];
+            S_x_eT[j][i][e] = S_x_e[i][j][e];
+            S_y_eT[j][i][e] = S_y_e[i][j][e];
+            S_z_eT[j][i][e] = S_z_e[i][j][e];
+          }
         }
       }
     }
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+        #pragma unroll
+        for(int e = 0; e < p_elementsPerBlock; ++e){
+          if(element[e] != NOT_AN_ELEMENT){
 #pragma unroll
-        for (int i = 0; i < p_Nq_e; i++) {
-          pfloat value = 0.0;
+            for (int i = 0; i < p_Nq_e; i++) {
+              pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_y_eT[j][l] * work2[k][i][l];
-          work1[j][i][k] = value;
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_x_eT[j][l][e] * work1[k][i][l][e];
+              work2[k][j][i][e] = value;
+            }
+          }
+        }
+      }
+    }
+    @barrier("local");
+    for (int k = 0; k < p_Nq_e; k++; @inner) {
+      for (int j = 0; j < p_Nq_e; j++; @inner) {
+        #pragma unroll
+        for(int e = 0; e < p_elementsPerBlock; ++e){
+          if(element[e] != NOT_AN_ELEMENT){
+#pragma unroll
+            for (int i = 0; i < p_Nq_e; i++) {
+              pfloat value = 0.0;
+#pragma unroll
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_y_eT[j][l][e] * work2[k][i][l][e];
+              work1[j][i][k][e] = value;
+            }
+          }
         }
       }
     }
@@ -121,38 +161,53 @@
       @barrier("local");
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
-          const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
-          pfloat value = 0.0;
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
+              pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_z_eT[k][l] * work1[j][i][l];
-          work2[k][j][i] = value * inv_L[v + element * p_Nq_e * p_Nq_e * p_Nq_e];
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_z_eT[k][l][e] * work1[j][i][l][e];
+              work2[k][j][i][e] = value * inv_L[v + element[e] * p_Nq_e * p_Nq_e * p_Nq_e];
+            }
+          }
         }
       }
     }
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+        #pragma unroll
+        for(int e = 0; e < p_elementsPerBlock; ++e){
+          if(element[e] != NOT_AN_ELEMENT){
 #pragma unroll
-        for (int i = 0; i < p_Nq_e; i++) {
-          pfloat value = 0.0;
+            for (int i = 0; i < p_Nq_e; i++) {
+              pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_x_e[i][l] * work2[k][j][l];
-          work1[k][i][j] = value;
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_x_e[i][l][e] * work2[k][j][l][e];
+              work1[k][i][j][e] = value;
+            }
+          }
         }
       }
     }
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
+        #pragma unroll
+        for(int e = 0; e < p_elementsPerBlock; ++e){
+          if(element[e] != NOT_AN_ELEMENT){
 #pragma unroll
-        for (int i = 0; i < p_Nq_e; i++) {
-          pfloat value = 0.0;
+            for (int i = 0; i < p_Nq_e; i++) {
+              pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_y_e[j][l] * work1[k][i][l];
-          work2[j][i][k] = value;
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_y_e[j][l][e] * work1[k][i][l][e];
+              work2[j][i][k][e] = value;
+            }
+          }
         }
       }
     }
@@ -161,17 +216,22 @@
       @barrier("local");
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
-          pfloat value = 0.0;
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              pfloat value = 0.0;
 #pragma unroll
-          for (int l = 0; l < p_Nq_e; l++)
-            value += S_z_e[k][l] * work2[j][i][l];
+              for (int l = 0; l < p_Nq_e; l++)
+                value += S_z_e[k][l][e] * work2[j][i][l][e];
 
 #if (!p_restrict)
-          const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
-          const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
-          Su[v] = value;
+              const dlong elem_offset = element[e] * p_Nq_e * p_Nq_e * p_Nq_e;
+              const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+              Su[v] = value;
 #endif
-          work1[k][j][i] = value;
+              work1[k][j][i][e] = value;
+            }
+          }
         }
       }
     }
@@ -180,10 +240,15 @@
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 0;
-          work2[l1][j][k] = work1[l2][j][k];
-          work2[p_Nq_e - l1 - 1][j][k] = work1[p_Nq_e - l2 - 1][j][k];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 0;
+              work2[l1][j][k][e] = work1[l2][j][k][e];
+              work2[p_Nq_e - l1 - 1][j][k][e] = work1[p_Nq_e - l2 - 1][j][k][e];
+            }
+          }
         }
       }
     }
@@ -191,10 +256,15 @@
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 0;
-          work2[i][l1][k] = work1[i][l2][k];
-          work2[i][p_Nq_e - l1 - 1][k] = work1[i][p_Nq_e - l2 - 1][k];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 0;
+              work2[i][l1][k][e] = work1[i][l2][k][e];
+              work2[i][p_Nq_e - l1 - 1][k][e] = work1[i][p_Nq_e - l2 - 1][k][e];
+            }
+          }
         }
       }
     }
@@ -202,10 +272,15 @@
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
-          const int l1 = 0;
-          const int l2 = 0;
-          work2[i][j][l1] = work1[i][j][l2];
-          work2[i][j][p_Nq_e - l1 - 1] = work1[i][j][p_Nq_e - l2 - 1];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const int l1 = 0;
+              const int l2 = 0;
+              work2[i][j][l1][e] = work1[i][j][l2][e];
+              work2[i][j][p_Nq_e - l1 - 1][e] = work1[i][j][p_Nq_e - l2 - 1][e];
+            }
+          }
         }
       }
     }
@@ -214,9 +289,14 @@
       @barrier("local");
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner) {
-          const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
-          const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
-          u[idx] = work2[k][j][i];
+          #pragma unroll
+          for(int e = 0; e < p_elementsPerBlock; ++e){
+            if(element[e] != NOT_AN_ELEMENT){
+              const dlong elem_offset = element[e] * p_Nq_e * p_Nq_e * p_Nq_e;
+              const dlong idx = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e + elem_offset;
+              u[idx] = work2[k][j][i][e];
+            }
+          }
         }
       }
     }
@@ -228,9 +308,14 @@
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner){
           if(i < p_Nq && j < p_Nq) {
-            const dlong elem_offset = element * p_Nq * p_Nq * p_Nq;
-            const dlong idx = i + j * p_Nq + k * p_Nq * p_Nq + elem_offset;
-            Su[idx] = work1[k + 1][j + 1][i + 1] * wts[idx];
+            #pragma unroll
+            for(int e = 0; e < p_elementsPerBlock; ++e){
+              if(element[e] != NOT_AN_ELEMENT){
+                const dlong elem_offset = element[e] * p_Nq * p_Nq * p_Nq;
+                const dlong idx = i + j * p_Nq + k * p_Nq * p_Nq + elem_offset;
+                Su[idx] = work1[k + 1][j + 1][i + 1][e] * wts[idx];
+              }
+            }
           }
         }
       }
