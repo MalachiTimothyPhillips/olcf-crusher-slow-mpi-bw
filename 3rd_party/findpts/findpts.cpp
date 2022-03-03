@@ -69,8 +69,8 @@ static occa::memory findptsCopyData_3(const struct findpts_data_3 *fd,
                     + sizeof(double)*(6*fd_local->fed.n[0]+6*fd_local->fed.n[1]+6*fd_local->fed.n[2]) // fed.wtend
                     + 8*6; // room for alignment padding
                     // other structures are unused
-  occa::memory dev_copy = device.malloc(alloc_size, occa::dtype::byte);
-  char *dev_copy_ptr = dev_copy.ptr<char>();
+  occa::memory o_dev_copy = device.malloc(alloc_size, occa::dtype::byte);
+  char *o_dev_copy_ptr = o_dev_copy.ptr<char>();
 
   // create and fill host buffer
   char *host_copy = new char[alloc_size];
@@ -82,7 +82,7 @@ static occa::memory findptsCopyData_3(const struct findpts_data_3 *fd,
   #define SET_FIELD(field, type, size) do {\
         dlong align = 8; \
         working_offset = ((working_offset + align - 1)/align)*align; \
-        fd_local_copy->field = (type*)(dev_copy_ptr+working_offset); \
+        fd_local_copy->field = (type*)(o_dev_copy_ptr+working_offset); \
         memcpy(host_copy+working_offset, fd_local->field, size*sizeof(type)); \
         working_offset += size*sizeof(type); \
       } while(0)
@@ -105,9 +105,9 @@ static occa::memory findptsCopyData_3(const struct findpts_data_3 *fd,
   #undef SET_FIELD
 
   // copy buffer to device
-  dev_copy.copyFrom(host_copy);
+  o_dev_copy.copyFrom(host_copy);
   delete[] host_copy;
-  return dev_copy;
+  return o_dev_copy;
 }
 
 findpts_t* findptsSetup(
@@ -239,7 +239,7 @@ void findptsEval(dfloat *const out_base,
 void findptsEval(dfloat *const out_base,
                     findpts_data_t *findPtsData,
                     const dlong npt,
-                    occa::memory d_in,
+                    occa::memory o_in,
                     findpts_t *const fd)
 {
 
@@ -265,7 +265,7 @@ void findptsEval(dfloat *const out_base,
                       r_base,
                       r_stride,
                       npt,
-                      &d_in,
+                      &o_in,
                       (findpts_data_3 *)fd->findpts_data,
                       fd);
 }
@@ -288,19 +288,19 @@ void findptsLocalEval(
 }
 
 void findptsLocalEval(
-  occa::memory  out_base, const dlong  out_stride,
-  occa::memory   el_base, const dlong   el_stride,
-  occa::memory    r_base, const dlong    r_stride,
-  const dlong npt, occa::memory d_in, findpts_t* const fd) {
+  occa::memory  o_out, const dlong  out_stride,
+  occa::memory   o_el, const dlong   el_stride,
+  occa::memory    o_r, const dlong    r_stride,
+  const dlong npt, occa::memory o_in, findpts_t* const fd) {
 
-  devFindptsLocalEval(&out_base,
+  devFindptsLocalEval(&o_out,
                            out_stride,
-                           &el_base,
+                           &o_el,
                            el_stride,
-                           &r_base,
+                           &o_r,
                            r_stride,
                            npt,
-                           &d_in,
+                           &o_in,
                            (findpts_data_3 *)fd->findpts_data,
                            fd);
 }
