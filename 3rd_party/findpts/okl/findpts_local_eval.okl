@@ -28,11 +28,11 @@
       for (int i = 0; i < p_nptsBlock; i++) {
         if(i+pb*p_nptsBlock < npts && l < 3) {
           const dfloat r = s_rst[i][l];
-          dfloat prod = 1;
+          dfloat prod = (1 << (p_Nq-1));
 
           #pragma unroll p_Nq 
           for (int k = 0; k < p_Nq; k++) {
-            prod *= r - z[k];
+            prod *= k==m ? 1.0 : r - z[k];
           }
           s_lj[i][l][m] = prod * lagrangeCoeff[m]; 
         }

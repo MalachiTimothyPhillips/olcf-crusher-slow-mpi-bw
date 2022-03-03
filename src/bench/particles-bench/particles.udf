@@ -327,11 +327,55 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   auto o_Uy = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
   auto o_Uz = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
 
+  const double Ux = 1.5;
+  const double Uy = 2.5;
+  const double Uz = 3.5;
+
+  platform->linAlg->fill(mesh->Nlocal, Ux, o_Ux);
+  platform->linAlg->fill(mesh->Nlocal, Uy, o_Uy);
+  platform->linAlg->fill(mesh->Nlocal, Uz, o_Uz);
+
   auto o_outx = o_out + 0 * pn * sizeof(dfloat);
   auto o_outy = o_out + 1 * pn * sizeof(dfloat);
   auto o_outz = o_out + 2 * pn * sizeof(dfloat);
 
+  auto o_out_expected = platform->device.malloc(3*pn, sizeof(dfloat));
+  auto o_outx_expected = o_out_expected + 0 * pn * sizeof(dfloat);
+  auto o_outy_expected = o_out_expected + 1 * pn * sizeof(dfloat);
+  auto o_outz_expected = o_out_expected + 2 * pn * sizeof(dfloat);
+
+  platform->linAlg->fill(pn, Ux, o_outx_expected);
+  platform->linAlg->fill(pn, Uy, o_outy_expected);
+  platform->linAlg->fill(pn, Uz, o_outz_expected);
+
   auto* findpts = particles.interp().ptr();
+
+  // correctness check
+  findpts->local_eval_kernel(pn, o_el, o_r, o_Ux, o_outx);
+  findpts->local_eval_kernel(pn, o_el, o_r, o_Uy, o_outy);
+  findpts->local_eval_kernel(pn, o_el, o_r, o_Uz, o_outz);
+
+  platform->linAlg->axpbyMany(
+    pn,
+    3,
+    pn,
+    1.0,
+    o_out_expected,
+    -1.0,
+    o_out
+  );
+
+  const auto error = platform->linAlg->norm2Many(
+    pn,
+    3,
+    pn,
+    o_out,
+    platform->comm.mpiComm
+  );
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "Error in findpts_local_eval kernel: " << error << std::endl;
+  }
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
