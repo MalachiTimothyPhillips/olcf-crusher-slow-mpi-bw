@@ -36,6 +36,29 @@ void velocitySubcyclingFlops(nrs_t *nrs)
 
   platform->flopCounter->addWork("velocitySubcycling", flopCount);
 }
+void scalarSubcyclingFlops(nrs_t *nrs)
+{
+  const auto mesh = nrs->meshV;
+  const auto cubNq = mesh->cubNq;
+  const auto cubNp = mesh->cubNp;
+  const auto Nq = mesh->Nq;
+  const auto Np = mesh->Np;
+  const auto nEXT = nrs->nEXT;
+  const auto Nelements = mesh->Nelements;
+  double flopCount = 0.0; // per elem basis
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
+    flopCount += 6. * cubNp * nEXT;  // extrapolate U(r,s,t) to current time
+    flopCount += 6. * cubNp * cubNq; // apply Dcub
+    flopCount += 3. * Np;            // compute NU
+    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+  }
+  else {
+    flopCount = Nq * Nq * Nq * (6. * Nq + 6. * nEXT + 8.);
+  }
+  flopCount *= Nelements;
+
+  platform->flopCounter->addWork("scalarSubcycling", flopCount);
+}
 } // namespace
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);
@@ -1293,6 +1316,8 @@ occa::memory scalarStrongSubCycleMovingMesh(cds_t *cds,
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
 
+        scalarSubcyclingFlops(nrs);
+
         linAlg->axmy(cds->mesh[0]->Nlocal, 1.0, o_LMMe, o_rhs);
         if (rk != 3)
           linAlg->axpbyz(cds->mesh[0]->Nlocal,
@@ -1462,6 +1487,8 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
 
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
+
+        scalarSubcyclingFlops(nrs);
 
         cds->subCycleRKUpdateKernel(cds->meshV->Nlocal,
             rk,
