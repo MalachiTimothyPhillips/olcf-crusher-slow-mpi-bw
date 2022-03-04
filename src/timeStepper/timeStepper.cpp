@@ -36,14 +36,14 @@ void velocitySubcyclingFlops(nrs_t *nrs)
 
   platform->flopCounter->addWork("velocitySubcycling", flopCount);
 }
-void scalarSubcyclingFlops(nrs_t *nrs)
+void scalarSubcyclingFlops(cds_t *cds)
 {
-  const auto mesh = nrs->meshV;
+  const auto mesh = cds->mesh[0];
   const auto cubNq = mesh->cubNq;
   const auto cubNp = mesh->cubNp;
   const auto Nq = mesh->Nq;
   const auto Np = mesh->Np;
-  const auto nEXT = nrs->nEXT;
+  const auto nEXT = cds->nEXT;
   const auto Nelements = mesh->Nelements;
   double flopCount = 0.0; // per elem basis
   if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
@@ -1316,7 +1316,7 @@ occa::memory scalarStrongSubCycleMovingMesh(cds_t *cds,
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
 
-        scalarSubcyclingFlops(nrs);
+        scalarSubcyclingFlops(cds);
 
         linAlg->axmy(cds->mesh[0]->Nlocal, 1.0, o_LMMe, o_rhs);
         if (rk != 3)
@@ -1488,7 +1488,7 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
 
-        scalarSubcyclingFlops(nrs);
+        scalarSubcyclingFlops(cds);
 
         cds->subCycleRKUpdateKernel(cds->meshV->Nlocal,
             rk,
