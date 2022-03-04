@@ -79,6 +79,11 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
 void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
 {
   elliptic->precon->prolongateKernel(mesh->Nelements, o_R, o_x, o_Px);
+  const auto NqC = elliptic->mesh->Nq;
+  const auto NqF = std::cbrt(NpF);
+  auto flopCounter = 2 * (NqF * NqF * NqF * NqC + NqF * NqF * NqC * NqC + NqF * NqC * NqC * NqC);
+  flopCounter += NqF * NqF * NqF;
+  platform->flopCounter->addWork("MGLevel::prolongate, N=" + std::to_string(mesh->N), flopCounter);
 }
 
 void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
