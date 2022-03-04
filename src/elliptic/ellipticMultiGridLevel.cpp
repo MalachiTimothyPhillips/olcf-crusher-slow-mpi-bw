@@ -56,16 +56,24 @@ void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
 
 void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
 {
+  double flopCounter = 0.0;
   if (options.compareArgs("DISCRETIZATION", "CONTINUOUS")) {
     platform->linAlg->axmy(mesh->Nelements * NpF, 1.0, o_invDegree, o_x);
+    flopCounter += mesh->Nelements * NpF;
   }
 
+  const auto NqC = elliptic->mesh->Nq;
+  const auto NqF = std::cbrt(NpF);
+
   elliptic->precon->coarsenKernel(mesh->Nelements, o_R, o_x, o_Rx);
+  flopCounter += 2 * (NqF * NqF * NqF * NqC + NqF * NqF * NqC * NqC + NqF * NqC * NqC * NqC);
 
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
     oogs::startFinish(o_Rx, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
     // applyMask(elliptic, o_Rx, dfloatString);
   }
+
+  platform->flopCounter->addWork("MGLevel::coarsen, N=" + std::to_string(mesh->N), flopCounter);
 }
 
 void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
