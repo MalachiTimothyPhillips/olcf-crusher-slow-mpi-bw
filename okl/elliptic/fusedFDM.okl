@@ -93,10 +93,10 @@
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
-#pragma unroll
+#pragma unroll p_Nq_e
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_x_eT[j][l] * work1[k][i][l];
           work2[k][j][i] = value;
@@ -106,10 +106,10 @@
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
-#pragma unroll
+#pragma unroll p_Nq_e
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_y_eT[j][l] * work2[k][i][l];
           work1[j][i][k] = value;
@@ -123,7 +123,7 @@
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_z_eT[k][l] * work1[j][i][l];
           work2[k][j][i] = value * inv_L[v + element * p_Nq_e * p_Nq_e * p_Nq_e];
@@ -133,10 +133,10 @@
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
-#pragma unroll
+#pragma unroll p_Nq_e
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_x_e[i][l] * work2[k][j][l];
           work1[k][i][j] = value;
@@ -146,10 +146,10 @@
     @barrier("local");
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
-#pragma unroll
+#pragma unroll p_Nq_e
         for (int i = 0; i < p_Nq_e; i++) {
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_y_e[j][l] * work1[k][i][l];
           work2[j][i][k] = value;
@@ -162,7 +162,7 @@
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           pfloat value = 0.0;
-#pragma unroll
+#pragma unroll p_Nq_e
           for (int l = 0; l < p_Nq_e; l++)
             value += S_z_e[k][l] * work2[j][i][l];
 
