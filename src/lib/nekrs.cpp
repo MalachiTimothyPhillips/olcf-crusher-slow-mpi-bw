@@ -364,6 +364,16 @@ int runTimeStatFreq()
 void printRuntimeStatistics(int step)
 {
   platform->timer.printRunStat(step);
+  const auto flopCount = platform->flopCounter->count();
+  const auto tSolve = platform->timer.query("solve", "DEVICE:MAX");
+  std::cout.setf(std::ios::scientific);
+  int outPrecisionSave = std::cout.precision();
+  std::cout.precision(5);
+  if (platform->comm.mpiRank == 0) {
+    std::cout << "GFlops/s: " << flopCount / tSolve / 1e9 << std::endl;
+  }
+  std::cout.unsetf(std::ios::scientific);
+  std::cout.precision(outPrecisionSave);
 }
 
 void processUpdFile()

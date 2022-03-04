@@ -1,15 +1,15 @@
-#if !defined(nekrs_flopCounter_hpp_)
-#define nekrs_flopCounter_hpp_
+#if !defined(nekrs_counter_hpp_)
+#define nekrs_counter_hpp_
 #include "nrssys.hpp"
 #include <map>
 class flopCounter_t {
 public:
   void clear();
-  void logWork(const std::string &entry, dfloat work);
-  dfloat flopCount(const std::string &entry) const;
+  void addWork(const std::string &entry, dfloat work);
+  dfloat count(const std::string &entry) const;
 
   // all entries
-  dfloat flopCount() const;
+  dfloat count() const;
 
 private:
   std::map<std::string, dfloat> flopMap;

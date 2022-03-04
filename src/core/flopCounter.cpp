@@ -2,7 +2,7 @@
 #include "flopCounter.hpp"
 #include "platform.hpp"
 
-void flopCounter_t::logWork(const std::string &entry, dfloat work)
+void flopCounter_t::addWork(const std::string &entry, dfloat work)
 {
   if (!flopMap.count(entry)) {
     flopMap[entry] = 0.0;
@@ -10,9 +10,9 @@ void flopCounter_t::logWork(const std::string &entry, dfloat work)
   flopMap[entry] += work;
 }
 
-dfloat flopCounter_t::flopCount(const std::string &entry) const { return flopMap.at(entry); }
+dfloat flopCounter_t::count(const std::string &entry) const { return flopMap.at(entry); }
 
-dfloat flopCounter_t::flopCount() const
+dfloat flopCounter_t::count() const
 {
   dfloat total = 0.0;
   for (auto const &entry : flopMap) {

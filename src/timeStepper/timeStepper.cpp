@@ -34,7 +34,7 @@ void velocitySubcyclingFlops(nrs_t *nrs)
   }
   flopCount *= Nelements;
 
-  platform->flopCounter->logWork("velocitySubcycling", flopCount);
+  platform->flopCounter->addWork("velocitySubcycling", flopCount);
 }
 } // namespace
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
