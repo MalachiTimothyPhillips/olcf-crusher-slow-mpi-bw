@@ -110,4 +110,14 @@ void ellipticOperator(elliptic_t* elliptic,
   if (masked)
     applyMaskInterior(elliptic, o_Aq, std::string(precision));
   oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+
+  auto flopCount = 12 * mesh->Np * mesh->Nq + 15 * mesh->Np;
+  if (!elliptic->poisson) {
+    flopCount += 5 * mesh->Np;
+  }
+  flopCount *= elliptic->Nfields * mesh->Nelements;
+
+  platform->flopCounter->logWork(elliptic->name + " Ax, N=" + std::string(mesh->N) + ", " +
+                                     std::string(precision),
+                                 flopCount);
 }

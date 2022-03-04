@@ -1,7 +1,13 @@
 #include <mpi.h>
 #include "flopCounter.hpp"
 
-void flopCounter_t::logWork(const std::string &entry, dfloat work) { flopMap[entry] += work; }
+void flopCounter_t::logWork(const std::string &entry, dfloat work)
+{
+  if (!flopMap.count(entry)) {
+    flopMap[entry] = 0.0;
+  }
+  flopMap[entry] += work;
+}
 
 dfloat flopCounter_t::flopCount(const std::string &entry) const { return flopMap.at(entry); }
 
