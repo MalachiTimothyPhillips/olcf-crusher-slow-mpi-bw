@@ -28,6 +28,9 @@
       for (int i = 0; i < p_nptsBlock; i++) {
         if(i+pb*p_nptsBlock < npts && l < 3) {
           const dfloat r = s_rst[i][l];
+
+          // 2^{p_Nq-1} factor accounts for product
+          // of the inverses of the distances of the GLL points
           dfloat prod = (1 << (p_Nq-1));
 
           #pragma unroll p_Nq 
