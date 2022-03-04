@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include "flopCounter.hpp"
 
 void flopCounter_t::logWork(const std::string &entry, dfloat work) { flopMap[entry] += work; }
@@ -10,6 +11,8 @@ dfloat flopCounter_t::flopCount() const
   for (auto const &entry : flopMap) {
     total += entry.second;
   }
+
+  MPI_Allreduce(MPI_IN_PLACE, &total, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
   return total;
 }
 
