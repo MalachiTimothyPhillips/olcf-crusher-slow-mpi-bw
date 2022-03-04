@@ -1,5 +1,6 @@
 #include <mpi.h>
 #include "flopCounter.hpp"
+#include "platform.hpp"
 
 void flopCounter_t::logWork(const std::string &entry, dfloat work)
 {

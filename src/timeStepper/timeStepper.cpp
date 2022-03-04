@@ -12,6 +12,31 @@
 #include "tombo.hpp"
 #include "udf.hpp"
 
+namespace {
+void velocitySubcyclingFlops(nrs_t *nrs)
+{
+  const auto mesh = nrs->meshV;
+  const auto cubNq = mesh->cubNq;
+  const auto cubNp = mesh->cubNp;
+  const auto Nq = mesh->Nq;
+  const auto Np = mesh->Np;
+  const auto nEXT = nrs->nEXT;
+  const auto Nelements = mesh->Nelements;
+  double flopCount = 0.0; // per elem basis
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
+    flopCount += 6. * cubNp * nEXT;   // extrapolate U(r,s,t) to current time
+    flopCount += 18. * cubNp * cubNq; // apply Dcub
+    flopCount += 9. * Np;             // compute NU
+    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+  }
+  else {
+    flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
+  }
+  flopCount *= Nelements;
+
+  platform->flopCounter->logWork("velocitySubcycling", flopCount);
+}
+} // namespace
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);
   cds_t *cds = nrs->cds;
@@ -896,6 +921,9 @@ occa::memory velocityStrongSubCycleMovingMesh(nrs_t* nrs, int nEXT, dfloat time,
             ogsDfloat,
             ogsAdd,
             nrs->gsh);
+
+        velocitySubcyclingFlops(nrs);
+
         linAlg->axmyMany(mesh->Nlocal,
             nrs->NVfields,
             nrs->fieldOffset,
@@ -1078,6 +1106,8 @@ occa::memory velocityStrongSubCycle(
             ogsDfloat,
             ogsAdd,
             nrs->gsh);
+
+        velocitySubcyclingFlops(nrs);
 
         nrs->subCycleRKUpdateKernel(mesh->Nlocal,
             rk,

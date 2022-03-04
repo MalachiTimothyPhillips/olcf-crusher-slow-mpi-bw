@@ -117,7 +117,7 @@ void ellipticOperator(elliptic_t* elliptic,
   }
   flopCount *= elliptic->Nfields * mesh->Nelements;
 
-  platform->flopCounter->logWork(elliptic->name + " Ax, N=" + std::string(mesh->N) + ", " +
+  platform->flopCounter->logWork(elliptic->name + " Ax, N=" + std::to_string(mesh->N) + ", " +
                                      std::string(precision),
                                  flopCount);
 }
