@@ -265,7 +265,9 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   const bool relative = movingMesh && nrs->Nsubsteps;
   occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
   mesh = nrs->meshV;
-  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE"))
+  dfloat flopCount = 0.0;
+
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
     nrs->UrstCubatureKernel(mesh->Nelements,
                             mesh->o_cubvgeo,
                             mesh->o_cubInterpT,
@@ -274,13 +276,22 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
                             nrs->o_U,
                             mesh->o_U,
                             o_Urst);
-  else
+    flopCount += 6 * mesh->Np * mesh->cubNq;
+    flopCount += 6 * mesh->Nq * mesh->Nq * mesh->cubNq * mesh->cubNq;
+    flopCount += 6 * mesh->Nq * mesh->cubNp;
+    flopCount += 24 * mesh->cubNp;
+    flopCount *= mesh->Nelements;
+  }
+  else {
     nrs->UrstKernel(mesh->Nelements,
         mesh->o_vgeo,
         nrs->fieldOffset,
         nrs->o_U,
         mesh->o_U,
         o_Urst);
+    flopCount += 24 * mesh->Nelements * mesh->Nelements;
+  }
+  platform->flopCounter->addWork("Urst", flopCount);
 
   if (nrs->Nscalar) {
     platform->timer.tic("makeq", 1);
