@@ -31,5 +31,10 @@ std::vector<std::string> flopCounter_t::entries() const
   for (auto const &entry : flopMap) {
     loggedCategory.push_back(entry.first);
   }
+
+  // sort by flops (largest first)
+  std::sort(loggedCategory.begin(), loggedCategory.end(), [&](const std::string &a, const std::string &b) {
+    return count(a) > count(b);
+  });
   return loggedCategory;
 }
