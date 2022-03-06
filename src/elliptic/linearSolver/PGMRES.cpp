@@ -126,6 +126,10 @@ void gmresUpdate(elliptic_t* elliptic,
       1.0,
       o_x
     );
+
+    double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * mesh->Nlocal // update GMRES solution
+                       + elliptic->Nfields * mesh->Nlocal;                    // axpby
+    platform->flopCounter->addWork("gmresUpdate", flopCount);
   }
 }
 }
@@ -217,6 +221,11 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         y
       );
 
+      {
+        double flopCount = 3 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
+        platform->flopCounter->addWork("weightedInnerProdMulti", flopCount);
+      }
+
       for(int k = 0 ; k <=i; ++k)
         H[k + i*(nRestartVectors+1)] = y[k];
       o_y.copyFrom(y, (i+1)*sizeof(dfloat));
@@ -244,16 +253,25 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       MPI_Allreduce(MPI_IN_PLACE, &nw, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
       nw = sqrt(nw);
 
+      {
+        double flopCount = 5 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
+        platform->flopCounter->addWork("gramSchmidt", flopCount);
+      }
+
       // H(i+1,i) = ||w||_2
       H[i+1 + i*(nRestartVectors+1)] = nw;
 
       // V(:,i+1) = w/nw
-      if (i<nRestartVectors-1)
+      if (i < nRestartVectors - 1) {
         linAlg.axpbyMany(
           mesh->Nlocal,
           elliptic->Nfields,
           elliptic->Ntotal,
           (1./nw), o_w, 0., o_V.at(i+1));
+
+        double flopCount = elliptic->Nfields * mesh->Nlocal;
+        platform->flopCounter->addWork("weight gmres vector", flopCount);
+      }
 
       //apply Givens rotation
       for(int k=0; k<i; ++k){
@@ -324,6 +342,11 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
     MPI_Allreduce(MPI_IN_PLACE, &nr, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
     nr = sqrt(nr);
+
+    {
+      double flopCount = 4 * elliptic->Nfields * mesh->Nlocal;
+      platform->flopCounter->addWork("gmres evaluate residual and norm", flopCount);
+    }
 
     error = nr * sqrt(elliptic->resNormFactor);
     rdotr = nr * sqrt(elliptic->resNormFactor);
