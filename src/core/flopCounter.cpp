@@ -24,3 +24,12 @@ dfloat flopCounter_t::count() const
 }
 
 void flopCounter_t::clear() { flopMap.clear(); }
+
+std::vector<std::string> flopCounter_t::entries() const
+{
+  std::vector<std::string> loggedCategory;
+  for (auto const &entry : flopMap) {
+    loggedCategory.push_back(entry.first);
+  }
+  return loggedCategory;
+}
