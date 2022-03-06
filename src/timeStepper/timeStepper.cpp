@@ -38,6 +38,30 @@ void velocityAdvectionFlops(nrs_t *nrs)
 
   platform->flopCounter->addWork("velocityAdvection", flopCount);
 }
+void scalarAdvectionFlops(cds_t *cds)
+{
+  const auto mesh = cds->mesh[0];
+  const auto cubNq = mesh->cubNq;
+  const auto cubNp = mesh->cubNp;
+  const auto Nq = mesh->Nq;
+  const auto Np = mesh->Np;
+  const auto Nelements = mesh->Nelements;
+  double flopCount = 0.0; // per elem basis
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
+    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    flopCount += 6. * cubNp * cubNq;                                       // apply Dcub
+    flopCount += 5 * cubNp; // compute advection term on cubature mesh
+    flopCount += mesh->Np;  // weight by inv. mass matrix
+  }
+  else {
+    flopCount += 8 * (Np * Nq + Np);
+  }
+
+  flopCount *= Nelements;
+  flopCount += cds->fieldOffset[0]; // axpby operation
+
+  platform->flopCounter->addWork("scalarAdvection", flopCount);
+}
 void velocitySubcyclingFlops(nrs_t *nrs)
 {
   const auto mesh = nrs->meshV;
@@ -551,6 +575,8 @@ void makeq(
             o_FS,
             0,
             isOffset);
+
+        scalarAdvectionFlops(cds);
       }
     } else {
       platform->linAlg->fill(cds->fieldOffsetSum, 0.0, o_Usubcycling);
