@@ -13,6 +13,31 @@
 #include "udf.hpp"
 
 namespace {
+void velocityAdvectionFlops(nrs_t *nrs)
+{
+  const auto mesh = nrs->meshV;
+  const auto cubNq = mesh->cubNq;
+  const auto cubNp = mesh->cubNp;
+  const auto Nq = mesh->Nq;
+  const auto Np = mesh->Np;
+  const auto nEXT = nrs->nEXT;
+  const auto Nelements = mesh->Nelements;
+  double flopCount = 0.0; // per elem basis
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
+    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    flopCount += 18. * cubNp * cubNq;                                       // apply Dcub
+    flopCount += 15 * cubNp;   // compute advection term on cubature mesh
+    flopCount += 3 * mesh->Np; // weight by inv. mass matrix
+  }
+  else {
+    flopCount += 24 * (Np * Nq + Np);
+  }
+
+  flopCount *= Nelements;
+  flopCount += nrs->NVfields * nrs->fieldOffset; // axpby operation
+
+  platform->flopCounter->addWork("velocityAdvection", flopCount);
+}
 void velocitySubcyclingFlops(nrs_t *nrs)
 {
   const auto mesh = nrs->meshV;
@@ -655,6 +680,8 @@ void makef(
           platform->o_mempool.slice0,
           1.0,
           o_FU);
+
+      velocityAdvectionFlops(nrs);
     }
   } else {
     if (nrs->Nsubsteps)
