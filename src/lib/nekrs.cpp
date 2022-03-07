@@ -363,7 +363,8 @@ int runTimeStatFreq()
 
 void printRuntimeStatistics(int step)
 {
-  platform->timer.printRunStat(step);
+  platform->timer.printRunStat(step, platform->flopCounter->count());
+#if 0
   const auto flopCount = platform->flopCounter->count();
   const auto tSolve = platform->timer.query("solve", "DEVICE:MAX");
   std::cout.setf(std::ios::scientific);
@@ -374,6 +375,7 @@ void printRuntimeStatistics(int step)
   }
   std::cout.unsetf(std::ios::scientific);
   std::cout.precision(outPrecisionSave);
+#endif
 }
 
 void processUpdFile()
