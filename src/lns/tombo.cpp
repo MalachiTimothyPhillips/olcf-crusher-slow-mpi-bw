@@ -7,6 +7,7 @@ namespace tombo
 {
 occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 {
+  dfloat flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
   
   //enforce Dirichlet BCs
@@ -66,6 +67,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
                   nrs->fieldOffset,
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
+  flopCount += mesh->Nelements * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
   
@@ -78,6 +80,8 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice0
   );
 
+  flopCount += mesh->Nlocal;
+
   nrs->curlKernel(
     mesh->Nelements,
     mesh->o_vgeo,
@@ -85,6 +89,8 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->fieldOffset,
     platform->o_mempool.slice0,
     platform->o_mempool.slice3);
+
+  flopCount += mesh->Nelements * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   nrs->gradientVolumeKernel(
     mesh->Nelements,
@@ -94,7 +100,9 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->o_div,
     platform->o_mempool.slice0);
 
-  if(platform->options.compareArgs("STRESSFORMULATION", "TRUE"))
+  flopCount += mesh->Nelements * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
+
+  if (platform->options.compareArgs("STRESSFORMULATION", "TRUE")) {
     nrs->pressureStressKernel(
          mesh->Nelements,
          mesh->o_vgeo,
@@ -104,6 +112,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
          nrs->o_Ue,
          nrs->o_div,
          platform->o_mempool.slice3);
+  }
 
   occa::memory o_irho = nrs->o_ellipticCoeff;
   nrs->pressureRhsKernel(
@@ -116,6 +125,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice0,
     platform->o_mempool.slice6);
 
+  flopCount += 12 * mesh->Nlocal;
 
   oogs::startFinish(platform->o_mempool.slice6, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
 
@@ -128,6 +138,8 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice6
   );
 
+  flopCount += 3 * mesh->Nlocal;
+
   nrs->wDivergenceVolumeKernel(
     mesh->Nelements,
     mesh->o_vgeo,
@@ -136,6 +148,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice6,
     platform->o_mempool.slice3);
 
+  flopCount += mesh->Nelements * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   nrs->pressureAddQtlKernel(
     mesh->Nlocal,
@@ -143,6 +156,8 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->g0 * nrs->idt,
     nrs->o_div,
     platform->o_mempool.slice3);
+
+  flopCount += 3 * mesh->Nlocal;
 
   nrs->divergenceSurfaceKernel(
     mesh->Nelements,
@@ -154,9 +169,13 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice6,
     nrs->o_U,
     platform->o_mempool.slice3);
-  
+
+  flopCount += 25 * mesh->Nelements * mesh->Nq * mesh->Nq;
+
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
   ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
+
+  platform->flopCounter->add("pressure RHS", flopCount);
 
   return platform->o_mempool.slice1;
 }
