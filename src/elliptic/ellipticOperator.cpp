@@ -85,6 +85,15 @@ void ellipticAx(elliptic_t* elliptic,
                   o_q,
                   o_Aq);
 
+  auto flopCount = 12 * mesh->Np * mesh->Nq + 15 * mesh->Np;
+  if (!elliptic->poisson) {
+    flopCount += 5 * mesh->Np;
+  }
+  flopCount *= elliptic->Nfields * NelementsList;
+
+  platform->flopCounter->add(elliptic->name + " Ax, N=" + std::to_string(mesh->N) + ", " +
+                                 std::string(precision),
+                             flopCount);
 }
 
 void ellipticOperator(elliptic_t* elliptic,
@@ -110,14 +119,4 @@ void ellipticOperator(elliptic_t* elliptic,
   if (masked)
     applyMaskInterior(elliptic, o_Aq, std::string(precision));
   oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
-
-  auto flopCount = 12 * mesh->Np * mesh->Nq + 15 * mesh->Np;
-  if (!elliptic->poisson) {
-    flopCount += 5 * mesh->Np;
-  }
-  flopCount *= elliptic->Nfields * mesh->Nelements;
-
-  platform->flopCounter->add(elliptic->name + " Ax, N=" + std::to_string(mesh->N) + ", " +
-                                 std::string(precision),
-                             flopCount);
 }
