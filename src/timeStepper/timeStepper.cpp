@@ -546,6 +546,10 @@ void makeq(
         o_FS,
         cds->o_rho,
         o_BF);
+
+    dfloat scalarSumMakef = (3 * cds->nEXT + 3) * mesh->Nlocal;
+    scalarSumMakef += (cds->Nsubsteps) ? mesh->Nlocal : 3 * cds->nBDF * mesh->Nlocal;
+    platform->flopCounter->add("scalarSumMakef", scalarSumMakef);
   }
 
   for (int s = std::max(cds->nBDF, cds->nEXT); s > 1; s--) {
