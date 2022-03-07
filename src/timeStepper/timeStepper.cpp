@@ -677,6 +677,16 @@ void makef(
       o_FU,
       o_BF);
 
+  dfloat sumMakefFlops = 0.0;
+  if (nrs->Nsubsteps) {
+    sumMakefFlops += (6 + 6 * nrs->nEXT) * mesh->Nlocal;
+  }
+  else {
+    sumMakefFlops += (6 * nrs->nEXT + 12 * nrs->nBDF) * mesh->Nlocal;
+  }
+
+  platform->flopCounter->add("sumMakef", sumMakefFlops);
+
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
         nrs->NVfields,
