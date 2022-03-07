@@ -13,34 +13,8 @@
 #include "udf.hpp"
 
 namespace {
-void velocityAdvectionFlops(nrs_t *nrs)
+void advectionFlops(mesh_t *mesh, int Nfields)
 {
-  const auto mesh = nrs->meshV;
-  const auto cubNq = mesh->cubNq;
-  const auto cubNp = mesh->cubNp;
-  const auto Nq = mesh->Nq;
-  const auto Np = mesh->Np;
-  const auto nEXT = nrs->nEXT;
-  const auto Nelements = mesh->Nelements;
-  double flopCount = 0.0; // per elem basis
-  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
-    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
-    flopCount += 18. * cubNp * cubNq;                                       // apply Dcub
-    flopCount += 15 * cubNp;   // compute advection term on cubature mesh
-    flopCount += 3 * mesh->Np; // weight by inv. mass matrix
-  }
-  else {
-    flopCount += 24 * (Np * Nq + Np);
-  }
-
-  flopCount *= Nelements;
-  flopCount += nrs->NVfields * nrs->fieldOffset; // axpby operation
-
-  platform->flopCounter->add("velocityAdvection", flopCount);
-}
-void scalarAdvectionFlops(cds_t *cds)
-{
-  const auto mesh = cds->mesh[0];
   const auto cubNq = mesh->cubNq;
   const auto cubNp = mesh->cubNp;
   const auto Nq = mesh->Nq;
@@ -58,55 +32,32 @@ void scalarAdvectionFlops(cds_t *cds)
   }
 
   flopCount *= Nelements;
-  flopCount += cds->fieldOffset[0]; // axpby operation
+  flopCount += mesh->Nlocal; // axpby operation
+  flopCount *= Nfields;
 
-  platform->flopCounter->add("scalarAdvection", flopCount);
+  platform->flopCounter->add("advection", flopCount);
 }
-void velocitySubcyclingFlops(nrs_t *nrs)
+void subcyclingFlops(mesh_t *mesh, int Nfields)
 {
-  const auto mesh = nrs->meshV;
   const auto cubNq = mesh->cubNq;
   const auto cubNp = mesh->cubNp;
   const auto Nq = mesh->Nq;
   const auto Np = mesh->Np;
-  const auto nEXT = nrs->nEXT;
-  const auto Nelements = mesh->Nelements;
-  double flopCount = 0.0; // per elem basis
-  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
-    flopCount += 6. * cubNp * nEXT;   // extrapolate U(r,s,t) to current time
-    flopCount += 18. * cubNp * cubNq; // apply Dcub
-    flopCount += 9. * Np;             // compute NU
-    flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
-  }
-  else {
-    flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
-  }
-  flopCount *= Nelements;
-
-  platform->flopCounter->add("velocitySubcycling", flopCount);
-}
-void scalarSubcyclingFlops(cds_t *cds)
-{
-  const auto mesh = cds->mesh[0];
-  const auto cubNq = mesh->cubNq;
-  const auto cubNp = mesh->cubNp;
-  const auto Nq = mesh->Nq;
-  const auto Np = mesh->Np;
-  const auto nEXT = cds->nEXT;
+  const auto nEXT = 3;
   const auto Nelements = mesh->Nelements;
   double flopCount = 0.0; // per elem basis
   if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
     flopCount += 6. * cubNp * nEXT;  // extrapolate U(r,s,t) to current time
-    flopCount += 6. * cubNp * cubNq; // apply Dcub
-    flopCount += 3. * Np;            // compute NU
-    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    flopCount += 6. * cubNp * cubNq * Nfields;                                       // apply Dcub
+    flopCount += 3. * Np * Nfields;                                                  // compute NU
+    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq) * Nfields; // interpolation
   }
   else {
-    flopCount = Nq * Nq * Nq * (6. * Nq + 6. * nEXT + 8.);
+    flopCount = Nq * Nq * Nq * (6. * Nq + 6. * nEXT + 8.) * Nfields;
   }
   flopCount *= Nelements;
 
-  platform->flopCounter->add("scalarSubcycling", flopCount);
+  platform->flopCounter->add("subcycling", flopCount);
 }
 } // namespace
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
@@ -576,7 +527,7 @@ void makeq(
             0,
             isOffset);
 
-        scalarAdvectionFlops(cds);
+        advectionFlops(cds->mesh[0], 1);
       }
     } else {
       platform->linAlg->fill(cds->fieldOffsetSum, 0.0, o_Usubcycling);
@@ -707,7 +658,7 @@ void makef(
           1.0,
           o_FU);
 
-      velocityAdvectionFlops(nrs);
+      advectionFlops(nrs->meshV, nrs->NVfields);
     }
   } else {
     if (nrs->Nsubsteps)
@@ -1009,7 +960,7 @@ occa::memory velocityStrongSubCycleMovingMesh(nrs_t* nrs, int nEXT, dfloat time,
             ogsAdd,
             nrs->gsh);
 
-        velocitySubcyclingFlops(nrs);
+        subcyclingFlops(nrs->meshV, nrs->NVfields);
 
         linAlg->axmyMany(mesh->Nlocal,
             nrs->NVfields,
@@ -1194,7 +1145,7 @@ occa::memory velocityStrongSubCycle(
             ogsAdd,
             nrs->gsh);
 
-        velocitySubcyclingFlops(nrs);
+        subcyclingFlops(nrs->meshV, nrs->NVfields);
 
         nrs->subCycleRKUpdateKernel(mesh->Nlocal,
             rk,
@@ -1380,7 +1331,7 @@ occa::memory scalarStrongSubCycleMovingMesh(cds_t *cds,
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
 
-        scalarSubcyclingFlops(cds);
+        subcyclingFlops(cds->mesh[0], 1);
 
         linAlg->axmy(cds->mesh[0]->Nlocal, 1.0, o_LMMe, o_rhs);
         if (rk != 3)
@@ -1552,7 +1503,7 @@ occa::memory scalarStrongSubCycle(cds_t *cds,
         oogs::finish(
             o_rhs, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, cds->gsh);
 
-        scalarSubcyclingFlops(cds);
+        subcyclingFlops(cds->mesh[0], 1);
 
         cds->subCycleRKUpdateKernel(cds->meshV->Nlocal,
             rk,
