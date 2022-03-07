@@ -64,8 +64,6 @@ void SolutionProjection::updateProjectionSpace()
   );
   o_alpha.copyFrom(alpha,sizeof(dfloat) * numVecsProjection);
 
-  flopCount += 3 * numVecsProjection * Nfields * Nlocal;
-
   const dfloat norm_orig = alpha[numVecsProjection - 1];
   dfloat norm_new = norm_orig;
   const dfloat one = 1.0;
@@ -119,8 +117,6 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
     Nfields * 0 * fieldOffset
   );
   o_alpha.copyFrom(alpha,sizeof(dfloat) * numVecsProjection);
-
-  flopCount += 3 * numVecsProjection * Nfields * Nlocal;
 
   accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_xx, o_xbar);
 

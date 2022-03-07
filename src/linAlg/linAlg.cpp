@@ -191,7 +191,7 @@ void linAlg_t::axpby(const dlong N,
                      const dlong yOffset)
 {
   axpbyKernel(N, xOffset, yOffset, alpha, o_x, beta, o_y);
-  platform->flopCounter->add("axpby", 3 * N * Nfields);
+  platform->flopCounter->add("axpby", 3 * N);
 }
 void linAlg_t::axpbyMany(const dlong N,
                          const dlong Nfields,
@@ -719,6 +719,8 @@ void linAlg_t::weightedInnerProdMulti(const dlong N,
 #ifdef ENABLE_TIMER
   platform->timer.toc("dotp");
 #endif
+
+  platform->flopCounter->add("weightedInnerProdMulti", NVec * N * (2 * Nfields + 1));
 }
 dfloat linAlg_t::weightedInnerProdMany(const dlong N,
                                        const dlong Nfields,
