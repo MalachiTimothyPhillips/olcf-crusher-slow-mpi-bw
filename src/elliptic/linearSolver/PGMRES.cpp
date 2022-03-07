@@ -220,11 +220,6 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         y
       );
 
-      {
-        double flopCount = 3 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
-        platform->flopCounter->add("weightedInnerProdMulti", flopCount);
-      }
-
       for(int k = 0 ; k <=i; ++k)
         H[k + i*(nRestartVectors+1)] = y[k];
       o_y.copyFrom(y, (i+1)*sizeof(dfloat));

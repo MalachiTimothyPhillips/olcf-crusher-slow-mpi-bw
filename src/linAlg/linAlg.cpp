@@ -214,6 +214,7 @@ void linAlg_t::axpbyz(const dlong N,
                       occa::memory &o_z)
 {
   axpbyzKernel(N, alpha, o_x, beta, o_y, o_z);
+  platform->flopCounter->add("axpbyz", 3 * N);
 }
 void linAlg_t::axpbyzMany(const dlong N,
                           const dlong Nfields,
@@ -225,6 +226,7 @@ void linAlg_t::axpbyzMany(const dlong N,
                           occa::memory &o_z)
 {
   axpbyzManyKernel(N, Nfields, fieldOffset, alpha, o_x, beta, o_y, o_z);
+  platform->flopCounter->add("axpbyzMany", 3 * N * Nfields);
 }
 
 // o_y[n] = alpha*o_x[n]*o_y[n]
@@ -672,6 +674,7 @@ dfloat linAlg_t::weightedInnerProd(const dlong N,
 #ifdef ENABLE_TIMER
   platform->timer.toc("dotp");
 #endif
+  platform->flopCounter->add("weightedInnerProd", 3 * N);
   return dot;
 }
 void linAlg_t::weightedInnerProdMulti(const dlong N,
@@ -765,6 +768,7 @@ dfloat linAlg_t::weightedInnerProdMany(const dlong N,
 #ifdef ENABLE_TIMER
   platform->timer.toc("dotp");
 #endif
+  platform->flopCounter->add("weightedInnerProdMany", 3 * N * Nfields);
 
   return dot;
 }
@@ -806,6 +810,8 @@ dfloat linAlg_t::weightedNorm2(const dlong N, occa::memory &o_w, occa::memory &o
 #ifdef ENABLE_TIMER
   platform->timer.toc("dotp");
 #endif
+
+  platform->flopCounter->add("weightedNorm2", 3 * N);
 
   return sqrt(norm);
 }
@@ -851,6 +857,7 @@ dfloat linAlg_t::weightedNorm2Many(const dlong N,
 #ifdef ENABLE_TIMER
   platform->timer.toc("dotp");
 #endif
+  platform->flopCounter->add("weightedNorm2Many", 3 * N * Nfields);
   return sqrt(norm);
 }
 
