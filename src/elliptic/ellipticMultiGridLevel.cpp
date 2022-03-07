@@ -51,7 +51,7 @@ void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
   } else {
     o_res.copyFrom(o_rhs, Nrows*sizeof(dfloat));
   }
-  platform->flopCounter->addWork("MGLevel::residual, N=" + std::to_string(mesh->N), flopCounter);
+  platform->flopCounter->add("MGLevel::residual, N=" + std::to_string(mesh->N), flopCounter);
 }
 
 void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
@@ -73,7 +73,7 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
     // applyMask(elliptic, o_Rx, dfloatString);
   }
 
-  platform->flopCounter->addWork("MGLevel::coarsen, N=" + std::to_string(mesh->N), flopCounter);
+  platform->flopCounter->add("MGLevel::coarsen, N=" + std::to_string(mesh->N), flopCounter);
 }
 
 void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
@@ -83,7 +83,7 @@ void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
   const auto NqF = std::cbrt(NpF);
   auto flopCounter = 2 * (NqF * NqF * NqF * NqC + NqF * NqF * NqC * NqC + NqF * NqC * NqC * NqC);
   flopCounter += NqF * NqF * NqF;
-  platform->flopCounter->addWork("MGLevel::prolongate, N=" + std::to_string(mesh->N), flopCounter);
+  platform->flopCounter->add("MGLevel::prolongate, N=" + std::to_string(mesh->N), flopCounter);
 }
 
 void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
@@ -153,7 +153,7 @@ void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
     flopCount += 7 * Nrows;
   }
   auto mesh = elliptic->mesh;
-  platform->flopCounter->addWork("MGLevel::smoothJacobi, N=" + std::to_string(mesh->N), flopCount);
+  platform->flopCounter->add("MGLevel::smoothJacobi, N=" + std::to_string(mesh->N), flopCount);
 }
 void MGLevel::smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
@@ -198,8 +198,7 @@ void MGLevel::smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x,
   flopCount += 6 * Nrows;
 
   auto mesh = elliptic->mesh;
-  platform->flopCounter->addWork("MGLevel::smoothChebyshevOneIteration, N=" + std::to_string(mesh->N),
-                                 flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshevOneIteration, N=" + std::to_string(mesh->N), flopCount);
 }
 void MGLevel::smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
@@ -255,8 +254,7 @@ void MGLevel::smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x,
   flopCount += 6 * Nrows;
 
   applyMask(elliptic, o_x, pfloatString);
-  platform->flopCounter->addWork("MGLevel::smoothChebyshevTwoIteration, N=" + std::to_string(mesh->N),
-                                 flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshevTwoIteration, N=" + std::to_string(mesh->N), flopCount);
 }
 
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
@@ -331,11 +329,11 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   elliptic->scaledAddPfloatKernel(Nrows, one, o_d, one, o_x);
   flopCount += Nrows;
   applyMask(elliptic, o_x, pfloatString);
-  platform->flopCounter->addWork("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), flopCount);
 }
 
 void MGLevel::smootherJacobi(occa::memory &o_r, occa::memory &o_Sr)
 {
   elliptic->dotMultiplyPfloatKernel(Nrows, o_invDiagA, o_r, o_Sr);
-  platform->flopCounter->addWork("MGLevel::smootherJacobi, N=" + std::to_string(mesh->N), Nrows);
+  platform->flopCounter->add("MGLevel::smootherJacobi, N=" + std::to_string(mesh->N), Nrows);
 }

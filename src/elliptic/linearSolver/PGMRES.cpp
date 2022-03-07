@@ -129,7 +129,7 @@ void gmresUpdate(elliptic_t* elliptic,
 
     double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * mesh->Nlocal // update GMRES solution
                        + elliptic->Nfields * mesh->Nlocal;                    // axpby
-    platform->flopCounter->addWork("gmresUpdate", flopCount);
+    platform->flopCounter->add("gmresUpdate", flopCount);
   }
 }
 }
@@ -223,7 +223,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
       {
         double flopCount = 3 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
-        platform->flopCounter->addWork("weightedInnerProdMulti", flopCount);
+        platform->flopCounter->add("weightedInnerProdMulti", flopCount);
       }
 
       for(int k = 0 ; k <=i; ++k)
@@ -255,7 +255,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
       {
         double flopCount = 5 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
-        platform->flopCounter->addWork("gramSchmidt", flopCount);
+        platform->flopCounter->add("gramSchmidt", flopCount);
       }
 
       // H(i+1,i) = ||w||_2
@@ -270,7 +270,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
           (1./nw), o_w, 0., o_V.at(i+1));
 
         double flopCount = elliptic->Nfields * mesh->Nlocal;
-        platform->flopCounter->addWork("weight gmres vector", flopCount);
+        platform->flopCounter->add("weight gmres vector", flopCount);
       }
 
       //apply Givens rotation
@@ -345,7 +345,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
     {
       double flopCount = 4 * elliptic->Nfields * mesh->Nlocal;
-      platform->flopCounter->addWork("gmres evaluate residual and norm", flopCount);
+      platform->flopCounter->add("gmres evaluate residual and norm", flopCount);
     }
 
     error = nr * sqrt(elliptic->resNormFactor);

@@ -2,7 +2,7 @@
 #include "flopCounter.hpp"
 #include "platform.hpp"
 
-void flopCounter_t::addWork(const std::string &entry, dfloat work)
+void flopCounter_t::add(const std::string &entry, dfloat work)
 {
   if (!flopMap.count(entry)) {
     flopMap[entry] = 0.0;

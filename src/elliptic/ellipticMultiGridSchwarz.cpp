@@ -950,5 +950,5 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
   const auto Npe = Nqe * Nqe * Nqe;
   const auto flopsPerElem = 12 * Nqe * Npe + Npe;
   const auto flops = mesh->Nelements * flopsPerElem;
-  platform->flopCounter->addWork(elliptic->name + " Schwarz, N=" + std::to_string(mesh->N), flops);
+  platform->flopCounter->add(elliptic->name + " Schwarz, N=" + std::to_string(mesh->N), flops);
 }

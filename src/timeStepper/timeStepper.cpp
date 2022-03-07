@@ -36,7 +36,7 @@ void velocityAdvectionFlops(nrs_t *nrs)
   flopCount *= Nelements;
   flopCount += nrs->NVfields * nrs->fieldOffset; // axpby operation
 
-  platform->flopCounter->addWork("velocityAdvection", flopCount);
+  platform->flopCounter->add("velocityAdvection", flopCount);
 }
 void scalarAdvectionFlops(cds_t *cds)
 {
@@ -60,7 +60,7 @@ void scalarAdvectionFlops(cds_t *cds)
   flopCount *= Nelements;
   flopCount += cds->fieldOffset[0]; // axpby operation
 
-  platform->flopCounter->addWork("scalarAdvection", flopCount);
+  platform->flopCounter->add("scalarAdvection", flopCount);
 }
 void velocitySubcyclingFlops(nrs_t *nrs)
 {
@@ -83,7 +83,7 @@ void velocitySubcyclingFlops(nrs_t *nrs)
   }
   flopCount *= Nelements;
 
-  platform->flopCounter->addWork("velocitySubcycling", flopCount);
+  platform->flopCounter->add("velocitySubcycling", flopCount);
 }
 void scalarSubcyclingFlops(cds_t *cds)
 {
@@ -106,7 +106,7 @@ void scalarSubcyclingFlops(cds_t *cds)
   }
   flopCount *= Nelements;
 
-  platform->flopCounter->addWork("scalarSubcycling", flopCount);
+  platform->flopCounter->add("scalarSubcycling", flopCount);
 }
 } // namespace
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
@@ -340,7 +340,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
         o_Urst);
     flopCount += 24 * mesh->Nelements * mesh->Nelements;
   }
-  platform->flopCounter->addWork("Urst", flopCount);
+  platform->flopCounter->add("Urst", flopCount);
 
   if (nrs->Nscalar) {
     platform->timer.tic("makeq", 1);
