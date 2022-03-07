@@ -191,6 +191,7 @@ void linAlg_t::axpby(const dlong N,
                      const dlong yOffset)
 {
   axpbyKernel(N, xOffset, yOffset, alpha, o_x, beta, o_y);
+  platform->flopCounter->add("axpby", 3 * N * Nfields);
 }
 void linAlg_t::axpbyMany(const dlong N,
                          const dlong Nfields,
@@ -201,6 +202,7 @@ void linAlg_t::axpbyMany(const dlong N,
                          occa::memory &o_y)
 {
   axpbyManyKernel(N, Nfields, offset, alpha, o_x, beta, o_y);
+  platform->flopCounter->add("axpbyMany", 3 * N * Nfields);
 }
 
 // o_z[n] = beta*o_y[n] + alpha*o_x[n]

@@ -127,8 +127,7 @@ void gmresUpdate(elliptic_t* elliptic,
       o_x
     );
 
-    double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * mesh->Nlocal // update GMRES solution
-                       + elliptic->Nfields * mesh->Nlocal;                    // axpby
+    double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * mesh->Nlocal;
     platform->flopCounter->add("gmresUpdate", flopCount);
   }
 }
@@ -263,14 +262,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
       // V(:,i+1) = w/nw
       if (i < nRestartVectors - 1) {
-        linAlg.axpbyMany(
-          mesh->Nlocal,
-          elliptic->Nfields,
-          elliptic->Ntotal,
-          (1./nw), o_w, 0., o_V.at(i+1));
-
-        double flopCount = elliptic->Nfields * mesh->Nlocal;
-        platform->flopCounter->add("weight gmres vector", flopCount);
+        linAlg
+            .axpbyMany(mesh->Nlocal, elliptic->Nfields, elliptic->Ntotal, (1. / nw), o_w, 0., o_V.at(i + 1));
       }
 
       //apply Givens rotation

@@ -118,14 +118,6 @@ int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
     //  dot(r,r)
     rdotr = sqrt(ellipticUpdatePCG(elliptic, o_p, o_Ap, alpha, o_x, o_r) * elliptic->resNormFactor);
 
-    const auto flopsDot = 3 * elliptic->Nfields * mesh->Nlocal;
-    const auto flopsPupdate = 4 * elliptic->Nfields * mesh->Nlocal;
-    const auto flopsAXPBY = 2 * elliptic->Nfields * mesh->Nlocal;
-
-    // Does not include Ax, preconditioner cost (handled by subsequent function calls)
-    const auto flopsPCG = flopsDot + flopsPupdate + flopsAXPBY;
-    platform->flopCounter->add(elliptic->name + " PCG", flopsPCG);
-
     if (verbose && (platform->comm.mpiRank == 0))
       printf("it %d r norm %.15e\n", iter, rdotr);
   }

@@ -224,8 +224,6 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
     -1.0,
     platform->o_mempool.slice0);
 
-  flopCount += nrs->NVfields * nrs->fieldOffset;
-
   nrs->velocityNeumannBCKernel(mesh->Nelements,
                                nrs->fieldOffset,
                                mesh->o_sgeo,

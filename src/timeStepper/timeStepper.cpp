@@ -32,7 +32,6 @@ void advectionFlops(mesh_t *mesh, int Nfields)
   }
 
   flopCount *= Nelements;
-  flopCount += mesh->Nlocal; // axpby operation
   flopCount *= Nfields;
 
   platform->flopCounter->add("advection", flopCount);

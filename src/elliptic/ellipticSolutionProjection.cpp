@@ -129,14 +129,12 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
     accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_bb, o_rtmp);
     platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_rtmp, one, o_r);
 
-    flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * Nlocal;
-    flopCount += Nfields * Nlocal;
+    flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * Nlocal; // accumulation
   }
   else if (type == ProjectionType::ACONJ)
   {
     matvec(o_bb, 0, o_xbar, 0);
     platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_bb, one, o_r);
-    flopCount += Nfields * Nlocal;
   }
 
   platform->flopCounter->add(solverName + " SolutionProjection::computePreProjection", flopCount);
@@ -144,8 +142,6 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
 
 void SolutionProjection::computePostProjection(occa::memory & o_x)
 {
-  dfloat flopCount = 0.0;
-
   const dfloat one = 1.0;
   const dfloat zero = 0.0;
 
@@ -156,7 +152,6 @@ void SolutionProjection::computePostProjection(occa::memory & o_x)
   } else if(numVecsProjection == maxNumVecsProjection) {
     numVecsProjection = 1;
     platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
-    flopCount += Nfields * Nlocal;
     o_xx.copyFrom(o_x, Nfields * fieldOffset * sizeof(dfloat));
   } else {
     numVecsProjection++;
@@ -164,7 +159,6 @@ void SolutionProjection::computePostProjection(occa::memory & o_x)
     o_xx.copyFrom(o_x, Nfields * fieldOffset * sizeof(dfloat), Nfields * (numVecsProjection - 1) * fieldOffset * sizeof(dfloat), 0);
     // x = x + xbar
     platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, one, o_xbar, one, o_x);
-    flopCount += Nfields * Nlocal;
   }
   const dlong previousNumVecsProjection = numVecsProjection;
   const dlong bOffset = (type == ProjectionType::CLASSIC) ? numVecsProjection - 1 : 0;
@@ -177,8 +171,6 @@ void SolutionProjection::computePostProjection(occa::memory & o_x)
     matvec(o_bb,0,o_xx,0);
     updateProjectionSpace();
   }
-
-  platform->flopCounter->add(solverName + " SolutionProjection::computePostProjection", flopCount);
 }
 
 SolutionProjection::SolutionProjection(elliptic_t &elliptic,
