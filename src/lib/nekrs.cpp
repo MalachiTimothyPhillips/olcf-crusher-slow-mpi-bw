@@ -80,13 +80,6 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   setOccaVars();
 
-  {
-    int overlap = 1;
-    options.compareArgs("ENABLE GS OVERLAP", "FALSE"); overlap = 0;
-    oogs::overlap(overlap);
-  }
-
-
   if (rank == 0) {
     std::string installDir;
     installDir.assign(getenv("NEKRS_HOME"));
@@ -154,6 +147,12 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   nek::bootstrap();
 
   if(udf.setup0) udf.setup0(comm, options);
+
+  {
+    int overlap = 1;
+    if(options.compareArgs("GS OVERLAP", "FALSE")) overlap = 0;
+    oogs::overlap(overlap);
+  }
 
   compileKernels();
 
