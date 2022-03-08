@@ -11,7 +11,7 @@ public:
 
   std::vector<std::string> entries() const;
 
-  // all entries
+  // Note: must be called collectively
   dfloat count() const;
 
 private:

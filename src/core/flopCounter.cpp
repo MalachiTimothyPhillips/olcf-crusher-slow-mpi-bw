@@ -1,6 +1,7 @@
 #include <mpi.h>
 #include "flopCounter.hpp"
 #include "platform.hpp"
+#include <array>
 
 void flopCounter_t::add(const std::string &entry, dfloat work)
 {
@@ -14,12 +15,27 @@ dfloat flopCounter_t::count(const std::string &entry) const { return flopMap.at(
 
 dfloat flopCounter_t::count() const
 {
+  dfloat err = 0;
   dfloat total = 0.0;
   for (auto const &entry : flopMap) {
+    if (entry.second < 0.0)
+      err += 1;
     total += entry.second;
   }
 
-  MPI_Allreduce(MPI_IN_PLACE, &total, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  std::array<dfloat, 2> errAndTotal = {err, total};
+  MPI_Allreduce(MPI_IN_PLACE, errAndTotal.data(), 2, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+
+  err = errAndTotal[0];
+  total = errAndTotal[1];
+
+  if (err > 0.0) {
+    if (platform->comm.mpiRank == 0) {
+      std::cout << "Encountered error in flopCounter_t::count" << std::endl;
+    }
+    ABORT(1)
+  }
+
   return total;
 }
 
