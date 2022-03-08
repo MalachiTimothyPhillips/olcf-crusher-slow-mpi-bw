@@ -267,7 +267,7 @@ void timer_t::printStatEntry(std::string name, double time)
   } 
 }
 
-void timer_t::printRunStat(int step, dfloat flops)
+void timer_t::printRunStat(int step)
 {
   int rank;
   MPI_Comm_rank(comm_, &rank);
@@ -307,6 +307,7 @@ void timer_t::printRunStat(int step, dfloat flops)
   const double tSolve        = query("solve", "DEVICE:MAX");
   const double tMinSolveStep = query("minSolveStep", "HOST:MAX");
   const double tMaxSolveStep = query("maxSolveStep", "HOST:MAX");
+  const double flops = platform->flopCounter->count();
   if(tSolve > 0 && rank == 0) {
     std::cout << "  total solve           " << tSolve << "s  (" << flops / tSolve << " FLOPS/s)\n";
     std::cout <<   "    step min            " << tMinSolveStep << "s\n";

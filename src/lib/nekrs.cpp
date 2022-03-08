@@ -188,6 +188,7 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
   fflush(stdout);
 
   platform->timer.set("setup", setupTime);
+  platform->flopCounter->clear();
 }
 
 void runStep(double time, double dt, int tstep)
@@ -363,7 +364,7 @@ int runTimeStatFreq()
 
 void printRuntimeStatistics(int step)
 {
-  platform->timer.printRunStat(step, platform->flopCounter->count());
+  platform->timer.printRunStat(step);
 #if 0
   const auto flopCount = platform->flopCounter->count();
   const auto tSolve = platform->timer.query("solve", "DEVICE:MAX");
