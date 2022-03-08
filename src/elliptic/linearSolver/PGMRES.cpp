@@ -127,7 +127,7 @@ void gmresUpdate(elliptic_t* elliptic,
       o_x
     );
 
-    double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * mesh->Nlocal;
+    double flopCount = 2 * gmresUpdateSize * elliptic->Nfields * static_cast<dfloat>(mesh->Nlocal);
     platform->flopCounter->add("gmresUpdate", flopCount);
   }
 }
@@ -248,7 +248,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       nw = sqrt(nw);
 
       {
-        double flopCount = 5 * (i + 1) * elliptic->Nfields * mesh->Nlocal;
+        double flopCount = 5 * (i + 1) * elliptic->Nfields * static_cast<dfloat>(mesh->Nlocal);
         platform->flopCounter->add("gramSchmidt", flopCount);
       }
 
@@ -332,7 +332,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
     nr = sqrt(nr);
 
     {
-      double flopCount = 4 * elliptic->Nfields * mesh->Nlocal;
+      double flopCount = 4 * elliptic->Nfields * static_cast<dfloat>(mesh->Nlocal);
       platform->flopCounter->add("gmres evaluate residual and norm", flopCount);
     }
 

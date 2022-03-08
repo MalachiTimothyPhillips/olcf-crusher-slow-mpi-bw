@@ -89,7 +89,7 @@ void ellipticAx(elliptic_t* elliptic,
   if (!elliptic->poisson) {
     flopCount += 5 * mesh->Np;
   }
-  flopCount *= elliptic->Nfields * NelementsList;
+  flopCount *= elliptic->Nfields * static_cast<dfloat>(NelementsList);
 
   platform->flopCounter->add(elliptic->name + " Ax, N=" + std::to_string(mesh->N) + ", " +
                                  std::string(precision),

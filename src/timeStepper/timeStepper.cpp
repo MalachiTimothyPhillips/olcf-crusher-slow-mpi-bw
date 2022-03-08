@@ -288,7 +288,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
         nrs->o_U,
         mesh->o_U,
         o_Urst);
-    flopCount += 24 * mesh->Nelements * mesh->Nelements;
+    flopCount += 24 * static_cast<dfloat>(mesh->Nlocal);
   }
   platform->flopCounter->add("Urst", flopCount);
 
@@ -550,8 +550,8 @@ void makeq(
         cds->o_rho,
         o_BF);
 
-    dfloat scalarSumMakef = (3 * cds->nEXT + 3) * mesh->Nlocal;
-    scalarSumMakef += (cds->Nsubsteps) ? mesh->Nlocal : 3 * cds->nBDF * mesh->Nlocal;
+    dfloat scalarSumMakef = (3 * cds->nEXT + 3) * static_cast<dfloat>(mesh->Nlocal);
+    scalarSumMakef += (cds->Nsubsteps) ? mesh->Nlocal : 3 * cds->nBDF * static_cast<dfloat>(mesh->Nlocal);
     platform->flopCounter->add("scalarSumMakef", scalarSumMakef);
   }
 
@@ -690,10 +690,10 @@ void makef(
 
   dfloat sumMakefFlops = 0.0;
   if (nrs->Nsubsteps) {
-    sumMakefFlops += (6 + 6 * nrs->nEXT) * mesh->Nlocal;
+    sumMakefFlops += (6 + 6 * nrs->nEXT) * static_cast<dfloat>(mesh->Nlocal);
   }
   else {
-    sumMakefFlops += (6 * nrs->nEXT + 12 * nrs->nBDF) * mesh->Nlocal;
+    sumMakefFlops += (6 * nrs->nEXT + 12 * nrs->nBDF) * static_cast<dfloat>(mesh->Nlocal);
   }
 
   platform->flopCounter->add("sumMakef", sumMakefFlops);
