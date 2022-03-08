@@ -471,6 +471,10 @@ void makeq(
         cds->o_rho,
         cds->o_S,
         o_FS);
+
+      dfloat flops = 6 * mesh->Np * mesh->Nq + 4 * mesh->Np;
+      flops *= static_cast<dfloat>(mesh->Nelements);
+      platform->flopCounter->add("scalarFilterRT", flops);
     }
     const int movingMesh = cds->options[is].compareArgs("MOVING MESH", "TRUE");
     if (movingMesh && !cds->Nsubsteps) {
@@ -606,7 +610,7 @@ void makef(
     platform->timer.toc("udfUEqnSource");
   }
 
-  if(platform->options.compareArgs("REGULARIZATION METHOD", "RELAXATION"))
+  if (platform->options.compareArgs("REGULARIZATION METHOD", "RELAXATION")) {
     nrs->filterRTKernel(
       mesh->Nelements,
       nrs->o_filterMT,
@@ -614,6 +618,10 @@ void makef(
       nrs->fieldOffset,
       nrs->o_U,
       o_FU);
+    dfloat flops = 24 * mesh->Np * mesh->Nq + 3 * mesh->Np;
+    flops *= static_cast<dfloat>(mesh->Nelements);
+    platform->flopCounter->add("velocityFilterRT", flops);
+  }
 
   if (movingMesh && !nrs->Nsubsteps) {
     nrs->advectMeshVelocityKernel(mesh->Nelements,
