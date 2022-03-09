@@ -487,6 +487,9 @@ void makeq(
           mesh->o_U,
           cds->o_S,
           o_FS);
+      double flops = 18 * mesh->Np * mesh->Nq + 21 * mesh->Np;
+      flops *= static_cast<double>(mesh->Nelements);
+      platform->flopCounter->add("scalar advectMeshVelocity", flops);
     }
 
     occa::memory o_Usubcycling = platform->o_mempool.slice0;
@@ -631,6 +634,9 @@ void makef(
         mesh->o_U,
         nrs->o_U,
         o_FU);
+    double flops = 54 * mesh->Np * mesh->Nq + 63 * mesh->Np;
+    flops *= static_cast<double>(mesh->Nelements);
+    platform->flopCounter->add("velocity advectMeshVelocity", flops);
   }
 
   occa::memory o_Usubcycling = platform->o_mempool.slice0;
