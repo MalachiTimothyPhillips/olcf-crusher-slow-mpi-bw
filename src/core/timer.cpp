@@ -308,8 +308,14 @@ void timer_t::printRunStat(int step)
   const double tMinSolveStep = query("minSolveStep", "HOST:MAX");
   const double tMaxSolveStep = query("maxSolveStep", "HOST:MAX");
   const double flops = platform->flopCounter->count();
+  bool printFlops = !platform->options.compareArgs("PRESSURE PRECONDITIONER", "SEMFEM");
   if(tSolve > 0 && rank == 0) {
-    std::cout << "  total solve           " << tSolve << "s  (" << flops / tSolve << " FLOPS/s)\n";
+    if (printFlops) {
+      std::cout << "  total solve           " << tSolve << "s  (" << flops / tSolve << " FLOPS/s)\n";
+    }
+    else {
+      std::cout << "  total solve           " << tSolve << "s\n";
+    }
     std::cout <<   "    step min            " << tMinSolveStep << "s\n";
     std::cout <<   "    step max            " << tMaxSolveStep << "s\n";
   }
