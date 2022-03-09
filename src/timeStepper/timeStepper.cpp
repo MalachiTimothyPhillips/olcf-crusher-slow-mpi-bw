@@ -252,13 +252,17 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
             (s - 2) * NbyteCubature);
       }
     }
-    if (movingMesh)
+    if (movingMesh) {
+      double flops = 18 * (mesh->Np * mesh->Nq + mesh->Np);
+      flops *= static_cast<double>(mesh->Nelements);
       nrs->divergenceVolumeKernel(mesh->Nelements,
           mesh->o_vgeo,
           mesh->o_D,
           nrs->fieldOffset,
           mesh->o_U,
           mesh->o_divU);
+      platform->flopCounter->add("divergenceVolumeKernel", flops);
+    }
   }
 
   const bool relative = movingMesh && nrs->Nsubsteps;
@@ -1743,6 +1747,12 @@ void computeDivUErr(nrs_t* nrs, dfloat& divUErrVolAvg, dfloat& divUErrL2)
       nrs->fieldOffset,
       nrs->o_U,
       platform->o_mempool.slice0);
+
+  double flops = 18 * (mesh->Np * mesh->Nq + mesh->Np);
+  flops *= static_cast<double>(mesh->Nelements);
+
+  platform->flopCounter->add("divergenceVolumeKernel", flops);
+
   oogs::startFinish(platform->o_mempool.slice0, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
   platform->linAlg->axmy(mesh->Nlocal, 1.0,
     mesh->o_invLMM, platform->o_mempool.slice0);
