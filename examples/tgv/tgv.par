@@ -1,6 +1,6 @@
 [GENERAL]
 polynomialOrder = 7
-ubaturePolynomialOrder = 9 
+cubaturePolynomialOrder = 9 
 
 #startFrom = "restart.fld"
 stopAt = endTime
@@ -13,7 +13,7 @@ timeStepper = tombo2
 dt = targetCFL=2 + max=2e-2
 
 writeControl = runTime
-writeInterval = 1
+writeInterval = 0
 
 regularization = hpfrt + nModes=1 + scalingCoeff=10 
 
