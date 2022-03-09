@@ -85,14 +85,11 @@ void devFindptsEval(
 }
 
 void devFindptsLocalEval(
-        void *const  out_base, const dlong  out_stride,
-  const void *const   el_base, const dlong   el_stride,
-  const void *const    r_base, const dlong    r_stride,
+        void *const  out,
+  const void *const   el,
+  const void *const    r,
   const dlong npt, void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData) {
 
-  findpts_local_eval(out_base,  out_stride,
-                            el_base,   el_stride,
-                             r_base,    r_stride,
-                           npt, in, &fd->local, findptsData);
+  findpts_local_eval(out, el, r, npt, in, &fd->local, findptsData);
 }

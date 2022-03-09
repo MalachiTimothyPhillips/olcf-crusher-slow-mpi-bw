@@ -288,17 +288,14 @@ void findptsLocalEval(
 }
 
 void findptsLocalEval(
-  occa::memory  o_out, const dlong  out_stride,
-  occa::memory   o_el, const dlong   el_stride,
-  occa::memory    o_r, const dlong    r_stride,
+  occa::memory  o_out,
+  occa::memory   o_el,
+  occa::memory    o_r,
   const dlong npt, occa::memory o_in, findpts_t* const fd) {
 
   devFindptsLocalEval(&o_out,
-                           out_stride,
                            &o_el,
-                           el_stride,
                            &o_r,
-                           r_stride,
                            npt,
                            &o_in,
                            (findpts_data_3 *)fd->findpts_data,

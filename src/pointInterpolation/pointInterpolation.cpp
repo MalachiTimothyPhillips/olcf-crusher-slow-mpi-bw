@@ -145,11 +145,8 @@ void pointInterpolation_t::evalLocalPoints(occa::memory o_fields,
   for (int i = 0; i < nFields; ++i) {
     occa::memory o_out_i = o_out + i * offset * sizeof(dfloat);
     findptsLocalEval(o_out_i,
-                        sizeof(dfloat),
                         o_el,
-                        sizeof(dlong),
                         o_r,
-                        3 * sizeof(dfloat),
                         n,
                         o_fields + i * nrs->fieldOffset * sizeof(dfloat),
                         findpts_);

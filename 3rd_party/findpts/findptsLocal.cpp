@@ -3,6 +3,7 @@
 #include "ogstypes.h"
 #include "findpts.hpp"
 #include "platform.hpp"
+#include <vector>
 
 extern "C" {
 
@@ -112,57 +113,57 @@ void findpts_local_eval_internal(
   occa::device device = *findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
 
-  dlong alloc_size = (sizeof(struct eval_out_pt_3)+sizeof(struct eval_src_pt_3))*pn;
-  occa::memory workspace;
-  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if(alloc_size < mempool.size()) {
-    workspace = mempool.cast(occa::dtype::byte);
-  } else {
-    workspace = device.malloc(alloc_size, occa::dtype::byte);
+  // pack buffers
+  std::vector<dfloat> out(pn, 0.0);
+  std::vector<dfloat> r(3*pn, 0.0);
+  std::vector<dlong> el(pn, 0);
+
+  for(int point = 0; point < pn; ++point){
+    for(int component = 0; component < 3; ++component){
+      r[3*point+component] = spt[point].r[component];
+      el[point] = spt[point].el;
+    }
   }
-  occa::memory o_out_pt = workspace; workspace += sizeof(struct eval_out_pt_3)*pn;
-  occa::memory o_src_pt = workspace;
-  o_src_pt.copyFrom(spt, sizeof(struct eval_src_pt_3)*pn);
 
-  occa::memory o_out_base   = o_out_pt + offsetof(struct eval_out_pt_3, out);
-  occa::memory o_el_base    = o_src_pt + offsetof(struct eval_src_pt_3, el);
-  occa::memory o_r_base     = o_src_pt + offsetof(struct eval_src_pt_3, r);
+  // TODO: use pinned memory buffers + common scratch space
+  auto o_out = device.malloc(pn * sizeof(dfloat));
+  auto o_el  = device.malloc(pn * sizeof(dlong));
+  auto o_r   = device.malloc(3 * pn * sizeof(dfloat));
 
-  dlong out_stride = sizeof(struct eval_out_pt_3);
-  dlong src_stride = sizeof(struct eval_src_pt_3);
+  o_r.copyFrom(r.data(), 3 * pn * sizeof(dfloat));
+  o_el.copyFrom(el.data(), pn * sizeof(dlong));
 
-#if 0
-  findptsData->local_eval_kernel(1, 0, 0, o_out_base,   out_stride,
-                            o_el_base,    src_stride,
-                            o_r_base,     src_stride,
-                            pn, o_in);
-#endif
+  findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
 
-  o_out_pt.copyTo(opt, sizeof(struct eval_out_pt_3)*pn);
+  o_out.copyTo(out.data(), pn * sizeof(dfloat));
+
+  // unpack buffer
+  for(int point = 0; point < pn; ++point){
+    opt[point].out = out[point];
+  }
+
+  o_out.free();
+  o_el.free();
+  o_r.free();
+
 }
 
 void findpts_local_eval(
-          void * const out_base, const uint out_stride,
-    const void * const el_base,  const uint el_stride,
-    const void * const r_base,   const uint r_stride,
+          void * const out,
+    const void * const el,
+    const void * const r,
     const uint pn, const void *const in,
     struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
 {
   if (pn == 0) return;
 
   findpts_t *findptsData = (findpts_t*)findptsData_void;
-  occa::memory o_out_base = *(occa::memory*)out_base;
-  occa::memory o_el_base  = *(occa::memory*) el_base;
-  occa::memory o_r_base   = *(occa::memory*)  r_base;
+  occa::memory o_out = *(occa::memory*)out;
+  occa::memory o_el  = *(occa::memory*) el;
+  occa::memory o_r   = *(occa::memory*)  r;
   occa::memory o_in       = *(occa::memory*)in;
 
-#if 0
-  findptsData->local_eval_kernel(1, 0, 0, o_out_base, out_stride,
-                            o_el_base,  el_stride,
-                            o_r_base,   r_stride,
-                            pn, o_in);
-#endif
-
+  findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
 }
 
 }

@@ -41,9 +41,9 @@ void findpts_local_eval_internal(
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
 void findpts_local_eval(
-        void *const  out_base, const unsigned  out_stride,
-  const void *const   el_base, const unsigned   el_stride,
-  const void *const    r_base, const unsigned    r_stride,
+        void *const  out_base,
+  const void *const   el_base,
+  const void *const    r_base,
   const uint pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
