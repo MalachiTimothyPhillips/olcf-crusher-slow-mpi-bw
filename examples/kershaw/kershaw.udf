@@ -103,7 +103,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     const double solveTimeMax = *std::max_element(eTime.begin(), eTime.end()); 
     const double solveTimeAvg = std::accumulate(eTime.begin(), eTime.end(), 0.0) / Nrep; 
     const double throughput = (double)Ntotal/solveTime;
-    const double flopsPerSecond = (platform->flopCounter->count()/Nrep)/solveTime;
+    const double flopsPerSecond = (platform->flopCounter->get(platform->comm.mpiComm)/Nrep)/solveTime;
 
     if(platform->comm.mpiRank == 0) {
       printf("repetitions: %d\n", Nrep);
