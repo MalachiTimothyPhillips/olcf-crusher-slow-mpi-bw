@@ -11,9 +11,16 @@ void flopCounter_t::add(const std::string &entry, dfloat work)
   flopMap[entry] += work;
 }
 
-dfloat flopCounter_t::count(const std::string &entry) const { return flopMap.at(entry); }
+dfloat flopCounter_t::count(const std::string &entry, MPI_Comm comm) const
+{
+  dfloat total = flopMap.at(entry);
+  if (comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, &total, 1, MPI_DFLOAT, MPI_SUM, comm);
+  }
+  return total;
+}
 
-dfloat flopCounter_t::count() const
+dfloat flopCounter_t::count(MPI_Comm comm) const
 {
   dfloat err = 0;
   dfloat total = 0.0;
@@ -24,13 +31,20 @@ dfloat flopCounter_t::count() const
   }
 
   std::array<dfloat, 2> errAndTotal = {err, total};
-  MPI_Allreduce(MPI_IN_PLACE, errAndTotal.data(), 2, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  if (comm != MPI_COMM_NULL) {
+    MPI_Allreduce(MPI_IN_PLACE, errAndTotal.data(), 2, MPI_DFLOAT, MPI_SUM, comm);
+  }
 
   err = errAndTotal[0];
   total = errAndTotal[1];
 
   if (err > 0.0) {
-    if (platform->comm.mpiRank == 0) {
+    int rank = 0;
+    if (comm != MPI_COMM_NULL) {
+      MPI_Comm_rank(comm, &rank);
+    }
+
+    if (rank == 0) {
       std::cout << "Encountered error in flopCounter_t::count" << std::endl;
     }
     ABORT(1)

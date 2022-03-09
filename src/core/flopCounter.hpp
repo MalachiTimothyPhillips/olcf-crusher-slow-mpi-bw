@@ -7,12 +7,13 @@ class flopCounter_t {
 public:
   void clear();
   void add(const std::string &entry, dfloat work);
-  dfloat count(const std::string &entry) const;
+
+  dfloat count(const std::string &entry, MPI_Comm comm) const;
 
   std::vector<std::string> entries() const;
 
   // Note: must be called collectively
-  dfloat count() const;
+  dfloat count(MPI_Comm comm) const;
 
 private:
   std::map<std::string, dfloat> flopMap;
