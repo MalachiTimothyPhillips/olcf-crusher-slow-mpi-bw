@@ -7,7 +7,7 @@ namespace tombo
 {
 occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 {
-  dfloat flopCount = 0.0;
+  double flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
   
   //enforce Dirichlet BCs
@@ -67,7 +67,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
                   nrs->fieldOffset,
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
   
@@ -90,7 +90,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice0,
     platform->o_mempool.slice3);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   nrs->gradientVolumeKernel(
     mesh->Nelements,
@@ -100,7 +100,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->o_div,
     platform->o_mempool.slice0);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   if (platform->options.compareArgs("STRESSFORMULATION", "TRUE")) {
     nrs->pressureStressKernel(
@@ -125,7 +125,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice0,
     platform->o_mempool.slice6);
 
-  flopCount += 12 * static_cast<dfloat>(mesh->Nlocal);
+  flopCount += 12 * static_cast<double>(mesh->Nlocal);
 
   oogs::startFinish(platform->o_mempool.slice6, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
 
@@ -148,7 +148,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice6,
     platform->o_mempool.slice3);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   nrs->pressureAddQtlKernel(
     mesh->Nlocal,
@@ -170,7 +170,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->o_U,
     platform->o_mempool.slice3);
 
-  flopCount += 25 * static_cast<dfloat>(mesh->Nelements) * mesh->Nq * mesh->Nq;
+  flopCount += 25 * static_cast<double>(mesh->Nelements) * mesh->Nq * mesh->Nq;
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
   ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
@@ -182,7 +182,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 
 occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
 {
-  dfloat flopCount = 0.0;
+  double flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
   
   dfloat scale = -1./3;
@@ -205,7 +205,7 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice3,
     platform->o_mempool.slice0);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   nrs->wgradientVolumeKernel(
     mesh->Nelements,
@@ -215,7 +215,7 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
     nrs->o_P,
     platform->o_mempool.slice3);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * 18 * (mesh->Np * mesh->Nq + mesh->Np);
+  flopCount += static_cast<double>(mesh->Nelements) * 18 * (mesh->Np * mesh->Nq + mesh->Np);
 
   platform->linAlg->axpby(
     nrs->NVfields*nrs->fieldOffset,
@@ -238,7 +238,7 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
                                nrs->o_U,
                                platform->o_mempool.slice0);
 
-  flopCount += static_cast<dfloat>(mesh->Nelements) * (3 * mesh->Np + 36 * mesh->Nq * mesh->Nq);
+  flopCount += static_cast<double>(mesh->Nelements) * (3 * mesh->Np + 36 * mesh->Nq * mesh->Nq);
 
   nrs->velocityRhsKernel(
     mesh->Nlocal,

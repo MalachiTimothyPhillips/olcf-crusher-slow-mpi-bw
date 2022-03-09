@@ -288,7 +288,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
         nrs->o_U,
         mesh->o_U,
         o_Urst);
-    flopCount += 24 * static_cast<dfloat>(mesh->Nlocal);
+    flopCount += 24 * static_cast<double>(mesh->Nlocal);
   }
   platform->flopCounter->add("Urst", flopCount);
 
@@ -472,8 +472,8 @@ void makeq(
         cds->o_S,
         o_FS);
 
-      dfloat flops = 6 * mesh->Np * mesh->Nq + 4 * mesh->Np;
-      flops *= static_cast<dfloat>(mesh->Nelements);
+      double flops = 6 * mesh->Np * mesh->Nq + 4 * mesh->Np;
+      flops *= static_cast<double>(mesh->Nelements);
       platform->flopCounter->add("scalarFilterRT", flops);
     }
     const int movingMesh = cds->options[is].compareArgs("MOVING MESH", "TRUE");
@@ -550,8 +550,8 @@ void makeq(
         cds->o_rho,
         o_BF);
 
-    dfloat scalarSumMakef = (3 * cds->nEXT + 3) * static_cast<dfloat>(mesh->Nlocal);
-    scalarSumMakef += (cds->Nsubsteps) ? mesh->Nlocal : 3 * cds->nBDF * static_cast<dfloat>(mesh->Nlocal);
+    dfloat scalarSumMakef = (3 * cds->nEXT + 3) * static_cast<double>(mesh->Nlocal);
+    scalarSumMakef += (cds->Nsubsteps) ? mesh->Nlocal : 3 * cds->nBDF * static_cast<double>(mesh->Nlocal);
     platform->flopCounter->add("scalarSumMakef", scalarSumMakef);
   }
 
@@ -618,8 +618,8 @@ void makef(
       nrs->fieldOffset,
       nrs->o_U,
       o_FU);
-    dfloat flops = 24 * mesh->Np * mesh->Nq + 3 * mesh->Np;
-    flops *= static_cast<dfloat>(mesh->Nelements);
+    double flops = 24 * mesh->Np * mesh->Nq + 3 * mesh->Np;
+    flops *= static_cast<double>(mesh->Nelements);
     platform->flopCounter->add("velocityFilterRT", flops);
   }
 
@@ -690,10 +690,10 @@ void makef(
 
   dfloat sumMakefFlops = 0.0;
   if (nrs->Nsubsteps) {
-    sumMakefFlops += (6 + 6 * nrs->nEXT) * static_cast<dfloat>(mesh->Nlocal);
+    sumMakefFlops += (6 + 6 * nrs->nEXT) * static_cast<double>(mesh->Nlocal);
   }
   else {
-    sumMakefFlops += (6 * nrs->nEXT + 12 * nrs->nBDF) * static_cast<dfloat>(mesh->Nlocal);
+    sumMakefFlops += (6 * nrs->nEXT + 12 * nrs->nBDF) * static_cast<double>(mesh->Nlocal);
   }
 
   platform->flopCounter->add("sumMakef", sumMakefFlops);

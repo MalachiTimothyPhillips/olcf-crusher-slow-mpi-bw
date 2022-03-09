@@ -70,7 +70,7 @@ void SolutionProjection::updateProjectionSpace()
   multiScaledAddwOffsetKernel(Nlocal, numVecsProjection, Nfields * (numVecsProjection - 1) * fieldOffset, fieldOffset, o_alpha, one, o_xx);
   if(type == ProjectionType::CLASSIC) multiScaledAddwOffsetKernel(Nlocal, numVecsProjection, Nfields * (numVecsProjection - 1) * fieldOffset, fieldOffset, o_alpha, one, o_bb);
 
-  flopCount += 3 * static_cast<dfloat>(Nlocal) * Nfields * (numVecsProjection - 1);
+  flopCount += 3 * static_cast<double>(Nlocal) * Nfields * (numVecsProjection - 1);
   flopCount *= (type == ProjectionType::CLASSIC) ? 2 : 1;
 
   for(int k = 0; k < numVecsProjection - 1; ++k)
@@ -82,7 +82,7 @@ void SolutionProjection::updateProjectionSpace()
     const dfloat scale = 1.0 / norm_new;
     platform->linAlg->scaleMany(Nlocal, Nfields, fieldOffset, scale, o_xx, fieldOffset * Nfields * (numVecsProjection - 1));
     if(type == ProjectionType::CLASSIC) platform->linAlg->scaleMany(Nlocal, Nfields, fieldOffset, scale, o_bb, fieldOffset * Nfields * (numVecsProjection - 1));
-    flopCount += static_cast<dfloat>(Nlocal) * Nfields;
+    flopCount += static_cast<double>(Nlocal) * Nfields;
     flopCount *= (type == ProjectionType::CLASSIC) ? 2 : 1;
   } else {
     if(verbose && platform->comm.mpiRank == 0) {
@@ -120,12 +120,12 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
 
   accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_xx, o_xbar);
 
-  flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * static_cast<dfloat>(Nlocal);
+  flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * static_cast<double>(Nlocal);
   if(type == ProjectionType::CLASSIC){
     accumulateKernel(Nlocal, numVecsProjection, fieldOffset, o_alpha, o_bb, o_rtmp);
     platform->linAlg->axpbyMany(Nlocal, Nfields, fieldOffset, mone, o_rtmp, one, o_r);
 
-    flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * static_cast<dfloat>(Nlocal); // accumulation
+    flopCount += Nfields * (1 + 2 * (numVecsProjection - 1)) * static_cast<double>(Nlocal); // accumulation
   }
   else if (type == ProjectionType::ACONJ)
   {
