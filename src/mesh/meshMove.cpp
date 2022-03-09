@@ -8,6 +8,7 @@ void mesh_t::computeInvLMM()
   platform->linAlg->ady(Nelements * Np, 1.0, o_invLMM);
 }
 void mesh_t::move(){
+  platform->timer.tic("mesh_t::move", 1);
   // update o_x, o_y and o_z based on mesh->o_U using AB formula
   nStagesSumVectorKernel(
       Nelements * Np,
@@ -20,37 +21,59 @@ void mesh_t::move(){
       o_z
   );
   update();
+
+  double flops = 6 * static_cast<double>(Nlocal) * nAB;
+  platform->flopCounter->add("mesh_t::move", flops);
+  platform->timer.toc("mesh_t::move");
 }
 void mesh_t::update(){
-    geometricFactorsKernel(
-        Nelements,
-        o_D,
-        o_gllw,
-        o_x,
-        o_y,
-        o_z,
-        o_LMM,
-        o_vgeo,
-        o_ggeo,
-        platform->o_mempool.slice0
-    );
+  platform->timer.tic("mesh_t::update", 1);
+  geometricFactorsKernel(Nelements,
+                         o_D,
+                         o_gllw,
+                         o_x,
+                         o_y,
+                         o_z,
+                         o_LMM,
+                         o_vgeo,
+                         o_ggeo,
+                         platform->o_mempool.slice0);
 
-    cubatureGeometricFactorsKernel(Nelements, o_D, o_x, o_y, o_z, o_cubInterpT, o_cubw, o_cubvgeo);
+  double flopsGeometricFactors = 18 * Np * Nq + 91 * Np;
+  flopsGeometricFactors *= static_cast<double>(Nelements);
 
-    // do add check if negative
-    const dfloat minJ = platform->linAlg->min(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
-    const dfloat maxJ = platform->linAlg->max(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
+  cubatureGeometricFactorsKernel(Nelements, o_D, o_x, o_y, o_z, o_cubInterpT, o_cubw, o_cubvgeo);
 
-    if(minJ < 0 || maxJ < 0) {
-      if(platform->options.compareArgs("GALERKIN COARSE OPERATOR","FALSE") ||
-	      (platform->options.compareArgs("GALERKIN COARSE OPERATOR","TRUE") && N > 1)) { 
-        if(platform->comm.mpiRank == 0) printf("Jacobian < 0!");
-        ABORT(EXIT_FAILURE);
-      }
+  double flopsCubatureGeometricFactors = 0.0;
+  flopsCubatureGeometricFactors += 18 * Np * Nq;                                             // deriv
+  flopsCubatureGeometricFactors += 18 * (cubNq * Np + cubNq * cubNq * Nq * Nq + cubNp * Nq); // c->f interp
+  flopsCubatureGeometricFactors += 55 * cubNp; // geometric factor computation
+  flopsCubatureGeometricFactors *= static_cast<double>(Nelements);
+
+  // do add check if negative
+  const dfloat minJ =
+      platform->linAlg->min(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
+  const dfloat maxJ =
+      platform->linAlg->max(Nelements * Np, platform->o_mempool.slice0, platform->comm.mpiComm);
+
+  if (minJ < 0 || maxJ < 0) {
+    if (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "FALSE") ||
+        (platform->options.compareArgs("GALERKIN COARSE OPERATOR", "TRUE") && N > 1)) {
+      if (platform->comm.mpiRank == 0)
+        printf("Jacobian < 0!");
+      ABORT(EXIT_FAILURE);
+    }
     }  
 
     volume = platform->linAlg->sum(Nelements * Np, o_LMM, platform->comm.mpiComm);
 
     computeInvLMM();
     surfaceGeometricFactorsKernel(Nelements, o_gllw, o_faceNodes, o_vgeo, o_sgeo);
+
+    double flopsSurfaceGeometricFactors = 32 * Nq * Nq;
+    flopsSurfaceGeometricFactors *= static_cast<double>(Nelements);
+
+    double flops = flopsGeometricFactors + flopsCubatureGeometricFactors + flopsSurfaceGeometricFactors;
+    platform->flopCounter->add("mesh_t::update", flops);
+    platform->timer.toc("mesh_t::update");
 }
