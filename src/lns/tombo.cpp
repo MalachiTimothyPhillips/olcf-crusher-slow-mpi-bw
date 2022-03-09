@@ -112,6 +112,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
          nrs->o_Ue,
          nrs->o_div,
          platform->o_mempool.slice3);
+    flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Nq * mesh->Np + 100 * mesh->Np);
   }
 
   occa::memory o_irho = nrs->o_ellipticCoeff;
@@ -137,8 +138,6 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->meshV->o_invLMM,
     platform->o_mempool.slice6
   );
-
-  flopCount += 3 * mesh->Nlocal;
 
   nrs->wDivergenceVolumeKernel(
     mesh->Nelements,
@@ -194,8 +193,6 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
        nrs->o_mue,
        nrs->o_div,
        platform->o_mempool.slice3);
-
-  flopCount += 2 * mesh->Nlocal;
 
   nrs->gradientVolumeKernel(
     mesh->Nelements,
