@@ -11,7 +11,7 @@ void flopCounter_t::add(const std::string &entry, dfloat work)
   flopMap[entry] += work;
 }
 
-dfloat flopCounter_t::count(const std::string &entry, MPI_Comm comm) const
+dfloat flopCounter_t::get(const std::string &entry, MPI_Comm comm) const
 {
   dfloat total = flopMap.at(entry);
   if (comm != MPI_COMM_NULL) {
@@ -20,7 +20,7 @@ dfloat flopCounter_t::count(const std::string &entry, MPI_Comm comm) const
   return total;
 }
 
-dfloat flopCounter_t::count(MPI_Comm comm) const
+dfloat flopCounter_t::get(MPI_Comm comm) const
 {
   dfloat err = 0;
   dfloat total = 0.0;
@@ -45,7 +45,7 @@ dfloat flopCounter_t::count(MPI_Comm comm) const
     }
 
     if (rank == 0) {
-      std::cout << "Encountered error in flopCounter_t::count" << std::endl;
+      std::cout << "Encountered error in flopCounter_t::get" << std::endl;
     }
     ABORT(1)
   }
@@ -55,7 +55,7 @@ dfloat flopCounter_t::count(MPI_Comm comm) const
 
 void flopCounter_t::clear() { flopMap.clear(); }
 
-std::vector<std::string> flopCounter_t::entries() const
+std::vector<std::string> flopCounter_t::entries(MPI_Comm comm) const
 {
   std::vector<std::string> loggedCategory;
   for (auto const &entry : flopMap) {
@@ -64,7 +64,7 @@ std::vector<std::string> flopCounter_t::entries() const
 
   // sort by flops (largest first)
   std::sort(loggedCategory.begin(), loggedCategory.end(), [&](const std::string &a, const std::string &b) {
-    return count(a) > count(b);
+    return get(a, comm) > get(b, comm);
   });
   return loggedCategory;
 }

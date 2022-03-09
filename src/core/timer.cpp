@@ -307,7 +307,7 @@ void timer_t::printRunStat(int step)
   const double tSolve        = query("solve", "DEVICE:MAX");
   const double tMinSolveStep = query("minSolveStep", "HOST:MAX");
   const double tMaxSolveStep = query("maxSolveStep", "HOST:MAX");
-  const double flops = platform->flopCounter->count(platform->comm.mpiComm);
+  const double flops = platform->flopCounter->get(platform->comm.mpiComm);
   bool printFlops = !platform->options.compareArgs("PRESSURE PRECONDITIONER", "SEMFEM");
   if(tSolve > 0 && rank == 0) {
     if (printFlops) {
