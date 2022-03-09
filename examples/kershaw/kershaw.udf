@@ -16,7 +16,10 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
     double* const nek_cb_scnrs = (double*) nek::ptr("cb_scnrs");
     nek_cb_scnrs[0] = P_EPS;
   }
-  //platform->options.setArgs("GS OVERLAP", "FALSE");
+
+  int gsOverlap = 1;
+  platform->par->extract("casedata", "gsoverlap", gsOverlap);
+  if(!gsOverlap) platform->options.setArgs("GS OVERLAP", "FALSE");
 }
 
 void UDF_Setup(nrs_t *nrs)
@@ -40,15 +43,16 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
   for(std::string benchmark : {"BPS5", "BP5"}){
 
+    MPI_Barrier(platform->comm.mpiComm);
     if(platform->comm.mpiRank == 0) 
-      std::cout << "\n" << benchmark << " ..."; 
+      std::cout << "\n" << benchmark << "\n"; 
 
     int Nrep = 0;
     if(benchmark == "BP5"){
       Nrep = 50;
       nrs->pSolver->options.setArgs("PRECONDITIONER", "JACOBI");
       nrs->pSolver->options.setArgs("KRYLOV SOLVER", "PCG");
-      nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "1000");
+      nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "500");
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-15));
       ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
     }

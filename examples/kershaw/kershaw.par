@@ -48,3 +48,4 @@ viscosity = 1.0
 
 [CASEDATA]
 P_EPS = 0.3
+gsOverlap = 1
