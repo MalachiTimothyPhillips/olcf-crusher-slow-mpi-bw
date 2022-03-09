@@ -1,12 +1,16 @@
 [GENERAL]
 polynomialOrder = 7
+ubaturePolynomialOrder = 9 
+
 #startFrom = "restart.fld"
 stopAt = endTime
 endTime = 20
 
-dt = 2.0e-2
 timeStepper = tombo2
-subCyclingSteps = 1
+
+#dt = 2.0e-2
+#subCyclingSteps = 1
+dt = targetCFL=2 + max=2e-2
 
 writeControl = runTime
 writeInterval = 1
@@ -14,7 +18,10 @@ writeInterval = 1
 regularization = hpfrt + nModes=1 + scalingCoeff=10 
 
 [PRESSURE]
+solver = pfcg
 residualTol = 1e-04
+preconditioner = multigrid+coarse
+smootherType = JAC+Chebyshev+degree=2
 
 [VELOCITY]
 solver = cg+block
