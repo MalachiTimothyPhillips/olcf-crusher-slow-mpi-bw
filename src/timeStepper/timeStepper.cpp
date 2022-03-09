@@ -264,7 +264,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep) {
   const bool relative = movingMesh && nrs->Nsubsteps;
   occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
   mesh = nrs->meshV;
-  dfloat flopCount = 0.0;
+  double flopCount = 0.0;
 
   if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
     nrs->UrstCubatureKernel(mesh->Nelements,

@@ -85,7 +85,7 @@ void ellipticAx(elliptic_t* elliptic,
                   o_q,
                   o_Aq);
 
-  auto flopCount = 12 * mesh->Np * mesh->Nq + 15 * mesh->Np;
+  double flopCount = 12 * mesh->Np * mesh->Nq + 15 * mesh->Np;
   if (!elliptic->poisson) {
     flopCount += 5 * mesh->Np;
   }

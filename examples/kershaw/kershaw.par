@@ -5,9 +5,9 @@ stopAt = numSteps
 numSteps = 0
 
 [PRESSURE]
-#solver = pfgmres+nVector=20
-#maxIterations = 200
-#residualTol = 1e-8+relative
+solver = pfgmres+nVector=30
+maxIterations = 200
+residualTol = 1e-8+relative
 
 # p-MG multiplicative V-cycle, coarse grid solve
 preconditioner = multigrid+coarse

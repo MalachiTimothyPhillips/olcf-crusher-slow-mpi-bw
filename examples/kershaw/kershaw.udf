@@ -40,29 +40,22 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
   for(std::string benchmark : {"BPS5", "BP5"}){
 
+    if(platform->comm.mpiRank == 0) 
+      std::cout << "\n" << benchmark << " ..."; 
+
     int Nrep = 0;
     if(benchmark == "BP5"){
       Nrep = 50;
       nrs->pSolver->options.setArgs("PRECONDITIONER", "JACOBI");
       nrs->pSolver->options.setArgs("KRYLOV SOLVER", "PCG");
-      nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "500");
+      nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "1000");
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-15));
       ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
     }
     if(benchmark == "BPS5"){
       Nrep = 50;
-      //nrs->pSolver->options.setArgs("PRECONDITIONER", "MULTIGRID");
-      //nrs->pSolver->options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
-      //nrs->pSolver->options.setArgs("MULTIGRID DOWNWARD SMOOTHER", "RAS");
-      //nrs->pSolver->options.setArgs("MULTIGRID UPWARD SMOOTHER", "RAS");
-      //nrs->pSolver-> options.setArgs("MULTIGRID CHEBYSHEV DEGREE", "2");
-      //ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
-
-      nrs->pSolver->options.setArgs("KRYLOV SOLVER", "PGMRES+FLEXIBLE");
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-8));
       nrs->pSolver->options.setArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE");
-      nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "60");
-      nrs->pSolver->options.setArgs("PGMRES RESTART", "60");
     }
 
     platform->timer.reset();
@@ -72,9 +65,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     std::vector<double> precoTime; 
     std::vector<double> smootherTime; 
     std::vector<double> crsTime;
-
-    if(platform->comm.mpiRank == 0) 
-      std::cout << "\n" << benchmark << " ..."; 
 
     for (int i = 0; i < Nrep; i++) { 
       platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
