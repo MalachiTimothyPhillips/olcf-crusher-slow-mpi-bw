@@ -338,6 +338,7 @@ void timer_t::printRunStat(int step)
   printStatEntry("    scalarSolve         ", "scalarSolve", "DEVICE:MAX");
   printStatEntry("      projection        ", "scalar proj", "DEVICE:MAX");
 
+  printStatEntry("    meshUpdate          ", "meshUpdate", "DEVICE:MAX");
   printStatEntry("    meshSolve           ", "meshSolve", "DEVICE:MAX");
 
   printStatEntry("    gsMPI               ", gsTime);

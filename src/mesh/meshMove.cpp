@@ -2,7 +2,7 @@
 #include "linAlg.hpp"
 #include "platform.hpp"
 void mesh_t::move(){
-  platform->timer.tic("mesh_t::move", 1);
+  platform->timer.tic("meshUpdate", 1);
   // update o_x, o_y and o_z based on mesh->o_U using AB formula
   nStagesSumVectorKernel(
       Nelements * Np,
@@ -18,10 +18,10 @@ void mesh_t::move(){
 
   double flops = 6 * static_cast<double>(Nlocal) * nAB;
   platform->flopCounter->add("mesh_t::move", flops);
-  platform->timer.toc("mesh_t::move");
+  platform->timer.toc("meshUpdate");
 }
-void mesh_t::update(){
-  platform->timer.tic("mesh_t::update", 1);
+void mesh_t::update()
+{
   geometricFactorsKernel(Nelements,
                          o_D,
                          o_gllw,
@@ -69,5 +69,4 @@ void mesh_t::update(){
 
     double flops = flopsGeometricFactors + flopsCubatureGeometricFactors + flopsSurfaceGeometricFactors;
     platform->flopCounter->add("mesh_t::update", flops);
-    platform->timer.toc("mesh_t::update");
 }
