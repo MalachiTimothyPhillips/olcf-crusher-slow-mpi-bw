@@ -1,12 +1,6 @@
-#include <mesh.h>
-#include <linAlg.hpp>
-#include <nekInterfaceAdapter.hpp>
-void mesh_t::computeInvLMM()
-{
-  o_invLMM.copyFrom(o_LMM, Nelements * Np * sizeof(dfloat));
-  oogs::startFinish(o_invLMM, 1, 0, ogsDfloat, ogsAdd, oogs);
-  platform->linAlg->ady(Nelements * Np, 1.0, o_invLMM);
-}
+#include "mesh.h"
+#include "linAlg.hpp"
+#include "platform.hpp"
 void mesh_t::move(){
   platform->timer.tic("mesh_t::move", 1);
   // update o_x, o_y and o_z based on mesh->o_U using AB formula
