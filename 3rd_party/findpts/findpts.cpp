@@ -172,29 +172,17 @@ void findpts(findpts_data_t *const findPtsData,
                 const dlong npt,
                 findpts_t *const fd)
 {
-  // x_base, x_stride have length D
-
   dlong *const code_base = findPtsData->code_base;
-  const dlong code_stride = sizeof(dlong);
   dlong *const proc_base = findPtsData->proc_base;
-  const dlong proc_stride = sizeof(dlong);
   dlong *const el_base = findPtsData->el_base;
-  const dlong el_stride = sizeof(dlong);
   dfloat *const r_base = findPtsData->r_base;
-  const dlong r_stride = 3 * sizeof(dfloat);
   dfloat *const dist2_base = findPtsData->dist2_base;
-  const dlong dist2_stride = sizeof(dfloat);
 
   devFindpts(code_base,
-                  code_stride,
                   proc_base,
-                  proc_stride,
                   el_base,
-                  el_stride,
                   r_base,
-                  r_stride,
                   dist2_base,
-                  dist2_stride,
                   x_base,
                   x_stride,
                   npt,

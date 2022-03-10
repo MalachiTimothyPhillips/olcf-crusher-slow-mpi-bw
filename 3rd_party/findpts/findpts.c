@@ -72,21 +72,22 @@ struct out_pt_3 {
 };
 
 void findpts_impl(int *const code_base,
-                   const int code_stride,
                    int *const proc_base,
-                   const int proc_stride,
                    int *const el_base,
-                   const int el_stride,
                    double *const r_base,
-                   const int r_stride,
                    double *const dist2_base,
-                   const int dist2_stride,
                    const double *const x_base[D],
                    const int x_stride[D],
                    const int npt,
                    struct findpts_data_3 *const fd,
                    const void *const findptsData)
 {
+  int code_stride = sizeof(double);
+  int proc_stride = sizeof(int);
+  int el_stride = sizeof(int);
+  int r_stride = 3 * sizeof(double);
+  int dist2_stride = sizeof(double);
+
   const int np = fd->cr.comm.np, id=fd->cr.comm.id;
   struct array hash_pt, src_pt_3, out_pt_3;
   /* look locally first */
