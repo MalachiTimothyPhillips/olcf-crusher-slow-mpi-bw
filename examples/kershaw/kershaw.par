@@ -1,6 +1,8 @@
 [GENERAL] 
 #verbose = true
 polynomialOrder = 7
+dealiasing = false
+timeStepper = tombo1
 stopAt = numSteps
 numSteps = 0
 

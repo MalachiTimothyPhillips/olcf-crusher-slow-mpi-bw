@@ -404,7 +404,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
         gs->modeExchange = modeExchange;
 
         if(gs->modeExchange == OOGS_EX_NBC && gs->mode == OOGS_DEVICEMPI)
-  	  continue; // not yet supported by some MPI implementations
+  	    continue; // not yet supported by some MPI implementations
 
         // warum-up
         gs->earlyPrepostRecv = 0;
@@ -421,8 +421,8 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
             if(!(gs->modeExchange == OOGS_EX_PW && gs->earlyPrepostRecv ==0)) continue;
           }
 
-	  //printf("testing mode %d exchange %d earlyPrepost %d\n", gs->mode, gs->modeExchange, gs->earlyPrepostRecv);
-	  double elapsedTest[Ntests];
+	      //printf("testing mode %d exchange %d earlyPrepost %d\n", gs->mode, gs->modeExchange, gs->earlyPrepostRecv);
+	      double elapsedTest[Ntests];
           for(int test=0;test<Ntests;++test) {
             device.finish();
             MPI_Barrier(gs->comm);
@@ -435,8 +435,8 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
             elapsedTest[test] = MPI_Wtime() - tStart;
           }
           MPI_Allreduce(MPI_IN_PLACE, elapsedTest, Ntests, MPI_DOUBLE, MPI_MIN, gs->comm);
-	  const double elapsed = elapsedTest[0];
-          if(gs->rank == 0) printf("%.3es ", elapsed);
+	      const double elapsed = elapsedTest[0];
+          if(gs->rank == 0) printf("%.2es ", elapsed);
           fflush(stdout);
           if(elapsed < elapsedMin){
             elapsedMin = elapsed;
@@ -483,15 +483,14 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
     const int unit_size = nVec*Nbytes;
     reallocBuffers(unit_size, gs);
 
+    device.finish();
     for(int test=0;test<Ntests;++test) {
-      device.finish();
       MPI_Barrier(gs->comm);
       const double tStart = MPI_Wtime();
       if(gs->modeExchange == OOGS_EX_NBC)
         neighborAllToAll(unit_size, gs);
       else
         pairwiseExchange(unit_size, gs);
-      device.finish();
       MPI_Barrier(gs->comm);
       elapsedMinMPI = std::min(elapsedMinMPI, MPI_Wtime() - tStart);
     }
@@ -499,7 +498,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
   }
 
   MPI_Barrier(gs->comm);
-  if(gs->rank == 0) printf("used config: %d.%d.%d  (MPI: %.3es)\n", 
+  if(gs->rank == 0) printf("used config: %d.%d.%d (MPI: %.2es)\n", 
                            gs->mode, gs->modeExchange, gs->earlyPrepostRecv, elapsedMinMPI);
   fflush(stdout);
   return gs;
