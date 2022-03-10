@@ -82,7 +82,7 @@ void findpts_impl(int *const code_base,
                    struct findpts_data_3 *const fd,
                    const void *const findptsData)
 {
-  int code_stride = sizeof(double);
+  int code_stride = sizeof(int);
   int proc_stride = sizeof(int);
   int el_stride = sizeof(int);
   int r_stride = 3 * sizeof(double);
