@@ -18,14 +18,14 @@ extern "C" {
   (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])
 
 static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
-static_assert(sizeof(dlong) == sizeof(uint), "findpts dlong is not compatible with GSLIB uint");
+static_assert(sizeof(dlong) == sizeof(int), "findpts dlong is not compatible with GSLIB int");
 
-void findpts_local(    uint   *const  code_base   , const unsigned  code_stride   ,
-                             uint   *const    el_base   , const unsigned    el_stride   ,
-                             double *const     r_base   , const unsigned     r_stride   ,
-                             double *const dist2_base   , const unsigned dist2_stride   ,
-                       const double *const     x_base[3], const unsigned     x_stride[3],
-                       const uint pn, const void *const findptsData_void)
+void findpts_local(    int   *const  code_base   , const int  code_stride   ,
+                             int   *const    el_base   , const int    el_stride   ,
+                             double *const     r_base   , const int     r_stride   ,
+                             double *const dist2_base   , const int dist2_stride   ,
+                       const double *const     x_base[3], const int     x_stride[3],
+                       const int pn, const void *const findptsData_void)
 {
   if (pn == 0) return;
 
@@ -104,7 +104,7 @@ void findpts_local(    uint   *const  code_base   , const unsigned  code_stride 
 
 void findpts_local_eval_internal(
     struct eval_out_pt_3 *opt, const struct eval_src_pt_3 *spt,
-    const uint pn, const void *const in,
+    const int pn, const void *const in,
     struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
 {
   if (pn == 0) return;
@@ -152,7 +152,7 @@ void findpts_local_eval(
           void * const out,
     const void * const el,
     const void * const r,
-    const uint pn, const void *const in,
+    const int pn, const void *const in,
     struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
 {
   if (pn == 0) return;

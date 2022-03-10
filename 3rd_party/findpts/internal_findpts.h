@@ -5,55 +5,55 @@
 #warning "findpts.h" requires "mem.h", "findpts.h", "findpts_local.h", "findpts_el.h", "obbox.h"
 #endif
 
-void findpts_local(uint *const code_base,
-                         const unsigned code_stride,
-                         uint *const el_base,
-                         const unsigned el_stride,
+void findpts_local(int *const code_base,
+                         const int code_stride,
+                         int *const el_base,
+                         const int el_stride,
                          double *const r_base,
-                         const unsigned r_stride,
+                         const int r_stride,
                          double *const dist2_base,
-                         const unsigned dist2_stride,
+                         const int dist2_stride,
                          const double *const x_base[3],
-                         const unsigned x_stride[3],
-                         const uint npt,
+                         const int x_stride[3],
+                         const int npt,
                          const void *const findptsData);
-void findpts_impl(    uint   *const  code_base   , const unsigned  code_stride   ,
-                       uint   *const  proc_base   , const unsigned  proc_stride   ,
-                       uint   *const    el_base   , const unsigned    el_stride   ,
-                       double *const     r_base   , const unsigned     r_stride   ,
-                       double *const dist2_base   , const unsigned dist2_stride   ,
-                 const double *const     x_base[3], const unsigned     x_stride[3],
-                 const uint npt, struct findpts_data_3 *const fd,
+void findpts_impl(    int   *const  code_base   , const int  code_stride   ,
+                       int   *const  proc_base   , const int  proc_stride   ,
+                       int   *const    el_base   , const int    el_stride   ,
+                       double *const     r_base   , const int     r_stride   ,
+                       double *const dist2_base   , const int dist2_stride   ,
+                 const double *const     x_base[3], const int     x_stride[3],
+                 const int npt, struct findpts_data_3 *const fd,
                  const void *const findptsData);
 
 struct eval_src_pt_3 {
   double r[3];
-  uint index, proc, el;
+  int index, proc, el;
 };
 struct eval_out_pt_3 {
   double out;
-  uint index, proc;
+  int index, proc;
 };
 
 void findpts_local_eval_internal(
   struct eval_out_pt_3 *opt, const struct eval_src_pt_3 *spt,
-  const uint pn, const void *const in,
+  const int pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
 void findpts_local_eval(
         void *const  out_base,
   const void *const   el_base,
   const void *const    r_base,
-  const uint pn, const void *const in,
+  const int pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
 void findpts_eval_impl(
-        double *const  out_base, const unsigned  out_stride,
-  const uint   *const code_base, const unsigned code_stride,
-  const uint   *const proc_base, const unsigned proc_stride,
-  const uint   *const   el_base, const unsigned   el_stride,
-  const double *const    r_base, const unsigned    r_stride,
-  const uint npt,
+        double *const  out_base, const int  out_stride,
+  const int   *const code_base, const int code_stride,
+  const int   *const proc_base, const int proc_stride,
+  const int   *const   el_base, const int   el_stride,
+  const double *const    r_base, const int    r_stride,
+  const int npt,
   const void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData);
 
