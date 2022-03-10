@@ -123,10 +123,11 @@ void findpts_impl(int *const code_base,
         pt->proc=hi%np;
         ++pt;
       }
-      for(d=0;d<D;++d)
-      xp[d] = (const double*)((const char*)xp[d]+   x_stride[d]);
-      code  =         (int*)(      (char*)code +code_stride   );
-      proc  =         (int*)(      (char*)proc +proc_stride   );
+      for(d=0;d<D;++d){
+        xp[d] = (const double*)((const char*)xp[d]+   x_stride[d]);
+      }
+      code++;
+      proc++;
     }
     hash_pt.n = pt - (struct src_pt_3 *)hash_pt.ptr;
     sarray_transfer(struct src_pt_3, &hash_pt, proc, 1, &fd->cr);
@@ -206,19 +207,17 @@ void findpts_impl(int *const code_base,
     struct out_pt_3 *opt;
     for (opt = out_pt_3.ptr; n; --n, ++opt) {
       const int index = opt->index;
-      int *code = AT(int,code,index);
-      double *dist2 = AT(double,dist2,index);
-      if(*code==CODE_INTERNAL) continue;
-      if(*code==CODE_NOT_FOUND
+      if(code_base[index]==CODE_INTERNAL) continue;
+      if(code_base[index]==CODE_NOT_FOUND
          || opt->code==CODE_INTERNAL
-         || opt->dist2<*dist2) {
-        double *r = AT(double,r,index);
-        int  *el = AT(int,el,index), *proc = AT(int,proc,index);
-        int d; for(d=0;d<D;++d) r[d]=opt->r[d];
-        *dist2 = opt->dist2;
-        *proc = opt->proc;
-        *el = opt->el;
-        *code = opt->code;
+         || opt->dist2<dist2_base[index]) {
+        for(int d=0;d<D;++d) {
+          r_base[3*index + d]=opt->r[d];
+        }
+        dist2_base[index] = opt->dist2;
+        proc_base[index] = opt->proc;
+        el_base[index] = opt->el;
+        code_base[index] = opt->code;
       }
     }
     array_free(&out_pt_3);
