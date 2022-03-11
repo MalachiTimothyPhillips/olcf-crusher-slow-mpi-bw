@@ -4,7 +4,7 @@ set(FINDPTS_SOURCES
     ${FINDPTS_SOURCE_DIR}/findpts.cpp
     ${FINDPTS_SOURCE_DIR}/findptsLocal.cpp
     ${FINDPTS_SOURCE_DIR}/findptsImpl.cpp
-    ${FINDPTS_SOURCE_DIR}/hostFindpts.c
+    ${FINDPTS_SOURCE_DIR}/legacyFindptsSetup.c
     ${FINDPTS_SOURCE_DIR}/kernelsFindpts.cpp
 )
 
