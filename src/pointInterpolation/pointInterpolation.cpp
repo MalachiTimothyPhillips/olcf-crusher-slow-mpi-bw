@@ -61,11 +61,7 @@ void pointInterpolation_t::find(bool printWarnings)
   dfloat * x[3] = {_x, _y, _z};
   const auto n = nPoints;
 
-  dlong xStrideBytes[3] = {sizeof(dfloat),
-                           sizeof(dfloat),
-                           sizeof(dfloat)};
-
-  findpts(&data_, x, xStrideBytes, n, findpts_);
+  findpts(&data_, x, n, findpts_);
 
   if (printWarnings) {
     dlong nFail = 0;

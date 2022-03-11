@@ -24,7 +24,7 @@ void findpts_local(    int   *const  code_base,
                              int   *const    el_base,
                              double *const     r_base   ,
                              double *const dist2_base   ,
-                       const double *const     x_base[3], const int     x_stride[3],
+                       const double *const     x_base[3],
                        const int pn, const void *const findptsData_void)
 {
   if (pn == 0) return;
@@ -32,8 +32,7 @@ void findpts_local(    int   *const  code_base,
   findpts_t *findptsData = (findpts_t*)findptsData_void;
   occa::device device = *findptsData->device;
 
-  dlong worksize = sizeof(dlong)+sizeof(dlong)+3*sizeof(dfloat)+sizeof(dfloat)
-                   +x_stride[0]+x_stride[1]+x_stride[2];
+  dlong worksize = 2*sizeof(dlong)+7*sizeof(dfloat);
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
   occa::memory workspace;
   occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
@@ -47,17 +46,18 @@ void findpts_local(    int   *const  code_base,
   occa::memory     o_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
   occa::memory o_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
   occa::memory     o_x_base = workspace; workspace += 3*sizeof(dfloat*);
-  occa::memory    o_x0_base = workspace; workspace +=  x_stride[0]*pn;
-  occa::memory    o_x1_base = workspace; workspace +=  x_stride[1]*pn;
-  occa::memory    o_x2_base = workspace; workspace +=  x_stride[2]*pn;
+  occa::memory    o_x0_base = workspace; workspace +=  sizeof(dfloat)*pn;
+  occa::memory    o_x1_base = workspace; workspace +=  sizeof(dfloat)*pn;
+  occa::memory    o_x2_base = workspace; workspace +=  sizeof(dfloat)*pn;
   occa::memory   o_x_stride = workspace; workspace += 3*sizeof(dlong);
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
+  std::array<dlong,3> x_stride = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
   o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
-  o_x0_base.copyFrom(x_base[0], x_stride[0]*pn);
-  o_x1_base.copyFrom(x_base[1], x_stride[1]*pn);
-  o_x2_base.copyFrom(x_base[2], x_stride[2]*pn);
-  o_x_stride.copyFrom(x_stride, 3*sizeof(dlong));
+  o_x0_base.copyFrom(x_base[0], sizeof(dfloat)*pn);
+  o_x1_base.copyFrom(x_base[1], sizeof(dfloat)*pn);
+  o_x2_base.copyFrom(x_base[2], sizeof(dfloat)*pn);
+  o_x_stride.copyFrom(x_stride.data(), 3*sizeof(dlong));
 
   findptsData->local_kernel( o_code_base, (dlong)sizeof(dlong),
                           o_el_base, (dlong)sizeof(dlong),

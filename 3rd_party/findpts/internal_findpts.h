@@ -10,7 +10,6 @@ void findpts_local(int *const code_base,
                          double *const r_base,
                          double *const dist2_base,
                          const double *const x_base[3],
-                         const int x_stride[3],
                          const int npt,
                          const void *const findptsData);
 void findpts_impl(    int   *const  code_base,
@@ -18,7 +17,7 @@ void findpts_impl(    int   *const  code_base,
                        int   *const    el_base,
                        double *const     r_base,
                        double *const dist2_base,
-                 const double *const     x_base[3], const int     x_stride[3],
+                 const double *const     x_base[3],
                  const int npt, struct findpts_data_3 *const fd,
                  const void *const findptsData);
 

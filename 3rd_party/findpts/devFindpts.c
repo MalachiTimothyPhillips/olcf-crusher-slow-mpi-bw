@@ -55,7 +55,7 @@ void devFindpts(      dlong  *const  code_base   ,
                            dlong  *const    el_base   ,
                            dfloat *const     r_base   ,
                            dfloat *const dist2_base   ,
-                     const dfloat *const     x_base[3], const dlong     x_stride[3],
+                     const dfloat *const     x_base[3],
                      const dlong npt, struct findpts_data_3 *const fd,
                      const void *const findptsData) {
   findpts_impl( code_base,
@@ -63,7 +63,7 @@ void devFindpts(      dlong  *const  code_base   ,
                    el_base,
                     r_base,
                 dist2_base,
-                    x_base,     x_stride,
+                    x_base,
                 npt, fd, findptsData);
 }
 

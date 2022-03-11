@@ -76,7 +76,6 @@ void findpts_impl(int *const code_base,
                    double *const r_base,
                    double *const dist2_base,
                    const double *const x_base[D],
-                   const int x_stride[D],
                    const int npt,
                    struct findpts_data_3 *const fd,
                    const void *const findptsData)
@@ -91,7 +90,6 @@ void findpts_impl(int *const code_base,
                         r_base,
                         dist2_base,
                         x_base,
-                        x_stride,
                         npt,
                         findptsData);
   }
@@ -115,7 +113,7 @@ void findpts_impl(int *const code_base,
         ++pt;
       }
       for(d=0;d<D;++d){
-        xp[d] = (const double*)((const char*)xp[d]+   x_stride[d]);
+        xp[d]++;
       }
       code++;
       proc++;
@@ -183,17 +181,11 @@ void findpts_impl(int *const code_base,
         }
       }
 
-      int spt_x_stride[D];
-      for(int d = 0; d < D; ++d){
-        spt_x_stride[d] = sizeof(double);
-      }
-
       findpts_local(codeArr,
                           elArr,
                           rArr,
                           dist2Arr,
                           spt_x_base,
-                          spt_x_stride,
                           src_pt_3.n,
                           findptsData);
 

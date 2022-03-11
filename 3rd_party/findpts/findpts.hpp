@@ -66,7 +66,6 @@ findpts_t *findptsSetup(
 void findptsFree(findpts_t *fd);
 void findpts(findpts_data_t *findPtsData,
                 const dfloat *const x_base[],
-                const dlong x_stride[],
                 const dlong npt,
                 findpts_t *const fd);
 void findptsEval(dfloat *const out_base,

@@ -168,7 +168,6 @@ void findptsFree(findpts_t *fd)
 
 void findpts(findpts_data_t *const findPtsData,
                 const dfloat *const x_base[],
-                const dlong x_stride[],
                 const dlong npt,
                 findpts_t *const fd)
 {
@@ -184,7 +183,6 @@ void findpts(findpts_data_t *const findPtsData,
                   r_base,
                   dist2_base,
                   x_base,
-                  x_stride,
                   npt,
                   (findpts_data_3 *)fd->findpts_data,
                   fd);
