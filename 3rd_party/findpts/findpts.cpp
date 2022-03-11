@@ -32,6 +32,8 @@ SOFTWARE.
 #include "gslib.h"
 #include "findptsTypes.h"
 
+#include "internal_findpts.h"
+
 extern "C" {
 uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
                                const struct obbox_3 *const obb, const uint nel,
@@ -161,17 +163,11 @@ void findpts(findpts_data_t *const findPtsData,
                 const dlong npt,
                 findpts_t *const fd)
 {
-  dlong *const code_base = findPtsData->code_base;
-  dlong *const proc_base = findPtsData->proc_base;
-  dlong *const el_base = findPtsData->el_base;
-  dfloat *const r_base = findPtsData->r_base;
-  dfloat *const dist2_base = findPtsData->dist2_base;
-
-  devFindpts(code_base,
-                  proc_base,
-                  el_base,
-                  r_base,
-                  dist2_base,
+  findpts_impl(findPtsData->code_base,
+                  findPtsData->proc_base,
+                  findPtsData->el_base,
+                  findPtsData->r_base,
+                  findPtsData->dist2_base,
                   x_base,
                   npt,
                   (findpts_data_3 *)fd->findpts_data,
@@ -186,17 +182,11 @@ void findptsEval(dfloat *const out_base,
                     findpts_t *const fd)
 {
 
-  dlong *const code_base = findPtsData->code_base;
-  dlong *const proc_base = findPtsData->proc_base;
-  dlong *const el_base = findPtsData->el_base;
-  dfloat *const r_base = findPtsData->r_base;
-  dfloat *const dist2_base = findPtsData->dist2_base;
-
-  devFindptsEval(out_base,
-                      code_base,
-                      proc_base,
-                      el_base,
-                      r_base,
+  findpts_eval_impl(out_base,
+                 findPtsData->code_base,
+                 findPtsData->proc_base,
+                 findPtsData->el_base,
+                 findPtsData->r_base,
                       npt,
                       &o_in,
                       (findpts_data_3 *)fd->findpts_data,
@@ -209,12 +199,12 @@ void findptsLocalEval(
   occa::memory    o_r,
   const dlong npt, occa::memory o_in, findpts_t* const fd) {
 
-  devFindptsLocalEval(&o_out,
+  findpts_local_eval(&o_out,
                            &o_el,
                            &o_r,
                            npt,
                            &o_in,
-                           (findpts_data_3 *)fd->findpts_data,
+                           &(((findpts_data_3 *)fd->findpts_data)->local),
                            fd);
 }
 
