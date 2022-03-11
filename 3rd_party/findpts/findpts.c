@@ -1,10 +1,5 @@
-
-#include <limits.h>
-#include <stdio.h>
-#include <stddef.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 #include "c99.h"
 #include "types.h"
 #include "name.h"
@@ -12,15 +7,15 @@
 #include "mem.h"
 #include "obbox.h"
 #include "poly.h"
-#include "gs_defs.h"
 #include "sort.h"
 #include "comm.h"
 #include "crystal.h"
 #include "sarray_transfer.h"
 #include "sarray_sort.h"
+
+// TODO: remove following two includes
 #include "findpts_el.h"
 #include "findpts_local.h"
-#include "findpts.h"
 
 #include "findptsTypes.h"
 #include "internal_findpts.h"

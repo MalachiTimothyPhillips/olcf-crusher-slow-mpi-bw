@@ -1,14 +1,18 @@
 #ifndef FINDPTS_TYPES_H
 #define FINDPTS_TYPES_H
-// Okay for both C/C++ files to look at this
 
-#if !defined(MEM_H) || !defined(FINDPTS_H) || !defined(FINDPTS_LOCAL_H) || !defined(FINDPTS_EL_H) || !defined(OBBOX_H)
-#warning "findptsTypes.h" requires "mem.h", "findpts.h", "findpts_local.h", "findpts_el.h", "obbox.h"
+#if !defined(FINDPTS_LOCAL_H)
+#warning "findptsTypes.h" requires "findpts_local.h"
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+//struct dbl_range{
+//  double min, max;
+//};
+
 struct eval_src_pt_3 {
   double r[3];
   int index, proc, el;
