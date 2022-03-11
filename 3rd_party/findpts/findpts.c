@@ -173,21 +173,61 @@ void findpts_impl(int *const code_base,
     for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
     spt = src_pt_3.ptr, opt = out_pt_3.ptr;
     if (src_pt_3.n) {
-      const double *spt_x_base[D]; int spt_x_stride[D];
-      int d; for(d=0;d<D;++d)
-        spt_x_base[d] = spt[0].x + d, spt_x_stride[d] = sizeof(struct src_pt_3);
-      findpts_local(&opt[0].code,
-                          sizeof(struct out_pt_3),
-                          &opt[0].el,
-                          sizeof(struct out_pt_3),
-                          opt[0].r,
-                          sizeof(struct out_pt_3),
-                          &opt[0].dist2,
-                          sizeof(struct out_pt_3),
+
+      // result buffers
+      int* codeArr = (int*) calloc(src_pt_3.n, sizeof(int));
+      int* elArr = (int*) calloc(src_pt_3.n, sizeof(int));
+      double* rArr = (double*) calloc(3*src_pt_3.n, sizeof(double));
+      double* dist2Arr = (double*) calloc(src_pt_3.n, sizeof(double));
+
+      // pack position data into arrays
+      double* spt_x_base[3];
+      spt_x_base[0] = (double*) calloc(src_pt_3.n, sizeof(double));
+      spt_x_base[1] = (double*) calloc(src_pt_3.n, sizeof(double));
+      spt_x_base[2] = (double*) calloc(src_pt_3.n, sizeof(double));
+
+      for(int point = 0; point < src_pt_3.n; ++point){
+        for(int d = 0; d < 3; ++d){
+            spt_x_base[d][point] = spt[point].x[d];
+        }
+      }
+
+      int spt_x_stride[D];
+      for(int d = 0; d < D; ++d){
+        spt_x_stride[d] = sizeof(double);
+      }
+
+      findpts_local(codeArr,
+                          sizeof(int),
+                          elArr,
+                          sizeof(int),
+                          rArr,
+                          3*sizeof(double),
+                          dist2Arr,
+                          sizeof(double),
                           spt_x_base,
                           spt_x_stride,
                           src_pt_3.n,
                           findptsData);
+
+      // unpack arrays into opt
+      for(int point = 0; point < src_pt_3.n; point++){
+        opt[point].code = codeArr[point];
+        opt[point].el = elArr[point];
+        opt[point].dist2 = dist2Arr[point];
+        for(int d = 0; d < D; ++d){
+          opt[point].r[d] = rArr[3*point + d];
+        }
+      }
+
+      free(codeArr);
+      free(elArr);
+      free(rArr);
+      free(dist2Arr);
+      free(spt_x_base[0]);
+      free(spt_x_base[1]);
+      free(spt_x_base[2]);
+
     }
     array_free(&src_pt_3);
     /* group by code to eliminate unfound points */
