@@ -3,6 +3,10 @@
 
 #include "findptsTypes.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void findpts_local(int *const code_base,
                          int *const el_base,
                          double *const r_base,
@@ -40,5 +44,9 @@ void findpts_eval_impl(
   const int npt,
   const void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

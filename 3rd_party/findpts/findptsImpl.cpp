@@ -1,21 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
-#include "c99.h"
-#include "types.h"
-#include "name.h"
-#include "fail.h"
-#include "mem.h"
-#include "obbox.h"
-#include "poly.h"
-#include "sort.h"
-#include "comm.h"
-#include "crystal.h"
-#include "sarray_transfer.h"
-#include "sarray_sort.h"
-
-// TODO: remove following two includes
-#include "findpts_el.h"
-#include "findpts_local.h"
+#include "gslib.h"
 
 #include "findptsTypes.h"
 #include "internal_findpts.h"
@@ -35,14 +20,16 @@ static ulong hash_index_aux(double low, double fac, ulong n, double x)
   return i<0 ? 0 : (n-1<(ulong)i ? n-1 : (ulong)i);
 }
 
+#if 0
 struct findpts_hash_data_3 {
   ulong hash_n;
   struct dbl_range bnd[D];
   double fac[D];
   int *offset;
 };
+#endif
 
-static ulong hash_index_3(const struct findpts_hash_data_3 *p, const double x[D])
+static ulong hash_index_3(const struct hash_data_3 *p, const double x[D])
 {
   const ulong n = p->hash_n;
   return (hash_index_aux(p->bnd[2].min, p->fac[2], n, x[2]) * n +
@@ -90,7 +77,7 @@ void findpts_impl(int *const code_base,
     const double *xp[D];
     struct src_pt_3 *pt;
     int d; for(d=0;d<D;++d) xp[d]=x_base[d];
-    array_init(struct src_pt_3, &hash_pt, npt), pt = hash_pt.ptr;
+    array_init(struct src_pt_3, &hash_pt, npt), pt = (struct src_pt_3*) hash_pt.ptr;
     for(index=0;index<npt;++index) {
       double x[D]; for(d=0;d<D;++d) x[d]=*xp[d];
       *proc = id;
@@ -113,9 +100,9 @@ void findpts_impl(int *const code_base,
   }
   /* look up points in hash cells, route to possible procs */
   {
-    const int *const hash_offset = fd->hash.offset;
+    const unsigned int *const hash_offset = fd->hash.offset;
     int count=0, *proc, *proc_p;
-    const struct src_pt_3 *p = hash_pt.ptr, *const pe = p + hash_pt.n;
+    const struct src_pt_3 *p = (struct src_pt_3*) hash_pt.ptr, *const pe = p + hash_pt.n;
     struct src_pt_3 *q;
     for(;p!=pe;++p) {
       const int hi = hash_index_3(&fd->hash, p->x) / np;
@@ -123,8 +110,9 @@ void findpts_impl(int *const code_base,
       count += ie-i;
     }
     proc_p = proc = tmalloc(int,count);
-    array_init(struct src_pt_3, &src_pt_3, count), q = src_pt_3.ptr;
-    for(p=hash_pt.ptr;p!=pe;++p) {
+    array_init(struct src_pt_3, &src_pt_3, count), q = (struct src_pt_3*) src_pt_3.ptr;
+    p = (struct src_pt_3 *) hash_pt.ptr;
+    for(;p!=pe;++p) {
       const int hi = hash_index_3(&fd->hash, p->x) / np;
       int i = hash_offset[hi]; const int ie = hash_offset[hi+1];
       for(;i!=ie;++i) {
@@ -139,7 +127,7 @@ void findpts_impl(int *const code_base,
 #ifdef DIAGNOSTICS
     printf("(proc %u) hashed; routing %u/%u\n", id, (int)src_pt_3.n, count);
 #endif
-    sarray_transfer_ext(struct src_pt_3, &src_pt_3, proc, sizeof(int), &fd->cr);
+    sarray_transfer_ext(struct src_pt_3, &src_pt_3, reinterpret_cast<unsigned int*>(proc), sizeof(int), &fd->cr);
     free(proc);
   }
   /* look for other procs' points, send back */
@@ -148,9 +136,9 @@ void findpts_impl(int *const code_base,
     const struct src_pt_3 *spt;
     struct out_pt_3 *opt;
     array_init(struct out_pt_3, &out_pt_3, n), out_pt_3.n = n;
-    spt = src_pt_3.ptr, opt = out_pt_3.ptr;
+    spt = (struct src_pt_3*) src_pt_3.ptr, opt = (struct out_pt_3*) out_pt_3.ptr;
     for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
-    spt = src_pt_3.ptr, opt = out_pt_3.ptr;
+    spt = (struct src_pt_3*) src_pt_3.ptr, opt = (struct out_pt_3*) out_pt_3.ptr;
     if (src_pt_3.n) {
 
       // result buffers
@@ -213,8 +201,8 @@ void findpts_impl(int *const code_base,
   /* merge remote results with user data */
   {
     int n = out_pt_3.n;
-    struct out_pt_3 *opt;
-    for (opt = out_pt_3.ptr; n; --n, ++opt) {
+    struct out_pt_3 *opt = (struct out_pt_3*) out_pt_3.ptr;
+    for (; n; --n, ++opt) {
       const int index = opt->index;
       if(code_base[index]==CODE_INTERNAL) continue;
       if(code_base[index]==CODE_NOT_FOUND
@@ -250,7 +238,7 @@ void findpts_eval_impl(double *const out_base,
     const int *code=code_base, *proc=proc_base, *el=el_base;
     const double *r=r_base;
     struct eval_src_pt_3 *pt;
-    array_init(struct eval_src_pt_3, &src, npt), pt = src.ptr;
+    array_init(struct eval_src_pt_3, &src, npt), pt = (struct eval_src_pt_3*)src.ptr;
     for(index=0;index<npt;++index) {
       if(*code!=CODE_NOT_FOUND) {
         int d;
@@ -276,9 +264,9 @@ void findpts_eval_impl(double *const out_base,
     /* group points by element */
     sarray_sort(struct eval_src_pt_3, src.ptr, n, el, 0, &fd->cr.data);
     array_init(struct eval_out_pt_3, &outpt, n), outpt.n = n;
-    spt=src.ptr, opt=outpt.ptr;
+    spt=(struct eval_src_pt_3*)src.ptr, opt=(struct eval_out_pt_3*) outpt.ptr;
     findpts_local_eval_internal(opt, spt, src.n, in, &fd->local, findptsData);
-    spt=src.ptr, opt=outpt.ptr;
+    spt=(struct eval_src_pt_3*)src.ptr, opt=(struct eval_out_pt_3*)outpt.ptr;
     for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
     array_free(&src);
     sarray_transfer(struct eval_out_pt_3, &outpt, proc, 1, &fd->cr);
@@ -286,8 +274,8 @@ void findpts_eval_impl(double *const out_base,
   /* copy results to user data */
   {
     int n=outpt.n;
-    struct eval_out_pt_3 *opt;
-    for(opt=outpt.ptr;n;--n,++opt) {
+    struct eval_out_pt_3 *opt = (struct eval_out_pt_3*) outpt.ptr;
+    for(;n;--n,++opt) {
       out_base[opt->index]=opt->out;
     }
     array_free(&outpt);

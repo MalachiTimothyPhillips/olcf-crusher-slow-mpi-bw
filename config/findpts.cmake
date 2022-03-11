@@ -3,7 +3,7 @@ set(FINDPTS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rd_party/findpts)
 set(FINDPTS_SOURCES
     ${FINDPTS_SOURCE_DIR}/findpts.cpp
     ${FINDPTS_SOURCE_DIR}/findptsLocal.cpp
-    ${FINDPTS_SOURCE_DIR}/findpts.c
+    ${FINDPTS_SOURCE_DIR}/findptsImpl.cpp
     ${FINDPTS_SOURCE_DIR}/devFindpts.c
     ${FINDPTS_SOURCE_DIR}/hostFindpts.c
     ${FINDPTS_SOURCE_DIR}/kernelsFindpts.cpp
