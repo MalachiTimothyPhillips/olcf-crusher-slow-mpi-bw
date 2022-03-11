@@ -24,6 +24,8 @@
 
 #include "internal_findpts.h"
 
+#define D 3
+
 #define CODE_INTERNAL 0
 #define CODE_BORDER 1
 #define CODE_NOT_FOUND 2
@@ -36,9 +38,6 @@ static ulong hash_index_aux(double low, double fac, ulong n, double x)
   const slong i = lfloor((x-low)*fac);
   return i<0 ? 0 : (n-1<(ulong)i ? n-1 : (ulong)i);
 }
-#define D 3
-
-#define AT(T, var, i) (T *)((char *)var##_base + (i)*var##_stride)
 
 struct findpts_hash_data_3 {
   ulong hash_n;
@@ -86,7 +85,7 @@ void findpts_impl(int *const code_base,
   const int np = fd->cr.comm.np, id=fd->cr.comm.id;
   struct array hash_pt, src_pt_3, out_pt_3;
   /* look locally first */
-  if (npt)
+  if (npt){
     findpts_local(code_base,
                         el_base,
                         r_base,
@@ -95,6 +94,7 @@ void findpts_impl(int *const code_base,
                         x_stride,
                         npt,
                         findptsData);
+  }
   /* send unfound and border points to global hash cells */
   {
     int index;
@@ -261,11 +261,6 @@ void findpts_eval_impl(double *const out_base,
                         struct findpts_data_3 *const fd,
                         const void *const findptsData)
 {
-  const int out_stride = sizeof(double);
-  const int code_stride = sizeof(int);
-  const int proc_stride = sizeof(int);
-  const int el_stride = sizeof(int);
-  const int r_stride = sizeof(int);
   struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
   {
@@ -283,10 +278,10 @@ void findpts_eval_impl(double *const out_base,
         pt->el=*el;
         ++pt;
       }
-      r    = (const double*)((const char*)r   +   r_stride);
-      code = (const   int*)((const char*)code+code_stride);
-      proc = (const   int*)((const char*)proc+proc_stride);
-      el   = (const   int*)((const char*)el  +  el_stride);
+      r += D;
+      code++;
+      proc++;
+      el++;
     }
     src.n = pt - (struct eval_src_pt_3 *)src.ptr;
     sarray_transfer(struct eval_src_pt_3, &src, proc, 1, &fd->cr);
@@ -310,9 +305,9 @@ void findpts_eval_impl(double *const out_base,
   {
     int n=outpt.n;
     struct eval_out_pt_3 *opt;
-    for(opt=outpt.ptr;n;--n,++opt) *AT(double,out,opt->index)=opt->out;
+    for(opt=outpt.ptr;n;--n,++opt) {
+      out_base[opt->index]=opt->out;
+    }
     array_free(&outpt);
   }
 }
-
-#undef AT
