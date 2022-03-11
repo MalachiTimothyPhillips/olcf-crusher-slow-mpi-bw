@@ -637,7 +637,7 @@ newton_edge_fin:
 
 void seed_j(const dfloat *elx[p_D],
             const dfloat  x[p_D],
-                  dfloat *z[p_D],
+                  //dfloat *z[p_D],
                   dfloat  dist2[p_Nq],
                   dfloat *r[p_D],
             const int j)
@@ -646,11 +646,11 @@ void seed_j(const dfloat *elx[p_D],
 
   dist2[j] = DBL_MAX;
 
-  dfloat zr = z[0][j];
+  dfloat zr = z[j];
   for (dlong l = 0; l < p_Nq; ++l) {
-    const dfloat zt = z[2][l];
+    const dfloat zt = z[l];
     for (dlong k = 0; k < p_Nq; ++k) {
-      dfloat zs = z[1][k];
+      dfloat zs = z[k];
 
       const dlong jkl = j + k*p_Nq + l*p_Nq*p_Nq;
       dfloat dx[p_D];
@@ -768,7 +768,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
               dfloat *dist2_temp = r_workspace_ptr;
               dfloat *r_temp[p_D]; for(dlong d=0;d<p_D;++d) r_temp[d]=dist2_temp+(1+d)*p_Nq;
               for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                seed_j(elx, x_i, fd->fed.z, dist2_temp, r_temp, j);
+                //seed_j(elx, x_i, fd->fed.z, dist2_temp, r_temp, j);
+                seed_j(elx, x_i, dist2_temp, r_temp, j);
               }
               @barrier("local");
               // TODO switch to binary reduction
