@@ -30,18 +30,8 @@ SOFTWARE.
 #include "findpts.hpp"
 #include "interfaceFindpts.h"
 #include "gslib.h"
+#include "findptsTypes.h"
 
-struct hash_data_3 {
-  ulong hash_n;
-  struct dbl_range bnd[3];
-  double fac[3];
-  uint *offset;
-};
-struct findpts_data_3 {
-  struct crystal cr;
-  struct findpts_local_data_3 local;
-  struct hash_data_3 hash;
-};
 extern "C" {
 uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
                                const struct obbox_3 *const obb, const uint nel,

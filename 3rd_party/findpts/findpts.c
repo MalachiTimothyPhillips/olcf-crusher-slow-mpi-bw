@@ -22,6 +22,7 @@
 #include "findpts_local.h"
 #include "findpts.h"
 
+#include "findptsTypes.h"
 #include "internal_findpts.h"
 
 #define D 3
@@ -54,12 +55,6 @@ static ulong hash_index_3(const struct findpts_hash_data_3 *p, const double x[D]
              n +
          hash_index_aux(p->bnd[0].min, p->fac[0], n, x[0]);
 }
-
-struct findpts_data_3 {
-  struct crystal cr;
-  struct findpts_local_data_3 local;
-  struct findpts_hash_data_3 hash;
-};
 
 struct src_pt_3 {
   double x[D];

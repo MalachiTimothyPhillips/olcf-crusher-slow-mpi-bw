@@ -33,22 +33,11 @@ SOFTWARE.
 #include <string.h>
 
 #include "gslib.h"
+
+#include "findptsTypes.h"
 #include "internal_findpts.h"
 
 #include "ogstypes.h" // for dfloat
-
-// need to access internals of findpts_data structs
-struct hash_data_3 {
-  ulong hash_n;
-  struct dbl_range bnd[3];
-  double fac[3];
-  uint *offset;
-};
-struct findpts_data_3 {
-  struct crystal cr;
-  struct findpts_local_data_3 local;
-  struct hash_data_3 hash;
-};
 
 void devFindpts(      dlong  *const  code_base   ,
                            dlong  *const  proc_base   ,

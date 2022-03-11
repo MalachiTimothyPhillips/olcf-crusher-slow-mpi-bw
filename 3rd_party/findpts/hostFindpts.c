@@ -35,19 +35,7 @@ SOFTWARE.
 #include "gslib.h"
 
 #include "ogstypes.h"
-
-// need to access internals of findpts_data structs
-struct hash_data_3 {
-  ulong hash_n;
-  struct dbl_range bnd[3];
-  double fac[3];
-  uint *offset;
-};
-struct findpts_data_3 {
-  struct crystal cr;
-  struct findpts_local_data_3 local;
-  struct hash_data_3 hash;
-};
+#include "findptsTypes.h"
 
 struct findpts_data_3 *legacyFindptsSetup(
   MPI_Comm mpi_comm,
