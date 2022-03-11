@@ -68,23 +68,12 @@ void findpts(findpts_data_t *findPtsData,
                 const dfloat *const x_base[],
                 const dlong npt,
                 findpts_t *const fd);
-void findptsEval(dfloat *const out_base,
-                    findpts_data_t *findPtsData,
-                    const dlong npt,
-                    const dfloat *const in,
-                    findpts_t *const fd);
 
 void findptsEval(dfloat *const out_base,
                     findpts_data_t *findPtsData,
                     const dlong npt,
                     occa::memory o_in,
                     findpts_t *const fd);
-
-void findptsLocalEval(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat *const in, findpts_t *const fd);
 
 void findptsLocalEval(
   occa::memory o_out,

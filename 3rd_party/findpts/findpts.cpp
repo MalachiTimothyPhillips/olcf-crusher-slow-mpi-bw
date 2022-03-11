@@ -192,39 +192,6 @@ void findpts(findpts_data_t *const findPtsData,
 void findptsEval(dfloat *const out_base,
                     findpts_data_t *findPtsData,
                     const dlong npt,
-                    const dfloat *const in,
-                    findpts_t *const fd)
-{
-
-  dlong *const code_base = findPtsData->code_base;
-  const dlong code_stride = sizeof(dlong);
-  dlong *const proc_base = findPtsData->proc_base;
-  const dlong proc_stride = sizeof(dlong);
-  dlong *const el_base = findPtsData->el_base;
-  const dlong el_stride = sizeof(dlong);
-  dfloat *const r_base = findPtsData->r_base;
-  const dlong r_stride = 3 * sizeof(dfloat);
-  dfloat *const dist2_base = findPtsData->dist2_base;
-  const dlong dist2_stride = sizeof(dfloat);
-
-  legacyFindptsEval(out_base,
-                       sizeof(dfloat),
-                       code_base,
-                       code_stride,
-                       proc_base,
-                       proc_stride,
-                       el_base,
-                       el_stride,
-                       r_base,
-                       r_stride,
-                       npt,
-                       in,
-                       (findpts_data_3 *)fd->findpts_data);
-}
-
-void findptsEval(dfloat *const out_base,
-                    findpts_data_t *findPtsData,
-                    const dlong npt,
                     occa::memory o_in,
                     findpts_t *const fd)
 {
@@ -244,23 +211,6 @@ void findptsEval(dfloat *const out_base,
                       &o_in,
                       (findpts_data_3 *)fd->findpts_data,
                       fd);
-}
-
-void findptsLocalEval(
-        dfloat* const  out_base, const dlong  out_stride,
-  const dlong*  const   el_base, const dlong   el_stride,
-  const dfloat* const    r_base, const dlong    r_stride,
-  const dlong npt, const dfloat* const in, findpts_t* const fd) {
-
-  legacyFindptsLocalEval(out_base,
-                            out_stride,
-                            el_base,
-                            el_stride,
-                            r_base,
-                            r_stride,
-                            npt,
-                            in,
-                            (findpts_data_3 *)fd->findpts_data);
 }
 
 void findptsLocalEval(
