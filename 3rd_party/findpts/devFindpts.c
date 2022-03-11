@@ -68,19 +68,19 @@ void devFindpts(      dlong  *const  code_base   ,
 }
 
 void devFindptsEval(
-        dfloat *const  out_base, const dlong  out_stride,
-  const dlong  *const code_base, const dlong code_stride,
-  const dlong  *const proc_base, const dlong proc_stride,
-  const dlong  *const   el_base, const dlong   el_stride,
-  const dfloat *const    r_base, const dlong    r_stride,
+        dfloat *const  out_base,
+  const dlong  *const code_base,
+  const dlong  *const proc_base,
+  const dlong  *const   el_base,
+  const dfloat *const    r_base,
   const dlong npt, void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData) {
 
-  findpts_eval_impl( out_base,  out_stride,
-                     code_base, code_stride,
-                     proc_base, proc_stride,
-                       el_base,   el_stride,
-                        r_base,    r_stride,
+  findpts_eval_impl( out_base,
+                     code_base,
+                     proc_base,
+                       el_base,
+                        r_base,
                      npt, in, fd, findptsData);
 }
 

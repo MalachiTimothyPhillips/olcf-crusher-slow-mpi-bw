@@ -20,10 +20,10 @@ extern "C" {
 static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
 static_assert(sizeof(dlong) == sizeof(int), "findpts dlong is not compatible with GSLIB int");
 
-void findpts_local(    int   *const  code_base   , const int  code_stride   ,
-                             int   *const    el_base   , const int    el_stride   ,
-                             double *const     r_base   , const int     r_stride   ,
-                             double *const dist2_base   , const int dist2_stride   ,
+void findpts_local(    int   *const  code_base,
+                             int   *const    el_base,
+                             double *const     r_base   ,
+                             double *const dist2_base   ,
                        const double *const     x_base[3], const int     x_stride[3],
                        const int pn, const void *const findptsData_void)
 {
@@ -32,7 +32,7 @@ void findpts_local(    int   *const  code_base   , const int  code_stride   ,
   findpts_t *findptsData = (findpts_t*)findptsData_void;
   occa::device device = *findptsData->device;
 
-  dlong worksize = code_stride+el_stride+r_stride+dist2_stride
+  dlong worksize = sizeof(dlong)+sizeof(dlong)+3*sizeof(dfloat)+sizeof(dfloat)
                    +x_stride[0]+x_stride[1]+x_stride[2];
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
   occa::memory workspace;
@@ -66,40 +66,10 @@ void findpts_local(    int   *const  code_base   , const int  code_stride   ,
                            o_x_base, o_x_stride,
                        pn, findptsData->o_fd_local);
 
-  if( code_stride == sizeof(dlong)) {
-     o_code_base.copyTo( code_base, sizeof(dlong) *pn);
-  } else {
-    dlong*   h_code_base = new dlong [pn];
-     o_code_base.copyTo( h_code_base, sizeof(dlong) *pn);
-    for(dlong i=0;i<pn;++i) *AT(dlong ,  code, i) =  h_code_base[i];
-    delete []  h_code_base;
-  }
-  if(   el_stride == sizeof(dlong)) {
-       o_el_base.copyTo(   el_base,    el_stride*pn);
-  } else {
-    dlong*     h_el_base = new dlong [pn];
-       o_el_base.copyTo(   h_el_base, sizeof(dlong) *pn);
-    for(dlong i=0;i<pn;++i) *AT(dlong ,    el, i) =    h_el_base[i];
-    delete []    h_el_base;
-  }
-  if(    r_stride == sizeof(dfloat)*3) {
-        o_r_base.copyTo(    r_base,     r_stride*pn);
-  } else {
-    dfloat*     h_r_base = new dfloat[pn*3];
-        o_r_base.copyTo(    h_r_base, sizeof(dfloat)*pn*3);
-    for(dlong i=0;i<pn;++i) for(dlong d=0;d<3;++d) {
-        (AT(dfloat, r, i))[d] = h_r_base[i*3 + d];
-    }
-    delete []     h_r_base;
-  }
-  if(dist2_stride == sizeof(dfloat)) {
-    o_dist2_base.copyTo(dist2_base, dist2_stride*pn);
-  } else {
-    dfloat* h_dist2_base = new dfloat[pn];
-    o_dist2_base.copyTo(h_dist2_base, sizeof(dfloat)*pn);
-    for(dlong i=0;i<pn;++i) *AT(dfloat, dist2, i) = h_dist2_base[i];
-    delete [] h_dist2_base;
-  }
+  o_code_base.copyTo( code_base, sizeof(dlong) *pn);
+  o_el_base.copyTo(   el_base,   sizeof(dlong)*pn);
+  o_r_base.copyTo(    r_base,     3*sizeof(dfloat)*pn);
+  o_dist2_base.copyTo(dist2_base, sizeof(dfloat)*pn);
 }
 
 void findpts_local_eval_internal(

@@ -6,13 +6,9 @@
 #endif
 
 void findpts_local(int *const code_base,
-                         const int code_stride,
                          int *const el_base,
-                         const int el_stride,
                          double *const r_base,
-                         const int r_stride,
                          double *const dist2_base,
-                         const int dist2_stride,
                          const double *const x_base[3],
                          const int x_stride[3],
                          const int npt,
@@ -48,11 +44,11 @@ void findpts_local_eval(
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
 void findpts_eval_impl(
-        double *const  out_base, const int  out_stride,
-  const int   *const code_base, const int code_stride,
-  const int   *const proc_base, const int proc_stride,
-  const int   *const   el_base, const int   el_stride,
-  const double *const    r_base, const int    r_stride,
+        double *const  out_base,
+  const int   *const code_base,
+  const int   *const proc_base,
+  const int   *const   el_base,
+  const double *const    r_base,
   const int npt,
   const void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData);

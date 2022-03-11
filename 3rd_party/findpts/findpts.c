@@ -82,24 +82,15 @@ void findpts_impl(int *const code_base,
                    struct findpts_data_3 *const fd,
                    const void *const findptsData)
 {
-  int code_stride = sizeof(int);
-  int proc_stride = sizeof(int);
-  int el_stride = sizeof(int);
-  int r_stride = 3 * sizeof(double);
-  int dist2_stride = sizeof(double);
 
   const int np = fd->cr.comm.np, id=fd->cr.comm.id;
   struct array hash_pt, src_pt_3, out_pt_3;
   /* look locally first */
   if (npt)
     findpts_local(code_base,
-                        code_stride,
                         el_base,
-                        el_stride,
                         r_base,
-                        r_stride,
                         dist2_base,
-                        dist2_stride,
                         x_base,
                         x_stride,
                         npt,
@@ -198,13 +189,9 @@ void findpts_impl(int *const code_base,
       }
 
       findpts_local(codeArr,
-                          sizeof(int),
                           elArr,
-                          sizeof(int),
                           rArr,
-                          3*sizeof(double),
                           dist2Arr,
-                          sizeof(double),
                           spt_x_base,
                           spt_x_stride,
                           src_pt_3.n,
@@ -265,20 +252,20 @@ void findpts_impl(int *const code_base,
 }
 
 void findpts_eval_impl(double *const out_base,
-                        const int out_stride,
                         const int *const code_base,
-                        const int code_stride,
                         const int *const proc_base,
-                        const int proc_stride,
                         const int *const el_base,
-                        const int el_stride,
                         const double *const r_base,
-                        const int r_stride,
                         const int npt,
                         const void *const in,
                         struct findpts_data_3 *const fd,
                         const void *const findptsData)
 {
+  const int out_stride = sizeof(double);
+  const int code_stride = sizeof(int);
+  const int proc_stride = sizeof(int);
+  const int el_stride = sizeof(int);
+  const int r_stride = sizeof(int);
   struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
   {
