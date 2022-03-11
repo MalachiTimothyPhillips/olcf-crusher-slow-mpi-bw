@@ -10,13 +10,6 @@ extern "C" {
 #include "gslib.h"
 #include "internal_findpts.h"
 
-#define   AT(T,var,i)   \
-        (T*)(      (char*)var##_base   +(i)*var##_stride   )
-#define  CAT(T,var,i) \
-  (const T*)((const char*)var##_base   +(i)*var##_stride   )
-#define CATD(T,var,i,d) \
-  (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])
-
 static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
 static_assert(sizeof(dlong) == sizeof(int), "findpts dlong is not compatible with GSLIB int");
 
@@ -49,21 +42,18 @@ void findpts_local(    int   *const  code_base,
   occa::memory    o_x0_base = workspace; workspace +=  sizeof(dfloat)*pn;
   occa::memory    o_x1_base = workspace; workspace +=  sizeof(dfloat)*pn;
   occa::memory    o_x2_base = workspace; workspace +=  sizeof(dfloat)*pn;
-  occa::memory   o_x_stride = workspace; workspace += 3*sizeof(dlong);
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
-  std::array<dlong,3> x_stride = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
   o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
   o_x0_base.copyFrom(x_base[0], sizeof(dfloat)*pn);
   o_x1_base.copyFrom(x_base[1], sizeof(dfloat)*pn);
   o_x2_base.copyFrom(x_base[2], sizeof(dfloat)*pn);
-  o_x_stride.copyFrom(x_stride.data(), 3*sizeof(dlong));
 
-  findptsData->local_kernel( o_code_base, (dlong)sizeof(dlong),
-                          o_el_base, (dlong)sizeof(dlong),
-                           o_r_base, (dlong)(3*sizeof(dfloat)),
-                       o_dist2_base, (dlong)sizeof(dfloat),
-                           o_x_base, o_x_stride,
+  findptsData->local_kernel( o_code_base,
+                          o_el_base,
+                           o_r_base,
+                       o_dist2_base,
+                           o_x_base,
                        pn, findptsData->o_fd_local);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);

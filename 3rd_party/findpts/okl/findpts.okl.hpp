@@ -53,7 +53,7 @@ struct findpts_local_data {
   dfloat tol;
 };
 
-
+// TODO: remove
 #define   AT(T,var,i)   \
         (T*)(      (char*)var##_base   +(i)*var##_stride   )
 #define  CAT(T,var,i) \

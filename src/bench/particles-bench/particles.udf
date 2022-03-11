@@ -172,8 +172,6 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   findpts_data_t data(pn);
 
-  const std::array<dlong, 3> xStrideBytes = {sizeof(dfloat), sizeof(dfloat), sizeof(dfloat)};
-
   auto findpts = particles.interp().ptr();
 
   occa::memory  d_code_base = platform->device.malloc(  sizeof(dlong) *pn);
@@ -184,25 +182,23 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   occa::memory    d_x0_base = platform->device.malloc( xStrideBytes[0]*pn);
   occa::memory    d_x1_base = platform->device.malloc( xStrideBytes[1]*pn);
   occa::memory    d_x2_base = platform->device.malloc( xStrideBytes[2]*pn);
-  occa::memory   d_x_stride = platform->device.malloc(3*sizeof(dlong)    );
 
   dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
   d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
   d_x0_base.copyFrom(x.data(), xStrideBytes[0]*pn);
   d_x1_base.copyFrom(y.data(), xStrideBytes[1]*pn);
   d_x2_base.copyFrom(z.data(), xStrideBytes[2]*pn);
-  d_x_stride.copyFrom(xStrideBytes.data(), 3*sizeof(dlong));
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      findpts->local_kernel( d_code_base,sizeof(dlong),
-                              d_el_base, sizeof(dlong),
-                               d_r_base, 3*sizeof(dfloat),
-                           d_dist2_base, sizeof(dfloat),
-                               d_x_base, d_x_stride,
+      findpts->local_kernel( d_code_base,
+                              d_el_base, 
+                               d_r_base, 
+                           d_dist2_base, 
+                               d_x_base, 
                            pn, findpts->o_fd_local);
     }
   }

@@ -701,11 +701,11 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 }
 
 @kernel void findpts_local(
-        dlong  *const  code_base     , const dlong  code_stride     ,
-        dlong  *const    el_base     , const dlong    el_stride     ,
-        dfloat *const     r_base     , const dlong     r_stride     ,
-        dfloat *const dist2_base     , const dlong dist2_stride     ,
-  const dfloat *const     x_base[p_D], const dlong     x_stride[p_D],
+        dlong  *const  code_base     ,
+        dlong  *const    el_base     ,
+        dfloat *const     r_base     ,
+        dfloat *const dist2_base     ,
+  const dfloat *const     x_base[p_D],
   const dlong npt, struct findpts_local_data *fd)
 {
   #define MAX_CONST(a,b) (((a)>(b))?(a):(b))
@@ -731,12 +731,13 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 
     dfloat x_i[p_D];
     for(dlong d=0;d<p_D;++d){
-        x_i[d] = (*CATD(dfloat, x, i, d));
+        //x_i[d] = (*CATD(dfloat, x, i, d));
+        x_i[d] = x_base[d][i];
     }
-    dlong  *code_i  = AT(dlong,  code,  i);
-    dlong  *el_i    = AT(dlong,  el,    i);
-    dfloat *r_i     = AT(dfloat, r,     i);
-    dfloat *dist2_i = AT(dfloat, dist2, i);
+    dlong  *code_i  = code_base + i;
+    dlong  *el_i    = el_base + i;
+    dfloat *r_i     = r_base + 3 * i;
+    dfloat *dist2_i = dist2_base + i;
 
     //// map_points_to_els ////
     const dlong hi = hash_index(&fd->hd,x_i);
