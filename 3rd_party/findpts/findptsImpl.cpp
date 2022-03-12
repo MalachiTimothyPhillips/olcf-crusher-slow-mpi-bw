@@ -5,6 +5,8 @@
 #include "findptsTypes.h"
 #include "findptsImpl.hpp"
 
+#include <vector>
+
 #define D 3
 
 #define CODE_INTERNAL 0
@@ -20,16 +22,7 @@ static ulong hash_index_aux(double low, double fac, ulong n, double x)
   return i<0 ? 0 : (n-1<(ulong)i ? n-1 : (ulong)i);
 }
 
-#if 0
-struct findpts_hash_data_3 {
-  ulong hash_n;
-  struct dbl_range bnd[D];
-  double fac[D];
-  int *offset;
-};
-#endif
-
-static ulong hash_index_3(const struct hash_data_3 *p, const double x[D])
+static ulong hash_index_3(const hash_data_3 *p, const double x[D])
 {
   const ulong n = p->hash_n;
   return (hash_index_aux(p->bnd[2].min, p->fac[2], n, x[2]) * n +
@@ -54,7 +47,7 @@ void findpts_impl(int *const code_base,
                    double *const dist2_base,
                    const double *const x_base[D],
                    const int npt,
-                   struct findpts_data_3 *const fd,
+                   findpts_data_3 *const fd,
                    const void *const findptsData)
 {
 
@@ -76,20 +69,30 @@ void findpts_impl(int *const code_base,
     int *code=code_base, *proc=proc_base;
     const double *xp[D];
     struct src_pt_3 *pt;
-    int d; for(d=0;d<D;++d) xp[d]=x_base[d];
-    array_init(struct src_pt_3, &hash_pt, npt), pt = (struct src_pt_3*) hash_pt.ptr;
+
+    for(int d=0;d<D;++d) {
+      xp[d]=x_base[d];
+    }
+    array_init(struct src_pt_3, &hash_pt, npt);
+    pt = (struct src_pt_3*) hash_pt.ptr;
+
+    double x[D];
+
     for(index=0;index<npt;++index) {
-      double x[D]; for(d=0;d<D;++d) x[d]=*xp[d];
+      for(int d=0;d<D;++d) {
+        x[d]=*xp[d];
+      }
       *proc = id;
       if(*code!=CODE_INTERNAL) {
         const int hi = hash_index_3(&fd->hash, x);
-        int d;
-        for(d=0;d<D;++d) pt->x[d]=x[d];
+        for(int d=0;d<D;++d) {
+          pt->x[d]=x[d];
+        }
         pt->index=index;
         pt->proc=hi%np;
         ++pt;
       }
-      for(d=0;d<D;++d){
+      for(int d=0;d<D;++d){
         xp[d]++;
       }
       code++;
@@ -109,7 +112,8 @@ void findpts_impl(int *const code_base,
       const int i = hash_offset[hi], ie = hash_offset[hi+1];
       count += ie-i;
     }
-    proc_p = proc = tmalloc(int,count);
+    proc = tmalloc(int,count);
+    proc_p = proc;
     array_init(struct src_pt_3, &src_pt_3, count), q = (struct src_pt_3*) src_pt_3.ptr;
     p = (struct src_pt_3 *) hash_pt.ptr;
     for(;p!=pe;++p) {
@@ -135,23 +139,30 @@ void findpts_impl(int *const code_base,
     int n = src_pt_3.n;
     const struct src_pt_3 *spt;
     struct out_pt_3 *opt;
-    array_init(struct out_pt_3, &out_pt_3, n), out_pt_3.n = n;
-    spt = (struct src_pt_3*) src_pt_3.ptr, opt = (struct out_pt_3*) out_pt_3.ptr;
-    for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
-    spt = (struct src_pt_3*) src_pt_3.ptr, opt = (struct out_pt_3*) out_pt_3.ptr;
+    array_init(struct out_pt_3, &out_pt_3, n);
+    out_pt_3.n = n;
+    spt = (struct src_pt_3*) src_pt_3.ptr;
+    opt = (struct out_pt_3*) out_pt_3.ptr;
+    for(;n;--n,++spt,++opt) {
+      opt->index=spt->index;
+      opt->proc=spt->proc;
+    }
+    spt = (struct src_pt_3*) src_pt_3.ptr;
+    opt = (struct out_pt_3*) out_pt_3.ptr;
     if (src_pt_3.n) {
 
       // result buffers
-      int* codeArr = (int*) calloc(src_pt_3.n, sizeof(int));
-      int* elArr = (int*) calloc(src_pt_3.n, sizeof(int));
-      double* rArr = (double*) calloc(3*src_pt_3.n, sizeof(double));
-      double* dist2Arr = (double*) calloc(src_pt_3.n, sizeof(double));
+      std::vector<int> codeArr(src_pt_3.n, 0);
+      std::vector<int> elArr(src_pt_3.n, 0);
+      std::vector<double> rArr(3*src_pt_3.n, 0.0);
+      std::vector<double> dist2Arr(src_pt_3.n, 0.0);
+
+      std::vector<double> x0(src_pt_3.n, 0.0);
+      std::vector<double> x1(src_pt_3.n, 0.0);
+      std::vector<double> x2(src_pt_3.n, 0.0);
 
       // pack position data into arrays
-      double* spt_x_base[3];
-      spt_x_base[0] = (double*) calloc(src_pt_3.n, sizeof(double));
-      spt_x_base[1] = (double*) calloc(src_pt_3.n, sizeof(double));
-      spt_x_base[2] = (double*) calloc(src_pt_3.n, sizeof(double));
+      double* spt_x_base[3] = {x0.data(), x1.data(), x2.data()};
 
       for(int point = 0; point < src_pt_3.n; ++point){
         for(int d = 0; d < 3; ++d){
@@ -159,10 +170,10 @@ void findpts_impl(int *const code_base,
         }
       }
 
-      findpts_local(codeArr,
-                          elArr,
-                          rArr,
-                          dist2Arr,
+      findpts_local(codeArr.data(),
+                          elArr.data(),
+                          rArr.data(),
+                          dist2Arr.data(),
                           spt_x_base,
                           src_pt_3.n,
                           findptsData);
@@ -176,15 +187,6 @@ void findpts_impl(int *const code_base,
           opt[point].r[d] = rArr[3*point + d];
         }
       }
-
-      free(codeArr);
-      free(elArr);
-      free(rArr);
-      free(dist2Arr);
-      free(spt_x_base[0]);
-      free(spt_x_base[1]);
-      free(spt_x_base[2]);
-
     }
     array_free(&src_pt_3);
     /* group by code to eliminate unfound points */
@@ -238,11 +240,13 @@ void findpts_eval_impl(double *const out_base,
     const int *code=code_base, *proc=proc_base, *el=el_base;
     const double *r=r_base;
     struct eval_src_pt_3 *pt;
-    array_init(struct eval_src_pt_3, &src, npt), pt = (struct eval_src_pt_3*)src.ptr;
+    array_init(struct eval_src_pt_3, &src, npt);
+    pt = (struct eval_src_pt_3*)src.ptr;
     for(index=0;index<npt;++index) {
       if(*code!=CODE_NOT_FOUND) {
-        int d;
-        for(d=0;d<D;++d) pt->r[d]=r[d];
+        for(int d=0;d<D;++d) {
+          pt->r[d]=r[d];
+        }
         pt->index=index;
         pt->proc=*proc;
         pt->el=*el;
@@ -263,11 +267,17 @@ void findpts_eval_impl(double *const out_base,
     struct eval_out_pt_3 *opt;
     /* group points by element */
     sarray_sort(struct eval_src_pt_3, src.ptr, n, el, 0, &fd->cr.data);
-    array_init(struct eval_out_pt_3, &outpt, n), outpt.n = n;
-    spt=(struct eval_src_pt_3*)src.ptr, opt=(struct eval_out_pt_3*) outpt.ptr;
+    array_init(struct eval_out_pt_3, &outpt, n);
+    outpt.n = n;
+    spt=(struct eval_src_pt_3*)src.ptr;
+    opt=(struct eval_out_pt_3*) outpt.ptr;
     findpts_local_eval_internal(opt, spt, src.n, in, &fd->local, findptsData);
-    spt=(struct eval_src_pt_3*)src.ptr, opt=(struct eval_out_pt_3*)outpt.ptr;
-    for(;n;--n,++spt,++opt) opt->index=spt->index,opt->proc=spt->proc;
+    spt=(struct eval_src_pt_3*)src.ptr;
+    opt=(struct eval_out_pt_3*)outpt.ptr;
+    for(;n;--n,++spt,++opt) {
+      opt->index=spt->index;
+      opt->proc=spt->proc;
+    }
     array_free(&src);
     sarray_transfer(struct eval_out_pt_3, &outpt, proc, 1, &fd->cr);
   }
