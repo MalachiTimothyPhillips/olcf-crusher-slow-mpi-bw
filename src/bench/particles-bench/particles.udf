@@ -179,15 +179,15 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   occa::memory     d_r_base = platform->device.malloc(3*sizeof(dfloat)*pn);
   occa::memory d_dist2_base = platform->device.malloc(  sizeof(dfloat)*pn);
   occa::memory     d_x_base = platform->device.malloc(3*sizeof(dfloat*)  );
-  occa::memory    d_x0_base = platform->device.malloc( xStrideBytes[0]*pn);
-  occa::memory    d_x1_base = platform->device.malloc( xStrideBytes[1]*pn);
-  occa::memory    d_x2_base = platform->device.malloc( xStrideBytes[2]*pn);
+  occa::memory    d_x0_base = platform->device.malloc( sizeof(dfloat)*pn);
+  occa::memory    d_x1_base = platform->device.malloc( sizeof(dfloat)*pn);
+  occa::memory    d_x2_base = platform->device.malloc( sizeof(dfloat)*pn);
 
   dfloat *x_base_d[3] = {(double*)d_x0_base.ptr(), (double*)d_x1_base.ptr(), (double*)d_x2_base.ptr()};
   d_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
-  d_x0_base.copyFrom(x.data(), xStrideBytes[0]*pn);
-  d_x1_base.copyFrom(y.data(), xStrideBytes[1]*pn);
-  d_x2_base.copyFrom(z.data(), xStrideBytes[2]*pn);
+  d_x0_base.copyFrom(x.data(), sizeof(dfloat)*pn);
+  d_x1_base.copyFrom(y.data(), sizeof(dfloat)*pn);
+  d_x2_base.copyFrom(z.data(), sizeof(dfloat)*pn);
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
@@ -214,7 +214,6 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   d_x0_base.free();
   d_x1_base.free();
   d_x2_base.free();
-  d_x_stride.free();
 
   return (end - start) / Ntrials;
 }
