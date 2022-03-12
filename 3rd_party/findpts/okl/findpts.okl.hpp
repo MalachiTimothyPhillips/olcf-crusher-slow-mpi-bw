@@ -50,11 +50,3 @@ struct findptsLocalData_t {
   findptsElementData_t fed;
   dfloat tol;
 };
-
-// TODO: remove
-#define   AT(T,var,i)   \
-        (T*)(      (char*)var##_base   +(i)*var##_stride   )
-#define  CAT(T,var,i) \
-  (const T*)((const char*)var##_base   +(i)*var##_stride   )
-#define CATD(T,var,i,d) \
-  (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])

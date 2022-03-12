@@ -130,9 +130,8 @@ findpts_t* findptsSetup(
   if (device != nullptr) {
     handle->device = device;
     auto kernels = initFindptsKernels(comm, *device, D, n[0]);
-    handle->local_eval_vector_kernel = std::get<0>(kernels);
-    handle->local_eval_kernel = std::get<1>(kernels);
-    handle->local_kernel = std::get<2>(kernels);
+    handle->local_eval_kernel = std::get<0>(kernels);
+    handle->local_kernel = std::get<1>(kernels);
 
     // Need to copy findpts data to the
     handle->o_fd_local = findptsCopyData_3((struct gslibFindptsData_t *)handle->findpts_data,
