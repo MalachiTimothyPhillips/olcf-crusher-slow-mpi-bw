@@ -1,55 +1,53 @@
 
-struct findpts_el_pt {
+struct findptsElementPoint_t {
   dfloat x[p_D],r[p_D],oldr[p_D],dist2,dist2p,tr;
   dlong  flags;
 };
 
-struct findpts_el_gface { dfloat *x[p_D], *dxdn[p_D]; };
-struct findpts_el_gedge { dfloat *x[p_D], *dxdn1[p_D], *dxdn2[p_D],
+struct findptsElementGFace_t { dfloat *x[p_D], *dxdn[p_D]; };
+struct findptsElementGEdge_t { dfloat *x[p_D], *dxdn1[p_D], *dxdn2[p_D],
                                        *d2xdn1[p_D], *d2xdn2[p_D]; };
-struct findpts_el_gpt {
+struct findptsElementGPT_t {
   dfloat x[p_D], jac[p_D * p_D], hes[18];
 };
 
-struct findpts_el_data {
+struct findptsElementData_t {
   dlong npt_max;
-  struct findpts_el_pt *p; // unused: storage for an single element's data
-
+  findptsElementPoint_t* p;
   dlong n[p_D];
   dfloat *z[p_D];
-  void *lag[p_D]; // unused: we don't use the function pointer approach on device
+  void *lag[p_D];
   dfloat *lag_data[p_D];
   dfloat *wtend[p_D];
 
-  const dfloat *x[p_D]; // unused: storage for an single element's data
+  const dfloat *x[p_D];
+  dlong side_init;
+  dlong *sides;
+  findptsElementGFace_t face[2*p_D];
+  findptsElementGEdge_t edge[2 * 2 * p_D];
+  findptsElementGPT_t pt[1<<p_D];
 
-  dlong side_init; // unused: storage for an single element's data
-  dfloat *sides;   // unused: storage for an single element's data
-  struct findpts_el_gface face[2*p_D];   // unused: storage for an single element's data
-  struct findpts_el_gedge edge[2 * 2 * p_D]; // unused: storage for an single element's data
-  struct findpts_el_gpt pt[1<<p_D]; // unused: storage for an single element's data
-
-  dfloat *work; // unused: workspace for an single element's data
+  dfloat *work;
 };
 
-struct dbl_range { dfloat min, max; };
-struct obbox { dfloat c0[p_D], A[p_D*p_D];
-               struct dbl_range x[p_D]; };
+struct dbl_range_t { dfloat min, max; };
+struct obbox_t { dfloat c0[p_D], A[p_D*p_D];
+               dbl_range_t x[p_D]; };
 
-struct findpts_local_hash_data {
+struct findptsLocalHashData_t {
   dlong hash_n;
-  struct dbl_range bnd[p_D];
+  dbl_range_t bnd[p_D];
   dfloat fac[p_D];
   dlong *offset;
   dlong max;
 };
 
-struct findpts_local_data {
+struct findptsLocalData_t {
   dlong ntot;
   const dfloat *elx[p_D];
-  struct obbox *obb;
-  struct findpts_local_hash_data hd;
-  struct findpts_el_data fed;
+  obbox_t *obb;
+  findptsLocalHashData_t hd;
+  findptsElementData_t fed;
   dfloat tol;
 };
 
@@ -60,4 +58,3 @@ struct findpts_local_data {
   (const T*)((const char*)var##_base   +(i)*var##_stride   )
 #define CATD(T,var,i,d) \
   (const T*)((const char*)var##_base[d]+(i)*var##_stride[d])
-

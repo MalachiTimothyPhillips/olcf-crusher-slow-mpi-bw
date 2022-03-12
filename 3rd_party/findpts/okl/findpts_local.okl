@@ -1,4 +1,3 @@
-
 #define CODE_INTERNAL  0
 #define CODE_BORDER    1
 #define CODE_NOT_FOUND 2
@@ -6,7 +5,7 @@
 ////// OBBOX //////
 
 /* positive when possibly inside */
-static dfloat obbox_axis_test(const struct obbox *const b,
+static dfloat obbox_axis_test(const obbox_t *const b,
                               const dfloat x[p_D])
 {
   dfloat test = 1;
@@ -18,7 +17,7 @@ static dfloat obbox_axis_test(const struct obbox *const b,
 }
 
 /* positive when possibly inside */
-static dfloat obbox_test(const struct obbox *const b, const dfloat x[p_D])
+static dfloat obbox_test(const obbox_t *const b, const dfloat x[p_D])
 {
   const dfloat bxyz = obbox_axis_test(b,x);
   if(bxyz<0){
@@ -45,7 +44,7 @@ static dfloat obbox_test(const struct obbox *const b, const dfloat x[p_D])
 ////// HASH //////
 
 
-static dlong hash_index(const struct findpts_local_hash_data *p, const dfloat x[p_D])
+static dlong hash_index(const findptsLocalHashData_t *p, const dfloat x[p_D])
 {
   const dlong n = p->hash_n;
   dlong sum = 0;
@@ -152,14 +151,14 @@ static dlong point_index(const dlong x)
 // Must be called within an inner loop, with the final argument being the loop index
 // workspace is a shared workspace
 // side_init indicates the mode the workspace is set to
-static findpts_el_gface get_face(
-  const struct findpts_el_data *fd, const dfloat *elx[p_D], dlong fi,
+static findptsElementGFace_t get_face(
+  const findptsElementData_t *fd, const dfloat *elx[p_D], dlong fi,
   dfloat *workspace, dlong &side_init,
   dlong j)
 {
   const dlong dn = fi>>1, d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
   const dlong side_n = fi&1;
-  struct findpts_el_gface face;
+  findptsElementGFace_t face;
   for(dlong d=0;d<p_D;++d){
     face.x[d]    = workspace +    d *p_Nfp;
     face.dxdn[d] = workspace + (3+d)*p_Nfp;
@@ -190,12 +189,12 @@ static findpts_el_gface get_face(
   return face;
 }
 
-static findpts_el_gedge get_edge(
-  const struct findpts_el_data *fd, const dfloat *elx[p_D], dlong ei,
+static findptsElementGEdge_t get_edge(
+  const findptsElementData_t *fd, const dfloat *elx[p_D], dlong ei,
   dfloat *workspace, dlong &side_init,
   dlong j)
 {
-  findpts_el_gedge edge;
+  findptsElementGEdge_t edge;
   const dlong de = ei>>2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
   const dlong side_n1 = ei&1, side_n2 = (ei&2)>>1;
 
@@ -243,13 +242,13 @@ static findpts_el_gedge get_edge(
   }
   return edge;
 }
-static findpts_el_gpt get_pt(
-  struct findpts_el_data *fd, const dfloat *elx[p_D], dlong pi)
+static findptsElementGPT_t get_pt(
+  findptsElementData_t *fd, const dfloat *elx[p_D], dlong pi)
 {
   const dlong side_n1 = pi&1, side_n2 = (pi>>1)&1, side_n3 = (pi>>2)&1;
   const dlong in1 = side_n1*(p_Nq-1), in2 = side_n2*(p_Nq-1), in3 = side_n3*(p_Nq-1);
   const dlong hes_stride = (p_D+1)*p_D/2;
-  findpts_el_gpt pt;
+  findptsElementGPT_t pt;
 
   #define ELX(d, j, k, l) elx[d][j+k*p_Nq+l*p_Nq*p_Nq]
   for(dlong d=0;d<p_D;++d){
@@ -308,9 +307,9 @@ static findpts_el_gpt get_pt(
    may reject the prior step, returning 1; otherwise returns 0
    sets out->dist2, out->index, out->x, out->oldr in any event,
    leaving out->r, out->dr, out->flags to be set when returning 0 */
-bool reject_prior_step_q(      findpts_el_pt *out,
+bool reject_prior_step_q(      findptsElementPoint_t *out,
                          const dfloat resid[p_D],
-                         const findpts_el_pt *p,
+                         const findptsElementPoint_t *p,
                          const dfloat tol)
 {
   const dfloat dist2 = norm2(resid);
@@ -350,9 +349,9 @@ bool reject_prior_step_q(      findpts_el_pt *out,
 
 /* minimize ||resid - jac * dr||_2, with |dr| <= tr, |r0+dr|<=1
    (exact solution of trust region problem) */
-void newton_vol(struct findpts_el_pt *const out,
+void newton_vol(findptsElementPoint_t *const out,
                        const dfloat jac[9], const dfloat resid[3],
-                       const struct findpts_el_pt *const p, const dfloat tol)
+                       const findptsElementPoint_t *const p, const dfloat tol)
 {
   const dfloat tr = p->tr;
   dfloat bnd[6] = { -1,1, -1,1, -1,1 };
@@ -493,12 +492,12 @@ newton_vol_fin:
   }
   out->flags = flags | (p->flags<<7);
 }
-void newton_face(struct findpts_el_pt *const out,
+void newton_face(findptsElementPoint_t *const out,
                  const dfloat jac[9], const dfloat rhes[3],
                  const dfloat resid[3],
                  const dlong d1, const dlong d2, const dlong dn,
                  const dlong flags,
-                 const struct findpts_el_pt *const p, const dfloat tol)
+                 const findptsElementPoint_t *const p, const dfloat tol)
 {
   const dfloat tr = p->tr;
   dfloat bnd[4];
@@ -587,11 +586,11 @@ newton_face_fin:
   out->flags = new_flags | (p->flags<<7);
 }
 
-static void newton_edge(struct findpts_el_pt *const out,
+static void newton_edge(findptsElementPoint_t *const out,
   const dfloat jac[9], const dfloat rhes, const dfloat resid[3],
   const dlong de, const dlong dn1, const dlong dn2,
   dlong flags,
-  const struct findpts_el_pt *const p, const dfloat tol)
+  const findptsElementPoint_t *const p, const dfloat tol)
 {
   const dfloat tr = p->tr;
   /* A = J^T J - resid_d H_d */
@@ -706,14 +705,14 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
         dfloat *const     r_base     ,
         dfloat *const dist2_base     ,
   const dfloat *const     x_base[p_D],
-  const dlong npt, struct findpts_local_data *fd)
+  const dlong npt, findptsLocalData_t *fd)
 {
   #define MAX_CONST(a,b) (((a)>(b))?(a):(b))
   #define INNER_SIZE 32
 
   for (dlong i = 0; i < npt; ++i; @outer) {
     @shared dfloat r_workspace[MAX_CONST(4, p_Nq+1)*(p_D*p_D+2*p_D) + p_D*2*p_Nq];
-    @shared findpts_el_pt el_pts[2];
+    @shared findptsElementPoint_t el_pts[2];
 
     #define CONSTRAINT_SIZE MAX_CONST(p_Nq*p_Nq*6, p_Nq*p_D*3)
     @shared dfloat constraint_workspace[CONSTRAINT_SIZE];
@@ -721,7 +720,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 
     // OCCA has limits on access to shared variables outside inner loops
     dfloat *r_workspace_ptr;
-    findpts_el_pt *fpt, *tmp;
+    findptsElementPoint_t *fpt, *tmp;
     for(dlong j=0;j<INNER_SIZE;++j;@inner){
       r_workspace_ptr = r_workspace;
       fpt = el_pts+0;
@@ -872,7 +871,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   dfloat *J1 = wt1, *D1 = wt1+p_Nq;
                   dfloat *J2 = wt2, *D2 = wt2+p_Nq;
                   dfloat *DD1 = D1+p_Nq, *DD2 = D2+p_Nq;
-                  struct findpts_el_gface face;
+                  findptsElementGFace_t face;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     face = get_face(&fd->fed,elx,fi,constraint_workspace,constraint_init,j);
                   }
@@ -942,12 +941,12 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   dfloat *jac   = resid + p_D;
                   dfloat *hes_T = jac   + p_D*p_D;
                   dfloat *hes   = hes_T + hes_count*p_D;
-                  struct findpts_el_gedge edge;
+                  findptsElementGEdge_t edge;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     edge = get_edge(&fd->fed,elx,ei,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
-                  // TODO consider optimizing this using the internal structure of findpts_el_gedge
+                  // TODO consider optimizing this using the internal structure of findptsElementGEdge_t
                   const dfloat* const* e_x[p_D+3] = {edge.x, edge.x, edge.dxdn1, edge.dxdn2, edge.d2xdn1, edge.d2xdn2};
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
                     if(j < p_Nq) {
@@ -1033,7 +1032,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                 }
                 case 3:{ // findpts_pt
                   const dlong pi = point_index(tmp->flags & FLAG_MASK);
-                  const struct findpts_el_gpt gpt = get_pt(&fd->fed,elx,pi);
+                  const findptsElementGPT_t gpt = get_pt(&fd->fed,elx,pi);
                   const dfloat *const pt_x = gpt.x, *const jac = gpt.jac, *const hes = gpt.hes;
 
                   dfloat resid[p_D], steep[p_D];
