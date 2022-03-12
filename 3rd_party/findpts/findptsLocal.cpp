@@ -8,9 +8,34 @@
 #include "gslib.h"
 #include "findptsImpl.hpp"
 
+static occa::memory o_scratch;
+static occa::memory h_scratch;
+static void* scratch;
+static void realloc_scratch(occa::device& device, dlong Nbytes){
+  if(o_scratch.size()) o_scratch.free();
+  if(h_scratch.size()) h_scratch.free();
+
+  {
+    occa::properties props;
+    props["host"] = true;
+  
+    void* buffer = std::calloc(Nbytes, 1);
+    occa::memory h_scratch = device.malloc(Nbytes, buffer, props);
+    std::free(buffer);
+    
+    scratch = h_scratch.ptr();
+  }
+
+  {
+    o_scratch = device.malloc(Nbytes);
+  }
+}
+
 static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
 static_assert(sizeof(dlong) == sizeof(int), "findpts dlong is not compatible with GSLIB int");
 
+// Can't use pinned memory for D->H transfer without
+// doing H->H transfer to input arrays
 void findpts_local(    int   *const  code_base,
                              int   *const    el_base,
                              double *const     r_base   ,
@@ -25,21 +50,20 @@ void findpts_local(    int   *const  code_base,
 
   dlong worksize = 2*sizeof(dlong)+7*sizeof(dfloat);
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
-  occa::memory workspace;
-  occa::memory mempool = platform_t::getInstance()->o_mempool.o_ptr;
-  if(alloc_size < mempool.size()) {
-    workspace = mempool.cast(occa::dtype::byte);
-  } else {
-    workspace = device.malloc(alloc_size, occa::dtype::byte);
+  if(alloc_size > o_scratch.size()){
+    realloc_scratch(device, alloc_size);
   }
-  occa::memory  o_code_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory    o_el_base = workspace; workspace +=   sizeof(dlong) *pn;
-  occa::memory     o_r_base = workspace; workspace += 3*sizeof(dfloat)*pn;
-  occa::memory o_dist2_base = workspace; workspace +=   sizeof(dfloat)*pn;
-  occa::memory     o_x_base = workspace; workspace += 3*sizeof(dfloat*);
-  occa::memory    o_x0_base = workspace; workspace +=  sizeof(dfloat)*pn;
-  occa::memory    o_x1_base = workspace; workspace +=  sizeof(dfloat)*pn;
-  occa::memory    o_x2_base = workspace; workspace +=  sizeof(dfloat)*pn;
+
+  dlong byteOffset = 0;
+
+  occa::memory  o_code_base = o_scratch + byteOffset; byteOffset +=   sizeof(dlong) *pn;
+  occa::memory    o_el_base = o_scratch + byteOffset; byteOffset +=   sizeof(dlong) *pn;
+  occa::memory     o_r_base = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat)*pn;
+  occa::memory o_dist2_base = o_scratch + byteOffset; byteOffset +=   sizeof(dfloat)*pn;
+  occa::memory     o_x_base = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat*);
+  occa::memory    o_x0_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
+  occa::memory    o_x1_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
+  occa::memory    o_x2_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
   o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
@@ -71,11 +95,26 @@ void findpts_local_eval_internal(
   occa::device device = *findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
 
-  // pack buffers
-  std::vector<dfloat> out(pn, 0.0);
-  std::vector<dfloat> r(3*pn, 0.0);
-  std::vector<dlong> el(pn, 0);
+  const auto Nbytes = 4 * pn * sizeof(dfloat) + pn * sizeof(dlong);
+  if(Nbytes > o_scratch.size()){
+    realloc_scratch(device, Nbytes);
+  }
 
+  dlong byteOffset = 0;
+
+  dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
+  auto o_out = o_scratch + byteOffset;
+  byteOffset += pn * sizeof(dfloat);
+
+  dfloat* r = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
+  auto o_r = o_scratch + byteOffset;
+  byteOffset += 3 * pn * sizeof(dfloat);
+
+  dlong* el = (dlong*) (static_cast<char*>(scratch) + byteOffset);
+  auto o_el = o_scratch + byteOffset;
+  byteOffset += pn * sizeof(dlong);
+
+  // pack host buffers
   for(int point = 0; point < pn; ++point){
     for(int component = 0; component < 3; ++component){
       r[3*point+component] = spt[point].r[component];
@@ -83,17 +122,12 @@ void findpts_local_eval_internal(
     }
   }
 
-  // TODO: use pinned memory buffers + common scratch space
-  auto o_out = device.malloc(pn * sizeof(dfloat));
-  auto o_el  = device.malloc(pn * sizeof(dlong));
-  auto o_r   = device.malloc(3 * pn * sizeof(dfloat));
-
-  o_r.copyFrom(r.data(), 3 * pn * sizeof(dfloat));
-  o_el.copyFrom(el.data(), pn * sizeof(dlong));
+  o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
+  o_el.copyFrom(el, pn * sizeof(dlong));
 
   findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
 
-  o_out.copyTo(out.data(), pn * sizeof(dfloat));
+  o_out.copyTo(out, pn * sizeof(dfloat));
 
   // unpack buffer
   for(int point = 0; point < pn; ++point){

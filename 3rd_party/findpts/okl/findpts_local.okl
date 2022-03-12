@@ -767,7 +767,6 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
               dfloat *dist2_temp = r_workspace_ptr;
               dfloat *r_temp[p_D]; for(dlong d=0;d<p_D;++d) r_temp[d]=dist2_temp+(1+d)*p_Nq;
               for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                //seed_j(elx, x_i, fd->fed.z, dist2_temp, r_temp, j);
                 seed_j(elx, x_i, dist2_temp, r_temp, j);
               }
               @barrier("local");
