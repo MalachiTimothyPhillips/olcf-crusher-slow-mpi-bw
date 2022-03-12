@@ -31,11 +31,11 @@ static ulong hash_index_3(const hash_data_3 *p, const double x[D])
          hash_index_aux(p->bnd[0].min, p->fac[0], n, x[0]);
 }
 
-struct src_pt_3 {
+struct srcPt_t {
   double x[D];
   int index, proc;
 };
-struct out_pt_3 {
+struct outPt_t {
   double r[D], dist2;
   int index, code, el, proc;
 };
@@ -52,7 +52,7 @@ void findpts_impl(int *const code_base,
 {
 
   const int np = fd->cr.comm.np, id=fd->cr.comm.id;
-  struct array hash_pt, src_pt_3, out_pt_3;
+  struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
   if (npt){
     findpts_local(code_base,
@@ -68,13 +68,13 @@ void findpts_impl(int *const code_base,
     int index;
     int *code=code_base, *proc=proc_base;
     const double *xp[D];
-    struct src_pt_3 *pt;
+    struct srcPt_t *pt;
 
     for(int d=0;d<D;++d) {
       xp[d]=x_base[d];
     }
-    array_init(struct src_pt_3, &hash_pt, npt);
-    pt = (struct src_pt_3*) hash_pt.ptr;
+    array_init(struct srcPt_t, &hash_pt, npt);
+    pt = (struct srcPt_t*) hash_pt.ptr;
 
     double x[D];
 
@@ -98,15 +98,15 @@ void findpts_impl(int *const code_base,
       code++;
       proc++;
     }
-    hash_pt.n = pt - (struct src_pt_3 *)hash_pt.ptr;
-    sarray_transfer(struct src_pt_3, &hash_pt, proc, 1, &fd->cr);
+    hash_pt.n = pt - (struct srcPt_t *)hash_pt.ptr;
+    sarray_transfer(struct srcPt_t, &hash_pt, proc, 1, &fd->cr);
   }
   /* look up points in hash cells, route to possible procs */
   {
     const unsigned int *const hash_offset = fd->hash.offset;
     int count=0, *proc, *proc_p;
-    const struct src_pt_3 *p = (struct src_pt_3*) hash_pt.ptr, *const pe = p + hash_pt.n;
-    struct src_pt_3 *q;
+    const struct srcPt_t *p = (struct srcPt_t*) hash_pt.ptr, *const pe = p + hash_pt.n;
+    struct srcPt_t *q;
     for(;p!=pe;++p) {
       const int hi = hash_index_3(&fd->hash, p->x) / np;
       const int i = hash_offset[hi], ie = hash_offset[hi+1];
@@ -114,8 +114,8 @@ void findpts_impl(int *const code_base,
     }
     proc = tmalloc(int,count);
     proc_p = proc;
-    array_init(struct src_pt_3, &src_pt_3, count), q = (struct src_pt_3*) src_pt_3.ptr;
-    p = (struct src_pt_3 *) hash_pt.ptr;
+    array_init(struct srcPt_t, &srcPt_t, count), q = (struct srcPt_t*) srcPt_t.ptr;
+    p = (struct srcPt_t *) hash_pt.ptr;
     for(;p!=pe;++p) {
       const int hi = hash_index_3(&fd->hash, p->x) / np;
       int i = hash_offset[hi]; const int ie = hash_offset[hi+1];
@@ -127,44 +127,44 @@ void findpts_impl(int *const code_base,
       }
     }
     array_free(&hash_pt);
-    src_pt_3.n = proc_p - proc;
+    srcPt_t.n = proc_p - proc;
 #ifdef DIAGNOSTICS
-    printf("(proc %u) hashed; routing %u/%u\n", id, (int)src_pt_3.n, count);
+    printf("(proc %u) hashed; routing %u/%u\n", id, (int)srcPt_t.n, count);
 #endif
-    sarray_transfer_ext(struct src_pt_3, &src_pt_3, reinterpret_cast<unsigned int*>(proc), sizeof(int), &fd->cr);
+    sarray_transfer_ext(struct srcPt_t, &srcPt_t, reinterpret_cast<unsigned int*>(proc), sizeof(int), &fd->cr);
     free(proc);
   }
   /* look for other procs' points, send back */
   {
-    int n = src_pt_3.n;
-    const struct src_pt_3 *spt;
-    struct out_pt_3 *opt;
-    array_init(struct out_pt_3, &out_pt_3, n);
-    out_pt_3.n = n;
-    spt = (struct src_pt_3*) src_pt_3.ptr;
-    opt = (struct out_pt_3*) out_pt_3.ptr;
+    int n = srcPt_t.n;
+    const struct srcPt_t *spt;
+    struct outPt_t *opt;
+    array_init(struct outPt_t, &outPt_t, n);
+    outPt_t.n = n;
+    spt = (struct srcPt_t*) srcPt_t.ptr;
+    opt = (struct outPt_t*) outPt_t.ptr;
     for(;n;--n,++spt,++opt) {
       opt->index=spt->index;
       opt->proc=spt->proc;
     }
-    spt = (struct src_pt_3*) src_pt_3.ptr;
-    opt = (struct out_pt_3*) out_pt_3.ptr;
-    if (src_pt_3.n) {
+    spt = (struct srcPt_t*) srcPt_t.ptr;
+    opt = (struct outPt_t*) outPt_t.ptr;
+    if (srcPt_t.n) {
 
       // result buffers
-      std::vector<int> codeArr(src_pt_3.n, 0);
-      std::vector<int> elArr(src_pt_3.n, 0);
-      std::vector<double> rArr(3*src_pt_3.n, 0.0);
-      std::vector<double> dist2Arr(src_pt_3.n, 0.0);
+      std::vector<int> codeArr(srcPt_t.n, 0);
+      std::vector<int> elArr(srcPt_t.n, 0);
+      std::vector<double> rArr(3*srcPt_t.n, 0.0);
+      std::vector<double> dist2Arr(srcPt_t.n, 0.0);
 
-      std::vector<double> x0(src_pt_3.n, 0.0);
-      std::vector<double> x1(src_pt_3.n, 0.0);
-      std::vector<double> x2(src_pt_3.n, 0.0);
+      std::vector<double> x0(srcPt_t.n, 0.0);
+      std::vector<double> x1(srcPt_t.n, 0.0);
+      std::vector<double> x2(srcPt_t.n, 0.0);
 
       // pack position data into arrays
       double* spt_x_base[3] = {x0.data(), x1.data(), x2.data()};
 
-      for(int point = 0; point < src_pt_3.n; ++point){
+      for(int point = 0; point < srcPt_t.n; ++point){
         for(int d = 0; d < 3; ++d){
             spt_x_base[d][point] = spt[point].x[d];
         }
@@ -175,11 +175,11 @@ void findpts_impl(int *const code_base,
                           rArr.data(),
                           dist2Arr.data(),
                           spt_x_base,
-                          src_pt_3.n,
+                          srcPt_t.n,
                           findptsData);
 
       // unpack arrays into opt
-      for(int point = 0; point < src_pt_3.n; point++){
+      for(int point = 0; point < srcPt_t.n; point++){
         opt[point].code = codeArr[point];
         opt[point].el = elArr[point];
         opt[point].dist2 = dist2Arr[point];
@@ -188,22 +188,22 @@ void findpts_impl(int *const code_base,
         }
       }
     }
-    array_free(&src_pt_3);
+    array_free(&srcPt_t);
     /* group by code to eliminate unfound points */
-    sarray_sort(struct out_pt_3, opt, out_pt_3.n, code, 0, &fd->cr.data);
-    n = out_pt_3.n;
+    sarray_sort(struct outPt_t, opt, outPt_t.n, code, 0, &fd->cr.data);
+    n = outPt_t.n;
     while (n && opt[n - 1].code == CODE_NOT_FOUND)
       --n;
-    out_pt_3.n = n;
+    outPt_t.n = n;
 #ifdef DIAGNOSTICS
-    printf("(proc %u) sending back %u found points\n", id, (int)out_pt_3.n);
+    printf("(proc %u) sending back %u found points\n", id, (int)outPt_t.n);
 #endif
-    sarray_transfer(struct out_pt_3, &out_pt_3, proc, 1, &fd->cr);
+    sarray_transfer(struct outPt_t, &outPt_t, proc, 1, &fd->cr);
   }
   /* merge remote results with user data */
   {
-    int n = out_pt_3.n;
-    struct out_pt_3 *opt = (struct out_pt_3*) out_pt_3.ptr;
+    int n = outPt_t.n;
+    struct outPt_t *opt = (struct outPt_t*) outPt_t.ptr;
     for (; n; --n, ++opt) {
       const int index = opt->index;
       if(code_base[index]==CODE_INTERNAL) continue;
@@ -219,7 +219,7 @@ void findpts_impl(int *const code_base,
         code_base[index] = opt->code;
       }
     }
-    array_free(&out_pt_3);
+    array_free(&outPt_t);
   }
 }
 
