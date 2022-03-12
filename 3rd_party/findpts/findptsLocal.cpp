@@ -105,21 +105,3 @@ void findpts_local_eval_internal(
   o_r.free();
 
 }
-
-void findpts_local_eval(
-          void * const out,
-    const void * const el,
-    const void * const r,
-    const int pn, const void *const in,
-    struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void)
-{
-  if (pn == 0) return;
-
-  findpts_t *findptsData = (findpts_t*)findptsData_void;
-  occa::memory o_out = *(occa::memory*)out;
-  occa::memory o_el  = *(occa::memory*) el;
-  occa::memory o_r   = *(occa::memory*)  r;
-  occa::memory o_in       = *(occa::memory*)in;
-
-  findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
-}

@@ -24,13 +24,6 @@ void findpts_local_eval_internal(
   const int pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
-void findpts_local_eval(
-        void *const  out_base,
-  const void *const   el_base,
-  const void *const    r_base,
-  const int pn, const void *const in,
-  struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
-
 void findpts_eval_impl(
         double *const  out_base,
   const int   *const code_base,
