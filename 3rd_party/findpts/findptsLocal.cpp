@@ -5,10 +5,8 @@
 #include "platform.hpp"
 #include <vector>
 
-extern "C" {
-
 #include "gslib.h"
-#include "internal_findpts.h"
+#include "findptsImpl.hpp"
 
 static_assert(std::is_same<dfloat, double>::value, "findpts dfloat is not compatible with GSLIB double");
 static_assert(sizeof(dlong) == sizeof(int), "findpts dlong is not compatible with GSLIB int");
@@ -124,6 +122,4 @@ void findpts_local_eval(
   occa::memory o_in       = *(occa::memory*)in;
 
   findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
-}
-
 }

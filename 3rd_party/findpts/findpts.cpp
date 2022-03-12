@@ -32,7 +32,7 @@ SOFTWARE.
 #include "gslib.h"
 #include "findptsTypes.h"
 
-#include "internal_findpts.h"
+#include "findptsImpl.hpp"
 
 extern "C" {
 uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,

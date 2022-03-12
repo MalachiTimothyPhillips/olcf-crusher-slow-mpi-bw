@@ -3,7 +3,7 @@
 #include "gslib.h"
 
 #include "findptsTypes.h"
-#include "internal_findpts.h"
+#include "findptsImpl.hpp"
 
 #define D 3
 

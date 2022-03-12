@@ -1,11 +1,7 @@
-#ifndef INTERNAL_FINDPTS_H
-#define INTERNAL_FINDPTS_H
+#ifndef FINDPTS_IMPL_HPP
+#define FINDPTS_IMPL_HPP
 
 #include "findptsTypes.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void findpts_local(int *const code_base,
                          int *const el_base,
@@ -44,9 +40,5 @@ void findpts_eval_impl(
   const int npt,
   const void *const in, struct findpts_data_3 *const fd,
   const void *const findptsData);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
