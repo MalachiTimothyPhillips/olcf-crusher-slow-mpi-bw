@@ -13,16 +13,16 @@ extern "C" {
 //  double min, max;
 //};
 
-struct eval_src_pt_3 {
+struct evalSrcPt_t {
   double r[3];
   int index, proc, el;
 };
-struct eval_out_pt_3 {
+struct evalOutPt_t {
   double out;
   int index, proc;
 };
 
-struct hash_data_3 {
+struct hashData_t {
   ulong hash_n;
   struct dbl_range bnd[3];
   double fac[3];
@@ -31,7 +31,7 @@ struct hash_data_3 {
 struct findpts_data_3 {
   struct crystal cr;
   struct findpts_local_data_3 local;
-  struct hash_data_3 hash;
+  struct hashData_t hash;
 };
 #ifdef __cplusplus
 }

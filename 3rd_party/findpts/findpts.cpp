@@ -49,7 +49,7 @@ static occa::memory findptsCopyData_3(const struct findpts_data_3 *fd,
   //create device allocation
   dlong lag_size[3];
   for(dlong d=0;d<3;++d) lag_size[d] = gll_lag_size(fd_local->fed.n[d]);
-  struct findpts_local_hash_data_3 hash_data_copy = fd_local->hd;
+  auto hash_data_copy = fd_local->hd;
   dlong hd_d_size  = findpts_local_hash_opt_size_3(&hash_data_copy, fd_local->obb, nel, max_hash_size);
   dlong elx_d_size = nel*fd_local->ntot;
   dlong alloc_size =  sizeof(findpts_local_data_3)

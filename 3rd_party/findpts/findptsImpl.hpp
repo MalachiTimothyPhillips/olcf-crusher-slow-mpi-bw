@@ -20,7 +20,7 @@ void findpts_impl(    int   *const  code_base,
                  const void *const findptsData);
 
 void findpts_local_eval_internal(
-  struct eval_out_pt_3 *opt, const struct eval_src_pt_3 *spt,
+  struct evalOutPt_t *opt, const struct evalSrcPt_t *spt,
   const int pn, const void *const in,
   struct findpts_local_data_3 *const gs_fd, const void *const findptsData_void);
 
