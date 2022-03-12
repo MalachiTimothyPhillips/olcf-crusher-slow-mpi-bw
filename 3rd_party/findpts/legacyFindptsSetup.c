@@ -36,7 +36,7 @@ SOFTWARE.
 #include "ogstypes.h"
 
 // for declaration of legacyFindptsSetup
-#include "interfaceFindpts.h"
+#include "legacyFindptsSetup.h"
 
 // gslibFindptsData_t
 #include "findptsTypes.h"

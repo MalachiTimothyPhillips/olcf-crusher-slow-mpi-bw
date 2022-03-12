@@ -28,7 +28,7 @@ SOFTWARE.
 #include <cstdlib>
 #include "ogstypes.h"
 #include "findpts.hpp"
-#include "interfaceFindpts.h"
+#include "legacyFindptsSetup.h"
 #include "gslib.h"
 #include "findptsTypes.h"
 
