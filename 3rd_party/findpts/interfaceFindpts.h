@@ -4,10 +4,12 @@
 
 #include "ogstypes.h"
 
+#ifdef __cplusplus
 extern "C" {
-struct findpts_data_3;
+#endif
+struct gslibFindptsData_t;
 
-struct findpts_data_3 *legacyFindptsSetup(MPI_Comm comm,
+struct gslibFindptsData_t *legacyFindptsSetup(MPI_Comm comm,
                                              const dfloat *const elx[3],
                                              const dlong n[3],
                                              const dlong nel,
@@ -18,7 +20,7 @@ struct findpts_data_3 *legacyFindptsSetup(MPI_Comm comm,
                                              const dlong npt_max,
                                              const dfloat newt_tol);
 
-void legacyFindptsFree(struct findpts_data_3 *fd);
+#ifdef __cplusplus
 }
-
+#endif
 #endif

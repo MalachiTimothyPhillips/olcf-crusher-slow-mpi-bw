@@ -24,13 +24,13 @@ struct evalOutPt_t {
 
 struct hashData_t {
   ulong hash_n;
-  struct dbl_range bnd[3];
+  struct dbl_range bnd[3]; // TODO: remove dep on gslib
   double fac[3];
   uint *offset;
 };
-struct findpts_data_3 {
-  struct crystal cr;
-  struct findpts_local_data_3 local;
+struct gslibFindptsData_t {
+  struct crystal cr; // TODO: remove dep on gslib
+  struct findpts_local_data_3 local; // TODO: remove dep on gslib
   struct hashData_t hash;
 };
 #ifdef __cplusplus

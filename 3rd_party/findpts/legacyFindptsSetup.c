@@ -26,18 +26,35 @@ SOFTWARE.
 
 /* compile with C compiler (not C++) */
 
-#include <assert.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "gslib.h"
 
+// dlong, dfloat, etc.
 #include "ogstypes.h"
+
+// for declaration of legacyFindptsSetup
+#include "interfaceFindpts.h"
+
+// gslibFindptsData_t
 #include "findptsTypes.h"
 
-struct findpts_data_3 *legacyFindptsSetup(
+// kludge for getting type
+struct hash_data_3 {
+  ulong hash_n;
+  struct dbl_range bnd[3];
+  double fac[3];
+  uint *offset;
+};
+struct findpts_data_3 {
+  struct crystal cr;
+  struct findpts_local_data_3 local;
+  struct hash_data_3 hash;
+};
+
+struct gslibFindptsData_t *legacyFindptsSetup(
   MPI_Comm mpi_comm,
   const dfloat *const elx[3],
   const dlong n[3], const dlong nel,
@@ -55,13 +72,33 @@ struct findpts_data_3 *legacyFindptsSetup(
   struct comm gs_comm;
   comm_init(&gs_comm, mpi_comm);
 
-  struct findpts_data_3* fd = findpts_setup_3(&gs_comm, elx, n, nel, m, bbox_tol,
+  struct findpts_data_3* legacyFD = findpts_setup_3(&gs_comm, elx, n, nel, m, bbox_tol,
                                               local_hash_size, global_hash_size,
                                               npt_max, newt_tol);
   comm_free(&gs_comm);
-  return fd;
-}
 
-void legacyFindptsFree(struct findpts_data_3 *fd) {
-  findpts_free_3(fd);
+
+  // convert from legacy findpts type to correct type
+  struct gslibFindptsData_t* fd = (struct gslibFindptsData_t*) malloc(sizeof(struct gslibFindptsData_t));
+
+  struct hashData_t hash;
+
+  hash.hash_n = legacyFD->hash.hash_n;
+  hash.bnd[0] = legacyFD->hash.bnd[0];
+  hash.bnd[1] = legacyFD->hash.bnd[1];
+  hash.bnd[2] = legacyFD->hash.bnd[2];
+  hash.fac[0] = legacyFD->hash.fac[0];
+  hash.fac[1] = legacyFD->hash.fac[1];
+  hash.fac[2] = legacyFD->hash.fac[2];
+
+  hash.offset = legacyFD->hash.offset;
+
+  fd->cr = legacyFD->cr;
+  fd->local = legacyFD->local;
+  fd->hash = hash;
+
+  // TODO: enable this
+  //findpts_free_3(legacyFD);
+
+  return fd;
 }

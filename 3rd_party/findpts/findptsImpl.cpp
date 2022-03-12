@@ -47,7 +47,7 @@ void findpts_impl(int *const code_base,
                    double *const dist2_base,
                    const double *const x_base[D],
                    const int npt,
-                   findpts_data_3 *const fd,
+                   gslibFindptsData_t *const fd,
                    const void *const findptsData)
 {
 
@@ -230,7 +230,7 @@ void findpts_eval_impl(double *const out_base,
                         const double *const r_base,
                         const int npt,
                         const void *const in,
-                        struct findpts_data_3 *const fd,
+                        struct gslibFindptsData_t *const fd,
                         const void *const findptsData)
 {
   struct array src, outpt;

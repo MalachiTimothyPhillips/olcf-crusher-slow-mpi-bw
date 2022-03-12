@@ -40,7 +40,7 @@ uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
                                const uint max_size);
 }
 
-static occa::memory findptsCopyData_3(const struct findpts_data_3 *fd,
+static occa::memory findptsCopyData_3(const struct gslibFindptsData_t *fd,
                                          dlong nel, dlong max_hash_size,
                                          occa::device device)
 {
@@ -135,7 +135,7 @@ findpts_t* findptsSetup(
     handle->local_kernel = std::get<2>(kernels);
 
     // Need to copy findpts data to the
-    handle->o_fd_local = findptsCopyData_3((struct findpts_data_3 *)handle->findpts_data,
+    handle->o_fd_local = findptsCopyData_3((struct gslibFindptsData_t *)handle->findpts_data,
                                                   nel,
                                                   local_hash_size,
                                                   *device);
@@ -148,7 +148,6 @@ findpts_t* findptsSetup(
 
 void findptsFree(findpts_t *fd)
 {
-  legacyFindptsFree((findpts_data_3 *)fd->findpts_data);
   if (fd->device != nullptr) {
     // Use OCCA's reference counting to free memory and kernel objects
     fd->local_eval_kernel = occa::kernel();
@@ -170,7 +169,7 @@ void findpts(findpts_data_t *const findPtsData,
                   findPtsData->dist2_base,
                   x_base,
                   npt,
-                  (findpts_data_3 *)fd->findpts_data,
+                  (gslibFindptsData_t *)fd->findpts_data,
                   fd);
 
 }
@@ -189,7 +188,7 @@ void findptsEval(dfloat *const out_base,
                  findPtsData->r_base,
                       npt,
                       &o_in,
-                      (findpts_data_3 *)fd->findpts_data,
+                      (gslibFindptsData_t *)fd->findpts_data,
                       fd);
 }
 
@@ -202,4 +201,4 @@ void findptsLocalEval(
   fd->local_eval_kernel(npt, o_el, o_r, o_in, o_out);
 }
 
-crystal *crystalRouter(findpts_t *const fd) { return &((findpts_data_3 *)(fd->findpts_data))->cr; }
+crystal *crystalRouter(findpts_t *const fd) { return &((gslibFindptsData_t *)(fd->findpts_data))->cr; }
