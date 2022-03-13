@@ -1,4 +1,4 @@
-// assumes p_blockSize >= p_Nq * p_Nq && 3*p_nptsElementMax
+// assumes p_blockSize >= p_Nq * p_Nq && 3*p_nptsBlock
 @kernel void findpts_local_eval(
         const dlong npts,
         @restrict const dlong *elIdx,
@@ -85,6 +85,7 @@
 }
 
 #if 0
+// assumes p_blockSize >= p_Nq * p_Nq && 3*p_nptsElementMax
 @kernel void findpts_local_eval_eBlock(
         dfloat * const out_base,
         const dlong  * const el_base,

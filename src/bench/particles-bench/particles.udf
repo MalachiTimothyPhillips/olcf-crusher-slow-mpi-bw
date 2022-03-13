@@ -13,12 +13,13 @@ static int nParticles;
 static lpm_t *particles;
 
 occa::kernel applyPeriodicityKernel;
+occa::kernel findptsLocalEvalVectorKernel;
 
 enum class BENCHMARK{
-  ALL,
-  FINDPTS_LOCAL,
-  FINDPTS_LOCAL_EVAL,
-  PARTICLE_UPDATE,
+  ALL, // mode 0
+  FINDPTS_LOCAL, // mode 1
+  FINDPTS_LOCAL_EVAL, // mode 2
+  PARTICLE_UPDATE, // mode 3
   INVALID,
 };
 
@@ -118,7 +119,7 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 
 void UDF_Setup(nrs_t *nrs)
 {
-#if 0
+#if 1
   auto * mesh = nrs->meshV;
   auto kernelInfo = platform->kernelInfo;
   kernelInfo["defines"].asObject();
@@ -140,6 +141,15 @@ void UDF_Setup(nrs_t *nrs)
   const std::string extension = ".okl";
   kernelInfo["includes"] += path + "/findpts.okl.hpp";
   kernelInfo["includes"] += path + "/poly.okl.hpp";
+
+  // needed for kernel
+  kernelInfo["defines/p_nptsBlock"] = 4;
+  kernelInfo["defines/p_blockSize"] = mesh->Nq * mesh->Nq;
+
+  const std::string kernelName = "findpts_local_eval_vector";
+  const std::string fileName = path + kernelName + extension;
+  findptsLocalEvalVectorKernel = platform->device.buildKernel(fileName, kernelInfo, true);
+
 #endif
   particles = new lpm_t(nrs, 0);
 }
@@ -350,9 +360,10 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   auto* findpts = particles.interp().ptr();
 
   // correctness check
-  findpts->local_eval_kernel(pn, o_el, o_r, o_Ux, o_outx);
-  findpts->local_eval_kernel(pn, o_el, o_r, o_Uy, o_outy);
-  findpts->local_eval_kernel(pn, o_el, o_r, o_Uz, o_outz);
+  //findpts->local_eval_kernel(pn, o_el, o_r, o_Ux, o_outx);
+  //findpts->local_eval_kernel(pn, o_el, o_r, o_Uy, o_outy);
+  //findpts->local_eval_kernel(pn, o_el, o_r, o_Uz, o_outz);
+  findptsLocalEvalVectorKernel(pn, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
 
   platform->linAlg->axpbyMany(
     pn,
@@ -381,10 +392,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      findpts->local_eval_kernel(pn, o_el, o_r, o_Ux, o_outx);
-      findpts->local_eval_kernel(pn, o_el, o_r, o_Uy, o_outy);
-      findpts->local_eval_kernel(pn, o_el, o_r, o_Uz, o_outz);
-      //findpts->local_eval_vector_kernel(pn, o_el, o_r, o_U, o_out);
+      findpts->local_eval_vector_kernel(pn, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
     }
   }
   platform->device.finish();

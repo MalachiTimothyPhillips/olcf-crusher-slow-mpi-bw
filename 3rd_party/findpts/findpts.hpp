@@ -13,6 +13,7 @@ struct findpts_t {
   void *findpts_data;
   occa::device *device;
   occa::kernel local_eval_kernel;
+  occa::kernel local_eval_vector_kernel;
   occa::kernel local_kernel;
   occa::memory o_fd_local;
 };
@@ -83,7 +84,7 @@ void findptsLocalEval(
 struct crystal;
 crystal* crystalRouter(findpts_t *const fd);
 
-std::tuple<occa::kernel, occa::kernel> initFindptsKernels(
+std::vector<occa::kernel> initFindptsKernels(
       MPI_Comm comm, occa::device device, dlong D, dlong Nq);
 
 #endif
