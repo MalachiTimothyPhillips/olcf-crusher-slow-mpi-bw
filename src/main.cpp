@@ -170,8 +170,8 @@ cmdOptions* processCmdLineOptions(int argc, char** argv, const MPI_Comm &comm)
         break;
       case 'c':
         cmdOpt->ciMode = atoi(optarg);
-        if (cmdOpt->ciMode < 1) {
-          std::cout << "ERROR: ci test id has to be >0!\n";
+        if (cmdOpt->ciMode < 0) {
+          std::cout << "ERROR: ci test id has to be >= 0!\n";
           printHelp = 1;
         }
         break;

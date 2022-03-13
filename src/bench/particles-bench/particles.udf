@@ -15,6 +15,7 @@ static lpm_t *particles;
 occa::kernel applyPeriodicityKernel;
 
 enum class BENCHMARK{
+  ALL,
   FINDPTS_LOCAL,
   FINDPTS_LOCAL_EVAL,
   PARTICLE_UPDATE,
@@ -25,6 +26,9 @@ BENCHMARK benchmarkMode;
 
 BENCHMARK ciModeToBenchmark(dlong mode)
 {
+  if(mode == 0){
+    return BENCHMARK::ALL;
+  }
   if(mode == 1){
     return BENCHMARK::FINDPTS_LOCAL;
   }
@@ -404,70 +408,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
   // required to apply periodic applyBounds
   particles->addPostIntegrationWork(applyBounds);
 
-  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL)
-  {
-    double elapsed = run_findpts_local_bench(nrs, *particles, 10);
-    const int elapsedTarget = 10;
-    const int Ntests = elapsedTarget / elapsed;
-    elapsed = run_findpts_local_bench(nrs, *particles, Ntests);
-
-    const auto nParticles = particles->size();
-
-    double particleThroughput = (nParticles / elapsed) / 1.e9;
-
-    const int Nthreads =  omp_get_max_threads();
-
-    if(platform->comm.mpiRank == 0){
-      std::cout << "findpts_local kernel:\n";
-      std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << mesh->N
-                << " Nelements=" << mesh->Nelements
-                << " Nparticles=" << nParticles
-                << " elapsed time=" << elapsed
-                << " GParticles/s=" << particleThroughput
-                << "\n";
-    }
-
-    EXIT_AND_FINALIZE(0);
-  }
-
-  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL_EVAL)
-  {
-    // set up data for findpts_local_eval call
-    std::array<dfloat, 3> dt = {0.1, 0.1, 0.1};
-    particles->update(nrs->o_U, dt.data(), 1);
-
-    double elapsed = run_findpts_local_eval_bench(nrs, *particles, 10);
-    const int elapsedTarget = 10;
-    const int Ntests = elapsedTarget / elapsed;
-    elapsed = run_findpts_local_eval_bench(nrs, *particles, Ntests);
-
-    const auto nParticles = particles->size();
-
-    double particleThroughput = (nParticles / elapsed) / 1.e9;
-
-    const int Nthreads =  omp_get_max_threads();
-
-    if(platform->comm.mpiRank == 0){
-      std::cout << "findpts_local_eval kernel:\n";
-      std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << mesh->N
-                << " Nelements=" << mesh->Nelements
-                << " Nparticles=" << nParticles
-                << " elapsed time=" << elapsed
-                << " GParticles/s=" << particleThroughput
-                << "\n";
-    }
-
-    EXIT_AND_FINALIZE(0);
-
-  }
-
-  if(benchmarkMode == BENCHMARK::PARTICLE_UPDATE)
+  if(benchmarkMode == BENCHMARK::PARTICLE_UPDATE || benchmarkMode == BENCHMARK::ALL)
   {
     int Nstep = 10;
     std::array<dfloat, 3> dt = {1.0 / Nstep, 1.0 / Nstep, 1.0 / Nstep};
@@ -535,7 +476,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     errPos /= nParticles;
 
     if(platform->comm.mpiRank == 0){
-      std::cout << "Error in position: " << errPos << "\n";
+      std::cout << "\nError in position: " << errPos << "\n\n";
     }
 
     const dfloat testTol = 1e-12;
@@ -589,7 +530,70 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     std::cout <<   "    lpm_t::advance::postIntegrationWork  " << tPostIntegrationWork << "s\n";
     std::cout <<   "    lpm_t::advance::copyBackToHost       " << tCopyBackToHost << "s\n";
     std::cout <<   "  lpm_t::syncToDevice     " << tSync << "s\n";
+    std::cout << std::endl;
 
-    EXIT_AND_FINALIZE(0);
   }
+
+  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL || benchmarkMode == BENCHMARK::ALL)
+  {
+    double elapsed = run_findpts_local_bench(nrs, *particles, 10);
+    const int elapsedTarget = 10;
+    const int Ntests = elapsedTarget / elapsed;
+    elapsed = run_findpts_local_bench(nrs, *particles, Ntests);
+
+    const auto nParticles = particles->size();
+
+    double particleThroughput = (nParticles / elapsed) / 1.e9;
+
+    const int Nthreads =  omp_get_max_threads();
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "findpts_local kernel:\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << mesh->N
+                << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles
+                << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput
+                << "\n";
+      std::cout << std::endl;
+    }
+
+  }
+
+  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL_EVAL || benchmarkMode == BENCHMARK::ALL)
+  {
+    // set up data for findpts_local_eval call
+    std::array<dfloat, 3> dt = {0.1, 0.1, 0.1};
+    particles->update(nrs->o_U, dt.data(), 1);
+
+    double elapsed = run_findpts_local_eval_bench(nrs, *particles, 10);
+    const int elapsedTarget = 10;
+    const int Ntests = elapsedTarget / elapsed;
+    elapsed = run_findpts_local_eval_bench(nrs, *particles, Ntests);
+
+    const auto nParticles = particles->size();
+
+    double particleThroughput = (nParticles / elapsed) / 1.e9;
+
+    const int Nthreads =  omp_get_max_threads();
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "findpts_local_eval kernel:\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << mesh->N
+                << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles
+                << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput
+                << "\n";
+    }
+
+  }
+
+  EXIT_AND_FINALIZE(0);
 }
