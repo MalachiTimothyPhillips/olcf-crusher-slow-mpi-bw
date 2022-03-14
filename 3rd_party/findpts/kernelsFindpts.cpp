@@ -9,7 +9,7 @@ std::vector<occa::kernel> initFindptsKernels(MPI_Comm comm, occa::device device,
 
   occa::kernel findpts_local;
   occa::kernel findpts_local_eval;
-  occa::kernel findpts_local_eval_vector;
+  occa::kernel findpts_local_eval_many;
 
   occa::properties kernelInfo;
   kernelInfo["defines"].asObject();
@@ -41,11 +41,11 @@ std::vector<occa::kernel> initFindptsKernels(MPI_Comm comm, occa::device device,
       findpts_local = device.buildKernel(DFINDPTS "/okl/findpts_local.okl", "findpts_local", kernelInfo);
       findpts_local_eval =
           device.buildKernel(DFINDPTS "/okl/findpts_local_eval.okl", "findpts_local_eval", kernelInfo);
-      findpts_local_eval_vector =
-          device.buildKernel(DFINDPTS "/okl/findpts_local_eval_vector.okl", "findpts_local_eval_vector", kernelInfo);
+      findpts_local_eval_many =
+          device.buildKernel(DFINDPTS "/okl/findpts_local_eval_many.okl", "findpts_local_eval_many", kernelInfo);
     }
     MPI_Barrier(comm);
   }
 
-  return {findpts_local_eval, findpts_local_eval_vector, findpts_local};
+  return {findpts_local_eval, findpts_local_eval_many, findpts_local};
 }

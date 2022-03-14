@@ -1,6 +1,7 @@
 // assumes p_blockSize >= p_Nq * p_Nq && p_blockSize >= 3*p_nptsBlock
-@kernel void findpts_local_eval_vector(
+@kernel void findpts_local_eval_many(
         const dlong npts,
+        const dlong nFields,
         const dlong inputOffset,
         const dlong outputOffset,
         @restrict const dlong *elIdx,
@@ -8,7 +9,7 @@
         @restrict const dfloat *fld,
         @restrict dfloat *out)
 {
-  for (int fldIdx = 0; fldIdx < 3; fldIdx++; @outer(1)) {
+  for (int fldIdx = 0; fldIdx < nFields; fldIdx++; @outer(1)) {
   for (int pb = 0; pb < (npts+p_nptsBlock-1)/p_nptsBlock; pb++; @outer(0)) {
     @shared volatile dfloat s_L[p_nptsBlock][p_blockSize+1];
     @shared dfloat s_lj[p_nptsBlock][3][p_Nq];

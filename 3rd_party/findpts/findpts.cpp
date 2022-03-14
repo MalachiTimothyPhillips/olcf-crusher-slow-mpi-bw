@@ -131,7 +131,7 @@ findpts_t* findptsSetup(
     handle->device = device;
     auto kernels = initFindptsKernels(comm, *device, D, n[0]);
     handle->local_eval_kernel = kernels.at(0);
-    handle->local_eval_vector_kernel = kernels.at(1);
+    handle->local_eval_many_kernel = kernels.at(1);
     handle->local_kernel = kernels.at(2);
 
     // Need to copy findpts data to the
