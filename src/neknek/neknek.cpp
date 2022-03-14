@@ -203,13 +203,13 @@ void neknekSetup(nrs_t *nrs)
   findInterpPoints(nrs);
 }
 
-static void fieldEval(nrs_t *nrs, dlong field, occa::memory in) {
+static void fieldEval(nrs_t *nrs, dlong field, occa::memory o_in) {
 
   neknek_t *neknek = nrs->neknek;
   const dlong D = nrs->dim;
   dfloat *out = neknek->valInterp+field*neknek->npt;
 
-  findptsEval(out, neknek->findPtsData, neknek->npt, in, neknek->ogsHandle);
+  findptsEval(neknek->npt, o_in, neknek->ogsHandle, neknek->findPtsData, out);
 }
 
 void neknekUpdateBoundary(nrs_t *nrs)

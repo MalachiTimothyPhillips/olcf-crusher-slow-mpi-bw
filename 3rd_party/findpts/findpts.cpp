@@ -174,11 +174,11 @@ void findpts(findpts_data_t *const findPtsData,
 
 }
 
-void findptsEval(dfloat *const out_base,
-                    findpts_data_t *findPtsData,
-                    const dlong npt,
-                    occa::memory o_in,
-                    findpts_t *const fd)
+void findptsEval(const dlong npt,
+  occa::memory o_in,
+  findpts_t* fd,
+  findpts_data_t* findPtsData,
+  dfloat * out_base)
 {
 
   findpts_eval_impl(out_base,

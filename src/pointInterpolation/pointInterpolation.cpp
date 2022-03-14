@@ -106,7 +106,7 @@ void pointInterpolation_t::eval(occa::memory o_fields,
   
   const auto n = data_.code.size();
   for (int i = 0; i < nFields; ++i) {
-    findptsEval(out + i * n, &data_, n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_);
+    findptsEval(n, o_fields + i * nrs->fieldOffset * sizeof(dfloat), findpts_, &data_, out + i * n);
   }
 
   if(profile){
