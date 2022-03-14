@@ -11,12 +11,16 @@ struct evalSrcPt_t {
   double r[3];
   int index, proc, el;
 };
+
+template<int N>
 struct evalOutPt_t {
-  double out;
+  double out[N];
   int index, proc;
 };
 #endif
 
+// types that need to be visible to C for translation
+// from gslib data structures into nekRS/findpts data structures
 #ifdef __cplusplus
 extern "C" {
 #endif

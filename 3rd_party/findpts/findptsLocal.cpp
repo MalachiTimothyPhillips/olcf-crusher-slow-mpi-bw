@@ -132,7 +132,7 @@ void findpts_local_eval_internal(
 
   // unpack buffer
   for(int point = 0; point < pn; ++point){
-    opt[point].out = out[point];
+    opt[point].out[0] = out[point];
   }
 
   o_out.free();
@@ -142,7 +142,7 @@ void findpts_local_eval_internal(
 }
 
 template
-void findpts_local_eval_internal<evalOutPt_t>(
-  evalOutPt_t *opt, const evalSrcPt_t *spt,
+void findpts_local_eval_internal<evalOutPt_t<1>>(
+  evalOutPt_t<1> *opt, const evalSrcPt_t *spt,
   const int pn, const void *const in,
   const void *const findptsData_void);

@@ -19,13 +19,13 @@ void findpts_impl(    int   *const  code_base,
                  const int npt, gslibFindptsData_t *const fd,
                  const void *const findptsData);
 
-template<typename OutputType = evalOutPt_t>
+template<typename OutputType = evalOutPt_t<1>>
 void findpts_local_eval_internal(
   OutputType *opt, const evalSrcPt_t *spt,
   const int pn, const void *const in,
   const void *const findptsData_void);
 
-template<typename OutputType = evalOutPt_t>
+template<typename OutputType = evalOutPt_t<1>>
 void findpts_eval_impl(
         double *const  out_base,
   const int   *const code_base,

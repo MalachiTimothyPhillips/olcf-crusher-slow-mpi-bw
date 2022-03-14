@@ -287,7 +287,7 @@ void findpts_eval_impl(double *const out_base,
     int n=outpt.n;
     OutputType *opt = (OutputType*) outpt.ptr;
     for(;n;--n,++opt) {
-      out_base[opt->index]=opt->out;
+      out_base[opt->index]=opt->out[0];
     }
     array_free(&outpt);
   }
@@ -295,7 +295,7 @@ void findpts_eval_impl(double *const out_base,
 
 // explicit instantiation
 template
-void findpts_eval_impl<evalOutPt_t>(
+void findpts_eval_impl<evalOutPt_t<1>>(
         double *const  out_base,
   const int   *const code_base,
   const int   *const proc_base,
