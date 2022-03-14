@@ -230,7 +230,7 @@ void findpts_eval_impl(double *const out_base,
                         const double *const r_base,
                         const int npt,
                         const void *const in,
-                        struct gslibFindptsData_t *const fd,
+                        gslibFindptsData_t *const fd,
                         const void *const findptsData)
 {
   struct array src, outpt;
@@ -239,9 +239,9 @@ void findpts_eval_impl(double *const out_base,
     int index;
     const int *code=code_base, *proc=proc_base, *el=el_base;
     const double *r=r_base;
-    struct evalSrcPt_t *pt;
-    array_init(struct evalSrcPt_t, &src, npt);
-    pt = (struct evalSrcPt_t*)src.ptr;
+    evalSrcPt_t *pt;
+    array_init(evalSrcPt_t, &src, npt);
+    pt = (evalSrcPt_t*)src.ptr;
     for(index=0;index<npt;++index) {
       if(*code!=CODE_NOT_FOUND) {
         for(int d=0;d<D;++d) {
@@ -257,34 +257,34 @@ void findpts_eval_impl(double *const out_base,
       proc++;
       el++;
     }
-    src.n = pt - (struct evalSrcPt_t *)src.ptr;
-    sarray_transfer(struct evalSrcPt_t, &src, proc, 1, &fd->cr);
+    src.n = pt - (evalSrcPt_t *)src.ptr;
+    sarray_transfer(evalSrcPt_t, &src, proc, 1, &fd->cr);
   }
   /* evaluate points, send back */
   {
     int n=src.n;
-    const struct evalSrcPt_t *spt;
-    struct evalOutPt_t *opt;
+    const evalSrcPt_t *spt;
+    evalOutPt_t *opt;
     /* group points by element */
-    sarray_sort(struct evalSrcPt_t, src.ptr, n, el, 0, &fd->cr.data);
-    array_init(struct evalOutPt_t, &outpt, n);
+    sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &fd->cr.data);
+    array_init(evalOutPt_t, &outpt, n);
     outpt.n = n;
-    spt=(struct evalSrcPt_t*)src.ptr;
-    opt=(struct evalOutPt_t*) outpt.ptr;
+    spt=(evalSrcPt_t*)src.ptr;
+    opt=(evalOutPt_t*) outpt.ptr;
     findpts_local_eval_internal(opt, spt, src.n, in, findptsData);
-    spt=(struct evalSrcPt_t*)src.ptr;
-    opt=(struct evalOutPt_t*)outpt.ptr;
+    spt=(evalSrcPt_t*)src.ptr;
+    opt=(evalOutPt_t*)outpt.ptr;
     for(;n;--n,++spt,++opt) {
       opt->index=spt->index;
       opt->proc=spt->proc;
     }
     array_free(&src);
-    sarray_transfer(struct evalOutPt_t, &outpt, proc, 1, &fd->cr);
+    sarray_transfer(evalOutPt_t, &outpt, proc, 1, &fd->cr);
   }
   /* copy results to user data */
   {
     int n=outpt.n;
-    struct evalOutPt_t *opt = (struct evalOutPt_t*) outpt.ptr;
+    evalOutPt_t *opt = (evalOutPt_t*) outpt.ptr;
     for(;n;--n,++opt) {
       out_base[opt->index]=opt->out;
     }
