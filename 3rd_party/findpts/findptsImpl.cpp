@@ -223,6 +223,7 @@ void findpts_impl(int *const code_base,
   }
 }
 
+template<typename OutputType>
 void findpts_eval_impl(double *const out_base,
                         const int *const code_base,
                         const int *const proc_base,
@@ -264,30 +265,42 @@ void findpts_eval_impl(double *const out_base,
   {
     int n=src.n;
     const evalSrcPt_t *spt;
-    evalOutPt_t *opt;
+    OutputType *opt;
     /* group points by element */
     sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &fd->cr.data);
-    array_init(evalOutPt_t, &outpt, n);
+    array_init(OutputType, &outpt, n);
     outpt.n = n;
     spt=(evalSrcPt_t*)src.ptr;
-    opt=(evalOutPt_t*) outpt.ptr;
+    opt=(OutputType*) outpt.ptr;
     findpts_local_eval_internal(opt, spt, src.n, in, findptsData);
     spt=(evalSrcPt_t*)src.ptr;
-    opt=(evalOutPt_t*)outpt.ptr;
+    opt=(OutputType*)outpt.ptr;
     for(;n;--n,++spt,++opt) {
       opt->index=spt->index;
       opt->proc=spt->proc;
     }
     array_free(&src);
-    sarray_transfer(evalOutPt_t, &outpt, proc, 1, &fd->cr);
+    sarray_transfer(OutputType, &outpt, proc, 1, &fd->cr);
   }
   /* copy results to user data */
   {
     int n=outpt.n;
-    evalOutPt_t *opt = (evalOutPt_t*) outpt.ptr;
+    OutputType *opt = (OutputType*) outpt.ptr;
     for(;n;--n,++opt) {
       out_base[opt->index]=opt->out;
     }
     array_free(&outpt);
   }
 }
+
+// explicit instantiation
+template
+void findpts_eval_impl<evalOutPt_t>(
+        double *const  out_base,
+  const int   *const code_base,
+  const int   *const proc_base,
+  const int   *const   el_base,
+  const double *const    r_base,
+  const int npt,
+  const void *const in, gslibFindptsData_t *const fd,
+  const void *const findptsData);

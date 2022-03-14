@@ -84,8 +84,9 @@ void findpts_local(    int   *const  code_base,
   o_dist2_base.copyTo(dist2_base, sizeof(dfloat)*pn);
 }
 
+template<typename OutputType>
 void findpts_local_eval_internal(
-    struct evalOutPt_t *opt, const struct evalSrcPt_t *spt,
+    OutputType *opt, const evalSrcPt_t *spt,
     const int pn, const void *const in,
     const void *const findptsData_void)
 {
@@ -139,3 +140,9 @@ void findpts_local_eval_internal(
   o_r.free();
 
 }
+
+template
+void findpts_local_eval_internal<evalOutPt_t>(
+  evalOutPt_t *opt, const evalSrcPt_t *spt,
+  const int pn, const void *const in,
+  const void *const findptsData_void);

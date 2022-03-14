@@ -6,13 +6,7 @@
 #endif
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-//struct dbl_range{
-//  double min, max;
-//};
-
+// types only visible to C++
 struct evalSrcPt_t {
   double r[3];
   int index, proc, el;
@@ -21,6 +15,11 @@ struct evalOutPt_t {
   double out;
   int index, proc;
 };
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct hashData_t {
   ulong hash_n;
@@ -28,6 +27,7 @@ struct hashData_t {
   double fac[3];
   uint *offset;
 };
+
 struct gslibFindptsData_t {
   struct crystal cr; // TODO: remove dep on gslib
   struct findpts_local_data_3 local; // TODO: remove dep on gslib
