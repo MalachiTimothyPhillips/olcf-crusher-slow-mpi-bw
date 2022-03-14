@@ -92,20 +92,23 @@ void findpts_local_eval_internal(
 {
   if (pn == 0) return;
 
+  std::cout << "pn = " << pn << ", nFields = " << nFields << ", inputOffset = " << inputOffset << ", outputOffset = " << outputOffset << "\n";
+
   findpts_t *findptsData = (findpts_t*)findptsData_void;
   occa::device device = *findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
 
-  const auto Nbytes = (3 * pn + nFields * outputOffset) * sizeof(dfloat) + pn * sizeof(dlong);
+  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
   if(Nbytes > o_scratch.size()){
     realloc_scratch(device, Nbytes);
   }
 
   dlong byteOffset = 0;
 
-  dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
-  auto o_out = o_scratch + byteOffset;
-  byteOffset += nFields * outputOffset * sizeof(dfloat);
+  //dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
+  //byteOffset += nFields * pn * sizeof(dfloat);
+  auto o_out = o_scratch;
+  std::vector<dfloat> out(nFields * pn, 0.0);
 
   dfloat* r = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_r = o_scratch + byteOffset;
@@ -126,14 +129,15 @@ void findpts_local_eval_internal(
   o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el, pn * sizeof(dlong));
 
-  findptsData->local_eval_many_kernel(pn, nFields, inputOffset, outputOffset, o_el, o_r, o_in, o_out);
+  findptsData->local_eval_many_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
 
-  o_out.copyTo(out, nFields * outputOffset * sizeof(dfloat));
+  std::cout << "Copying " << nFields * pn * sizeof(dfloat) << " bytes to host.\n";
+  o_out.copyTo(out.data(), nFields * pn * sizeof(dfloat));
 
   // unpack buffer
   for(int point = 0; point < pn; ++point){
     for(int field = 0; field < nFields; ++field){
-      opt[point].out[field] = out[point + field * outputOffset];
+      opt[point].out[field] = out[point + field * pn];
     }
   }
 

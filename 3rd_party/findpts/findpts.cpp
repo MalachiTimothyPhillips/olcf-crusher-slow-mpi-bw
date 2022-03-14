@@ -187,9 +187,9 @@ void findptsEval(const dlong npt,
                  findPtsData->el_base,
                  findPtsData->r_base,
                       npt,
-                      1, // single field, no offset
-                      0,
-                      0,
+                      1,
+                      npt,
+                      npt,
                       &o_in,
                       (gslibFindptsData_t *)fd->findpts_data,
                       fd);
@@ -204,6 +204,7 @@ void findptsEval(const dlong npt,
   findpts_data_t* findPtsData,
   dfloat * out_base)
 {
+  std::cout << "npt = " << npt << ", nFields = " << nFields << ", inputOffset = " << inputOffset << ", outputOffset = " << outputOffset << "\n";
 
   if(nFields == 1){
     findpts_eval_impl(out_base,
@@ -214,7 +215,7 @@ void findptsEval(const dlong npt,
                         npt,
                         nFields,
                         inputOffset,
-                        outputOffset,
+                        npt,
                         &o_in,
                         (gslibFindptsData_t *)fd->findpts_data,
                         fd);
@@ -227,7 +228,7 @@ void findptsEval(const dlong npt,
                         npt,
                         nFields,
                         inputOffset,
-                        outputOffset,
+                        npt,
                         &o_in,
                         (gslibFindptsData_t *)fd->findpts_data,
                         fd);
@@ -259,7 +260,7 @@ void findptsLocalEval(
   findpts_t * fd,
   occa::memory o_out){
   if(npt == 0) return;
-  fd->local_eval_many_kernel(npt, nFields, inputOffset, outputOffset, o_el, o_r, o_in, o_out);
+  fd->local_eval_many_kernel(npt, nFields, inputOffset, npt, o_el, o_r, o_in, o_out);
 }
 
 crystal *crystalRouter(findpts_t *const fd) { return &((gslibFindptsData_t *)(fd->findpts_data))->cr; }
