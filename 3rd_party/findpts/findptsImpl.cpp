@@ -230,6 +230,9 @@ void findpts_eval_impl(double *const out_base,
                         const int *const el_base,
                         const double *const r_base,
                         const int npt,
+                        const int nFields,
+                        const int inputOffset,
+                        const int outputOffset,
                         const void *const in,
                         gslibFindptsData_t *const fd,
                         const void *const findptsData)
@@ -272,7 +275,7 @@ void findpts_eval_impl(double *const out_base,
     outpt.n = n;
     spt=(evalSrcPt_t*)src.ptr;
     opt=(OutputType*) outpt.ptr;
-    findpts_local_eval_internal(opt, spt, src.n, in, findptsData);
+    findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, in, findptsData);
     spt=(evalSrcPt_t*)src.ptr;
     opt=(OutputType*)outpt.ptr;
     for(;n;--n,++spt,++opt) {
@@ -287,7 +290,9 @@ void findpts_eval_impl(double *const out_base,
     int n=outpt.n;
     OutputType *opt = (OutputType*) outpt.ptr;
     for(;n;--n,++opt) {
-      out_base[opt->index]=opt->out[0];
+      for(int field = 0; field < nFields; ++field){
+        out_base[opt->index]=opt->out[field];
+      }
     }
     array_free(&outpt);
   }
@@ -301,6 +306,16 @@ void findpts_eval_impl<evalOutPt_t<1>>(
   const int   *const proc_base,
   const int   *const   el_base,
   const double *const    r_base,
-  const int npt,
+  const int npt, const int nFields, const int inputOffset, const int outputOffset,
+  const void *const in, gslibFindptsData_t *const fd,
+  const void *const findptsData);
+template
+void findpts_eval_impl<evalOutPt_t<3>>(
+        double *const  out_base,
+  const int   *const code_base,
+  const int   *const proc_base,
+  const int   *const   el_base,
+  const double *const    r_base,
+  const int npt, const int nFields, const int inputOffset, const int outputOffset,
   const void *const in, gslibFindptsData_t *const fd,
   const void *const findptsData);

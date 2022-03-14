@@ -73,6 +73,15 @@ void findptsEval(const dlong npt,
   occa::memory o_in,
   findpts_t* fd,
   findpts_data_t* findPtsData,
+ 
+  dfloat * out_base);
+void findptsEval(const dlong npt,
+  const dlong nFields,
+  const dlong inputOffset,
+  const dlong outputOffset,
+  occa::memory o_in,
+  findpts_t* fd,
+  findpts_data_t* findPtsData,
   dfloat * out_base);
 
 void findptsLocalEval(

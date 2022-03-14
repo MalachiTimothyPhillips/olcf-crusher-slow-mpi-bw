@@ -22,7 +22,7 @@ void findpts_impl(    int   *const  code_base,
 template<typename OutputType = evalOutPt_t<1>>
 void findpts_local_eval_internal(
   OutputType *opt, const evalSrcPt_t *spt,
-  const int pn, const void *const in,
+  const int pn, const int nFields, const int inputOffset, const int outputOffset, const void *const in,
   const void *const findptsData_void);
 
 template<typename OutputType = evalOutPt_t<1>>
@@ -32,7 +32,7 @@ void findpts_eval_impl(
   const int   *const proc_base,
   const int   *const   el_base,
   const double *const    r_base,
-  const int npt,
+  const int npt, const int nFields, const int inputOffset, const int outputOffset,
   const void *const in, gslibFindptsData_t *const fd,
   const void *const findptsData);
 

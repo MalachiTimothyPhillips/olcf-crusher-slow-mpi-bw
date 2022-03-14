@@ -187,9 +187,53 @@ void findptsEval(const dlong npt,
                  findPtsData->el_base,
                  findPtsData->r_base,
                       npt,
+                      1, // single field, no offset
+                      0,
+                      0,
                       &o_in,
                       (gslibFindptsData_t *)fd->findpts_data,
                       fd);
+}
+
+void findptsEval(const dlong npt,
+  const dlong nFields,
+  const dlong inputOffset,
+  const dlong outputOffset,
+  occa::memory o_in,
+  findpts_t* fd,
+  findpts_data_t* findPtsData,
+  dfloat * out_base)
+{
+
+  if(nFields == 1){
+    findpts_eval_impl(out_base,
+                   findPtsData->code_base,
+                   findPtsData->proc_base,
+                   findPtsData->el_base,
+                   findPtsData->r_base,
+                        npt,
+                        nFields,
+                        inputOffset,
+                        outputOffset,
+                        &o_in,
+                        (gslibFindptsData_t *)fd->findpts_data,
+                        fd);
+  } else if (nFields == 3){
+    findpts_eval_impl<evalOutPt_t<3>>(out_base,
+                   findPtsData->code_base,
+                   findPtsData->proc_base,
+                   findPtsData->el_base,
+                   findPtsData->r_base,
+                        npt,
+                        nFields,
+                        inputOffset,
+                        outputOffset,
+                        &o_in,
+                        (gslibFindptsData_t *)fd->findpts_data,
+                        fd);
+  }
+
+  // TODO: add other sizes, or correctly error
 }
 
 void findptsLocalEval(

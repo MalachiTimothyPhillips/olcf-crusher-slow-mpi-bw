@@ -87,7 +87,7 @@ void findpts_local(    int   *const  code_base,
 template<typename OutputType>
 void findpts_local_eval_internal(
     OutputType *opt, const evalSrcPt_t *spt,
-    const int pn, const void *const in,
+    const int pn, const int nFields, const int inputOffset, const int outputOffset, const void *const in,
     const void *const findptsData_void)
 {
   if (pn == 0) return;
@@ -96,7 +96,7 @@ void findpts_local_eval_internal(
   occa::device device = *findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
 
-  const auto Nbytes = 4 * pn * sizeof(dfloat) + pn * sizeof(dlong);
+  const auto Nbytes = (3 * pn + nFields * outputOffset) * sizeof(dfloat) + pn * sizeof(dlong);
   if(Nbytes > o_scratch.size()){
     realloc_scratch(device, Nbytes);
   }
@@ -105,7 +105,7 @@ void findpts_local_eval_internal(
 
   dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_out = o_scratch + byteOffset;
-  byteOffset += pn * sizeof(dfloat);
+  byteOffset += nFields * outputOffset * sizeof(dfloat);
 
   dfloat* r = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_r = o_scratch + byteOffset;
@@ -126,13 +126,15 @@ void findpts_local_eval_internal(
   o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el, pn * sizeof(dlong));
 
-  findptsData->local_eval_kernel(pn, o_el, o_r, o_in, o_out);
+  findptsData->local_eval_many_kernel(pn, nFields, inputOffset, outputOffset, o_el, o_r, o_in, o_out);
 
-  o_out.copyTo(out, pn * sizeof(dfloat));
+  o_out.copyTo(out, nFields * outputOffset * sizeof(dfloat));
 
   // unpack buffer
   for(int point = 0; point < pn; ++point){
-    opt[point].out[0] = out[point];
+    for(int field = 0; field < nFields; ++field){
+      opt[point].out[field] = out[point + field * outputOffset];
+    }
   }
 
   o_out.free();
@@ -144,5 +146,11 @@ void findpts_local_eval_internal(
 template
 void findpts_local_eval_internal<evalOutPt_t<1>>(
   evalOutPt_t<1> *opt, const evalSrcPt_t *spt,
-  const int pn, const void *const in,
+    const int pn, const int nFields, const int inputOffset, const int outputOffset, const void *const in,
+  const void *const findptsData_void);
+
+template
+void findpts_local_eval_internal<evalOutPt_t<3>>(
+  evalOutPt_t<3> *opt, const evalSrcPt_t *spt,
+    const int pn, const int nFields, const int inputOffset, const int outputOffset, const void *const in,
   const void *const findptsData_void);
