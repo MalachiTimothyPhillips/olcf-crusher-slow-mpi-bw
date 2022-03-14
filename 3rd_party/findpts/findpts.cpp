@@ -193,12 +193,29 @@ void findptsEval(dfloat *const out_base,
 }
 
 void findptsLocalEval(
-  occa::memory  o_out,
-  occa::memory   o_el,
-  occa::memory    o_r,
-  const dlong npt, occa::memory o_in, findpts_t* const fd) {
+  const dlong npt,
+  occa::memory o_in,
+  occa::memory o_el,
+  occa::memory o_r,
+  findpts_t * fd,
+  occa::memory o_out){
+
   if(npt == 0) return;
   fd->local_eval_kernel(npt, o_el, o_r, o_in, o_out);
+}
+
+void findptsLocalEval(
+  const dlong npt,
+  const dlong nFields,
+  const dlong inputOffset,
+  const dlong outputOffset,
+  occa::memory o_in,
+  occa::memory o_el,
+  occa::memory o_r,
+  findpts_t * fd,
+  occa::memory o_out){
+  if(npt == 0) return;
+  fd->local_eval_many_kernel(npt, nFields, inputOffset, outputOffset, o_el, o_r, o_in, o_out);
 }
 
 crystal *crystalRouter(findpts_t *const fd) { return &((gslibFindptsData_t *)(fd->findpts_data))->cr; }

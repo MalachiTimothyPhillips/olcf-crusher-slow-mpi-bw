@@ -76,10 +76,23 @@ void findptsEval(dfloat *const out_base,
                     findpts_t *const fd);
 
 void findptsLocalEval(
-  occa::memory o_out,
-  occa::memory  o_el,
-  occa::memory   o_r,
-  const dlong npt, occa::memory o_in, findpts_t *const fd);
+  const dlong npt,
+  occa::memory o_in,
+  occa::memory o_el,
+  occa::memory o_r,
+  findpts_t * fd,
+  occa::memory o_out);
+
+void findptsLocalEval(
+  const dlong npt,
+  const dlong nFields,
+  const dlong inputOffset,
+  const dlong outputOffset,
+  occa::memory o_in,
+  occa::memory o_el,
+  occa::memory o_r,
+  findpts_t * fd,
+  occa::memory o_out);
 
 struct crystal;
 crystal* crystalRouter(findpts_t *const fd);
