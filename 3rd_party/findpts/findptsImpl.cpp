@@ -271,7 +271,7 @@ void findpts_eval_impl(double *const out_base,
     outpt.n = n;
     spt=(struct evalSrcPt_t*)src.ptr;
     opt=(struct evalOutPt_t*) outpt.ptr;
-    findpts_local_eval_internal(opt, spt, src.n, in, &fd->local, findptsData);
+    findpts_local_eval_internal(opt, spt, src.n, in, findptsData);
     spt=(struct evalSrcPt_t*)src.ptr;
     opt=(struct evalOutPt_t*)outpt.ptr;
     for(;n;--n,++spt,++opt) {
