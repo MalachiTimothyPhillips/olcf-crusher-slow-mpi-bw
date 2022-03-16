@@ -223,8 +223,9 @@ void neknekUpdateBoundary(nrs_t *nrs)
 
   const dlong D = nrs->dim;
 
-  dfloat* out = neknek->valInterp;
-  findptsEval(neknek->npt, 3, nrs->fieldOffset, neknek->npt, nrs->o_U, neknek->ogsHandle, neknek->findPtsData, out);
+  fieldEval(nrs, 0, nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat));
+  fieldEval(nrs, 1, nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat));
+  fieldEval(nrs, 2, nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat));
 
   if (neknek->Nscalar > 0) {
     for(dlong i = 0; i < neknek->Nscalar; ++i) {
