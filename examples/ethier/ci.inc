@@ -133,12 +133,6 @@ void ciTestPointInterpolation(nrs_t* nrs)
   o_Uy.copyTo(Uy_exact.data(), mesh->Nlocal * sizeof(dfloat));
   o_Uz.copyTo(Uz_exact.data(), mesh->Nlocal * sizeof(dfloat));
 
-#if 1
-  interp.eval(o_Ux, 1, Ux.data());
-  interp.eval(o_Uy, 1, Uy.data());
-  interp.eval(o_Uz, 1, Uz.data());
-#else
-  // TODO: get multi-field support working correctly
   std::vector<double> buffer(3 * mesh->Nlocal, 0.0);
   interp.eval(nrs->o_U, 3, buffer.data());
   for(int i = 0; i < mesh->Nlocal; ++i){
@@ -146,8 +140,6 @@ void ciTestPointInterpolation(nrs_t* nrs)
     Uy[i] = buffer[i + 1 * mesh->Nlocal];
     Uz[i] = buffer[i + 2 * mesh->Nlocal];
   }
-#endif
-
 
   // compute relative linf error
   dfloat linfErrUx = 0.0;
