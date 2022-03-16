@@ -1,0 +1,82 @@
+@kernel void findpts_local_eval(
+              const dlong pn,
+              const dlong Nfields,
+              const dlong fieldOffset,
+              const dlong outputOffset,
+              @restrict const dlong  * const el,
+              @restrict const dfloat * const r,
+              @restrict const dfloat * const in,
+              @restrict dfloat * const out){
+
+  for(dlong i=0;i<pn;++i;@outer){
+
+    @shared dfloat wtr[p_Nq];
+    @shared dfloat wts[p_Nq];
+    @shared dfloat wtt[p_Nq];
+    @shared dfloat sums[p_Nq];
+
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      lagrange_eval(wtr, r[3*i+0], j);
+      lagrange_eval(wts, r[3*i+1], j);
+      lagrange_eval(wtt, r[3*i+2], j);
+    }
+    @barrier("local");
+
+    for(int fld = 0; fld < Nfields; ++fld){
+
+    const dlong elemOffset = el[i] * p_Np + fld * fieldOffset;
+
+    for (dlong j=0;j<p_Nq;++j;@inner){
+      dfloat sum_j = 0;
+      for(dlong k=0;k<p_Nq;++k){
+        dfloat sum_k = 0;
+
+        for(dlong l=0;l<p_Nq;++l){
+          sum_k += in[elemOffset + j + k*p_Nq + l*p_Nq*p_Nq] * wtt[l];
+        }
+        sum_j += wts[k]*sum_k;
+      }
+      sums[j] = wtr[j]*sum_j;
+    }
+    @barrier("local");
+#if p_Nq>16
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<16&&j<p_Nq-16){
+        sums[j] += sums[j+16];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>8
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<8&&j<p_Nq-8){
+        sums[j] += sums[j+8];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>4
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<4&&j<p_Nq-4){
+        sums[j] += sums[j+4];
+      }
+    }
+    @barrier("local");
+#endif
+#if p_Nq>2
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j<2&&j<p_Nq-2){
+        sums[j] += sums[j+2];
+      }
+    }
+    @barrier("local");
+#endif
+    for(dlong j=0;j<p_Nq;++j;@inner){
+      if(j==0){
+        out[i + fld * outputOffset] = sums[0] + sums[1];
+      }
+    }
+    @barrier("local");
+  }
+  }
+}

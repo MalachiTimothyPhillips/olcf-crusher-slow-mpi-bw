@@ -129,9 +129,8 @@ void findpts_local_eval_internal(
   o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el, pn * sizeof(dlong));
 
-  findptsData->local_eval_many_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
+  findptsData->local_eval_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
 
-  std::cout << "Copying " << nFields * pn * sizeof(dfloat) << " bytes to host.\n";
   o_out.copyTo(out.data(), nFields * pn * sizeof(dfloat));
 
   // unpack buffer
