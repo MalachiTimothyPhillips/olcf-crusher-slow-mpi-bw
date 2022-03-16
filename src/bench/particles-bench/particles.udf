@@ -327,7 +327,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   auto* findpts = particles.interp().ptr();
 
   // correctness check
-  findpts->local_eval_many_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
+  findpts->local_eval_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
 
   platform->linAlg->axpbyMany(
     pn,
@@ -356,7 +356,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   const auto start = MPI_Wtime();
   {
     for(int i = 0; i < Ntrials; ++i){
-      findpts->local_eval_many_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
+      findpts->local_eval_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
     }
   }
   platform->device.finish();
