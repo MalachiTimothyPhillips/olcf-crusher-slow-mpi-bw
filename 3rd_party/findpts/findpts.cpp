@@ -112,7 +112,7 @@ findpts_t* findptsSetup(
   occa::device* device) {
   // elx, n, m have length D
 
-  void *findpts_data = legacyFindptsSetup(comm,
+  auto findpts_data = legacyFindptsSetup(comm,
                                              elx,
                                              n,
                                              nel,
@@ -135,7 +135,7 @@ findpts_t* findptsSetup(
     handle->local_kernel = kernels.at(2);
 
     // Need to copy findpts data to the
-    handle->o_fd_local = findptsCopyData_3((struct gslibFindptsData_t *)handle->findpts_data,
+    handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
                                                   nel,
                                                   local_hash_size,
                                                   *device);
@@ -169,7 +169,7 @@ void findpts(findpts_data_t *const findPtsData,
                   findPtsData->dist2_base,
                   x_base,
                   npt,
-                  (gslibFindptsData_t *)fd->findpts_data,
+                  fd->findpts_data,
                   fd);
 
 }
@@ -191,7 +191,7 @@ void findptsEval(const dlong npt,
                       npt,
                       npt,
                       &o_in,
-                      (gslibFindptsData_t *)fd->findpts_data,
+                      fd->findpts_data,
                       fd);
 }
 
@@ -215,7 +215,7 @@ void findptsEval(const dlong npt,
                         inputOffset,
                         npt,
                         &o_in,
-                        (gslibFindptsData_t *)fd->findpts_data,
+                        fd->findpts_data,
                         fd);
   } else if (nFields == 3){
     findpts_eval_impl<evalOutPt_t<3>>(out_base,
@@ -228,7 +228,7 @@ void findptsEval(const dlong npt,
                         inputOffset,
                         npt,
                         &o_in,
-                        (gslibFindptsData_t *)fd->findpts_data,
+                        fd->findpts_data,
                         fd);
   }
 
@@ -261,4 +261,4 @@ void findptsLocalEval(
   fd->local_eval_kernel(npt, nFields, inputOffset, npt, o_el, o_r, o_in, o_out);
 }
 
-crystal *crystalRouter(findpts_t *const fd) { return &((gslibFindptsData_t *)(fd->findpts_data))->cr; }
+crystal *crystalRouter(findpts_t *const fd) { return &fd->findpts_data->cr; }

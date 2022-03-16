@@ -8,9 +8,11 @@
 #include <tuple>
 #include <vector>
 
+class gslibFindptsData_t;
+
 struct findpts_t {
   int D;
-  void *findpts_data;
+  gslibFindptsData_t *findpts_data;
   occa::device *device;
   occa::kernel local_eval_kernel;
   occa::kernel local_eval_many_kernel;
