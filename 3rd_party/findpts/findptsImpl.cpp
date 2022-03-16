@@ -291,7 +291,7 @@ void findpts_eval_impl(double *const out_base,
     OutputType *opt = (OutputType*) outpt.ptr;
     for(;n;--n,++opt) {
       for(int field = 0; field < nFields; ++field){
-        out_base[opt->index]=opt->out[field];
+        out_base[opt->index + field * npt]=opt->out[field];
       }
     }
     array_free(&outpt);
