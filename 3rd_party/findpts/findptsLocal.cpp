@@ -103,10 +103,9 @@ void findpts_local_eval_internal(
 
   dlong byteOffset = 0;
 
-  //dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
-  //byteOffset += nFields * pn * sizeof(dfloat);
+  dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_out = o_scratch;
-  std::vector<dfloat> out(nFields * pn, 0.0);
+  byteOffset += nFields * pn * sizeof(dfloat);
 
   dfloat* r = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_r = o_scratch + byteOffset;
@@ -129,7 +128,7 @@ void findpts_local_eval_internal(
 
   findptsData->local_eval_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
 
-  o_out.copyTo(out.data(), nFields * pn * sizeof(dfloat));
+  o_out.copyTo(out, nFields * pn * sizeof(dfloat));
 
   // unpack buffer
   for(int point = 0; point < pn; ++point){
