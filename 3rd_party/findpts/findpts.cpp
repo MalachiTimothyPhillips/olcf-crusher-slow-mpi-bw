@@ -204,8 +204,6 @@ void findptsEval(const dlong npt,
   findpts_data_t* findPtsData,
   dfloat * out_base)
 {
-  std::cout << "npt = " << npt << ", nFields = " << nFields << ", inputOffset = " << inputOffset << ", outputOffset = " << outputOffset << "\n";
-
   if(nFields == 1){
     findpts_eval_impl(out_base,
                    findPtsData->code_base,

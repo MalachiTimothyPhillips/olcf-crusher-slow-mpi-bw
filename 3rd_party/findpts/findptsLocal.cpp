@@ -92,8 +92,6 @@ void findpts_local_eval_internal(
 {
   if (pn == 0) return;
 
-  std::cout << "pn = " << pn << ", nFields = " << nFields << ", inputOffset = " << inputOffset << ", outputOffset = " << outputOffset << "\n";
-
   findpts_t *findptsData = (findpts_t*)findptsData_void;
   occa::device device = *findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
