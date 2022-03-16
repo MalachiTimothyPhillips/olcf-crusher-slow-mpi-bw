@@ -122,5 +122,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     nek::ocopyToNek(time, tstep);
     nek::userchk();
   }
-  if (ciMode) ciTestErrors(nrs, time, tstep);
+  if (ciMode) {
+    ciTestErrors(nrs, time, tstep);
+  }
 }

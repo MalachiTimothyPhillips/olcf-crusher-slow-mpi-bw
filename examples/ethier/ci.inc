@@ -3,6 +3,8 @@
 #include <vector>
 #include <numeric>
 
+#include "pointInterpolation.hpp"
+
 static int ciMode = 0;
 
 #define PASS { if (rank == 0) printf("TESTS passed \n"); MPI_Finalize(); exit(0); }
@@ -96,6 +98,103 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("SCALAR00 SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("SCALAR01 SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("VARIABLEPROPERTIES", "FALSE");
+}
+
+void ciTestPointInterpolation(nrs_t* nrs)
+{
+  auto mesh = nrs->meshV;
+
+  const int rank = platform->comm.mpiRank;
+
+  std::vector<double> pointsX(mesh->Nlocal, 0.0);
+  std::vector<double> pointsY(mesh->Nlocal, 0.0);
+  std::vector<double> pointsZ(mesh->Nlocal, 0.0);
+
+  mesh->o_x.copyTo(pointsX.data(), mesh->Nlocal * sizeof(dfloat));
+  mesh->o_y.copyTo(pointsY.data(), mesh->Nlocal * sizeof(dfloat));
+  mesh->o_z.copyTo(pointsZ.data(), mesh->Nlocal * sizeof(dfloat));
+
+  auto interp = pointInterpolation_t(nrs);
+  interp.addPoints(mesh->Nlocal, pointsX.data(), pointsY.data(), pointsZ.data());
+  interp.find(true);
+
+  std::vector<double> Ux(mesh->Nlocal, 0.0);
+  std::vector<double> Uy(mesh->Nlocal, 0.0);
+  std::vector<double> Uz(mesh->Nlocal, 0.0);
+  std::vector<double> Ux_exact(mesh->Nlocal, 0.0);
+  std::vector<double> Uy_exact(mesh->Nlocal, 0.0);
+  std::vector<double> Uz_exact(mesh->Nlocal, 0.0);
+
+  auto o_Ux = nrs->o_U + 0 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_Uy = nrs->o_U + 1 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_Uz = nrs->o_U + 2 * nrs->fieldOffset * sizeof(dfloat);
+
+  o_Ux.copyTo(Ux_exact.data(), mesh->Nlocal * sizeof(dfloat));
+  o_Uy.copyTo(Uy_exact.data(), mesh->Nlocal * sizeof(dfloat));
+  o_Uz.copyTo(Uz_exact.data(), mesh->Nlocal * sizeof(dfloat));
+
+#if 1
+  interp.eval(o_Ux, 1, Ux.data());
+  interp.eval(o_Uy, 1, Uy.data());
+  interp.eval(o_Uz, 1, Uz.data());
+#else
+  // TODO: get multi-field support working correctly
+  std::vector<double> buffer(3 * mesh->Nlocal, 0.0);
+  interp.eval(nrs->o_U, 3, buffer.data());
+  for(int i = 0; i < mesh->Nlocal; ++i){
+    Ux[i] = buffer[i + 0 * mesh->Nlocal];
+    Uy[i] = buffer[i + 1 * mesh->Nlocal];
+    Uz[i] = buffer[i + 2 * mesh->Nlocal];
+  }
+#endif
+
+
+  // compute relative linf error
+  dfloat linfErrUx = 0.0;
+  dfloat linfErrUy = 0.0;
+  dfloat linfErrUz = 0.0;
+
+  dfloat maxUx = 0.0;
+  dfloat maxUy = 0.0;
+  dfloat maxUz = 0.0;
+  for(int i = 0; i < mesh->Nlocal; ++i){
+    maxUx = std::max(maxUx, std::abs(Ux_exact[i]));
+    maxUy = std::max(maxUy, std::abs(Uy_exact[i]));
+    maxUz = std::max(maxUz, std::abs(Uz_exact[i]));
+    const auto diffUx = std::abs(Ux[i] - Ux_exact[i]);
+    const auto diffUy = std::abs(Uy[i] - Uy_exact[i]);
+    const auto diffUz = std::abs(Uz[i] - Uz_exact[i]);
+    linfErrUx = std::max(diffUx, linfErrUx);
+    linfErrUy = std::max(diffUy, linfErrUy);
+    linfErrUz = std::max(diffUz, linfErrUz);
+  }
+
+  std::array<dfloat, 6> data = { linfErrUx, linfErrUy, linfErrUz, maxUx, maxUy, maxUz};
+  MPI_Allreduce(MPI_IN_PLACE, data.data(), 6, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
+
+  maxUx = data[3];
+  maxUy = data[4];
+  maxUz = data[5];
+
+  linfErrUx = data[0] / maxUx;
+  linfErrUy = data[1] / maxUy;
+  linfErrUz = data[2] / maxUz;
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "linfErrUx = " << linfErrUx
+              << ", linfErrUy = " << linfErrUy
+              << ", linfErrUz = " << linfErrUz
+              << std::endl;
+  }
+
+  const auto threshold = 1e-12;
+
+  for(auto&& err : {linfErrUx, linfErrUy, linfErrUz}){
+    if(err > threshold){
+      FAIL;
+    }
+  }
+
 }
 
 void surfaceArea(nrs_t* nrs, int BID, dfloat& SA)
@@ -267,6 +366,8 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     }
   }
   if (!nrs->lastStep) return;
+
+  ciTestPointInterpolation(nrs);
 
   ciTestAvgBoundary(nrs);
 
