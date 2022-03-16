@@ -9,25 +9,62 @@
 #include "findptsImpl.hpp"
 
 static occa::memory o_scratch;
-static occa::memory h_scratch;
-static void* scratch;
+static occa::memory h_out;
+static occa::memory h_r;
+static occa::memory h_el;
+static dfloat* out;
+static dfloat* r;
+static dlong* el;
+
+// findpts, do not allocate pinned memory
 static void realloc_scratch(occa::device& device, dlong Nbytes){
   if(o_scratch.size()) o_scratch.free();
-  if(h_scratch.size()) h_scratch.free();
+  {
+    void* buffer = std::calloc(Nbytes, 1);
+    o_scratch = device.malloc(Nbytes, buffer);
+    std::free(buffer);
+  }
+}
+
+// findpts_eval
+static void realloc_scratch(occa::device& device, dlong pn, dlong nFields){
+
+  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
+
+  if(h_out.size()) h_out.free();
+  if(h_r.size()) h_r.free();
+  if(h_el.size()) h_el.free();
+
+  if(Nbytes > o_scratch.size())
+  {
+    if(o_scratch.size()) o_scratch.free();
+    void* buffer = std::calloc(Nbytes, 1);
+    o_scratch = device.malloc(Nbytes, buffer);
+    std::free(buffer);
+  }
+
+  occa::properties props;
+  props["host"] = true;
 
   {
-    occa::properties props;
-    props["host"] = true;
-  
-    void* buffer = std::calloc(Nbytes, 1);
-    occa::memory h_scratch = device.malloc(Nbytes, buffer, props);
+    void* buffer = std::calloc(nFields * pn * sizeof(dfloat), 1);
+    h_out = device.malloc(nFields * pn * sizeof(dfloat), buffer, props);
+    out = (dfloat*) h_out.ptr();
     std::free(buffer);
-    
-    scratch = h_scratch.ptr();
   }
 
   {
-    o_scratch = device.malloc(Nbytes);
+    void* buffer = std::calloc(3 * pn * sizeof(dfloat), 1);
+    h_r = device.malloc(3 * pn * sizeof(dfloat), buffer, props);
+    r = (dfloat*) h_r.ptr();
+    std::free(buffer);
+  }
+
+  {
+    void* buffer = std::calloc(pn * sizeof(dlong), 1);
+    h_el = device.malloc(pn * sizeof(dlong), buffer, props);
+    el = (dlong*) h_el.ptr();
+    std::free(buffer);
   }
 }
 
@@ -97,21 +134,18 @@ void findpts_local_eval_internal(
   occa::memory o_in = *(occa::memory*)in;
 
   const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
-  if(Nbytes > o_scratch.size()){
-    realloc_scratch(device, Nbytes);
+  if(Nbytes > o_scratch.size() || h_out.size() == 0){
+    realloc_scratch(device, pn, nFields);
   }
 
   dlong byteOffset = 0;
 
-  dfloat* out = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_out = o_scratch;
   byteOffset += nFields * pn * sizeof(dfloat);
 
-  dfloat* r = (dfloat*) (static_cast<char*>(scratch) + byteOffset);
   auto o_r = o_scratch + byteOffset;
   byteOffset += 3 * pn * sizeof(dfloat);
 
-  dlong* el = (dlong*) (static_cast<char*>(scratch) + byteOffset);
   auto o_el = o_scratch + byteOffset;
   byteOffset += pn * sizeof(dlong);
 
@@ -119,8 +153,8 @@ void findpts_local_eval_internal(
   for(int point = 0; point < pn; ++point){
     for(int component = 0; component < 3; ++component){
       r[3*point+component] = spt[point].r[component];
-      el[point] = spt[point].el;
     }
+    el[point] = spt[point].el;
   }
 
   o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
@@ -136,10 +170,6 @@ void findpts_local_eval_internal(
       opt[point].out[field] = out[point + field * pn];
     }
   }
-
-  o_out.free();
-  o_el.free();
-  o_r.free();
 
 }
 
