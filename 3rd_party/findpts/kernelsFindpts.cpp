@@ -4,6 +4,20 @@
 #include <cfloat>
 #include <tuple>
 
+// compute nearest power of two larger than v
+// from: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+unsigned nearestPowerOfTwo(unsigned int v){
+  static_assert(sizeof(unsigned int) == 4);
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+  return v;
+}
+
 std::vector<occa::kernel> initFindptsKernels(MPI_Comm comm, occa::device device,
                                                              dlong D, dlong Nq) {
 
@@ -22,7 +36,11 @@ std::vector<occa::kernel> initFindptsKernels(MPI_Comm comm, occa::device device,
   kernelInfo["defines/p_Nq"] = Nq;
   kernelInfo["defines/p_Np"] = Nq*Nq*Nq;
   kernelInfo["defines/p_nptsBlock"] = 4;
-  kernelInfo["defines/p_blockSize"] = Nq*Nq;
+
+  unsigned int Nq2 = Nq * Nq;
+  const auto blockSize = nearestPowerOfTwo(Nq2);
+
+  kernelInfo["defines/p_blockSize"] = blockSize;
   kernelInfo["defines/p_Nfp"] = Nq*Nq;
   kernelInfo["defines/dlong"] = dlongString;
   kernelInfo["defines/hlong"] = hlongString;
