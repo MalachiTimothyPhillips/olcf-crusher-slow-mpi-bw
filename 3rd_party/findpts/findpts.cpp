@@ -136,13 +136,15 @@ findpts_t *findptsSetup(
   handle->D = 3;
   handle->findpts_data = findpts_data;
 
-  handle->o_x = device.malloc(Nlocal * sizeof(dfloat));
-  handle->o_y = device.malloc(Nlocal * sizeof(dfloat));
-  handle->o_z = device.malloc(Nlocal * sizeof(dfloat));
+  if(x != nullptr){
+    handle->o_x = device.malloc(Nlocal * sizeof(dfloat));
+    handle->o_y = device.malloc(Nlocal * sizeof(dfloat));
+    handle->o_z = device.malloc(Nlocal * sizeof(dfloat));
 
-  handle->o_x.copyFrom(x, Nlocal * sizeof(dfloat));
-  handle->o_y.copyFrom(y, Nlocal * sizeof(dfloat));
-  handle->o_z.copyFrom(z, Nlocal * sizeof(dfloat));
+    handle->o_x.copyFrom(x, Nlocal * sizeof(dfloat));
+    handle->o_y.copyFrom(y, Nlocal * sizeof(dfloat));
+    handle->o_z.copyFrom(z, Nlocal * sizeof(dfloat));
+  }
 
   handle->device = device;
   auto kernels = initFindptsKernels(comm, device, 3, Nq);
