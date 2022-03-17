@@ -705,7 +705,9 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
         dfloat *const     r_base     ,
         dfloat *const dist2_base     ,
   const dfloat *const     x_base[p_D],
-  const dlong npt, findptsLocalData_t *fd)
+  const dlong npt,
+  const dfloat tol,
+  findptsLocalData_t *fd)
 {
   #define MAX_CONST(a,b) (((a)>(b))?(a):(b))
   #define INNER_SIZE 32
@@ -843,8 +845,8 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                   }
                   @barrier("local");
-                  if(reject_prior_step_q(fpt, resid, tmp, fd->tol)) break;
-                  newton_vol(fpt, jac, resid, tmp, fd->tol);
+                  if(reject_prior_step_q(fpt, resid, tmp, tol)) break;
+                  newton_vol(fpt, jac, resid, tmp, tol);
                   break;
                 }
                 case 1:{ // findpt_face / findpt_area
@@ -916,16 +918,16 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                   }
                   @barrier("local");
-                  if(reject_prior_step_q(fpt, resid, tmp, fd->tol)) break;
+                  if(reject_prior_step_q(fpt, resid, tmp, tol)) break;
 
                   const dfloat steep = resid[0] * jac[  dn]
                                       +resid[1] * jac[3+dn]
                                       +resid[2] * jac[6+dn];
                   if(steep * tmp->r[dn] < 0){ /* relax constraint */
-                    newton_vol(fpt, jac, resid, tmp, fd->tol);
+                    newton_vol(fpt, jac, resid, tmp, tol);
                   }else{
                     newton_face(fpt, jac, hes, resid, d1,d2,dn,
-                                tmp->flags&FLAG_MASK, tmp, fd->tol);
+                                tmp->flags&FLAG_MASK, tmp, tol);
                   }
                   break;
                 }
@@ -997,7 +999,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   }
                   @barrier("local");
                   /* check prior step */
-                  if(reject_prior_step_q(fpt,resid,tmp,fd->tol)) break;
+                  if(reject_prior_step_q(fpt,resid,tmp,tol)) break;
 
                   /* check constraint */
                   dfloat steep[p_D-1];
@@ -1011,20 +1013,20 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   }
                   if(steep[0]<0) {
                     if(steep[1]<0) {
-                      newton_vol(fpt, jac,resid, tmp, fd->tol);
+                      newton_vol(fpt, jac,resid, tmp, tol);
                     } else {
                       dfloat rh[3]; rh[0]=hes[0], rh[1]=hes[1], rh[2]=hes[3];
                       newton_face(fpt, jac,rh,resid, de,dn1,dn2,
-                                  tmp->flags & (3u<<(dn2*2)), tmp, fd->tol);
+                                  tmp->flags & (3u<<(dn2*2)), tmp, tol);
                     }
                   } else {
                     if(steep[1]<0) {
                       dfloat rh[3]; rh[0]=hes[4], rh[1]=hes[2], rh[2]=hes[0];
                       newton_face(fpt, jac,rh,resid, dn2,de,dn1,
-                                  tmp->flags & (3u<<(dn1*2)), tmp, fd->tol);
+                                  tmp->flags & (3u<<(dn1*2)), tmp, tol);
                     } else {
                       newton_edge(fpt, jac,hes[0],resid, de,dn1,dn2,
-                                  tmp->flags & FLAG_MASK, tmp, fd->tol);
+                                  tmp->flags & FLAG_MASK, tmp, tol);
                     }
                   }
                   break;
@@ -1038,7 +1040,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                   for(dlong d=0;d<p_D;++d){
                     resid[d] = fpt->x[d]-pt_x[d];
                   }
-                  if(reject_prior_step_q(fpt,resid,tmp,fd->tol)) break;
+                  if(reject_prior_step_q(fpt,resid,tmp,tol)) break;
                   for(dlong d=0;d<p_D;++d){
                     steep[d]=0;
                     for(dlong e=0;d<p_D;++d){
@@ -1086,7 +1088,7 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     }
                   }
                   findpt_pt_vol:
-                    newton_vol(fpt, jac,resid, tmp, fd->tol);
+                    newton_vol(fpt, jac,resid, tmp, tol);
                     break;
                   findpt_pt_face: {
                     dfloat rh[3];
@@ -1094,13 +1096,13 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
                     rh[1] = resid[0]*hes[hi1]+resid[1]*hes[6+hi1]+resid[2]*hes[12+hi1],
                     rh[2] = resid[0]*hes[hi2]+resid[1]*hes[6+hi2]+resid[2]*hes[12+hi2];
                     newton_face(fpt, jac,rh,resid, d1,d2,dn,
-                                (tmp->flags)&(3u<<(2*dn)), tmp, fd->tol);
+                                (tmp->flags)&(3u<<(2*dn)), tmp, tol);
                   } break;
                   findpt_pt_edge: {
                     const dfloat rh =
                       resid[0]*hes[hi0]+resid[1]*hes[6+hi0]+resid[2]*hes[12+hi0];
                     newton_edge(fpt, jac,rh,resid, de,dn1,dn2,
-                                tmp->flags&(~(3u<<(2*de))), tmp, fd->tol);
+                                tmp->flags&(~(3u<<(2*de))), tmp, tol);
                   } break;
                 }
               }
