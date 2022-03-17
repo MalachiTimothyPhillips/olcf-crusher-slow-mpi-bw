@@ -88,6 +88,7 @@ void findpts_local(    int   *const  code_base,
   dlong worksize = 2*sizeof(dlong)+7*sizeof(dfloat);
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
   alloc_size += 3 * (sizeof(dfloat*));
+  alloc_size += 6 * sizeof(dfloat);
   if(alloc_size > o_scratch.size()){
     realloc_scratch(device, alloc_size);
   }
@@ -103,6 +104,15 @@ void findpts_local(    int   *const  code_base,
   occa::memory    o_x1_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
   occa::memory    o_x2_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
   occa::memory    o_wtend = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat*);
+  occa::memory    o_hashMin = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat);
+  occa::memory    o_hashFac = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat);
+
+  auto hash = findptsData->findpts_data->local.hd;
+  dfloat hashMin[3] = {hash.bnd[0].min, hash.bnd[1].min, hash.bnd[2].min};
+  dfloat hashFac[3] = {hash.fac[0], hash.fac[1], hash.fac[2]};
+
+  o_hashMin.copyFrom(hashMin, 3 * sizeof(dfloat));
+  o_hashFac.copyFrom(hashFac, 3 * sizeof(dfloat));
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
   o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
@@ -127,6 +137,10 @@ void findpts_local(    int   *const  code_base,
                        findptsData->o_A,
                        findptsData->o_min,
                        findptsData->o_max,
+                       hash.hash_n,
+                       o_hashMin,
+                       o_hashFac,
+                       findptsData->o_offset,
                        findptsData->findpts_data->local.tol, findptsData->o_fd_local);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);

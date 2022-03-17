@@ -35,6 +35,7 @@ struct findpts_t {
   occa::memory o_min;
   occa::memory o_max;
 
+  occa::memory o_offset;
 
 };
 

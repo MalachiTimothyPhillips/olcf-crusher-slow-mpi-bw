@@ -42,7 +42,8 @@ uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
 
 static occa::memory findptsCopyData_3(const struct gslibFindptsData_t *fd,
                                          dlong nel, dlong max_hash_size,
-                                         occa::device device)
+                                         occa::device device,
+                                         dlong& hd_d_size)
 {
   const findpts_local_data_3 *fd_local = &fd->local;
 
@@ -50,7 +51,7 @@ static occa::memory findptsCopyData_3(const struct gslibFindptsData_t *fd,
   dlong lag_size[3];
   for(dlong d=0;d<3;++d) lag_size[d] = gll_lag_size(fd_local->fed.n[d]);
   auto hash_data_copy = fd_local->hd;
-  dlong hd_d_size  = findpts_local_hash_opt_size_3(&hash_data_copy, fd_local->obb, nel, max_hash_size);
+  hd_d_size  = findpts_local_hash_opt_size_3(&hash_data_copy, fd_local->obb, nel, max_hash_size);
   dlong elx_d_size = nel*fd_local->ntot;
   dlong alloc_size =  sizeof(findpts_local_data_3)
                     + sizeof(double)*elx_d_size*3 // elx
@@ -196,10 +197,19 @@ findpts_t *findptsSetup(
   handle->o_wtend_z.copyFrom(handle->findpts_data->local.fed.wtend[2], 6 * Nq * sizeof(dfloat));
 
   // Need to copy findpts data to the
+  dlong hd_d_size;
   handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
                                                 Nelements,
                                                 local_hash_size,
-                                                device);
+                                                device,
+                                                hd_d_size);
+  
+  std::vector<dlong> offsets(hd_d_size, 0);
+  for(dlong i = 0; i < hd_d_size; ++i){
+    offsets[i] = handle->findpts_data->local.hd.offset[i];
+  }
+  handle->o_offset = device.malloc(offsets.size() * sizeof(dlong));
+  handle->o_offset.copyFrom(offsets.data(), offsets.size() * sizeof(dlong));
 
   return handle;
 }

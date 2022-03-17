@@ -714,6 +714,10 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
   @restrict const dfloat * A,
   @restrict const dfloat * minBound,
   @restrict const dfloat * maxBound,
+  const dlong hash_n,
+  const dfloat hashMin[p_D],
+  const dfloat hashFac[p_D],
+  @restrict dlong * hashOffset,
   const dfloat tol,
   findptsLocalData_t *fd)
 {
@@ -749,9 +753,16 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
     dfloat *dist2_i = dist2_base + i;
 
     //// map_points_to_els ////
-    const dlong hi = hash_index(&fd->hd,x_i);
-    const dlong       *elp = fd->hd.offset + fd->hd.offset[hi  ],
-                *const ele = fd->hd.offset + fd->hd.offset[hi+1];
+    findptsLocalHashData_t hash;
+    for(int d = 0; d < 3; ++d){
+      hash.bnd[d].min = hashMin[d];
+      hash.fac[d] = hashFac[d];
+    }
+    hash.hash_n = hash_n;
+    hash.offset = hashOffset;
+    const dlong hi = hash_index(&hash,x_i);
+    const dlong       *elp = hash.offset + hash.offset[hi  ],
+                *const ele = hash.offset + hash.offset[hi+1];
     *code_i = CODE_NOT_FOUND;
 
     for(; elp!=ele; ++elp) {
