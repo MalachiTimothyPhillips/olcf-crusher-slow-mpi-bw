@@ -141,7 +141,7 @@ void findpts_local(    int   *const  code_base,
                        o_hashMin,
                        o_hashFac,
                        findptsData->o_offset,
-                       findptsData->findpts_data->local.tol, findptsData->o_fd_local);
+                       findptsData->findpts_data->local.tol);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);
   o_el_base.copyTo(   el_base,   sizeof(dlong)*pn);

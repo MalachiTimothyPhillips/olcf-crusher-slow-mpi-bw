@@ -41,12 +41,3 @@ struct findptsLocalHashData_t {
   dlong *offset;
   dlong max;
 };
-
-struct findptsLocalData_t {
-  dlong ntot;
-  const dfloat *elx[p_D];
-  obbox_t *obb;
-  findptsLocalHashData_t hd;
-  findptsElementData_t fed;
-  dfloat tol;
-};

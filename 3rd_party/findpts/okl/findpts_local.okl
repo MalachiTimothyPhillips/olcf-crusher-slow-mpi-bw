@@ -718,8 +718,7 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
   const dfloat hashMin[p_D],
   const dfloat hashFac[p_D],
   @restrict dlong * hashOffset,
-  const dfloat tol,
-  findptsLocalData_t *fd)
+  const dfloat tol)
 {
   #define MAX_CONST(a,b) (((a)>(b))?(a):(b))
   #define INNER_SIZE 32
