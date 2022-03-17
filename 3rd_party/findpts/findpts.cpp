@@ -115,14 +115,16 @@ findpts_t *findptsSetup(
   const dlong npt_max, const dfloat newt_tol,
   occa::device &device){
 
-  const auto elx = {x,y,z};
-  const auto n = {Nq, Nq, Nq};
-  const auto ms = {m, m, m};
+  const dlong Nlocal = Nq * Nq * Nq * Nelements;
+
+  const dfloat* elx[3] = {x,y,z};
+  const int n[3] = {Nq, Nq, Nq};
+  const int ms[3] = {m, m, m};
 
   auto findpts_data = legacyFindptsSetup(comm,
                                              elx,
                                              n,
-                                             nel,
+                                             Nelements,
                                              ms,
                                              bbox_tol,
                                              local_hash_size,
@@ -131,18 +133,26 @@ findpts_t *findptsSetup(
                                              newt_tol);
 
   findpts_t* handle = new findpts_t();
-  handle->D = D;
+  handle->D = 3;
   handle->findpts_data = findpts_data;
 
+  handle->o_x = device.malloc(Nlocal * sizeof(dfloat));
+  handle->o_y = device.malloc(Nlocal * sizeof(dfloat));
+  handle->o_z = device.malloc(Nlocal * sizeof(dfloat));
+
+  handle->o_x.copyFrom(x, Nlocal * sizeof(dfloat));
+  handle->o_y.copyFrom(y, Nlocal * sizeof(dfloat));
+  handle->o_z.copyFrom(z, Nlocal * sizeof(dfloat));
+
   handle->device = device;
-  auto kernels = initFindptsKernels(comm, device, D, n[0]);
+  auto kernels = initFindptsKernels(comm, device, 3, Nq);
   handle->local_eval_kernel = kernels.at(0);
   handle->local_eval_many_kernel = kernels.at(1);
   handle->local_kernel = kernels.at(2);
 
   // Need to copy findpts data to the
   handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
-                                                nel,
+                                                Nelements,
                                                 local_hash_size,
                                                 device);
 

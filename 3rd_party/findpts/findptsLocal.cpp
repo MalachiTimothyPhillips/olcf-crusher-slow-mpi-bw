@@ -113,7 +113,11 @@ void findpts_local(    int   *const  code_base,
                            o_r_base,
                        o_dist2_base,
                            o_x_base,
-                       pn, fd->local.tol, findptsData->o_fd_local);
+                       pn,
+                       findptsData->o_x,
+                       findptsData->o_y,
+                       findptsData->o_z,
+                       findptsData->findpts_data->local.tol, findptsData->o_fd_local);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);
   o_el_base.copyTo(   el_base,   sizeof(dlong)*pn);

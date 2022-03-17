@@ -18,6 +18,10 @@ struct findpts_t {
   occa::kernel local_eval_many_kernel;
   occa::kernel local_kernel;
   occa::memory o_fd_local;
+
+  occa::memory o_x;
+  occa::memory o_y;
+  occa::memory o_z;
 };
 
 struct findpts_data_t {

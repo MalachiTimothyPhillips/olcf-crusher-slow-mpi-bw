@@ -21,7 +21,7 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool
   mesh_t *mesh = nrs->meshV;
 
   // used for # of cells in hash tables
-  const dlong hash_size = nelm * n1[0] * n1[1] * n1[2];
+  const dlong hash_size = mesh->Nlocal;
 
   MPI_Comm comm = platform_t::getInstance()->comm.mpiComm;
 

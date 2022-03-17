@@ -68,11 +68,11 @@ static void findInterpPoints(nrs_t* nrs){
                                     (i == sessionID ? mesh->z : nullptr),
                                     mesh->Nq, (i == sessionID ? mesh->Nelements : 0),
                                     2 * mesh->Nq, bb_tol, ntot, ntot, npt_max, tol,
-                                    &device);
+                                    device);
   }
   neknek->ogsHandle = findptsSetup(globalComm, mesh->x, mesh->y, mesh->z, mesh->Nq, mesh->Nelements,
                                       2 * mesh->Nq, bb_tol, ntot, ntot, npt_max, tol,
-                                      &device);
+                                      device);
 
   constexpr dlong faceMap[6] = {5, 0, 1, 2, 3, 4};
 

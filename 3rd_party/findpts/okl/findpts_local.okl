@@ -667,14 +667,14 @@ void seed_j(const dfloat *elx[p_D],
   }
 }
 
-dfloat tensor_ig3_j(      dfloat *g_partials,
-                    const dfloat *Jr,
-                    const dfloat *Dr,
-                    const dfloat *Js,
-                    const dfloat *Ds,
-                    const dfloat *Jt,
-                    const dfloat *Dt,
-                    const dfloat *u,
+dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
+                    @restrict const dfloat *Jr,
+                    @restrict const dfloat *Dr,
+                    @restrict const dfloat *Js,
+                    @restrict const dfloat *Ds,
+                    @restrict const dfloat *Jt,
+                    @restrict const dfloat *Dt,
+                    @restrict const dfloat *u,
                     const dlong j)
 {
   dfloat uJtJs = 0.0;
@@ -700,12 +700,15 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
 }
 
 @kernel void findpts_local(
-        dlong  *const  code_base     ,
-        dlong  *const    el_base     ,
-        dfloat *const     r_base     ,
-        dfloat *const dist2_base     ,
+  dlong  *const  code_base,
+  @restrict dlong  *const    el_base,
+  @restrict dfloat *const     r_base,
+  @restrict dfloat *const dist2_base,
   const dfloat *const     x_base[p_D],
   const dlong npt,
+  @restrict const dfloat * xCoord,
+  @restrict const dfloat * yCoord,
+  @restrict const dfloat * zCoord,
   const dfloat tol,
   findptsLocalData_t *fd)
 {
@@ -752,7 +755,10 @@ dfloat tensor_ig3_j(      dfloat *g_partials,
         //// findpts_local ////
         {
           const dfloat *elx[p_D];
-          for(dlong d=0;d<p_D;++d) elx[d]=fd->elx[d]+el*fd->ntot;
+
+          elx[0]=xCoord+el*p_Np;
+          elx[1]=yCoord+el*p_Np;
+          elx[2]=zCoord+el*p_Np;
 
           //// findpts_el ////
           {
