@@ -87,6 +87,7 @@ void findpts_local(    int   *const  code_base,
 
   dlong worksize = 2*sizeof(dlong)+7*sizeof(dfloat);
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
+  alloc_size += 3 * (sizeof(dfloat*));
   if(alloc_size > o_scratch.size()){
     realloc_scratch(device, alloc_size);
   }
@@ -101,12 +102,16 @@ void findpts_local(    int   *const  code_base,
   occa::memory    o_x0_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
   occa::memory    o_x1_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
   occa::memory    o_x2_base = o_scratch + byteOffset; byteOffset +=  sizeof(dfloat)*pn;
+  occa::memory    o_wtend = o_scratch + byteOffset; byteOffset += 3*sizeof(dfloat*);
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
   o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
   o_x0_base.copyFrom(x_base[0], sizeof(dfloat)*pn);
   o_x1_base.copyFrom(x_base[1], sizeof(dfloat)*pn);
   o_x2_base.copyFrom(x_base[2], sizeof(dfloat)*pn);
+
+  dfloat *wtend_d[3] = {(double*)findptsData->o_wtend_x.ptr(), (double*)findptsData->o_wtend_y.ptr(), (double*)findptsData->o_wtend_z.ptr()};
+  o_wtend.copyFrom(wtend_d, 3*sizeof(dfloat*));
 
   findptsData->local_kernel( o_code_base,
                           o_el_base,
@@ -117,6 +122,7 @@ void findpts_local(    int   *const  code_base,
                        findptsData->o_x,
                        findptsData->o_y,
                        findptsData->o_z,
+                       o_wtend,
                        findptsData->findpts_data->local.tol, findptsData->o_fd_local);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);

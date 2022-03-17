@@ -22,6 +22,10 @@ struct findpts_t {
   occa::memory o_x;
   occa::memory o_y;
   occa::memory o_z;
+
+  occa::memory o_wtend_x;
+  occa::memory o_wtend_y;
+  occa::memory o_wtend_z;
 };
 
 struct findpts_data_t {

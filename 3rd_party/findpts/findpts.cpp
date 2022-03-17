@@ -152,6 +152,13 @@ findpts_t *findptsSetup(
   handle->local_eval_many_kernel = kernels.at(1);
   handle->local_kernel = kernels.at(2);
 
+  handle->o_wtend_x = device.malloc(6 * Nq * sizeof(dfloat));
+  handle->o_wtend_y = device.malloc(6 * Nq * sizeof(dfloat));
+  handle->o_wtend_z = device.malloc(6 * Nq * sizeof(dfloat));
+  handle->o_wtend_x.copyFrom(handle->findpts_data->local.fed.wtend[0], 6 * Nq * sizeof(dfloat));
+  handle->o_wtend_y.copyFrom(handle->findpts_data->local.fed.wtend[1], 6 * Nq * sizeof(dfloat));
+  handle->o_wtend_z.copyFrom(handle->findpts_data->local.fed.wtend[2], 6 * Nq * sizeof(dfloat));
+
   // Need to copy findpts data to the
   handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
                                                 Nelements,
