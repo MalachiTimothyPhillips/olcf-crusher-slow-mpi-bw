@@ -123,6 +123,10 @@ void findpts_local(    int   *const  code_base,
                        findptsData->o_y,
                        findptsData->o_z,
                        o_wtend,
+                       findptsData->o_c,
+                       findptsData->o_A,
+                       findptsData->o_min,
+                       findptsData->o_max,
                        findptsData->findpts_data->local.tol, findptsData->o_fd_local);
 
   o_code_base.copyTo( code_base, sizeof(dlong) *pn);

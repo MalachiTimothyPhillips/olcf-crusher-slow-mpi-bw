@@ -710,6 +710,10 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
   @restrict const dfloat * yCoord,
   @restrict const dfloat * zCoord,
   dfloat *wtend[p_D],
+  @restrict const dfloat * c,
+  @restrict const dfloat * A,
+  @restrict const dfloat * minBound,
+  @restrict const dfloat * maxBound,
   const dfloat tol,
   findptsLocalData_t *fd)
 {
@@ -751,8 +755,23 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
     *code_i = CODE_NOT_FOUND;
 
     for(; elp!=ele; ++elp) {
+
       const dlong el = *elp;
-      if(obbox_test(&fd->obb[el],x_i)>=0) {
+
+      // construct obbox_t on the fly from data
+      obbox_t box;
+
+      for(int idx = 0; idx < 3; ++idx){
+        box.c0[idx] = c[3*el + idx];
+        box.x[idx].min = minBound[3*el + idx];
+        box.x[idx].max = maxBound[3*el + idx];
+      }
+
+      for(int idx = 0; idx < 9; ++idx){
+        box.A[idx] = A[9*el + idx];
+      }
+
+      if(obbox_test(&box,x_i)>=0) {
         //// findpts_local ////
         {
           const dfloat *elx[p_D];

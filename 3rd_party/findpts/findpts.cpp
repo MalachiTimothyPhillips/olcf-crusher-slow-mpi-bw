@@ -144,6 +144,42 @@ findpts_t *findptsSetup(
     handle->o_x.copyFrom(x, Nlocal * sizeof(dfloat));
     handle->o_y.copyFrom(y, Nlocal * sizeof(dfloat));
     handle->o_z.copyFrom(z, Nlocal * sizeof(dfloat));
+    std::vector<dfloat> c(3*Nelements, 0.0);
+    std::vector<dfloat> A(9*Nelements, 0.0);
+    std::vector<dfloat> minBound(3*Nelements, 0.0);
+    std::vector<dfloat> maxBound(3*Nelements, 0.0);
+
+    for(int e = 0; e < Nelements; ++e){
+      auto box = handle->findpts_data->local.obb[e];
+
+      c[3*e + 0] = box.c0[0];
+      c[3*e + 1] = box.c0[1];
+      c[3*e + 2] = box.c0[2];
+
+      minBound[3*e + 0] = box.x[0].min;
+      minBound[3*e + 1] = box.x[1].min;
+      minBound[3*e + 2] = box.x[2].min;
+
+      maxBound[3*e + 0] = box.x[0].max;
+      maxBound[3*e + 1] = box.x[1].max;
+      maxBound[3*e + 2] = box.x[2].max;
+
+      for(int i = 0; i < 9; ++i){
+        A[9*e + i] = box.A[i];
+      }
+
+    }
+
+    handle->o_c = device.malloc(c.size() * sizeof(dfloat));
+    handle->o_A = device.malloc(A.size() * sizeof(dfloat));
+    handle->o_min = device.malloc(minBound.size() * sizeof(dfloat));
+    handle->o_max = device.malloc(maxBound.size() * sizeof(dfloat));
+
+    handle->o_c.copyFrom(c.data(), c.size() * sizeof(dfloat));
+    handle->o_A.copyFrom(A.data(), A.size() * sizeof(dfloat));
+    handle->o_min.copyFrom(minBound.data(), minBound.size() * sizeof(dfloat));
+    handle->o_max.copyFrom(maxBound.data(), maxBound.size() * sizeof(dfloat));
+
   }
 
   handle->device = device;

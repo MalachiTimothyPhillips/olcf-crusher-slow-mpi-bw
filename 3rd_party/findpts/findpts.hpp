@@ -19,13 +19,23 @@ struct findpts_t {
   occa::kernel local_kernel;
   occa::memory o_fd_local;
 
+  // data for elx
   occa::memory o_x;
   occa::memory o_y;
   occa::memory o_z;
 
+  // data for wtend
   occa::memory o_wtend_x;
   occa::memory o_wtend_y;
   occa::memory o_wtend_z;
+
+  // SoA variant of obbox
+  occa::memory o_c;
+  occa::memory o_A;
+  occa::memory o_min;
+  occa::memory o_max;
+
+
 };
 
 struct findpts_data_t {
