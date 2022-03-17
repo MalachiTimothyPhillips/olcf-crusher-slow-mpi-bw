@@ -62,14 +62,16 @@ static void findInterpPoints(nrs_t* nrs){
 
   findpts_t **ogsHandles = new findpts_t*[nsessions];
   for(dlong i = 0; i < nsessions; ++i) {
-    ogsHandles[i] = findptsSetup(D, globalComm,
-                                    (i == sessionID ? elx : elx_null),
-                                    n1, (i == sessionID ? nelm : 0),
-                                    nf1, bb_tol, ntot, ntot, npt_max, tol,
+    ogsHandles[i] = findptsSetup(globalComm,
+                                    (i == sessionID ? mesh->x : nullptr),
+                                    (i == sessionID ? mesh->y : nullptr),
+                                    (i == sessionID ? mesh->z : nullptr),
+                                    mesh->Nq, (i == sessionID ? mesh->Nelements : 0),
+                                    2 * mesh->Nq, bb_tol, ntot, ntot, npt_max, tol,
                                     &device);
   }
-  neknek->ogsHandle = findptsSetup(D, globalComm, elx, n1, nelm,
-                                      nf1, bb_tol, ntot, ntot, npt_max, tol,
+  neknek->ogsHandle = findptsSetup(globalComm, mesh->x, mesh->y, mesh->z, mesh->Nq, mesh->Nelements,
+                                      2 * mesh->Nq, bb_tol, ntot, ntot, npt_max, tol,
                                       &device);
 
   constexpr dlong faceMap[6] = {5, 0, 1, 2, 3, 4};

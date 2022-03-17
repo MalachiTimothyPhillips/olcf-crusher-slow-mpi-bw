@@ -83,7 +83,7 @@ void findpts_local(    int   *const  code_base,
   if (pn == 0) return;
 
   findpts_t *findptsData = (findpts_t*)findptsData_void;
-  occa::device device = *findptsData->device;
+  occa::device& device = findptsData->device;
 
   dlong worksize = 2*sizeof(dlong)+7*sizeof(dfloat);
   dlong alloc_size = worksize*pn+3*(sizeof(dfloat*)+sizeof(dlong));
@@ -130,7 +130,7 @@ void findpts_local_eval_internal(
   if (pn == 0) return;
 
   findpts_t *findptsData = (findpts_t*)findptsData_void;
-  occa::device device = *findptsData->device;
+  occa::device& device = findptsData->device;
   occa::memory o_in = *(occa::memory*)in;
 
   const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);

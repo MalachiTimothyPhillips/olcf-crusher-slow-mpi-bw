@@ -13,7 +13,7 @@ class gslibFindptsData_t;
 struct findpts_t {
   int D;
   gslibFindptsData_t *findpts_data;
-  occa::device *device;
+  occa::device device;
   occa::kernel local_eval_kernel;
   occa::kernel local_eval_many_kernel;
   occa::kernel local_kernel;
@@ -58,13 +58,17 @@ struct findpts_data_t {
 };
 
 findpts_t *findptsSetup(
-  const dlong D, MPI_Comm comm,
-  const dfloat *const elx[],
-  const dlong n[], const dlong nel,
-  const dlong m[], const dfloat bbox_tol,
+  MPI_Comm comm,
+  const dfloat* const x,
+  const dfloat* const y,
+  const dfloat* const z,
+  const dlong Nq,
+  const dlong Nelements,
+  const dlong m,
+  const dfloat bbox_tol,
   const hlong local_hash_size, const hlong global_hash_size,
   const dlong npt_max, const dfloat newt_tol,
-  occa::device *device = nullptr);
+  occa::device &device);
 void findptsFree(findpts_t *fd);
 void findpts(findpts_data_t *findPtsData,
                 const dfloat *const x_base[],

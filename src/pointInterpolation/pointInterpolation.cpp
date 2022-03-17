@@ -20,34 +20,25 @@ pointInterpolation_t::pointInterpolation_t(nrs_t *nrs_, double newton_tol_, bool
 
   mesh_t *mesh = nrs->meshV;
 
-  dlong nmsh = mesh->N;
-  dlong nelm = mesh->Nelements;
-
-  // element geometry
-  dfloat *elx[3] = {mesh->x, mesh->y, mesh->z};
-
-  // element dimensions
-  dlong n1[3] = {mesh->N + 1, mesh->N + 1, mesh->N + 1};
-
-  dlong m1[3] = {2 * n1[0], 2 * n1[1], 2 * n1[2]};
-
   // used for # of cells in hash tables
   const dlong hash_size = nelm * n1[0] * n1[1] * n1[2];
 
   MPI_Comm comm = platform_t::getInstance()->comm.mpiComm;
 
-  findpts_ = findptsSetup(3,
+  findpts_ = findptsSetup(
                             comm,
-                            elx,
-                            n1,
-                            nelm,
-                            m1,
+                            mesh->x,
+                            mesh->y,
+                            mesh->z,
+                            mesh->Nq,
+                            mesh->Nelements,
+                            2 * mesh->Nq,
                             bb_tol,
                             hash_size,
                             hash_size,
                             npt_max,
                             newton_tol,
-                            &platform_t::getInstance()->device.occaDevice());
+                            platform_t::getInstance()->device.occaDevice());
 }
 
 pointInterpolation_t::~pointInterpolation_t() { findptsFree(findpts_); }

@@ -102,21 +102,28 @@ static occa::memory findptsCopyData_3(const struct gslibFindptsData_t *fd,
   return o_dev_copy;
 }
 
-findpts_t* findptsSetup(
-  const dlong D, MPI_Comm comm,
-  const dfloat* const elx[],
-  const dlong n[], const dlong nel,
-  const dlong m[], const dfloat bbox_tol,
+findpts_t *findptsSetup(
+  MPI_Comm comm,
+  const dfloat* const x,
+  const dfloat* const y,
+  const dfloat* const z,
+  const dlong Nq,
+  const dlong Nelements,
+  const dlong m,
+  const dfloat bbox_tol,
   const hlong local_hash_size, const hlong global_hash_size,
   const dlong npt_max, const dfloat newt_tol,
-  occa::device* device) {
-  // elx, n, m have length D
+  occa::device &device){
+
+  const auto elx = {x,y,z};
+  const auto n = {Nq, Nq, Nq};
+  const auto ms = {m, m, m};
 
   auto findpts_data = legacyFindptsSetup(comm,
                                              elx,
                                              n,
                                              nel,
-                                             m,
+                                             ms,
                                              bbox_tol,
                                              local_hash_size,
                                              global_hash_size,
@@ -127,33 +134,27 @@ findpts_t* findptsSetup(
   handle->D = D;
   handle->findpts_data = findpts_data;
 
-  if (device != nullptr) {
-    handle->device = device;
-    auto kernels = initFindptsKernels(comm, *device, D, n[0]);
-    handle->local_eval_kernel = kernels.at(0);
-    handle->local_eval_many_kernel = kernels.at(1);
-    handle->local_kernel = kernels.at(2);
+  handle->device = device;
+  auto kernels = initFindptsKernels(comm, device, D, n[0]);
+  handle->local_eval_kernel = kernels.at(0);
+  handle->local_eval_many_kernel = kernels.at(1);
+  handle->local_kernel = kernels.at(2);
 
-    // Need to copy findpts data to the
-    handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
-                                                  nel,
-                                                  local_hash_size,
-                                                  *device);
-  } else {
-    handle->device = nullptr;
-  }
+  // Need to copy findpts data to the
+  handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
+                                                nel,
+                                                local_hash_size,
+                                                device);
 
   return handle;
 }
 
 void findptsFree(findpts_t *fd)
 {
-  if (fd->device != nullptr) {
-    // Use OCCA's reference counting to free memory and kernel objects
-    fd->local_eval_kernel = occa::kernel();
-    fd->local_kernel = occa::kernel();
-    fd->o_fd_local = occa::memory();
-  }
+  // Use OCCA's reference counting to free memory and kernel objects
+  fd->local_eval_kernel = occa::kernel();
+  fd->local_kernel = occa::kernel();
+  fd->o_fd_local = occa::memory();
   delete fd;
 }
 
