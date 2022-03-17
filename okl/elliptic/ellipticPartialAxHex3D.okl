@@ -1,3 +1,12 @@
+#if defined(gfxXX)
+#define PREVENT_UNROLL 1
+#endif
+
+// try out?
+//#if p_Nq == 6 || p_Nq == 8 || p_Nq == 10
+//#define PREVENT_UNROLL 1
+//#endif
+
 @kernel void ellipticPartialAxHex3D(const dlong Nelements,
                                     const dlong offset,
                                     const dlong loffset,
@@ -52,7 +61,9 @@
 
     @barrier("local");
 
+#if !defined(PREVENT_UNROLL)
 #pragma unroll p_Nq
+#endif
     for(int k = 0; k < p_Nq; k++) {
       @barrier("local");
       for(int j = 0; j < p_Nq; ++j; @inner(1))
