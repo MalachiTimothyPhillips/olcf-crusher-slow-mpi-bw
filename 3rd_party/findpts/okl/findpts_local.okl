@@ -152,7 +152,7 @@ static dlong point_index(const dlong x)
 // workspace is a shared workspace
 // side_init indicates the mode the workspace is set to
 static findptsElementGFace_t get_face(
-  const findptsElementData_t *fd, const dfloat *elx[p_D], dfloat *wtend[p_D], dlong fi,
+   const dfloat *elx[p_D], dfloat *wtend[p_D], dlong fi,
   dfloat *workspace, dlong &side_init,
   dlong j)
 {
@@ -190,7 +190,7 @@ static findptsElementGFace_t get_face(
 }
 
 static findptsElementGEdge_t get_edge(
-  const findptsElementData_t *fd, const dfloat *elx[p_D], dfloat * wtend[p_D], dlong ei,
+   const dfloat *elx[p_D], dfloat * wtend[p_D], dlong ei,
   dfloat *workspace, dlong &side_init,
   dlong j)
 {
@@ -243,7 +243,7 @@ static findptsElementGEdge_t get_edge(
   return edge;
 }
 static findptsElementGPT_t get_pt(
-  findptsElementData_t *fd, const dfloat *elx[p_D], dfloat *wtend[p_D], dlong pi)
+   const dfloat *elx[p_D], dfloat *wtend[p_D], dlong pi)
 {
   const dlong side_n1 = pi&1, side_n2 = (pi>>1)&1, side_n3 = (pi>>2)&1;
   const dlong in1 = side_n1*(p_Nq-1), in2 = side_n2*(p_Nq-1), in3 = side_n3*(p_Nq-1);
@@ -900,7 +900,7 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
                   dfloat *DD1 = D1+p_Nq, *DD2 = D2+p_Nq;
                   findptsElementGFace_t face;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    face = get_face(&fd->fed,elx,wtend,fi,constraint_workspace,constraint_init,j);
+                    face = get_face(elx,wtend,fi,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
@@ -970,7 +970,7 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
                   dfloat *hes   = hes_T + hes_count*p_D;
                   findptsElementGEdge_t edge;
                   for(dlong j=0;j<INNER_SIZE;++j;@inner){
-                    edge = get_edge(&fd->fed,elx,wtend,ei,constraint_workspace,constraint_init,j);
+                    edge = get_edge(elx,wtend,ei,constraint_workspace,constraint_init,j);
                   }
                   @barrier("local");
                   // TODO consider optimizing this using the internal structure of findptsElementGEdge_t
@@ -1059,7 +1059,7 @@ dfloat tensor_ig3_j(@restrict       dfloat *g_partials,
                 }
                 case 3:{ // findpts_pt
                   const dlong pi = point_index(tmp->flags & FLAG_MASK);
-                  const findptsElementGPT_t gpt = get_pt(&fd->fed,elx,wtend,pi);
+                  const findptsElementGPT_t gpt = get_pt(elx,wtend,pi);
                   const dfloat *const pt_x = gpt.x, *const jac = gpt.jac, *const hes = gpt.hes;
 
                   dfloat resid[p_D], steep[p_D];
