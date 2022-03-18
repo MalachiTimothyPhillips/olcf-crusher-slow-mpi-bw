@@ -2,11 +2,9 @@
 #define PREVENT_UNROLL 1
 #endif
 
-// try out?
-//#if p_Nq == 6 || p_Nq == 8 || p_Nq == 10
-//#define PREVENT_UNROLL 1
-//#endif
+#define USE_HIP_BONE_KERNEL
 
+#ifndef USE_HIP_BONE_KERNEL
 @kernel void ellipticPartialAxHex3D(const dlong Nelements,
                                     const dlong offset,
                                     const dlong loffset,
@@ -156,3 +154,155 @@
     }
   }
 }
+#else
+#define p_NelementsPerBlk 1
+@kernel void ellipticPartialAxHex3D(const dlong Nelements,
+                                    const dlong offset,
+                                    const dlong loffset,
+                                    @restrict const dlong*  elementList,
+                                    @restrict const dfloat* ggeo,
+                                    @restrict const dfloat* D,
+                                    @restrict const dfloat* S,
+                                    @restrict const dfloat* lambda,
+                                    @restrict const dfloat* q,
+                                    @restrict       dfloat* Aq)
+{
+//padding for bank conflicts
+#if p_Nq==8 || p_Nq==4
+#define p_pad 1
+#else
+#define p_pad 0
+#endif
+
+  for(int eo=0;eo<Nelements;eo+=p_NelementsPerBlk;@outer(0)){
+
+    @shared dfloat s_D [p_Nq][p_Nq+p_pad];
+    @shared dfloat s_DT[p_Nq][p_Nq+p_pad];
+    @shared dfloat   s_q[p_NelementsPerBlk][p_Nq][p_Nq][p_Nq+p_pad];
+    @shared dfloat s_Gqr[p_NelementsPerBlk][p_Nq][p_Nq][p_Nq+p_pad];
+    @shared dfloat s_Gqs[p_NelementsPerBlk][p_Nq][p_Nq][p_Nq+p_pad];
+    @shared dfloat s_Gqt[p_NelementsPerBlk][p_Nq][p_Nq][p_Nq+p_pad];
+
+    @exclusive dlong r_e, element;
+    @exclusive dfloat r_wJ;
+
+    @exclusive int k, es;
+
+    for(int ke=0;ke<p_Nq*p_NelementsPerBlk;++ke;@inner(2)){
+      for(int j=0;j<p_Nq;++j;@inner(1)){
+        for(int i=0;i<p_Nq;++i;@inner(0)){
+
+          //load operators
+          if(ke==0){
+            const int id = j*p_Nq+i;
+            const dfloat Dji = D[id];
+            s_D[j][i] = Dji;
+            s_DT[i][j] = Dji;
+          }
+
+          k  = ke%p_Nq;
+          es = ke/p_Nq;
+          r_e = es+eo;
+
+          if(r_e<Nelements){
+            element = elementList[r_e];
+            const dlong id = i + j*p_Nq + k*p_Nq*p_Nq + element*p_Np;
+            s_q[es][k][j][i] = q[id];
+          }
+        }
+      }
+    }
+
+    for(int ke=0;ke<p_Nq*p_NelementsPerBlk;++ke;@inner(2)){
+      for(int j=0;j<p_Nq;++j;@inner(1)){
+        for(int i=0;i<p_Nq;++i;@inner(0)){
+
+          if(r_e<Nelements){
+            const dlong gbase = p_Nggeo*(element*p_Np + i + j*p_Nq + k*p_Nq*p_Nq);
+
+            // 't' terms
+            dfloat tmp=0.0;
+
+            r_wJ = ggeo[gbase+p_GWJID];
+            const dfloat G00 = ggeo[gbase+p_G00ID];
+            const dfloat G01 = ggeo[gbase+p_G01ID];
+            const dfloat G11 = ggeo[gbase+p_G11ID];
+            const dfloat G02 = ggeo[gbase+p_G02ID];
+            const dfloat G12 = ggeo[gbase+p_G12ID];
+            const dfloat G22 = ggeo[gbase+p_G22ID];
+
+            // #pragma unroll p_Unr
+            for(int m = 0; m < p_Nq; ++m) {
+              const dfloat pmji = s_q[es][m][j][i];
+              const dfloat Dkm = s_DT[m][k];
+              tmp += Dkm*pmji;
+            }
+
+
+            s_Gqr[es][k][j][i] = G02*tmp;
+            s_Gqs[es][k][j][i] = G12*tmp;
+            s_Gqt[es][k][j][i] = G22*tmp;
+
+
+            // 'r' terms
+            tmp = 0;
+            // #pragma unroll p_Unr
+            for(int m = 0; m < p_Nq; ++m) {
+              const dfloat Dim = s_D[i][m];
+              tmp += Dim*s_q[es][k][j][m];
+            }
+
+            s_Gqr[es][k][j][i] += G00*tmp;
+            s_Gqs[es][k][j][i] += G01*tmp;
+            s_Gqt[es][k][j][i] += G02*tmp;
+
+
+            // 's' terms
+            tmp = 0;
+            // #pragma unroll p_Unr
+            for(int m = 0; m < p_Nq; ++m) {
+              const dfloat Djm = s_D[j][m];
+              tmp += Djm*s_q[es][k][m][i];
+            }
+
+            s_Gqr[es][k][j][i] += G01*tmp;
+            s_Gqs[es][k][j][i] += G11*tmp;
+            s_Gqt[es][k][j][i] += G12*tmp;
+          }
+        }
+      }
+    }
+
+    for(int ke=0;ke<p_Nq*p_NelementsPerBlk;++ke;@inner(2)){
+      for(int j=0;j<p_Nq;++j;@inner(1)){
+        for(int i=0;i<p_Nq;++i;@inner(0)){
+
+          if(r_e<Nelements){
+            dfloat tmpAp = s_q[es][k][j][i]*lambda*r_wJ;
+
+            // use same matrix for both slices
+            // #pragma unroll p_Unr
+            for(int m=0;m<p_Nq;++m){
+              const dfloat Dmi = s_D[m][i];
+              const dfloat Dmj = s_D[m][j];
+
+              tmpAp += Dmi*s_Gqr[es][k][j][m];
+              tmpAp += Dmj*s_Gqs[es][k][m][i];
+            }
+
+            // #pragma unroll p_Unr
+            for(int m=0;m<p_Nq;++m){
+              const dfloat Gpt = s_Gqt[es][m][j][i];
+              const dfloat Dmk = s_D[m][k];
+              tmpAp += Dmk*Gpt;
+            }
+
+            const dlong base = i + j*p_Nq + k*p_Nq*p_Nq + element*p_Np;
+            Aq[base] = tmpAp;
+          }
+        }
+      }
+    }
+  }
+}
+#endif
