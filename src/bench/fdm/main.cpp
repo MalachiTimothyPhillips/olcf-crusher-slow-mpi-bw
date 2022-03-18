@@ -5,6 +5,8 @@
 #include "omp.h"
 #include <unistd.h>
 #include "mpi.h"
+#include <vector>
+#include <algorithm>
 
 #include "nrssys.hpp"
 #include "setupAide.hpp"
@@ -13,7 +15,10 @@
 
 namespace {
 
+size_t wordSize = 8;
+
 occa::kernel fdmKernel;
+occa::kernel oldFdmKernel;
 
 occa::memory o_Sx;
 occa::memory o_Sy;
@@ -21,12 +26,49 @@ occa::memory o_Sz;
 occa::memory o_invL;
 occa::memory o_u;
 occa::memory o_Su;
+occa::memory o_SuGold;
 
 int Np; 
 int Nelements; 
 
+template<typename FloatingPointType>
+void checkCorrectnessImpl(occa::memory & o_a, occa::memory & o_b){
+  FloatingPointType linfError = 0.0;
+
+  std::vector<FloatingPointType> results_a(Np * Nelements, 0.0);
+  std::vector<FloatingPointType> results_b(Np * Nelements, 0.0);
+  o_a.copyTo(results_a.data(), Np * Nelements * sizeof(FloatingPointType));
+  o_b.copyTo(results_b.data(), Np * Nelements * sizeof(FloatingPointType));
+
+  for(int i = 0; i < Np * Nelements; ++i){
+    linfError = std::max(linfError, std::abs(results_a[i] - results_b[i]));
+  }
+
+  std::cout << "linfError: " << linfError << "\n";
+}
+
+void checkCorrectness(occa::memory & o_a, occa::memory & o_b)
+{
+  if(wordSize == 4){
+    checkCorrectnessImpl<float>(o_a, o_b);
+  }
+  
+  if(wordSize == 8){
+    checkCorrectnessImpl<double>(o_a, o_b);
+  }
+}
+
 double run(int Ntests)
 {
+
+  // correctness check
+  fdmKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u);
+  fdmKernel(Nelements, o_SuGold, o_Sx, o_Sy, o_Sz, o_invL, o_u);
+
+  checkCorrectness(o_Su, o_SuGold);
+
+
+
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const double start = MPI_Wtime();
@@ -81,7 +123,6 @@ int main(int argc, char** argv)
   int N;
   int okl = 1;
   int Ntests = -1;
-  size_t wordSize = 8;
 
   while(1) {
     static struct option long_options[] =
@@ -156,10 +197,14 @@ int main(int argc, char** argv)
 
   std::string kernelName = "fusedFDM";
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  const std::string fileName = 
+  std::string fileName = 
     installDir + "/okl/elliptic/" + kernelName + ext;
 
   fdmKernel = platform->device.buildKernel(fileName, props, true);
+
+  kernelName = "fusedFDM_old";
+  fileName = installDir + "/okl/elliptic/" + kernelName + ext;
+  oldFdmKernel = platform->device.buildKernel(fileName, props, true);
 
   // populate arrays
   randAlloc = &rand64Alloc; 
@@ -181,6 +226,7 @@ int main(int argc, char** argv)
   o_invL = platform->device.malloc(Nelements * Np * wordSize, invL);
   free(invL);
   o_Su = platform->device.malloc(Nelements * Np * wordSize, Su);
+  o_SuGold = platform->device.malloc(Nelements * Np * wordSize, Su);
   free(Su);
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
