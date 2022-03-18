@@ -33,6 +33,10 @@ inline void computeDirection(dfloat x1,
 
 static dfloat lengthScale;
 static dfloat baseFlowRate;
+static dfloat volumetricFlowRate;
+static dfloat deltaFlowRate;
+static dfloat currentFlowRate;
+dfloat* flowDirection;
 
 } // namespace
 
@@ -84,7 +88,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
-  dfloat *flowDirection = nrs->flowDirection;
+  flowDirection = nrs->flowDirection;
   const dfloat flowRate = nrs->flowRate;
 
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
@@ -309,7 +313,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   // scale by mass matrix
   platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_currentFlowRate);
 
-  const dfloat currentFlowRate =
+  currentFlowRate =
       platform->linAlg->sum(
           mesh->Nlocal, o_currentFlowRate, platform->comm.mpiComm) /
       lengthScale;
@@ -332,12 +336,12 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   }
 
   // user specifies a mean velocity, not volumetric flow rate
-  dfloat volumetricFlowRate = flowRate * mesh->volume / lengthScale;
+  volumetricFlowRate = flowRate * mesh->volume / lengthScale;
   if (platform->options.compareArgs("CONSTANT FLOW RATE TYPE", "VOLUMETRIC")) {
     volumetricFlowRate = flowRate;
   }
 
-  const dfloat deltaFlowRate = volumetricFlowRate - currentFlowRate;
+  deltaFlowRate = volumetricFlowRate - currentFlowRate;
 
   constantFlowScale = deltaFlowRate / baseFlowRate;
 
@@ -358,6 +362,22 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
 dfloat scaleFactor(){
   return constantFlowScale;
+}
+
+dfloat deltaVolumetricFlow(){
+  return deltaFlowRate;
+}
+
+dfloat currentVolumetricFlow(){
+  return currentFlowRate;
+}
+
+dfloat targetVolumetricFlow(){
+  return volumetricFlowRate;
+}
+
+dfloat* direction(){
+  return flowDirection;
 }
 
 void compute(nrs_t *nrs, double lengthScale, dfloat time) {
