@@ -1,4 +1,4 @@
-
+#define p_pad 1
 
 @kernel void fusedFDM(
   const dlong Nelements,
@@ -17,12 +17,12 @@
   )
 {
   for (dlong my_elem = 0; my_elem < Nelements; ++my_elem; @outer(0)) {
-    @shared pfloat S_x_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_y_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_z_e[p_Nq_e][p_Nq_e];
-    @shared pfloat S_x_eT[p_Nq_e][p_Nq_e];
-    @shared pfloat S_y_eT[p_Nq_e][p_Nq_e];
-    @shared pfloat S_z_eT[p_Nq_e][p_Nq_e];
+    @shared pfloat S_x_e[p_Nq_e][p_Nq_e+p_pad];
+    @shared pfloat S_y_e[p_Nq_e][p_Nq_e+p_pad];
+    @shared pfloat S_z_e[p_Nq_e][p_Nq_e+p_pad];
+    @shared pfloat S_x_eT[p_Nq_e][p_Nq_e+p_pad];
+    @shared pfloat S_y_eT[p_Nq_e][p_Nq_e+p_pad];
+    @shared pfloat S_z_eT[p_Nq_e][p_Nq_e+p_pad];
     @shared pfloat work1[p_Nq_e][p_Nq_e][p_Nq_e];
     @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e];
     @exclusive dlong element;
