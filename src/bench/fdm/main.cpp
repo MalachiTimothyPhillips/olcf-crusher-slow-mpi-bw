@@ -63,7 +63,7 @@ double run(int Ntests)
 
   // correctness check
   fdmKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u);
-  oldFdmKernel(Nelements, o_SuGold, o_Sx, o_Sy, o_Sz, o_invL, o_u);
+  fdmKernel(Nelements, o_SuGold, o_Sx, o_Sy, o_Sz, o_invL, o_u);
 
   checkCorrectness(o_Su, o_SuGold);
 
