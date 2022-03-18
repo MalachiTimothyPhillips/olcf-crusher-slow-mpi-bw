@@ -16,7 +16,10 @@ void findpts_impl(    int   *const  code_base,
                        double *const     r_base,
                        double *const dist2_base,
                  const double *const     x_base[3],
-                 const int npt, gslibFindptsData_t *const fd,
+                 const int npt,
+  //               gslibFindptsData_t *const fd,
+  hashData_t& hash,
+  crystal & cr,
                  const void *const findptsData);
 
 template<typename OutputType = evalOutPt_t<1>>
@@ -33,7 +36,12 @@ void findpts_eval_impl(
   const int   *const   el_base,
   const double *const    r_base,
   const int npt, const int nFields, const int inputOffset, const int outputOffset,
-  const void *const in, gslibFindptsData_t *const fd,
+  const void *const in,
+  //gslibFindptsData_t *const fd,
+  //hashData_t* hash,
+  //crystal * cr,
+  hashData_t& hash,
+  crystal & cr,
   const void *const findptsData);
 
 #endif

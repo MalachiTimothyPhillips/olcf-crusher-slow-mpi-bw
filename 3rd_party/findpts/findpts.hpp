@@ -8,16 +8,21 @@
 #include <tuple>
 #include <vector>
 
-class gslibFindptsData_t;
+//class gslibFindptsData_t;
+
+struct crystal;
+struct hashData_t;
 
 struct findpts_t {
   int D;
-  gslibFindptsData_t *findpts_data;
+  //gslibFindptsData_t *findpts_data;
+  dfloat tol;
+  crystal* cr;
+  hashData_t* hash;
   occa::device device;
   occa::kernel local_eval_kernel;
   occa::kernel local_eval_many_kernel;
   occa::kernel local_kernel;
-  occa::memory o_fd_local;
 
   // data for elx
   occa::memory o_x;
@@ -36,6 +41,10 @@ struct findpts_t {
   occa::memory o_max;
 
   occa::memory o_offset;
+
+  dfloat hashMin[3];
+  dfloat hashFac[3];
+  dlong hash_n;
 
 };
 

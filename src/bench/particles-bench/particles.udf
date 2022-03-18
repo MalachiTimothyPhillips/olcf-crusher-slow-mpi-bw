@@ -170,12 +170,8 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   occa::memory    o_hashMin = platform->device.malloc(3*sizeof(dfloat));
   occa::memory    o_hashFac = platform->device.malloc(3*sizeof(dfloat));
 
-  auto hash = findpts->findpts_data->local.hd;
-  dfloat hashMin[3] = {hash.bnd[0].min, hash.bnd[1].min, hash.bnd[2].min};
-  dfloat hashFac[3] = {hash.fac[0], hash.fac[1], hash.fac[2]};
-
-  o_hashMin.copyFrom(hashMin, 3 * sizeof(dfloat));
-  o_hashFac.copyFrom(hashFac, 3 * sizeof(dfloat));
+  o_hashMin.copyFrom(findpts->hashMin, 3 * sizeof(dfloat));
+  o_hashFac.copyFrom(findpts->hashFac, 3 * sizeof(dfloat));
 
 
   dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
@@ -207,11 +203,11 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
                            findpts->o_A,
                            findpts->o_min,
                            findpts->o_max,
-                           hash.hash_n,
+                           findpts->hash_n,
                            o_hashMin,
                            o_hashFac,
                            findpts->o_offset,
-                           findpts->findpts_data->local.tol);
+                           findpts->tol);
     }
   }
   platform->device.finish();

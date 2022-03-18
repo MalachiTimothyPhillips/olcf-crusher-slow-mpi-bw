@@ -31,7 +31,6 @@ SOFTWARE.
 #include "legacyFindptsSetup.h"
 #include "gslib.h"
 #include "findptsTypes.h"
-
 #include "findptsImpl.hpp"
 
 extern "C" {
@@ -40,67 +39,12 @@ uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
                                const uint max_size);
 }
 
-static occa::memory findptsCopyData_3(const struct gslibFindptsData_t *fd,
-                                         dlong nel, dlong max_hash_size,
-                                         occa::device device,
-                                         dlong& hd_d_size)
+dlong getHashSize(const struct gslibFindptsData_t *fd,
+                                         dlong nel, dlong max_hash_size)
 {
   const findpts_local_data_3 *fd_local = &fd->local;
-
-  //create device allocation
-  dlong lag_size[3];
-  for(dlong d=0;d<3;++d) lag_size[d] = gll_lag_size(fd_local->fed.n[d]);
   auto hash_data_copy = fd_local->hd;
-  hd_d_size  = findpts_local_hash_opt_size_3(&hash_data_copy, fd_local->obb, nel, max_hash_size);
-  dlong elx_d_size = nel*fd_local->ntot;
-  dlong alloc_size =  sizeof(findpts_local_data_3)
-                    + sizeof(double)*elx_d_size*3 // elx
-                    + sizeof(obbox_3)*nel
-                    + sizeof(uint)*hd_d_size // hd.offset
-                    + sizeof(double)*(fd_local->fed.n[0]+fd_local->fed.n[1]+fd_local->fed.n[2]) // fed.z
-                    + sizeof(double)*(lag_size[0]+lag_size[1]+lag_size[2]) // fed.lag_data
-                    + sizeof(double)*(6*fd_local->fed.n[0]+6*fd_local->fed.n[1]+6*fd_local->fed.n[2]) // fed.wtend
-                    + 8*6; // room for alignment padding
-                    // other structures are unused
-  occa::memory o_dev_copy = device.malloc(alloc_size, occa::dtype::byte);
-  char *o_dev_copy_ptr = o_dev_copy.ptr<char>();
-
-  // create and fill host buffer
-  char *host_copy = new char[alloc_size];
-  struct findpts_local_data_3 *fd_local_copy = (struct findpts_local_data_3*)host_copy;
-  *fd_local_copy = *fd_local;
-  dlong working_offset = sizeof(findpts_local_data_3);
-
-  // ensures all fields are aligned to 8 bytes
-  #define SET_FIELD(field, type, size) do {\
-        dlong align = 8; \
-        working_offset = ((working_offset + align - 1)/align)*align; \
-        fd_local_copy->field = (type*)(o_dev_copy_ptr+working_offset); \
-        memcpy(host_copy+working_offset, fd_local->field, size*sizeof(type)); \
-        working_offset += size*sizeof(type); \
-      } while(0)
-
-  SET_FIELD(elx[0], double, elx_d_size);
-  SET_FIELD(elx[1], double, elx_d_size);
-  SET_FIELD(elx[2], double, elx_d_size);
-  SET_FIELD(obb, struct obbox_3, nel);
-  SET_FIELD(hd.offset, uint, hd_d_size);
-  SET_FIELD(fed.z[0], double, fd_local->fed.n[0]);
-  SET_FIELD(fed.z[1], double, fd_local->fed.n[1]);
-  SET_FIELD(fed.z[2], double, fd_local->fed.n[2]);
-  SET_FIELD(fed.lag_data[0], double, lag_size[0]);
-  SET_FIELD(fed.lag_data[1], double, lag_size[1]);
-  SET_FIELD(fed.lag_data[2], double, lag_size[2]);
-  SET_FIELD(fed.wtend[0], double, 6*fd_local->fed.n[0]);
-  SET_FIELD(fed.wtend[1], double, 6*fd_local->fed.n[1]);
-  SET_FIELD(fed.wtend[2], double, 6*fd_local->fed.n[2]);
-
-  #undef SET_FIELD
-
-  // copy buffer to device
-  o_dev_copy.copyFrom(host_copy);
-  delete[] host_copy;
-  return o_dev_copy;
+  return findpts_local_hash_opt_size_3(&hash_data_copy, fd_local->obb, nel, max_hash_size);
 }
 
 findpts_t *findptsSetup(
@@ -135,7 +79,10 @@ findpts_t *findptsSetup(
 
   findpts_t* handle = new findpts_t();
   handle->D = 3;
-  handle->findpts_data = findpts_data;
+  //handle->findpts_data = findpts_data;
+  handle->tol = findpts_data->local.tol;
+  handle->hash = &findpts_data->hash;
+  handle->cr = &findpts_data->cr;
 
   if(x != nullptr){
     handle->o_x = device.malloc(Nlocal * sizeof(dfloat));
@@ -151,7 +98,7 @@ findpts_t *findptsSetup(
     std::vector<dfloat> maxBound(3*Nelements, 0.0);
 
     for(int e = 0; e < Nelements; ++e){
-      auto box = handle->findpts_data->local.obb[e];
+      auto box = findpts_data->local.obb[e];
 
       c[3*e + 0] = box.c0[0];
       c[3*e + 1] = box.c0[1];
@@ -183,6 +130,13 @@ findpts_t *findptsSetup(
 
   }
 
+  auto hash = findpts_data->local.hd;
+  for(int d = 0; d < 3; ++d){
+    handle->hashMin[d] = hash.bnd[d].min;
+    handle->hashFac[d] = hash.fac[d];
+  }
+  handle->hash_n = hash.hash_n;
+
   handle->device = device;
   auto kernels = initFindptsKernels(comm, device, 3, Nq);
   handle->local_eval_kernel = kernels.at(0);
@@ -192,21 +146,17 @@ findpts_t *findptsSetup(
   handle->o_wtend_x = device.malloc(6 * Nq * sizeof(dfloat));
   handle->o_wtend_y = device.malloc(6 * Nq * sizeof(dfloat));
   handle->o_wtend_z = device.malloc(6 * Nq * sizeof(dfloat));
-  handle->o_wtend_x.copyFrom(handle->findpts_data->local.fed.wtend[0], 6 * Nq * sizeof(dfloat));
-  handle->o_wtend_y.copyFrom(handle->findpts_data->local.fed.wtend[1], 6 * Nq * sizeof(dfloat));
-  handle->o_wtend_z.copyFrom(handle->findpts_data->local.fed.wtend[2], 6 * Nq * sizeof(dfloat));
+  handle->o_wtend_x.copyFrom(findpts_data->local.fed.wtend[0], 6 * Nq * sizeof(dfloat));
+  handle->o_wtend_y.copyFrom(findpts_data->local.fed.wtend[1], 6 * Nq * sizeof(dfloat));
+  handle->o_wtend_z.copyFrom(findpts_data->local.fed.wtend[2], 6 * Nq * sizeof(dfloat));
 
-  // Need to copy findpts data to the
-  dlong hd_d_size;
-  handle->o_fd_local = findptsCopyData_3(handle->findpts_data,
+  const auto hd_d_size = getHashSize(findpts_data,
                                                 Nelements,
-                                                local_hash_size,
-                                                device,
-                                                hd_d_size);
+                                                local_hash_size);
   
   std::vector<dlong> offsets(hd_d_size, 0);
   for(dlong i = 0; i < hd_d_size; ++i){
-    offsets[i] = handle->findpts_data->local.hd.offset[i];
+    offsets[i] = findpts_data->local.hd.offset[i];
   }
   handle->o_offset = device.malloc(offsets.size() * sizeof(dlong));
   handle->o_offset.copyFrom(offsets.data(), offsets.size() * sizeof(dlong));
@@ -219,7 +169,6 @@ void findptsFree(findpts_t *fd)
   // Use OCCA's reference counting to free memory and kernel objects
   fd->local_eval_kernel = occa::kernel();
   fd->local_kernel = occa::kernel();
-  fd->o_fd_local = occa::memory();
   delete fd;
 }
 
@@ -235,7 +184,9 @@ void findpts(findpts_data_t *const findPtsData,
                   findPtsData->dist2_base,
                   x_base,
                   npt,
-                  fd->findpts_data,
+                  //fd->findpts_data,
+                        *fd->hash,
+                        *fd->cr,
                   fd);
 
 }
@@ -257,7 +208,9 @@ void findptsEval(const dlong npt,
                       npt,
                       npt,
                       &o_in,
-                      fd->findpts_data,
+                      //fd->findpts_data,
+                        *fd->hash,
+                        *fd->cr,
                       fd);
 }
 
@@ -281,7 +234,9 @@ void findptsEval(const dlong npt,
                         inputOffset,
                         npt,
                         &o_in,
-                        fd->findpts_data,
+                        //fd->findpts_data,
+                        *fd->hash,
+                        *fd->cr,
                         fd);
   } else if (nFields == 3){
     findpts_eval_impl<evalOutPt_t<3>>(out_base,
@@ -294,7 +249,9 @@ void findptsEval(const dlong npt,
                         inputOffset,
                         npt,
                         &o_in,
-                        fd->findpts_data,
+                        //fd->findpts_data,
+                        *fd->hash,
+                        *fd->cr,
                         fd);
   }
 
@@ -327,4 +284,4 @@ void findptsLocalEval(
   fd->local_eval_kernel(npt, nFields, inputOffset, npt, o_el, o_r, o_in, o_out);
 }
 
-crystal *crystalRouter(findpts_t *const fd) { return &fd->findpts_data->cr; }
+crystal *crystalRouter(findpts_t *const fd) { return fd->cr; }

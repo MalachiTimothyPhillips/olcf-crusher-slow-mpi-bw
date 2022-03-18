@@ -27,14 +27,14 @@ extern "C" {
 
 struct hashData_t {
   ulong hash_n;
-  struct dbl_range bnd[3]; // TODO: remove dep on gslib
+  struct dbl_range bnd[3];
   double fac[3];
   uint *offset;
 };
 
 struct gslibFindptsData_t {
-  struct crystal cr; // TODO: remove dep on gslib
-  struct findpts_local_data_3 local; // TODO: remove dep on gslib
+  struct crystal cr;
+  struct findpts_local_data_3 local;
   struct hashData_t hash;
 };
 #ifdef __cplusplus

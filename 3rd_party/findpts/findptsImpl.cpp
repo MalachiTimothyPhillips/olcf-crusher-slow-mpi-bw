@@ -47,11 +47,13 @@ void findpts_impl(int *const code_base,
                    double *const dist2_base,
                    const double *const x_base[D],
                    const int npt,
-                   gslibFindptsData_t *const fd,
+                   //gslibFindptsData_t *const fd,
+  hashData_t& hash,
+  crystal & cr,
                    const void *const findptsData)
 {
 
-  const int np = fd->cr.comm.np, id=fd->cr.comm.id;
+  const int np = cr.comm.np, id=cr.comm.id;
   struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
   if (npt){
@@ -84,7 +86,7 @@ void findpts_impl(int *const code_base,
       }
       *proc = id;
       if(*code!=CODE_INTERNAL) {
-        const int hi = hash_index_3(&fd->hash, x);
+        const int hi = hash_index_3(&hash, x);
         for(int d=0;d<D;++d) {
           pt->x[d]=x[d];
         }
@@ -99,16 +101,16 @@ void findpts_impl(int *const code_base,
       proc++;
     }
     hash_pt.n = pt - (struct srcPt_t *)hash_pt.ptr;
-    sarray_transfer(struct srcPt_t, &hash_pt, proc, 1, &fd->cr);
+    sarray_transfer(struct srcPt_t, &hash_pt, proc, 1, &cr);
   }
   /* look up points in hash cells, route to possible procs */
   {
-    const unsigned int *const hash_offset = fd->hash.offset;
+    const unsigned int *const hash_offset = hash.offset;
     int count=0, *proc, *proc_p;
     const struct srcPt_t *p = (struct srcPt_t*) hash_pt.ptr, *const pe = p + hash_pt.n;
     struct srcPt_t *q;
     for(;p!=pe;++p) {
-      const int hi = hash_index_3(&fd->hash, p->x) / np;
+      const int hi = hash_index_3(&hash, p->x) / np;
       const int i = hash_offset[hi], ie = hash_offset[hi+1];
       count += ie-i;
     }
@@ -117,7 +119,7 @@ void findpts_impl(int *const code_base,
     array_init(struct srcPt_t, &srcPt_t, count), q = (struct srcPt_t*) srcPt_t.ptr;
     p = (struct srcPt_t *) hash_pt.ptr;
     for(;p!=pe;++p) {
-      const int hi = hash_index_3(&fd->hash, p->x) / np;
+      const int hi = hash_index_3(&hash, p->x) / np;
       int i = hash_offset[hi]; const int ie = hash_offset[hi+1];
       for(;i!=ie;++i) {
         const int pp = hash_offset[i];
@@ -131,7 +133,7 @@ void findpts_impl(int *const code_base,
 #ifdef DIAGNOSTICS
     printf("(proc %u) hashed; routing %u/%u\n", id, (int)srcPt_t.n, count);
 #endif
-    sarray_transfer_ext(struct srcPt_t, &srcPt_t, reinterpret_cast<unsigned int*>(proc), sizeof(int), &fd->cr);
+    sarray_transfer_ext(struct srcPt_t, &srcPt_t, reinterpret_cast<unsigned int*>(proc), sizeof(int), &cr);
     free(proc);
   }
   /* look for other procs' points, send back */
@@ -190,7 +192,7 @@ void findpts_impl(int *const code_base,
     }
     array_free(&srcPt_t);
     /* group by code to eliminate unfound points */
-    sarray_sort(struct outPt_t, opt, outPt_t.n, code, 0, &fd->cr.data);
+    sarray_sort(struct outPt_t, opt, outPt_t.n, code, 0, &cr.data);
     n = outPt_t.n;
     while (n && opt[n - 1].code == CODE_NOT_FOUND)
       --n;
@@ -198,7 +200,7 @@ void findpts_impl(int *const code_base,
 #ifdef DIAGNOSTICS
     printf("(proc %u) sending back %u found points\n", id, (int)outPt_t.n);
 #endif
-    sarray_transfer(struct outPt_t, &outPt_t, proc, 1, &fd->cr);
+    sarray_transfer(struct outPt_t, &outPt_t, proc, 1, &cr);
   }
   /* merge remote results with user data */
   {
@@ -234,7 +236,9 @@ void findpts_eval_impl(double *const out_base,
                         const int inputOffset,
                         const int outputOffset,
                         const void *const in,
-                        gslibFindptsData_t *const fd,
+  //                      gslibFindptsData_t *const fd,
+  hashData_t& hash,
+  crystal & cr,
                         const void *const findptsData)
 {
   struct array src, outpt;
@@ -262,7 +266,7 @@ void findpts_eval_impl(double *const out_base,
       el++;
     }
     src.n = pt - (evalSrcPt_t *)src.ptr;
-    sarray_transfer(evalSrcPt_t, &src, proc, 1, &fd->cr);
+    sarray_transfer(evalSrcPt_t, &src, proc, 1, &cr);
   }
   /* evaluate points, send back */
   {
@@ -270,7 +274,7 @@ void findpts_eval_impl(double *const out_base,
     const evalSrcPt_t *spt;
     OutputType *opt;
     /* group points by element */
-    sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &fd->cr.data);
+    sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &cr.data);
     array_init(OutputType, &outpt, n);
     outpt.n = n;
     spt=(evalSrcPt_t*)src.ptr;
@@ -283,7 +287,7 @@ void findpts_eval_impl(double *const out_base,
       opt->proc=spt->proc;
     }
     array_free(&src);
-    sarray_transfer(OutputType, &outpt, proc, 1, &fd->cr);
+    sarray_transfer(OutputType, &outpt, proc, 1, &cr);
   }
   /* copy results to user data */
   {
@@ -307,7 +311,10 @@ void findpts_eval_impl<evalOutPt_t<1>>(
   const int   *const   el_base,
   const double *const    r_base,
   const int npt, const int nFields, const int inputOffset, const int outputOffset,
-  const void *const in, gslibFindptsData_t *const fd,
+  const void *const in,
+  //gslibFindptsData_t *const fd,
+  hashData_t& hash,
+  crystal & cr,
   const void *const findptsData);
 template
 void findpts_eval_impl<evalOutPt_t<3>>(
@@ -317,5 +324,8 @@ void findpts_eval_impl<evalOutPt_t<3>>(
   const int   *const   el_base,
   const double *const    r_base,
   const int npt, const int nFields, const int inputOffset, const int outputOffset,
-  const void *const in, gslibFindptsData_t *const fd,
+  const void *const in,
+  //gslibFindptsData_t *const fd,
+  hashData_t& hash,
+  crystal & cr,
   const void *const findptsData);
