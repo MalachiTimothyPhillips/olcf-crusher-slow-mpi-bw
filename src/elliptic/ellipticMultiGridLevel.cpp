@@ -23,7 +23,7 @@
    SOFTWARE.
 
  */
-#include <type_traits>
+
 #include "elliptic.h"
 #include "linAlg.hpp"
 #include <iostream>
@@ -144,8 +144,7 @@ void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
     flopCount += 7 * Nrows;
   }
   auto mesh = elliptic->mesh;
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothJacobi, N=" + std::to_string(mesh->N), factor * flopCount);
+  platform->flopCounter->add("MGLevel::smoothJacobi, N=" + std::to_string(mesh->N), flopCount);
 }
 void MGLevel::smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
@@ -190,9 +189,7 @@ void MGLevel::smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x,
   flopCount += 6 * Nrows;
 
   auto mesh = elliptic->mesh;
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothChebyshevOneIteration, N=" + std::to_string(mesh->N),
-                             factor * flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshevOneIteration, N=" + std::to_string(mesh->N), flopCount);
 }
 void MGLevel::smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
@@ -248,9 +245,7 @@ void MGLevel::smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x,
   flopCount += 6 * Nrows;
 
   applyMask(elliptic, o_x, pfloatString);
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothChebyshevTwoIteration, N=" + std::to_string(mesh->N),
-                             factor * flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshevTwoIteration, N=" + std::to_string(mesh->N), flopCount);
 }
 
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
@@ -325,13 +320,11 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   elliptic->scaledAddPfloatKernel(Nrows, one, o_d, one, o_x);
   flopCount += Nrows;
   applyMask(elliptic, o_x, pfloatString);
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
+  platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), flopCount);
 }
 
 void MGLevel::smootherJacobi(occa::memory &o_r, occa::memory &o_Sr)
 {
   elliptic->dotMultiplyPfloatKernel(Nrows, o_invDiagA, o_r, o_Sr);
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smootherJacobi, N=" + std::to_string(mesh->N), factor * Nrows);
+  platform->flopCounter->add("MGLevel::smootherJacobi, N=" + std::to_string(mesh->N), Nrows);
 }
