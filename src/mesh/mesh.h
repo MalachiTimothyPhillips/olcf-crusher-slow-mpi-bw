@@ -285,7 +285,8 @@ void meshParallelGatherScatterSetup(mesh_t* mesh,
                                     hlong* globalIds,
                                     MPI_Comm &comm,
                                     oogs_mode gsMode,
-                                    int verbose);
+                                    int verbose,
+                                    bool isTMesh);
 
 // generic mesh setup
 mesh_t* meshSetup(char* filename, int N, setupAide &options);
