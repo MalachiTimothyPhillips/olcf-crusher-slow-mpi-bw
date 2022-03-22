@@ -326,6 +326,9 @@ mesh_t *createMeshV(
 
   meshHaloPhysicalNodes(mesh);
 
+  // compute volume of fluid mesh
+  meshVolume(mesh, meshT);
+
   // meshGeometricFactorsHex3D(mesh);
   mesh->vgeo = meshT->vgeo;
   mesh->cubvgeo = meshT->cubvgeo;

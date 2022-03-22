@@ -16,6 +16,7 @@ set(MESH_SOURCES
     ${MESH_SOURCE_DIR}/meshFree.cpp
     ${MESH_SOURCE_DIR}/meshMove.cpp
     ${MESH_SOURCE_DIR}/meshGeometricFactorsHex3D.cpp
+    ${MESH_SOURCE_DIR}/meshVolume.cpp
     ${MESH_SOURCE_DIR}/meshHaloExchange.cpp
     ${MESH_SOURCE_DIR}/meshHaloExtract.cpp
     ${MESH_SOURCE_DIR}/meshHaloSetup.cpp
