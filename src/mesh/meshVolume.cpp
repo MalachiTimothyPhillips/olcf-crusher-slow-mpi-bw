@@ -18,5 +18,6 @@ void meshVolume(mesh_t* meshV, mesh_t* meshT){
     }
   }
 
+  MPI_Allreduce(MPI_IN_PLACE, &volume, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
   meshV->volume = volume;
 }
