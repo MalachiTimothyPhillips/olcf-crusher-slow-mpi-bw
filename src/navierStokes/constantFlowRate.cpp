@@ -3,6 +3,7 @@
 #include "nrs.hpp"
 #include "udf.hpp"
 #include <limits>
+#include "alignment.hpp"
 
 namespace {
 static dfloat constantFlowScale = 0.0;
@@ -353,6 +354,21 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   platform->flopCounter->add("ConstantFlowRate::apply", flops);
 
+  const std::array<dfloat,3> direction = {nrs->flowDirection[0],
+    nrs->flowDirection[1],
+    nrs->flowDirection[2]
+  };
+
+  const std::string alignmentStr = to_string(computeAlignment(direction));
+
+  if(platform->comm.mpiRank == 0){
+    printf("  constant flow direction  : %s\n", alignmentStr.c_str());
+    printf("  current volumetric flow  : %g\n", currentFlowRate);
+    printf("  user    volumetric flow  : %g\n", volumetricFlowRate);
+    printf("  delta   volumetric flow  : %g\n", deltaFlowRate);
+
+  }
+
   return recomputeBaseFlowRate;
 }
 
@@ -600,6 +616,7 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time) {
   platform->timer.toc("velocitySolve");
 
   platform->flopCounter->add("ConstantFlowRate::compute", flops);
+
 }
 
 } // namespace ConstantFlowRate
