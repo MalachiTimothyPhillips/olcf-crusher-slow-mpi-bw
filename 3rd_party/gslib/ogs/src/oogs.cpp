@@ -418,6 +418,9 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
             if(!(gs->modeExchange == OOGS_EX_PW && gs->earlyPrepostRecv ==0)) 
               continue;
           }
+
+          // disable for now
+          gs->earlyPrepostRecv = 0;
        
 #if 0 
           if(gs->rank == 0)
@@ -454,10 +457,12 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
           if(gs->rank == 0) printf("%.2es ", elapsed);
           fflush(stdout);
           if(elapsed < elapsedMin){
-            if(gs->mode != OOGS_LOCAL) elapsedMin = elapsed;
-	        fastestMode = gs->mode;
-            fastestModeExchange = gs->modeExchange;
-            fastestPrepostRecv = gs->earlyPrepostRecv;
+            if(gs->mode != OOGS_LOCAL) {
+              elapsedMin = elapsed;
+	            fastestMode = gs->mode;
+              fastestModeExchange = gs->modeExchange;
+              fastestPrepostRecv = gs->earlyPrepostRecv;
+            }
           }
         }
       }
