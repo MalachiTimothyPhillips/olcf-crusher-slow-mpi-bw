@@ -164,7 +164,7 @@ void findptsLocal(int *const code,
                         (double *)findptsData->o_wtend_z.ptr()};
   o_wtend.copyFrom(wtend_d, 3 * sizeof(dfloat *));
 
-  findptsData->local_kernel(o_code,
+  findptsData->localKernel(o_code,
                             o_el,
                             o_r,
                             o_dist2,
@@ -232,7 +232,7 @@ void findptsLocalEvalInternal(OutputType *opt,
   o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el, pn * sizeof(dlong));
 
-  findptsData->local_eval_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
+  findptsData->localEvalKernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
 
   o_out.copyTo(out, nFields * pn * sizeof(dfloat));
 
@@ -428,9 +428,8 @@ findpts_t *findptsSetup(MPI_Comm comm,
 
   handle->device = device;
   auto kernels = initFindptsKernels(comm, device, 3, Nq);
-  handle->local_eval_kernel = kernels.at(0);
-  handle->local_eval_many_kernel = kernels.at(1);
-  handle->local_kernel = kernels.at(2);
+  handle->localEvalKernel = kernels.at(0);
+  handle->localKernel = kernels.at(1);
 
   handle->o_wtend_x = device.malloc(6 * Nq * sizeof(dfloat));
   handle->o_wtend_y = device.malloc(6 * Nq * sizeof(dfloat));
@@ -454,8 +453,8 @@ findpts_t *findptsSetup(MPI_Comm comm,
 void findptsFree(findpts_t *fd)
 {
   // Use OCCA's reference counting to free memory and kernel objects
-  fd->local_eval_kernel = occa::kernel();
-  fd->local_kernel = occa::kernel();
+  fd->localEvalKernel = occa::kernel();
+  fd->localKernel = occa::kernel();
   delete fd;
 }
 
@@ -741,7 +740,7 @@ void findptsLocalEval(const dlong npt,
 
   if (npt == 0)
     return;
-  fd->local_eval_kernel(npt, 1, 0, 0, o_el, o_r, o_in, o_out);
+  fd->localEvalKernel(npt, 1, 0, 0, o_el, o_r, o_in, o_out);
 }
 
 void findptsLocalEval(const dlong npt,
@@ -756,7 +755,7 @@ void findptsLocalEval(const dlong npt,
 {
   if (npt == 0)
     return;
-  fd->local_eval_kernel(npt, nFields, inputOffset, npt, o_el, o_r, o_in, o_out);
+  fd->localEvalKernel(npt, nFields, inputOffset, npt, o_el, o_r, o_in, o_out);
 }
 
 crystal *crystalRouter(findpts_t *const fd) { return fd->cr; }

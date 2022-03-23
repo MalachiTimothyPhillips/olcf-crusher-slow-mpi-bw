@@ -18,9 +18,8 @@ struct findpts_t {
   crystal *cr;
   hashData_t *hash;
   occa::device device;
-  occa::kernel local_eval_kernel;
-  occa::kernel local_eval_many_kernel;
-  occa::kernel local_kernel;
+  occa::kernel localEvalKernel;
+  occa::kernel localKernel;
 
   // data for elx
   occa::memory o_x;

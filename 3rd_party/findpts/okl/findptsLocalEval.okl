@@ -1,5 +1,5 @@
 #if 0
-@kernel void findptsLocalEval(
+@kernel void findpts_local_eval(
               const dlong pn,
               const dlong Nfields,
               const dlong fieldOffset,
@@ -191,7 +191,7 @@
 
 #if 0
 // assumes p_blockSize >= p_Nq * p_Nq && 3*p_nptsElementMax
-@kernel void findptsLocalEval_eBlock(
+@kernel void findpts_local_eval_eBlock(
         dfloat * const out_base,
         const dlong  * const el_base,
         const dfloat * const _r_base,

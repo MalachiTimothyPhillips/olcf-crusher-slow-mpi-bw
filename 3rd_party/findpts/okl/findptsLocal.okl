@@ -723,7 +723,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
   return uJtJs * Jr[j];
 }
 
-@kernel void findpts_local(dlong *const code_base,
+@kernel void findptsLocal(dlong *const code_base,
                            @ restrict dlong *const el_base,
                            @ restrict dfloat *const r_base,
                            @ restrict dfloat *const dist2_base,
