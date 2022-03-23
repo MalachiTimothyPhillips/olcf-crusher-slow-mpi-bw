@@ -373,6 +373,10 @@ findpts_t *findptsSetup(MPI_Comm comm,
                                          newt_tol);
 
   findpts_t *handle = new findpts_t();
+
+  handle->comm = comm;
+  MPI_Comm_rank(comm, &handle->rank);
+
   handle->tol = findpts_data->local.tol;
   handle->hash = &findpts_data->hash;
   handle->cr = &findpts_data->cr;
@@ -675,20 +679,14 @@ void findptsEval(const dlong npt,
                  findpts_data_t *findPtsData,
                  dfloat *out_base)
 {
-
-  findpts_eval_impl(out_base,
-                    findPtsData->code_base,
-                    findPtsData->proc_base,
-                    findPtsData->el_base,
-                    findPtsData->r_base,
-                    npt,
-                    1,
-                    npt,
-                    npt,
-                    &o_in,
-                    *fd->hash,
-                    *fd->cr,
-                    fd);
+  findptsEval(npt,
+              1,
+              0,
+              npt,
+              o_in,
+              fd,
+              findPtsData,
+              out_base);
 }
 
 void findptsEval(const dlong npt,
@@ -700,38 +698,44 @@ void findptsEval(const dlong npt,
                  findpts_data_t *findPtsData,
                  dfloat *out_base)
 {
-  if (nFields == 1) {
-    findpts_eval_impl(out_base,
-                      findPtsData->code_base,
-                      findPtsData->proc_base,
-                      findPtsData->el_base,
-                      findPtsData->r_base,
-                      npt,
-                      nFields,
-                      inputOffset,
-                      npt,
-                      &o_in,
-                      *fd->hash,
-                      *fd->cr,
-                      fd);
-  }
-  else if (nFields == 3) {
-    findpts_eval_impl<evalOutPt_t<3>>(out_base,
-                                      findPtsData->code_base,
-                                      findPtsData->proc_base,
-                                      findPtsData->el_base,
-                                      findPtsData->r_base,
-                                      npt,
-                                      nFields,
-                                      inputOffset,
-                                      npt,
-                                      &o_in,
-                                      *fd->hash,
-                                      *fd->cr,
-                                      fd);
+#define FINDPTS_EVAL(fieldSize)                           \
+{                                                         \
+  if (nFields == (fieldSize)) {                           \
+    findpts_eval_impl<evalOutPt_t<(fieldSize)>>(out_base, \
+                      findPtsData->code_base,             \
+                      findPtsData->proc_base,             \
+                      findPtsData->el_base,               \
+                      findPtsData->r_base,                \
+                      npt,                                \
+                      nFields,                            \
+                      inputOffset,                        \
+                      npt,                                \
+                      &o_in,                              \
+                      *fd->hash,                          \
+                      *fd->cr,                            \
+                      fd);                                \
+    return;                                               \
+  }                                                       \
+}
+  FINDPTS_EVAL(1);
+  FINDPTS_EVAL(2);
+  FINDPTS_EVAL(3);
+  FINDPTS_EVAL(4);
+  FINDPTS_EVAL(5);
+  FINDPTS_EVAL(6);
+  FINDPTS_EVAL(7);
+  FINDPTS_EVAL(8);
+  FINDPTS_EVAL(9);
+  FINDPTS_EVAL(10);
+
+  if(nFields < 1 || nFields > 10){
+    if(fd->rank == 0){
+      printf("Error: nFields = %d is not supported.\n", nFields);
+    }
+    fflush(stdout);
+    MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
-  // TODO: add other sizes, or correctly error
 }
 
 void findptsLocalEval(const dlong npt,

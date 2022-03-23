@@ -12,7 +12,8 @@ struct crystal;
 struct hashData_t;
 
 struct findpts_t {
-  int D;
+  MPI_Comm comm;
+  int rank;
   dfloat tol;
   crystal *cr;
   hashData_t *hash;
