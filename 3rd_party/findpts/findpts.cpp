@@ -31,7 +31,6 @@ SOFTWARE.
 #include "legacyFindptsSetup.h"
 #include "gslib.h"
 #include "findptsTypes.h"
-//#include "findptsImpl.hpp"
 
 #define D 3
 
@@ -105,20 +104,17 @@ static void realloc_scratch(occa::device &device, dlong pn, dlong nFields)
     std::free(buffer);
   }
 }
-// Can't use pinned memory for D->H transfer without
-// doing H->H transfer to input arrays
 void findpts_local(int *const code_base,
                    int *const el_base,
                    double *const r_base,
                    double *const dist2_base,
                    const double *const x_base[3],
                    const int pn,
-                   const void *const findptsData_void)
+                   findpts_t* findptsData)
 {
   if (pn == 0)
     return;
 
-  findpts_t *findptsData = (findpts_t *)findptsData_void;
   occa::device &device = findptsData->device;
 
   dlong worksize = 2 * sizeof(dlong) + 7 * sizeof(dfloat);
@@ -201,15 +197,13 @@ void findpts_local_eval_internal(OutputType *opt,
                                  const int nFields,
                                  const int inputOffset,
                                  const int outputOffset,
-                                 const void *const in,
-                                 const void *const findptsData_void)
+                                 occa::memory& o_in,
+                                 findpts_t* findptsData)
 {
   if (pn == 0)
     return;
 
-  findpts_t *findptsData = (findpts_t *)findptsData_void;
   occa::device &device = findptsData->device;
-  occa::memory o_in = *(occa::memory *)in;
 
   const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
   if (Nbytes > o_scratch.size() || h_out.size() == 0) {
@@ -259,10 +253,10 @@ void findpts_eval_impl(double *const out_base,
                        const int nFields,
                        const int inputOffset,
                        const int outputOffset,
-                       const void *const in,
+                       occa::memory& o_in,
                        hashData_t &hash,
                        crystal &cr,
-                       const void *const findptsData)
+                       findpts_t* findptsData)
 {
   struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
@@ -302,7 +296,7 @@ void findpts_eval_impl(double *const out_base,
     outpt.n = n;
     spt = (evalSrcPt_t *)src.ptr;
     opt = (OutputType *)outpt.ptr;
-    findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, in, findptsData);
+    findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, o_in, findptsData);
     spt = (evalSrcPt_t *)src.ptr;
     opt = (OutputType *)outpt.ptr;
     for (; n; --n, ++spt, ++opt) {
@@ -504,12 +498,11 @@ void findpts(findpts_data_t *const findPtsData,
   double *const dist2_base = findPtsData->dist2_base;
   hashData_t &hash = *fd->hash;
   crystal &cr = *fd->cr;
-  const void *const findptsData = fd;
   const int np = cr.comm.np, id = cr.comm.id;
   struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
   if (npt) {
-    findpts_local(code_base, el_base, r_base, dist2_base, x_base, npt, findptsData);
+    findpts_local(code_base, el_base, r_base, dist2_base, x_base, npt, fd);
   }
   /* send unfound and border points to global hash cells */
   {
@@ -626,7 +619,7 @@ void findpts(findpts_data_t *const findPtsData,
                     dist2Arr.data(),
                     spt_x_base,
                     srcPt_t.n,
-                    findptsData);
+                    fd);
 
       // unpack arrays into opt
       for (int point = 0; point < srcPt_t.n; point++) {
@@ -710,7 +703,7 @@ void findptsEval(const dlong npt,
                       nFields,                            \
                       inputOffset,                        \
                       npt,                                \
-                      &o_in,                              \
+                      o_in,                               \
                       *fd->hash,                          \
                       *fd->cr,                            \
                       fd);                                \
