@@ -5,8 +5,6 @@ set(FINDPTS_SOURCES
     ${FINDPTS_SOURCE_DIR}/legacyFindptsSetup.c
     ${FINDPTS_SOURCE_DIR}/kernelsFindpts.cpp
 )
-#    ${FINDPTS_SOURCE_DIR}/findptsLocal.cpp
-#    ${FINDPTS_SOURCE_DIR}/findptsImpl.cpp
 
 set(file_pattern "\.cu$|\.hip$|\.okl$|\.c$|\.hpp$|\.tpp$|\.h$$")
 
