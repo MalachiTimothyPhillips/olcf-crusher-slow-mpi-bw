@@ -81,7 +81,6 @@ findpts_t *findptsSetup(MPI_Comm comm,
 
   findpts_t *handle = new findpts_t();
   handle->D = 3;
-  // handle->findpts_data = findpts_data;
   handle->tol = findpts_data->local.tol;
   handle->hash = &findpts_data->hash;
   handle->cr = &findpts_data->cr;
@@ -182,7 +181,6 @@ void findpts(findpts_data_t *const findPtsData,
                findPtsData->dist2_base,
                x_base,
                npt,
-               // fd->findpts_data,
                *fd->hash,
                *fd->cr,
                fd);
@@ -205,7 +203,6 @@ void findptsEval(const dlong npt,
                     npt,
                     npt,
                     &o_in,
-                    // fd->findpts_data,
                     *fd->hash,
                     *fd->cr,
                     fd);
@@ -231,7 +228,6 @@ void findptsEval(const dlong npt,
                       inputOffset,
                       npt,
                       &o_in,
-                      // fd->findpts_data,
                       *fd->hash,
                       *fd->cr,
                       fd);
@@ -247,7 +243,6 @@ void findptsEval(const dlong npt,
                                       inputOffset,
                                       npt,
                                       &o_in,
-                                      // fd->findpts_data,
                                       *fd->hash,
                                       *fd->cr,
                                       fd);

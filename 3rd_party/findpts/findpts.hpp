@@ -8,14 +8,11 @@
 #include <tuple>
 #include <vector>
 
-// class gslibFindptsData_t;
-
 struct crystal;
 struct hashData_t;
 
 struct findpts_t {
   int D;
-  // gslibFindptsData_t *findpts_data;
   dfloat tol;
   crystal *cr;
   hashData_t *hash;
