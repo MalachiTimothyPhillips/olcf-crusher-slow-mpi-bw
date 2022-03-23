@@ -54,32 +54,42 @@ struct findpts_data_3 {
   struct hash_data_3 hash;
 };
 
-struct gslibFindptsData_t *legacyFindptsSetup(
-  MPI_Comm mpi_comm,
-  const dfloat *const elx[3],
-  const dlong n[3], const dlong nel,
-  const dlong m[3], const dfloat bbox_tol,
-  const hlong local_hash_size, const hlong global_hash_size,
-  const dlong npt_max, const dfloat newt_tol) {
+struct gslibFindptsData_t *legacyFindptsSetup(MPI_Comm mpi_comm,
+                                              const dfloat *const elx[3],
+                                              const dlong n[3],
+                                              const dlong nel,
+                                              const dlong m[3],
+                                              const dfloat bbox_tol,
+                                              const hlong local_hash_size,
+                                              const hlong global_hash_size,
+                                              const dlong npt_max,
+                                              const dfloat newt_tol)
+{
 
   if (sizeof(dfloat) != sizeof(double)) {
-    fail(1,__FILE__,__LINE__,"findpts's dfloat is not compatible with gslib's double");
+    fail(1, __FILE__, __LINE__, "findpts's dfloat is not compatible with gslib's double");
   }
   if (sizeof(dlong) != sizeof(uint)) {
-    fail(1,__FILE__,__LINE__,"findpts's dlong is not compatible with gslib's uint");
+    fail(1, __FILE__, __LINE__, "findpts's dlong is not compatible with gslib's uint");
   }
 
   struct comm gs_comm;
   comm_init(&gs_comm, mpi_comm);
 
-  struct findpts_data_3* legacyFD = findpts_setup_3(&gs_comm, elx, n, nel, m, bbox_tol,
-                                              local_hash_size, global_hash_size,
-                                              npt_max, newt_tol);
+  struct findpts_data_3 *legacyFD = findpts_setup_3(&gs_comm,
+                                                    elx,
+                                                    n,
+                                                    nel,
+                                                    m,
+                                                    bbox_tol,
+                                                    local_hash_size,
+                                                    global_hash_size,
+                                                    npt_max,
+                                                    newt_tol);
   comm_free(&gs_comm);
 
-
   // convert from legacy findpts type to correct type
-  struct gslibFindptsData_t* fd = (struct gslibFindptsData_t*) malloc(sizeof(struct gslibFindptsData_t));
+  struct gslibFindptsData_t *fd = (struct gslibFindptsData_t *)malloc(sizeof(struct gslibFindptsData_t));
 
   struct hashData_t hash;
 
@@ -98,7 +108,7 @@ struct gslibFindptsData_t *legacyFindptsSetup(
   fd->hash = hash;
 
   // TODO: enable this
-  //findpts_free_3(legacyFD);
+  // findpts_free_3(legacyFD);
 
   return fd;
 }

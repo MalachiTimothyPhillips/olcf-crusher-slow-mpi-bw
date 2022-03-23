@@ -12,8 +12,7 @@ struct evalSrcPt_t {
   int index, proc, el;
 };
 
-template<int N>
-struct evalOutPt_t {
+template <int N> struct evalOutPt_t {
   double out[N];
   int index, proc;
 };

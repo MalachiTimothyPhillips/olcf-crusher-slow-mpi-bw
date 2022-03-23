@@ -14,12 +14,12 @@
 #define CODE_NOT_FOUND 2
 
 static slong lfloor(double x) { return floor(x); }
-static slong lceil (double x) { return ceil (x); }
+static slong lceil(double x) { return ceil(x); }
 
 static ulong hash_index_aux(double low, double fac, ulong n, double x)
 {
-  const slong i = lfloor((x-low)*fac);
-  return i<0 ? 0 : (n-1<(ulong)i ? n-1 : (ulong)i);
+  const slong i = lfloor((x - low) * fac);
+  return i < 0 ? 0 : (n - 1 < (ulong)i ? n - 1 : (ulong)i);
 }
 
 static ulong hash_index_3(const hashData_t *p, const double x[D])
@@ -41,60 +41,54 @@ struct outPt_t {
 };
 
 void findpts_impl(int *const code_base,
-                   int *const proc_base,
-                   int *const el_base,
-                   double *const r_base,
-                   double *const dist2_base,
-                   const double *const x_base[D],
-                   const int npt,
-                   //gslibFindptsData_t *const fd,
-  hashData_t& hash,
-  crystal & cr,
-                   const void *const findptsData)
+                  int *const proc_base,
+                  int *const el_base,
+                  double *const r_base,
+                  double *const dist2_base,
+                  const double *const x_base[D],
+                  const int npt,
+                  // gslibFindptsData_t *const fd,
+                  hashData_t &hash,
+                  crystal &cr,
+                  const void *const findptsData)
 {
 
-  const int np = cr.comm.np, id=cr.comm.id;
+  const int np = cr.comm.np, id = cr.comm.id;
   struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
-  if (npt){
-    findpts_local(code_base,
-                        el_base,
-                        r_base,
-                        dist2_base,
-                        x_base,
-                        npt,
-                        findptsData);
+  if (npt) {
+    findpts_local(code_base, el_base, r_base, dist2_base, x_base, npt, findptsData);
   }
   /* send unfound and border points to global hash cells */
   {
     int index;
-    int *code=code_base, *proc=proc_base;
+    int *code = code_base, *proc = proc_base;
     const double *xp[D];
     struct srcPt_t *pt;
 
-    for(int d=0;d<D;++d) {
-      xp[d]=x_base[d];
+    for (int d = 0; d < D; ++d) {
+      xp[d] = x_base[d];
     }
     array_init(struct srcPt_t, &hash_pt, npt);
-    pt = (struct srcPt_t*) hash_pt.ptr;
+    pt = (struct srcPt_t *)hash_pt.ptr;
 
     double x[D];
 
-    for(index=0;index<npt;++index) {
-      for(int d=0;d<D;++d) {
-        x[d]=*xp[d];
+    for (index = 0; index < npt; ++index) {
+      for (int d = 0; d < D; ++d) {
+        x[d] = *xp[d];
       }
       *proc = id;
-      if(*code!=CODE_INTERNAL) {
+      if (*code != CODE_INTERNAL) {
         const int hi = hash_index_3(&hash, x);
-        for(int d=0;d<D;++d) {
-          pt->x[d]=x[d];
+        for (int d = 0; d < D; ++d) {
+          pt->x[d] = x[d];
         }
-        pt->index=index;
-        pt->proc=hi%np;
+        pt->index = index;
+        pt->proc = hi % np;
         ++pt;
       }
-      for(int d=0;d<D;++d){
+      for (int d = 0; d < D; ++d) {
         xp[d]++;
       }
       code++;
@@ -106,24 +100,26 @@ void findpts_impl(int *const code_base,
   /* look up points in hash cells, route to possible procs */
   {
     const unsigned int *const hash_offset = hash.offset;
-    int count=0, *proc, *proc_p;
-    const struct srcPt_t *p = (struct srcPt_t*) hash_pt.ptr, *const pe = p + hash_pt.n;
+    int count = 0, *proc, *proc_p;
+    const struct srcPt_t *p = (struct srcPt_t *)hash_pt.ptr, *const pe = p + hash_pt.n;
     struct srcPt_t *q;
-    for(;p!=pe;++p) {
+    for (; p != pe; ++p) {
       const int hi = hash_index_3(&hash, p->x) / np;
-      const int i = hash_offset[hi], ie = hash_offset[hi+1];
-      count += ie-i;
+      const int i = hash_offset[hi], ie = hash_offset[hi + 1];
+      count += ie - i;
     }
-    proc = tmalloc(int,count);
+    proc = tmalloc(int, count);
     proc_p = proc;
-    array_init(struct srcPt_t, &srcPt_t, count), q = (struct srcPt_t*) srcPt_t.ptr;
-    p = (struct srcPt_t *) hash_pt.ptr;
-    for(;p!=pe;++p) {
+    array_init(struct srcPt_t, &srcPt_t, count), q = (struct srcPt_t *)srcPt_t.ptr;
+    p = (struct srcPt_t *)hash_pt.ptr;
+    for (; p != pe; ++p) {
       const int hi = hash_index_3(&hash, p->x) / np;
-      int i = hash_offset[hi]; const int ie = hash_offset[hi+1];
-      for(;i!=ie;++i) {
+      int i = hash_offset[hi];
+      const int ie = hash_offset[hi + 1];
+      for (; i != ie; ++i) {
         const int pp = hash_offset[i];
-        if(pp==p->proc) continue; /* don't send back to source proc */
+        if (pp == p->proc)
+          continue; /* don't send back to source proc */
         *proc_p++ = pp;
         *q++ = *p;
       }
@@ -133,7 +129,7 @@ void findpts_impl(int *const code_base,
 #ifdef DIAGNOSTICS
     printf("(proc %u) hashed; routing %u/%u\n", id, (int)srcPt_t.n, count);
 #endif
-    sarray_transfer_ext(struct srcPt_t, &srcPt_t, reinterpret_cast<unsigned int*>(proc), sizeof(int), &cr);
+    sarray_transfer_ext(struct srcPt_t, &srcPt_t, reinterpret_cast<unsigned int *>(proc), sizeof(int), &cr);
     free(proc);
   }
   /* look for other procs' points, send back */
@@ -143,20 +139,20 @@ void findpts_impl(int *const code_base,
     struct outPt_t *opt;
     array_init(struct outPt_t, &outPt_t, n);
     outPt_t.n = n;
-    spt = (struct srcPt_t*) srcPt_t.ptr;
-    opt = (struct outPt_t*) outPt_t.ptr;
-    for(;n;--n,++spt,++opt) {
-      opt->index=spt->index;
-      opt->proc=spt->proc;
+    spt = (struct srcPt_t *)srcPt_t.ptr;
+    opt = (struct outPt_t *)outPt_t.ptr;
+    for (; n; --n, ++spt, ++opt) {
+      opt->index = spt->index;
+      opt->proc = spt->proc;
     }
-    spt = (struct srcPt_t*) srcPt_t.ptr;
-    opt = (struct outPt_t*) outPt_t.ptr;
+    spt = (struct srcPt_t *)srcPt_t.ptr;
+    opt = (struct outPt_t *)outPt_t.ptr;
     if (srcPt_t.n) {
 
       // result buffers
       std::vector<int> codeArr(srcPt_t.n, 0);
       std::vector<int> elArr(srcPt_t.n, 0);
-      std::vector<double> rArr(3*srcPt_t.n, 0.0);
+      std::vector<double> rArr(3 * srcPt_t.n, 0.0);
       std::vector<double> dist2Arr(srcPt_t.n, 0.0);
 
       std::vector<double> x0(srcPt_t.n, 0.0);
@@ -164,29 +160,29 @@ void findpts_impl(int *const code_base,
       std::vector<double> x2(srcPt_t.n, 0.0);
 
       // pack position data into arrays
-      double* spt_x_base[3] = {x0.data(), x1.data(), x2.data()};
+      double *spt_x_base[3] = {x0.data(), x1.data(), x2.data()};
 
-      for(int point = 0; point < srcPt_t.n; ++point){
-        for(int d = 0; d < 3; ++d){
-            spt_x_base[d][point] = spt[point].x[d];
+      for (int point = 0; point < srcPt_t.n; ++point) {
+        for (int d = 0; d < 3; ++d) {
+          spt_x_base[d][point] = spt[point].x[d];
         }
       }
 
       findpts_local(codeArr.data(),
-                          elArr.data(),
-                          rArr.data(),
-                          dist2Arr.data(),
-                          spt_x_base,
-                          srcPt_t.n,
-                          findptsData);
+                    elArr.data(),
+                    rArr.data(),
+                    dist2Arr.data(),
+                    spt_x_base,
+                    srcPt_t.n,
+                    findptsData);
 
       // unpack arrays into opt
-      for(int point = 0; point < srcPt_t.n; point++){
+      for (int point = 0; point < srcPt_t.n; point++) {
         opt[point].code = codeArr[point];
         opt[point].el = elArr[point];
         opt[point].dist2 = dist2Arr[point];
-        for(int d = 0; d < D; ++d){
-          opt[point].r[d] = rArr[3*point + d];
+        for (int d = 0; d < D; ++d) {
+          opt[point].r[d] = rArr[3 * point + d];
         }
       }
     }
@@ -205,15 +201,15 @@ void findpts_impl(int *const code_base,
   /* merge remote results with user data */
   {
     int n = outPt_t.n;
-    struct outPt_t *opt = (struct outPt_t*) outPt_t.ptr;
+    struct outPt_t *opt = (struct outPt_t *)outPt_t.ptr;
     for (; n; --n, ++opt) {
       const int index = opt->index;
-      if(code_base[index]==CODE_INTERNAL) continue;
-      if(code_base[index]==CODE_NOT_FOUND
-         || opt->code==CODE_INTERNAL
-         || opt->dist2<dist2_base[index]) {
-        for(int d=0;d<D;++d) {
-          r_base[3*index + d]=opt->r[d];
+      if (code_base[index] == CODE_INTERNAL)
+        continue;
+      if (code_base[index] == CODE_NOT_FOUND || opt->code == CODE_INTERNAL ||
+          opt->dist2 < dist2_base[index]) {
+        for (int d = 0; d < D; ++d) {
+          r_base[3 * index + d] = opt->r[d];
         }
         dist2_base[index] = opt->dist2;
         proc_base[index] = opt->proc;
@@ -225,39 +221,39 @@ void findpts_impl(int *const code_base,
   }
 }
 
-template<typename OutputType>
+template <typename OutputType>
 void findpts_eval_impl(double *const out_base,
-                        const int *const code_base,
-                        const int *const proc_base,
-                        const int *const el_base,
-                        const double *const r_base,
-                        const int npt,
-                        const int nFields,
-                        const int inputOffset,
-                        const int outputOffset,
-                        const void *const in,
-  //                      gslibFindptsData_t *const fd,
-  hashData_t& hash,
-  crystal & cr,
-                        const void *const findptsData)
+                       const int *const code_base,
+                       const int *const proc_base,
+                       const int *const el_base,
+                       const double *const r_base,
+                       const int npt,
+                       const int nFields,
+                       const int inputOffset,
+                       const int outputOffset,
+                       const void *const in,
+                       //                      gslibFindptsData_t *const fd,
+                       hashData_t &hash,
+                       crystal &cr,
+                       const void *const findptsData)
 {
   struct array src, outpt;
   /* copy user data, weed out unfound points, send out */
   {
     int index;
-    const int *code=code_base, *proc=proc_base, *el=el_base;
-    const double *r=r_base;
+    const int *code = code_base, *proc = proc_base, *el = el_base;
+    const double *r = r_base;
     evalSrcPt_t *pt;
     array_init(evalSrcPt_t, &src, npt);
-    pt = (evalSrcPt_t*)src.ptr;
-    for(index=0;index<npt;++index) {
-      if(*code!=CODE_NOT_FOUND) {
-        for(int d=0;d<D;++d) {
-          pt->r[d]=r[d];
+    pt = (evalSrcPt_t *)src.ptr;
+    for (index = 0; index < npt; ++index) {
+      if (*code != CODE_NOT_FOUND) {
+        for (int d = 0; d < D; ++d) {
+          pt->r[d] = r[d];
         }
-        pt->index=index;
-        pt->proc=*proc;
-        pt->el=*el;
+        pt->index = index;
+        pt->proc = *proc;
+        pt->el = *el;
         ++pt;
       }
       r += D;
@@ -270,32 +266,32 @@ void findpts_eval_impl(double *const out_base,
   }
   /* evaluate points, send back */
   {
-    int n=src.n;
+    int n = src.n;
     const evalSrcPt_t *spt;
     OutputType *opt;
     /* group points by element */
     sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &cr.data);
     array_init(OutputType, &outpt, n);
     outpt.n = n;
-    spt=(evalSrcPt_t*)src.ptr;
-    opt=(OutputType*) outpt.ptr;
+    spt = (evalSrcPt_t *)src.ptr;
+    opt = (OutputType *)outpt.ptr;
     findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, in, findptsData);
-    spt=(evalSrcPt_t*)src.ptr;
-    opt=(OutputType*)outpt.ptr;
-    for(;n;--n,++spt,++opt) {
-      opt->index=spt->index;
-      opt->proc=spt->proc;
+    spt = (evalSrcPt_t *)src.ptr;
+    opt = (OutputType *)outpt.ptr;
+    for (; n; --n, ++spt, ++opt) {
+      opt->index = spt->index;
+      opt->proc = spt->proc;
     }
     array_free(&src);
     sarray_transfer(OutputType, &outpt, proc, 1, &cr);
   }
   /* copy results to user data */
   {
-    int n=outpt.n;
-    OutputType *opt = (OutputType*) outpt.ptr;
-    for(;n;--n,++opt) {
-      for(int field = 0; field < nFields; ++field){
-        out_base[opt->index + field * npt]=opt->out[field];
+    int n = outpt.n;
+    OutputType *opt = (OutputType *)outpt.ptr;
+    for (; n; --n, ++opt) {
+      for (int field = 0; field < nFields; ++field) {
+        out_base[opt->index + field * npt] = opt->out[field];
       }
     }
     array_free(&outpt);
@@ -303,29 +299,31 @@ void findpts_eval_impl(double *const out_base,
 }
 
 // explicit instantiation
-template
-void findpts_eval_impl<evalOutPt_t<1>>(
-        double *const  out_base,
-  const int   *const code_base,
-  const int   *const proc_base,
-  const int   *const   el_base,
-  const double *const    r_base,
-  const int npt, const int nFields, const int inputOffset, const int outputOffset,
-  const void *const in,
-  //gslibFindptsData_t *const fd,
-  hashData_t& hash,
-  crystal & cr,
-  const void *const findptsData);
-template
-void findpts_eval_impl<evalOutPt_t<3>>(
-        double *const  out_base,
-  const int   *const code_base,
-  const int   *const proc_base,
-  const int   *const   el_base,
-  const double *const    r_base,
-  const int npt, const int nFields, const int inputOffset, const int outputOffset,
-  const void *const in,
-  //gslibFindptsData_t *const fd,
-  hashData_t& hash,
-  crystal & cr,
-  const void *const findptsData);
+template void findpts_eval_impl<evalOutPt_t<1>>(double *const out_base,
+                                                const int *const code_base,
+                                                const int *const proc_base,
+                                                const int *const el_base,
+                                                const double *const r_base,
+                                                const int npt,
+                                                const int nFields,
+                                                const int inputOffset,
+                                                const int outputOffset,
+                                                const void *const in,
+                                                // gslibFindptsData_t *const fd,
+                                                hashData_t &hash,
+                                                crystal &cr,
+                                                const void *const findptsData);
+template void findpts_eval_impl<evalOutPt_t<3>>(double *const out_base,
+                                                const int *const code_base,
+                                                const int *const proc_base,
+                                                const int *const el_base,
+                                                const double *const r_base,
+                                                const int npt,
+                                                const int nFields,
+                                                const int inputOffset,
+                                                const int outputOffset,
+                                                const void *const in,
+                                                // gslibFindptsData_t *const fd,
+                                                hashData_t &hash,
+                                                crystal &cr,
+                                                const void *const findptsData);

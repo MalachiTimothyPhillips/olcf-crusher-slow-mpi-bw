@@ -8,17 +8,17 @@
 #include <tuple>
 #include <vector>
 
-//class gslibFindptsData_t;
+// class gslibFindptsData_t;
 
 struct crystal;
 struct hashData_t;
 
 struct findpts_t {
   int D;
-  //gslibFindptsData_t *findpts_data;
+  // gslibFindptsData_t *findpts_data;
   dfloat tol;
-  crystal* cr;
-  hashData_t* hash;
+  crystal *cr;
+  hashData_t *hash;
   occa::device device;
   occa::kernel local_eval_kernel;
   occa::kernel local_eval_many_kernel;
@@ -45,7 +45,6 @@ struct findpts_t {
   dfloat hashMin[3];
   dfloat hashFac[3];
   dlong hash_n;
-
 };
 
 struct findpts_data_t {
@@ -61,14 +60,14 @@ struct findpts_data_t {
   dfloat *r_base;
   dfloat *dist2_base;
 
-  findpts_data_t(){}
+  findpts_data_t() {}
 
   findpts_data_t(int npt)
   {
     code = std::vector<dlong>(npt, 0);
     proc = std::vector<dlong>(npt, 0);
     el = std::vector<dlong>(npt, 0);
-    r = std::vector<dfloat>(3*npt, 0);
+    r = std::vector<dfloat>(3 * npt, 0);
     dist2 = std::vector<dfloat>(npt, 0);
 
     code_base = code.data();
@@ -82,65 +81,59 @@ struct findpts_data_t {
       code_base[i] = 2;
     }
   }
-
 };
 
-findpts_t *findptsSetup(
-  MPI_Comm comm,
-  const dfloat* const x,
-  const dfloat* const y,
-  const dfloat* const z,
-  const dlong Nq,
-  const dlong Nelements,
-  const dlong m,
-  const dfloat bbox_tol,
-  const hlong local_hash_size, const hlong global_hash_size,
-  const dlong npt_max, const dfloat newt_tol,
-  occa::device &device);
+findpts_t *findptsSetup(MPI_Comm comm,
+                        const dfloat *const x,
+                        const dfloat *const y,
+                        const dfloat *const z,
+                        const dlong Nq,
+                        const dlong Nelements,
+                        const dlong m,
+                        const dfloat bbox_tol,
+                        const hlong local_hash_size,
+                        const hlong global_hash_size,
+                        const dlong npt_max,
+                        const dfloat newt_tol,
+                        occa::device &device);
 void findptsFree(findpts_t *fd);
-void findpts(findpts_data_t *findPtsData,
-                const dfloat *const x_base[],
-                const dlong npt,
-                findpts_t *const fd);
+void findpts(findpts_data_t *findPtsData, const dfloat *const x_base[], const dlong npt, findpts_t *const fd);
 
 void findptsEval(const dlong npt,
-  occa::memory o_in,
-  findpts_t* fd,
-  findpts_data_t* findPtsData,
- 
-  dfloat * out_base);
+                 occa::memory o_in,
+                 findpts_t *fd,
+                 findpts_data_t *findPtsData,
+
+                 dfloat *out_base);
 void findptsEval(const dlong npt,
-  const dlong nFields,
-  const dlong inputOffset,
-  const dlong outputOffset,
-  occa::memory o_in,
-  findpts_t* fd,
-  findpts_data_t* findPtsData,
-  dfloat * out_base);
+                 const dlong nFields,
+                 const dlong inputOffset,
+                 const dlong outputOffset,
+                 occa::memory o_in,
+                 findpts_t *fd,
+                 findpts_data_t *findPtsData,
+                 dfloat *out_base);
 
-void findptsLocalEval(
-  const dlong npt,
-  occa::memory o_in,
-  occa::memory o_el,
-  occa::memory o_r,
-  findpts_t * fd,
-  occa::memory o_out);
+void findptsLocalEval(const dlong npt,
+                      occa::memory o_in,
+                      occa::memory o_el,
+                      occa::memory o_r,
+                      findpts_t *fd,
+                      occa::memory o_out);
 
-void findptsLocalEval(
-  const dlong npt,
-  const dlong nFields,
-  const dlong inputOffset,
-  const dlong outputOffset,
-  occa::memory o_in,
-  occa::memory o_el,
-  occa::memory o_r,
-  findpts_t * fd,
-  occa::memory o_out);
+void findptsLocalEval(const dlong npt,
+                      const dlong nFields,
+                      const dlong inputOffset,
+                      const dlong outputOffset,
+                      occa::memory o_in,
+                      occa::memory o_el,
+                      occa::memory o_r,
+                      findpts_t *fd,
+                      occa::memory o_out);
 
 struct crystal;
-crystal* crystalRouter(findpts_t *const fd);
+crystal *crystalRouter(findpts_t *const fd);
 
-std::vector<occa::kernel> initFindptsKernels(
-      MPI_Comm comm, occa::device device, dlong D, dlong Nq);
+std::vector<occa::kernel> initFindptsKernels(MPI_Comm comm, occa::device device, dlong D, dlong Nq);
 
 #endif
