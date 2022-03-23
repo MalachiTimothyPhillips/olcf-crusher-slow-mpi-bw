@@ -3,6 +3,7 @@
 
 #include "findptsTypes.h"
 
+#if 0 
 void findpts_local(int *const code_base,
                    int *const el_base,
                    double *const r_base,
@@ -35,5 +36,6 @@ void findpts_eval_impl(double *const out_base,
                        hashData_t &hash,
                        crystal &cr,
                        const void *const findptsData);
+#endif
 
 #endif

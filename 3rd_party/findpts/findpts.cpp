@@ -31,7 +31,300 @@ SOFTWARE.
 #include "legacyFindptsSetup.h"
 #include "gslib.h"
 #include "findptsTypes.h"
-#include "findptsImpl.hpp"
+//#include "findptsImpl.hpp"
+
+#define D 3
+
+#define CODE_INTERNAL 0
+#define CODE_BORDER 1
+#define CODE_NOT_FOUND 2
+
+namespace{
+static occa::memory o_scratch;
+static occa::memory h_out;
+static occa::memory h_r;
+static occa::memory h_el;
+static dfloat *out;
+static dfloat *r;
+static dlong *el;
+
+// findpts, do not allocate pinned memory
+static void realloc_scratch(occa::device &device, dlong Nbytes)
+{
+  if (o_scratch.size())
+    o_scratch.free();
+  {
+    void *buffer = std::calloc(Nbytes, 1);
+    o_scratch = device.malloc(Nbytes, buffer);
+    std::free(buffer);
+  }
+}
+
+// findpts_eval
+static void realloc_scratch(occa::device &device, dlong pn, dlong nFields)
+{
+
+  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
+
+  if (h_out.size())
+    h_out.free();
+  if (h_r.size())
+    h_r.free();
+  if (h_el.size())
+    h_el.free();
+
+  if (Nbytes > o_scratch.size()) {
+    if (o_scratch.size())
+      o_scratch.free();
+    void *buffer = std::calloc(Nbytes, 1);
+    o_scratch = device.malloc(Nbytes, buffer);
+    std::free(buffer);
+  }
+
+  occa::properties props;
+  props["host"] = true;
+
+  {
+    void *buffer = std::calloc(nFields * pn * sizeof(dfloat), 1);
+    h_out = device.malloc(nFields * pn * sizeof(dfloat), buffer, props);
+    out = (dfloat *)h_out.ptr();
+    std::free(buffer);
+  }
+
+  {
+    void *buffer = std::calloc(3 * pn * sizeof(dfloat), 1);
+    h_r = device.malloc(3 * pn * sizeof(dfloat), buffer, props);
+    r = (dfloat *)h_r.ptr();
+    std::free(buffer);
+  }
+
+  {
+    void *buffer = std::calloc(pn * sizeof(dlong), 1);
+    h_el = device.malloc(pn * sizeof(dlong), buffer, props);
+    el = (dlong *)h_el.ptr();
+    std::free(buffer);
+  }
+}
+// Can't use pinned memory for D->H transfer without
+// doing H->H transfer to input arrays
+void findpts_local(int *const code_base,
+                   int *const el_base,
+                   double *const r_base,
+                   double *const dist2_base,
+                   const double *const x_base[3],
+                   const int pn,
+                   const void *const findptsData_void)
+{
+  if (pn == 0)
+    return;
+
+  findpts_t *findptsData = (findpts_t *)findptsData_void;
+  occa::device &device = findptsData->device;
+
+  dlong worksize = 2 * sizeof(dlong) + 7 * sizeof(dfloat);
+  dlong alloc_size = worksize * pn + 3 * (sizeof(dfloat *) + sizeof(dlong));
+  alloc_size += 3 * (sizeof(dfloat *));
+  alloc_size += 6 * sizeof(dfloat);
+  if (alloc_size > o_scratch.size()) {
+    realloc_scratch(device, alloc_size);
+  }
+
+  dlong byteOffset = 0;
+
+  occa::memory o_code_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dlong) * pn;
+  occa::memory o_el_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dlong) * pn;
+  occa::memory o_r_base = o_scratch + byteOffset;
+  byteOffset += 3 * sizeof(dfloat) * pn;
+  occa::memory o_dist2_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dfloat) * pn;
+  occa::memory o_x_base = o_scratch + byteOffset;
+  byteOffset += 3 * sizeof(dfloat *);
+  occa::memory o_x0_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dfloat) * pn;
+  occa::memory o_x1_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dfloat) * pn;
+  occa::memory o_x2_base = o_scratch + byteOffset;
+  byteOffset += sizeof(dfloat) * pn;
+  occa::memory o_wtend = o_scratch + byteOffset;
+  byteOffset += 3 * sizeof(dfloat *);
+  occa::memory o_hashMin = o_scratch + byteOffset;
+  byteOffset += 3 * sizeof(dfloat);
+  occa::memory o_hashFac = o_scratch + byteOffset;
+  byteOffset += 3 * sizeof(dfloat);
+
+  o_hashMin.copyFrom(findptsData->hashMin, 3 * sizeof(dfloat));
+  o_hashFac.copyFrom(findptsData->hashFac, 3 * sizeof(dfloat));
+
+  dfloat *x_base_d[3] = {(double *)o_x0_base.ptr(), (double *)o_x1_base.ptr(), (double *)o_x2_base.ptr()};
+  o_x_base.copyFrom(x_base_d, 3 * sizeof(dfloat *));
+  o_x0_base.copyFrom(x_base[0], sizeof(dfloat) * pn);
+  o_x1_base.copyFrom(x_base[1], sizeof(dfloat) * pn);
+  o_x2_base.copyFrom(x_base[2], sizeof(dfloat) * pn);
+
+  dfloat *wtend_d[3] = {(double *)findptsData->o_wtend_x.ptr(),
+                        (double *)findptsData->o_wtend_y.ptr(),
+                        (double *)findptsData->o_wtend_z.ptr()};
+  o_wtend.copyFrom(wtend_d, 3 * sizeof(dfloat *));
+
+  findptsData->local_kernel(o_code_base,
+                            o_el_base,
+                            o_r_base,
+                            o_dist2_base,
+                            o_x_base,
+                            pn,
+                            findptsData->o_x,
+                            findptsData->o_y,
+                            findptsData->o_z,
+                            o_wtend,
+                            findptsData->o_c,
+                            findptsData->o_A,
+                            findptsData->o_min,
+                            findptsData->o_max,
+                            findptsData->hash_n,
+                            o_hashMin,
+                            o_hashFac,
+                            findptsData->o_offset,
+                            findptsData->tol);
+
+  o_code_base.copyTo(code_base, sizeof(dlong) * pn);
+  o_el_base.copyTo(el_base, sizeof(dlong) * pn);
+  o_r_base.copyTo(r_base, 3 * sizeof(dfloat) * pn);
+  o_dist2_base.copyTo(dist2_base, sizeof(dfloat) * pn);
+}
+
+template <typename OutputType = evalOutPt_t<1>>
+void findpts_local_eval_internal(OutputType *opt,
+                                 const evalSrcPt_t *spt,
+                                 const int pn,
+                                 const int nFields,
+                                 const int inputOffset,
+                                 const int outputOffset,
+                                 const void *const in,
+                                 const void *const findptsData_void)
+{
+  if (pn == 0)
+    return;
+
+  findpts_t *findptsData = (findpts_t *)findptsData_void;
+  occa::device &device = findptsData->device;
+  occa::memory o_in = *(occa::memory *)in;
+
+  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
+  if (Nbytes > o_scratch.size() || h_out.size() == 0) {
+    realloc_scratch(device, pn, nFields);
+  }
+
+  dlong byteOffset = 0;
+
+  auto o_out = o_scratch;
+  byteOffset += nFields * pn * sizeof(dfloat);
+
+  auto o_r = o_scratch + byteOffset;
+  byteOffset += 3 * pn * sizeof(dfloat);
+
+  auto o_el = o_scratch + byteOffset;
+  byteOffset += pn * sizeof(dlong);
+
+  // pack host buffers
+  for (int point = 0; point < pn; ++point) {
+    for (int component = 0; component < 3; ++component) {
+      r[3 * point + component] = spt[point].r[component];
+    }
+    el[point] = spt[point].el;
+  }
+
+  o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
+  o_el.copyFrom(el, pn * sizeof(dlong));
+
+  findptsData->local_eval_kernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
+
+  o_out.copyTo(out, nFields * pn * sizeof(dfloat));
+
+  // unpack buffer
+  for (int point = 0; point < pn; ++point) {
+    for (int field = 0; field < nFields; ++field) {
+      opt[point].out[field] = out[point + field * pn];
+    }
+  }
+}
+template <typename OutputType = evalOutPt_t<1>>
+void findpts_eval_impl(double *const out_base,
+                       const int *const code_base,
+                       const int *const proc_base,
+                       const int *const el_base,
+                       const double *const r_base,
+                       const int npt,
+                       const int nFields,
+                       const int inputOffset,
+                       const int outputOffset,
+                       const void *const in,
+                       hashData_t &hash,
+                       crystal &cr,
+                       const void *const findptsData)
+{
+  struct array src, outpt;
+  /* copy user data, weed out unfound points, send out */
+  {
+    int index;
+    const int *code = code_base, *proc = proc_base, *el = el_base;
+    const double *r = r_base;
+    evalSrcPt_t *pt;
+    array_init(evalSrcPt_t, &src, npt);
+    pt = (evalSrcPt_t *)src.ptr;
+    for (index = 0; index < npt; ++index) {
+      if (*code != CODE_NOT_FOUND) {
+        for (int d = 0; d < D; ++d) {
+          pt->r[d] = r[d];
+        }
+        pt->index = index;
+        pt->proc = *proc;
+        pt->el = *el;
+        ++pt;
+      }
+      r += D;
+      code++;
+      proc++;
+      el++;
+    }
+    src.n = pt - (evalSrcPt_t *)src.ptr;
+    sarray_transfer(evalSrcPt_t, &src, proc, 1, &cr);
+  }
+  /* evaluate points, send back */
+  {
+    int n = src.n;
+    const evalSrcPt_t *spt;
+    OutputType *opt;
+    /* group points by element */
+    sarray_sort(evalSrcPt_t, src.ptr, n, el, 0, &cr.data);
+    array_init(OutputType, &outpt, n);
+    outpt.n = n;
+    spt = (evalSrcPt_t *)src.ptr;
+    opt = (OutputType *)outpt.ptr;
+    findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, in, findptsData);
+    spt = (evalSrcPt_t *)src.ptr;
+    opt = (OutputType *)outpt.ptr;
+    for (; n; --n, ++spt, ++opt) {
+      opt->index = spt->index;
+      opt->proc = spt->proc;
+    }
+    array_free(&src);
+    sarray_transfer(OutputType, &outpt, proc, 1, &cr);
+  }
+  /* copy results to user data */
+  {
+    int n = outpt.n;
+    OutputType *opt = (OutputType *)outpt.ptr;
+    for (; n; --n, ++opt) {
+      for (int field = 0; field < nFields; ++field) {
+        out_base[opt->index + field * npt] = opt->out[field];
+      }
+    }
+    array_free(&outpt);
+  }
+}
+}
 
 extern "C" {
 uint findpts_local_hash_opt_size_3(struct findpts_local_hash_data_3 *p,
@@ -80,7 +373,6 @@ findpts_t *findptsSetup(MPI_Comm comm,
                                          newt_tol);
 
   findpts_t *handle = new findpts_t();
-  handle->D = 3;
   handle->tol = findpts_data->local.tol;
   handle->hash = &findpts_data->hash;
   handle->cr = &findpts_data->cr;
@@ -168,12 +460,6 @@ void findptsFree(findpts_t *fd)
   fd->local_kernel = occa::kernel();
   delete fd;
 }
-
-#define D 3
-
-#define CODE_INTERNAL 0
-#define CODE_BORDER 1
-#define CODE_NOT_FOUND 2
 
 static slong lfloor(double x) { return floor(x); }
 static slong lceil(double x) { return ceil(x); }
