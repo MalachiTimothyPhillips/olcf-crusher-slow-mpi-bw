@@ -207,18 +207,6 @@ void findpts(findpts_data_t *const findPtsData,
              const dlong npt,
              findpts_t *const fd)
 {
-#if 0
-  findpts_impl(findPtsData->code_base,
-               findPtsData->proc_base,
-               findPtsData->el_base,
-               findPtsData->r_base,
-               findPtsData->dist2_base,
-               x_base,
-               npt,
-               *fd->hash,
-               *fd->cr,
-               fd);
-#else
   int *const code_base = findPtsData->code_base;
   int *const proc_base = findPtsData->proc_base;
   int *const el_base = findPtsData->el_base;
@@ -393,7 +381,6 @@ void findpts(findpts_data_t *const findPtsData,
     }
     array_free(&outPt_t);
   }
-#endif
 }
 
 void findptsEval(const dlong npt,

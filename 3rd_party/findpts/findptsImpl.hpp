@@ -10,16 +10,6 @@ void findpts_local(int *const code_base,
                    const double *const x_base[3],
                    const int npt,
                    const void *const findptsData);
-void findpts_impl(int *const code_base,
-                  int *const proc_base,
-                  int *const el_base,
-                  double *const r_base,
-                  double *const dist2_base,
-                  const double *const x_base[3],
-                  const int npt,
-                  hashData_t &hash,
-                  crystal &cr,
-                  const void *const findptsData);
 
 template <typename OutputType = evalOutPt_t<1>>
 void findpts_local_eval_internal(OutputType *opt,
