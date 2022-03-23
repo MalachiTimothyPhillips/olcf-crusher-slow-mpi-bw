@@ -104,11 +104,11 @@ static void realloc_scratch(occa::device &device, dlong pn, dlong nFields)
     std::free(buffer);
   }
 }
-void findpts_local(int *const code_base,
-                   int *const el_base,
-                   double *const r_base,
-                   double *const dist2_base,
-                   const double *const x_base[3],
+void findpts_local(int *const code,
+                   int *const el,
+                   double *const r,
+                   double *const dist2,
+                   const double *const x[3],
                    const int pn,
                    findpts_t* findptsData)
 {
@@ -127,21 +127,21 @@ void findpts_local(int *const code_base,
 
   dlong byteOffset = 0;
 
-  occa::memory o_code_base = o_scratch + byteOffset;
+  occa::memory o_code = o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
-  occa::memory o_el_base = o_scratch + byteOffset;
+  occa::memory o_el = o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
-  occa::memory o_r_base = o_scratch + byteOffset;
+  occa::memory o_r = o_scratch + byteOffset;
   byteOffset += 3 * sizeof(dfloat) * pn;
-  occa::memory o_dist2_base = o_scratch + byteOffset;
+  occa::memory o_dist2 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
-  occa::memory o_x_base = o_scratch + byteOffset;
+  occa::memory o_x = o_scratch + byteOffset;
   byteOffset += 3 * sizeof(dfloat *);
-  occa::memory o_x0_base = o_scratch + byteOffset;
+  occa::memory o_x0 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
-  occa::memory o_x1_base = o_scratch + byteOffset;
+  occa::memory o_x1 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
-  occa::memory o_x2_base = o_scratch + byteOffset;
+  occa::memory o_x2 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
   occa::memory o_wtend = o_scratch + byteOffset;
   byteOffset += 3 * sizeof(dfloat *);
@@ -153,22 +153,22 @@ void findpts_local(int *const code_base,
   o_hashMin.copyFrom(findptsData->hashMin, 3 * sizeof(dfloat));
   o_hashFac.copyFrom(findptsData->hashFac, 3 * sizeof(dfloat));
 
-  dfloat *x_base_d[3] = {(double *)o_x0_base.ptr(), (double *)o_x1_base.ptr(), (double *)o_x2_base.ptr()};
-  o_x_base.copyFrom(x_base_d, 3 * sizeof(dfloat *));
-  o_x0_base.copyFrom(x_base[0], sizeof(dfloat) * pn);
-  o_x1_base.copyFrom(x_base[1], sizeof(dfloat) * pn);
-  o_x2_base.copyFrom(x_base[2], sizeof(dfloat) * pn);
+  dfloat *x_d[3] = {(double *)o_x0.ptr(), (double *)o_x1.ptr(), (double *)o_x2.ptr()};
+  o_x.copyFrom(x_d, 3 * sizeof(dfloat *));
+  o_x0.copyFrom(x[0], sizeof(dfloat) * pn);
+  o_x1.copyFrom(x[1], sizeof(dfloat) * pn);
+  o_x2.copyFrom(x[2], sizeof(dfloat) * pn);
 
   dfloat *wtend_d[3] = {(double *)findptsData->o_wtend_x.ptr(),
                         (double *)findptsData->o_wtend_y.ptr(),
                         (double *)findptsData->o_wtend_z.ptr()};
   o_wtend.copyFrom(wtend_d, 3 * sizeof(dfloat *));
 
-  findptsData->local_kernel(o_code_base,
-                            o_el_base,
-                            o_r_base,
-                            o_dist2_base,
-                            o_x_base,
+  findptsData->local_kernel(o_code,
+                            o_el,
+                            o_r,
+                            o_dist2,
+                            o_x,
                             pn,
                             findptsData->o_x,
                             findptsData->o_y,
@@ -184,10 +184,10 @@ void findpts_local(int *const code_base,
                             findptsData->o_offset,
                             findptsData->tol);
 
-  o_code_base.copyTo(code_base, sizeof(dlong) * pn);
-  o_el_base.copyTo(el_base, sizeof(dlong) * pn);
-  o_r_base.copyTo(r_base, 3 * sizeof(dfloat) * pn);
-  o_dist2_base.copyTo(dist2_base, sizeof(dfloat) * pn);
+  o_code.copyTo(code, sizeof(dlong) * pn);
+  o_el.copyTo(el, sizeof(dlong) * pn);
+  o_r.copyTo(r, 3 * sizeof(dfloat) * pn);
+  o_dist2.copyTo(dist2, sizeof(dfloat) * pn);
 }
 
 template <typename OutputType = evalOutPt_t<1>>
