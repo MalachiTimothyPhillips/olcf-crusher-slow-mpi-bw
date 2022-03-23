@@ -11,17 +11,17 @@
 // needed for accessing hash data structure
 #include "findptsTypes.h"
 
-/* UDF Functions */                                                      
+/* UDF Functions */
 static int nParticles;
 static lpm_t *particles;
 
 occa::kernel applyPeriodicityKernel;
 
-enum class BENCHMARK{
-  ALL, // mode 0
-  FINDPTS_LOCAL, // mode 1
+enum class BENCHMARK {
+  ALL,                // mode 0
+  FINDPTS_LOCAL,      // mode 1
   FINDPTS_LOCAL_EVAL, // mode 2
-  PARTICLE_UPDATE, // mode 3
+  PARTICLE_UPDATE,    // mode 3
   INVALID,
 };
 
@@ -29,25 +29,25 @@ BENCHMARK benchmarkMode;
 
 BENCHMARK ciModeToBenchmark(dlong mode)
 {
-  if(mode == 0){
+  if (mode == 0) {
     return BENCHMARK::ALL;
   }
-  if(mode == 1){
+  if (mode == 1) {
     return BENCHMARK::FINDPTS_LOCAL;
   }
-  if(mode == 2){
+  if (mode == 2) {
     return BENCHMARK::FINDPTS_LOCAL_EVAL;
   }
-  if(mode == 3){
+  if (mode == 3) {
     return BENCHMARK::PARTICLE_UPDATE;
   }
 
   return BENCHMARK::INVALID;
 }
 
-
 /* Particle Functions */
-void particleInit(lpm_t& p) {
+void particleInit(lpm_t &p)
+{
 
   static hlong gcount = 0; // total # particles emitted
 
@@ -73,11 +73,11 @@ void particleInit(lpm_t& p) {
         dfloat dy = Ly * invNParticleDir;
         dfloat dz = Lz * invNParticleDir;
 
-        dfloat xp = dx*(ix+0.5);
-        dfloat yp = dy*(iy+0.5);
-        dfloat zp = dz*(iz+0.5);
+        dfloat xp = dx * (ix + 0.5);
+        dfloat yp = dy * (iy + 0.5);
+        dfloat zp = dz * (iz + 0.5);
 
-        if (gcount%mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
+        if (gcount % mpi_size == mpi_rank) { // Distribute particles in a round robin fashion
           particle_t particle;
 
           particle.x = xp;
@@ -93,14 +93,9 @@ void particleInit(lpm_t& p) {
 }
 
 // apply periodicity for particles on [0,1]^3
-void applyBounds(lpm_t& p) {
-  applyPeriodicityKernel(p.size(),
-    p.device_x(),
-    p.device_y(),
-    p.device_z());
-}
+void applyBounds(lpm_t &p) { applyPeriodicityKernel(p.size(), p.device_x(), p.device_y(), p.device_z()); }
 
-void UDF_LoadKernels(occa::properties& kernelInfo)
+void UDF_LoadKernels(occa::properties &kernelInfo)
 {
   applyPeriodicityKernel = oudfBuildKernel(kernelInfo, "applyPeriodicity");
 }
@@ -113,24 +108,21 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
   options.getArgs("CI-MODE", ciMode);
   benchmarkMode = ciModeToBenchmark(ciMode);
 
-  if(benchmarkMode == BENCHMARK::INVALID){
+  if (benchmarkMode == BENCHMARK::INVALID) {
     printf("Invalid benchmark mode specified!\n");
     ABORT(1);
   }
 }
 
-void UDF_Setup(nrs_t *nrs)
-{
-  particles = new lpm_t(nrs, 0);
-}
+void UDF_Setup(nrs_t *nrs) { particles = new lpm_t(nrs, 0); }
 
-double run_particle_update(nrs_t* nrs, lpm_t& particles, int Ntrials, std::array<dfloat, 3>& dt)
+double run_particle_update(nrs_t *nrs, lpm_t &particles, int Ntrials, std::array<dfloat, 3> &dt)
 {
   platform->device.finish();
   MPI_Barrier(platform->comm.mpiComm);
   const double start = MPI_Wtime();
 
-  for(int tstep = 1; tstep <= Ntrials; ++tstep){
+  for (int tstep = 1; tstep <= Ntrials; ++tstep) {
     particles.update(nrs->o_U, dt.data(), tstep);
     applyBounds(particles);
   }
@@ -140,7 +132,7 @@ double run_particle_update(nrs_t* nrs, lpm_t& particles, int Ntrials, std::array
   return (MPI_Wtime() - start) / Ntrials;
 }
 
-double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
+double run_findpts_local_bench(nrs_t *nrs, lpm_t &particles, int Ntrials)
 {
   const auto pn = particles.size();
 
@@ -148,7 +140,7 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   std::vector<dfloat> y(pn, 0.0);
   std::vector<dfloat> z(pn, 0.0);
 
-  for(int p = 0; p < particles.size(); ++p){
+  for (int p = 0; p < particles.size(); ++p) {
     x[p] = particles.x(p);
     y[p] = particles.y(p);
     z[p] = particles.z(p);
@@ -158,90 +150,90 @@ double run_findpts_local_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   auto findpts = particles.interp().ptr();
 
-  occa::memory  o_code_base = platform->device.malloc(  sizeof(dlong) *pn);
-  occa::memory    o_el_base = platform->device.malloc(  sizeof(dlong) *pn);
-  occa::memory     o_r_base = platform->device.malloc(3*sizeof(dfloat)*pn);
-  occa::memory o_dist2_base = platform->device.malloc(  sizeof(dfloat)*pn);
-  occa::memory     o_x_base = platform->device.malloc(3*sizeof(dfloat*));
-  occa::memory    o_x0_base = platform->device.malloc( sizeof(dfloat)*pn);
-  occa::memory    o_x1_base = platform->device.malloc( sizeof(dfloat)*pn);
-  occa::memory    o_x2_base = platform->device.malloc( sizeof(dfloat)*pn);
-  occa::memory    o_wtend   = platform->device.malloc(3*sizeof(dfloat*));
-  occa::memory    o_hashMin = platform->device.malloc(3*sizeof(dfloat));
-  occa::memory    o_hashFac = platform->device.malloc(3*sizeof(dfloat));
+  occa::memory o_code_base = platform->device.malloc(sizeof(dlong) * pn);
+  occa::memory o_el_base = platform->device.malloc(sizeof(dlong) * pn);
+  occa::memory o_r_base = platform->device.malloc(3 * sizeof(dfloat) * pn);
+  occa::memory o_dist2_base = platform->device.malloc(sizeof(dfloat) * pn);
+  occa::memory o_x_base = platform->device.malloc(3 * sizeof(dfloat *));
+  occa::memory o_x0_base = platform->device.malloc(sizeof(dfloat) * pn);
+  occa::memory o_x1_base = platform->device.malloc(sizeof(dfloat) * pn);
+  occa::memory o_x2_base = platform->device.malloc(sizeof(dfloat) * pn);
+  occa::memory o_wtend = platform->device.malloc(3 * sizeof(dfloat *));
+  occa::memory o_hashMin = platform->device.malloc(3 * sizeof(dfloat));
+  occa::memory o_hashFac = platform->device.malloc(3 * sizeof(dfloat));
 
   o_hashMin.copyFrom(findpts->hashMin, 3 * sizeof(dfloat));
   o_hashFac.copyFrom(findpts->hashFac, 3 * sizeof(dfloat));
 
+  dfloat *x_base_d[3] = {(double *)o_x0_base.ptr(), (double *)o_x1_base.ptr(), (double *)o_x2_base.ptr()};
+  o_x_base.copyFrom(x_base_d, 3 * sizeof(dfloat *));
+  o_x0_base.copyFrom(x.data(), sizeof(dfloat) * pn);
+  o_x1_base.copyFrom(y.data(), sizeof(dfloat) * pn);
+  o_x2_base.copyFrom(z.data(), sizeof(dfloat) * pn);
 
-  dfloat *x_base_d[3] = {(double*)o_x0_base.ptr(), (double*)o_x1_base.ptr(), (double*)o_x2_base.ptr()};
-  o_x_base.copyFrom(x_base_d, 3*sizeof(dfloat*));
-  o_x0_base.copyFrom(x.data(), sizeof(dfloat)*pn);
-  o_x1_base.copyFrom(y.data(), sizeof(dfloat)*pn);
-  o_x2_base.copyFrom(z.data(), sizeof(dfloat)*pn);
-
-  dfloat *wtend_d[3] = {(double*)findpts->o_wtend_x.ptr(), (double*)findpts->o_wtend_y.ptr(), (double*)findpts->o_wtend_z.ptr()};
-  o_wtend.copyFrom(wtend_d, 3*sizeof(dfloat*));
-
+  dfloat *wtend_d[3] = {(double *)findpts->o_wtend_x.ptr(),
+                        (double *)findpts->o_wtend_y.ptr(),
+                        (double *)findpts->o_wtend_z.ptr()};
+  o_wtend.copyFrom(wtend_d, 3 * sizeof(dfloat *));
 
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const auto start = MPI_Wtime();
   {
-    for(int i = 0; i < Ntrials; ++i){
-      findpts->local_kernel( o_code_base,
-                              o_el_base,
-                               o_r_base,
-                           o_dist2_base,
-                               o_x_base,
-                           pn,
-                           findpts->o_x,
-                           findpts->o_y,
-                           findpts->o_z,
-                           o_wtend,
-                           findpts->o_c,
-                           findpts->o_A,
-                           findpts->o_min,
-                           findpts->o_max,
-                           findpts->hash_n,
-                           o_hashMin,
-                           o_hashFac,
-                           findpts->o_offset,
-                           findpts->tol);
+    for (int i = 0; i < Ntrials; ++i) {
+      findpts->local_kernel(o_code_base,
+                            o_el_base,
+                            o_r_base,
+                            o_dist2_base,
+                            o_x_base,
+                            pn,
+                            findpts->o_x,
+                            findpts->o_y,
+                            findpts->o_z,
+                            o_wtend,
+                            findpts->o_c,
+                            findpts->o_A,
+                            findpts->o_min,
+                            findpts->o_max,
+                            findpts->hash_n,
+                            o_hashMin,
+                            o_hashFac,
+                            findpts->o_offset,
+                            findpts->tol);
     }
   }
   platform->device.finish();
   MPI_Barrier(MPI_COMM_WORLD);
   const auto end = MPI_Wtime();
 
-   o_code_base.free();
-     o_el_base.free();
-      o_r_base.free();
+  o_code_base.free();
+  o_el_base.free();
+  o_r_base.free();
   o_dist2_base.free();
-      o_x_base.free();
-     o_x0_base.free();
-     o_x1_base.free();
-     o_x2_base.free();
-     o_wtend  .free();
-     o_hashMin.free();
-     o_hashFac.free();
+  o_x_base.free();
+  o_x0_base.free();
+  o_x1_base.free();
+  o_x2_base.free();
+  o_wtend.free();
+  o_hashMin.free();
+  o_hashFac.free();
 
   return (end - start) / Ntrials;
 }
 
-double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
+double run_findpts_local_eval_bench(nrs_t *nrs, lpm_t &particles, int Ntrials)
 {
 
   // sort particle entries by element
   particles.sort();
 
-  auto* mesh = nrs->meshV;
+  auto *mesh = nrs->meshV;
 
   const auto Np = nrs->meshV->Np;
 
   const auto pn = particles.size();
 
-  std::vector<dfloat> r(3*pn, 0.0);
+  std::vector<dfloat> r(3 * pn, 0.0);
   std::vector<dlong> code(pn, 0);
   std::vector<dlong> proc(pn, 0);
   std::vector<dlong> el(pn, 0);
@@ -251,22 +243,22 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
   auto prev = particles[0].el;
 
-  for(int p = 0; p < pn; ++p){
+  for (int p = 0; p < pn; ++p) {
     auto particle = particles[p];
     code[p] = particle.code;
     proc[p] = particle.proc;
     el[p] = particle.el;
     eltmp[p] = particle.el;
-    r[3*p + 0] = particle.r;
-    r[3*p + 1] = particle.s;
-    r[3*p + 2] = particle.t;
+    r[3 * p + 0] = particle.r;
+    r[3 * p + 1] = particle.s;
+    r[3 * p + 2] = particle.t;
 
     auto currElem = particle.el;
-    sorted&= prev <= currElem;
+    sorted &= prev <= currElem;
     prev = currElem;
   }
 
-  if(!sorted){
+  if (!sorted) {
     std::cout << "Not sorted! Bailing!\n";
     ABORT(1);
   }
@@ -279,39 +271,39 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   std::vector<dlong> particlesInElem(NelemP, 0);
   int index = 0;
   auto lastElem = eltmp[0];
-  for(int p = 0; p < pn; ++p){
+  for (int p = 0; p < pn; ++p) {
     auto elem = el[p];
-    if(lastElem != elem){
+    if (lastElem != elem) {
       lastElem = elem;
       index++;
     }
-    if(index >= NelemP){
+    if (index >= NelemP) {
       std::cout << "Index too large! Failing\n";
       ABORT(1);
     }
     particlesInElem[index] += 1;
   }
 
-  if(index!= (NelemP - 1)){
+  if (index != (NelemP - 1)) {
     std::cout << "Index is incorrect! Failing\n";
     ABORT(1);
   }
 
   // sanity check: sum of particlesInElem must match number particles
   int sumP = 0;
-  for(auto&& count : particlesInElem){
+  for (auto &&count : particlesInElem) {
     sumP += count;
   }
 
-  if(sumP != pn){
+  if (sumP != pn) {
     std::cout << "Different number of particles than expected!\n";
     ABORT(1);
   }
 
   std::vector<dlong> startPointIdx(NelemP, 0);
   startPointIdx[0] = 0;
-  for(int el = 1; el < NelemP; ++el){
-    startPointIdx[el] = startPointIdx[el-1] + particlesInElem[el-1];
+  for (int el = 1; el < NelemP; ++el) {
+    startPointIdx[el] = startPointIdx[el - 1] + particlesInElem[el - 1];
   }
 
   occa::memory o_starts = platform->device.malloc(NelemP * sizeof(dlong));
@@ -323,8 +315,8 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   constexpr int nFields = 3;
 
   occa::memory o_out = platform->device.malloc(nFields * pn * sizeof(dfloat));
-  occa::memory o_r   = platform->device.malloc(3 * pn * sizeof(dfloat));
-  occa::memory o_el =  platform->device.malloc(pn * sizeof(dlong));
+  occa::memory o_r = platform->device.malloc(3 * pn * sizeof(dfloat));
+  occa::memory o_el = platform->device.malloc(pn * sizeof(dlong));
 
   o_r.copyFrom(r.data(), 3 * pn * sizeof(dfloat));
   o_el.copyFrom(el.data(), pn * sizeof(dlong));
@@ -345,7 +337,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   auto o_outy = o_out + 1 * pn * sizeof(dfloat);
   auto o_outz = o_out + 2 * pn * sizeof(dfloat);
 
-  auto o_out_expected = platform->device.malloc(3*pn, sizeof(dfloat));
+  auto o_out_expected = platform->device.malloc(3 * pn, sizeof(dfloat));
   auto o_outx_expected = o_out_expected + 0 * pn * sizeof(dfloat);
   auto o_outy_expected = o_out_expected + 1 * pn * sizeof(dfloat);
   auto o_outz_expected = o_out_expected + 2 * pn * sizeof(dfloat);
@@ -354,30 +346,16 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   platform->linAlg->fill(pn, Uy, o_outy_expected);
   platform->linAlg->fill(pn, Uz, o_outz_expected);
 
-  auto* findpts = particles.interp().ptr();
+  auto *findpts = particles.interp().ptr();
 
   // correctness check
   findpts->local_eval_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
 
-  platform->linAlg->axpbyMany(
-    pn,
-    3,
-    pn,
-    1.0,
-    o_out_expected,
-    -1.0,
-    o_out
-  );
+  platform->linAlg->axpbyMany(pn, 3, pn, 1.0, o_out_expected, -1.0, o_out);
 
-  const auto error = platform->linAlg->norm2Many(
-    pn,
-    3,
-    pn,
-    o_out,
-    platform->comm.mpiComm
-  );
+  const auto error = platform->linAlg->norm2Many(pn, 3, pn, o_out, platform->comm.mpiComm);
 
-  if(platform->comm.mpiRank == 0){
+  if (platform->comm.mpiRank == 0) {
     std::cout << "Error in findpts_local_eval kernel: " << error << std::endl;
   }
 
@@ -385,7 +363,7 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
   MPI_Barrier(MPI_COMM_WORLD);
   const auto start = MPI_Wtime();
   {
-    for(int i = 0; i < Ntrials; ++i){
+    for (int i = 0; i < Ntrials; ++i) {
       findpts->local_eval_kernel(pn, 3, nrs->fieldOffset, pn, o_el, o_r, nrs->o_U, o_out);
     }
   }
@@ -403,15 +381,14 @@ double run_findpts_local_eval_bench(nrs_t* nrs, lpm_t& particles, int Ntrials)
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 {
-  auto * mesh = nrs->meshV;
+  auto *mesh = nrs->meshV;
 
-  particleInit  (*particles);
+  particleInit(*particles);
 
   // required to apply periodic applyBounds
   particles->addPostIntegrationWork(applyBounds);
 
-  if(benchmarkMode == BENCHMARK::PARTICLE_UPDATE || benchmarkMode == BENCHMARK::ALL)
-  {
+  if (benchmarkMode == BENCHMARK::PARTICLE_UPDATE || benchmarkMode == BENCHMARK::ALL) {
     int Nstep = 10;
     std::array<dfloat, 3> dt = {1.0 / Nstep, 1.0 / Nstep, 1.0 / Nstep};
 
@@ -433,7 +410,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
     std::vector<dfloat> expectedY(nParticles, 0.0);
     std::vector<dfloat> expectedZ(nParticles, 0.0);
     std::vector<dlong> particleIds(nParticles, 0);
-  
+
     const dfloat Lx = 1.0;
     const dfloat Ly = 1.0;
     const dfloat Lz = 1.0;
@@ -449,9 +426,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
           dfloat dy = Ly * invNParticleDir;
           dfloat dz = Lz * invNParticleDir;
 
-          dfloat xp = dx*(ix+0.5);
-          dfloat yp = dy*(iy+0.5);
-          dfloat zp = dz*(iz+0.5);
+          dfloat xp = dx * (ix + 0.5);
+          dfloat yp = dy * (iy + 0.5);
+          dfloat zp = dz * (iz + 0.5);
 
           expectedX[particleCtr] = xp;
           expectedY[particleCtr] = yp;
@@ -464,7 +441,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
     dfloat errPos = 0.0;
 
-    for(int i = 0; i < particles->size(); ++i){
+    for (int i = 0; i < particles->size(); ++i) {
       // find "global" index of particle to get expected coordinate
       auto found = std::lower_bound(particleIds.begin(), particleIds.end(), particles->particleIndex(i));
       auto globalIndex = *found;
@@ -477,14 +454,14 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
     errPos /= nParticles;
 
-    if(platform->comm.mpiRank == 0){
+    if (platform->comm.mpiRank == 0) {
       std::cout << "\nError in position: " << errPos << "\n\n";
     }
 
     const dfloat testTol = 1e-12;
 
-    if(errPos > testTol){
-      if(platform->comm.mpiRank == 0){
+    if (errPos > testTol) {
+      if (platform->comm.mpiRank == 0) {
         std::cout << "Error too large. Failing test!\n";
       }
       MPI_Finalize();
@@ -501,43 +478,37 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
     double particleThroughput = (nParticles / elapsed) / 1.e9;
 
-    const int Nthreads =  omp_get_max_threads();
+    const int Nthreads = omp_get_max_threads();
 
-    if(platform->comm.mpiRank == 0){
+    if (platform->comm.mpiRank == 0) {
       std::cout << "particle update:\n";
-      std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << mesh->N
-                << " Nelements=" << mesh->Nelements
-                << " Nparticles=" << nParticles
-                << " elapsed time=" << elapsed
-                << " GParticles/s=" << particleThroughput
-                << "\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests << " N=" << mesh->N << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput << "\n";
     }
 
-    const double tUpdate      = platform->timer.query("lpm_t::update", "DEVICE:MAX");
-    const double tFind        = platform->timer.query("lpm_t::find", "DEVICE:MAX");
-    const double tMigrate     = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
+    const double tUpdate = platform->timer.query("lpm_t::update", "DEVICE:MAX");
+    const double tFind = platform->timer.query("lpm_t::find", "DEVICE:MAX");
+    const double tMigrate = platform->timer.query("lpm_t::migrate", "DEVICE:MAX");
     const double tInterpLocal = platform->timer.query("lpm_t::interpLocal", "DEVICE:MAX");
-    const double tAdvance     = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
-    const double tSync        = platform->timer.query("lpm_t::syncToDevice", "DEVICE:MAX");
-    const double tPostIntegrationWork = platform->timer.query("lpm_t::advance::postIntegrationWork", "DEVICE:MAX");
+    const double tAdvance = platform->timer.query("lpm_t::advance", "DEVICE:MAX");
+    const double tSync = platform->timer.query("lpm_t::syncToDevice", "DEVICE:MAX");
+    const double tPostIntegrationWork =
+        platform->timer.query("lpm_t::advance::postIntegrationWork", "DEVICE:MAX");
     const double tCopyBackToHost = platform->timer.query("lpm_t::advance::copyBackToHost", "DEVICE:MAX");
-    std::cout <<   "lpm_t::update                            " << tUpdate << "s\n";
-    std::cout <<   "  lpm_t::find                            " << tFind << "s\n";
-    std::cout <<   "  lpm_t::migrate                         " << tMigrate << "s\n";
-    std::cout <<   "  lpm_t::interpLocal                     " << tInterpLocal << "s\n";
-    std::cout <<   "  lpm_t::advance                         " << tAdvance << "s\n";
-    std::cout <<   "    lpm_t::advance::postIntegrationWork  " << tPostIntegrationWork << "s\n";
-    std::cout <<   "    lpm_t::advance::copyBackToHost       " << tCopyBackToHost << "s\n";
-    std::cout <<   "  lpm_t::syncToDevice     " << tSync << "s\n";
+    std::cout << "lpm_t::update                            " << tUpdate << "s\n";
+    std::cout << "  lpm_t::find                            " << tFind << "s\n";
+    std::cout << "  lpm_t::migrate                         " << tMigrate << "s\n";
+    std::cout << "  lpm_t::interpLocal                     " << tInterpLocal << "s\n";
+    std::cout << "  lpm_t::advance                         " << tAdvance << "s\n";
+    std::cout << "    lpm_t::advance::postIntegrationWork  " << tPostIntegrationWork << "s\n";
+    std::cout << "    lpm_t::advance::copyBackToHost       " << tCopyBackToHost << "s\n";
+    std::cout << "  lpm_t::syncToDevice     " << tSync << "s\n";
     std::cout << std::endl;
-
   }
 
-  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL || benchmarkMode == BENCHMARK::ALL)
-  {
+  if (benchmarkMode == BENCHMARK::FINDPTS_LOCAL || benchmarkMode == BENCHMARK::ALL) {
     double elapsed = run_findpts_local_bench(nrs, *particles, 10);
     const int elapsedTarget = 10;
     const int Ntests = elapsedTarget / elapsed;
@@ -547,26 +518,19 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
     double particleThroughput = (nParticles / elapsed) / 1.e9;
 
-    const int Nthreads =  omp_get_max_threads();
+    const int Nthreads = omp_get_max_threads();
 
-    if(platform->comm.mpiRank == 0){
+    if (platform->comm.mpiRank == 0) {
       std::cout << "findpts_local kernel:\n";
-      std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << mesh->N
-                << " Nelements=" << mesh->Nelements
-                << " Nparticles=" << nParticles
-                << " elapsed time=" << elapsed
-                << " GParticles/s=" << particleThroughput
-                << "\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests << " N=" << mesh->N << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput << "\n";
       std::cout << std::endl;
     }
-
   }
 
-  if(benchmarkMode == BENCHMARK::FINDPTS_LOCAL_EVAL || benchmarkMode == BENCHMARK::ALL)
-  {
+  if (benchmarkMode == BENCHMARK::FINDPTS_LOCAL_EVAL || benchmarkMode == BENCHMARK::ALL) {
     // set up data for findpts_local_eval call
     std::array<dfloat, 3> dt = {0.1, 0.1, 0.1};
     particles->update(nrs->o_U, dt.data(), 1);
@@ -580,21 +544,15 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat /** unused **/, int /** unused **/)
 
     double particleThroughput = (nParticles / elapsed) / 1.e9;
 
-    const int Nthreads =  omp_get_max_threads();
+    const int Nthreads = omp_get_max_threads();
 
-    if(platform->comm.mpiRank == 0){
+    if (platform->comm.mpiRank == 0) {
       std::cout << "findpts_local_eval kernel:\n";
-      std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << mesh->N
-                << " Nelements=" << mesh->Nelements
-                << " Nparticles=" << nParticles
-                << " elapsed time=" << elapsed
-                << " GParticles/s=" << particleThroughput
-                << "\n";
+      std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests << " N=" << mesh->N << " Nelements=" << mesh->Nelements
+                << " Nparticles=" << nParticles << " elapsed time=" << elapsed
+                << " GParticles/s=" << particleThroughput << "\n";
     }
-
   }
 
   EXIT_AND_FINALIZE(0);
