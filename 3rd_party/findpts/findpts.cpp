@@ -48,7 +48,7 @@ static dfloat *r;
 static dlong *el;
 
 // findpts, do not allocate pinned memory
-static void realloc_scratch(occa::device &device, dlong Nbytes)
+static void reallocScratch(occa::device &device, dlong Nbytes)
 {
   if (o_scratch.size())
     o_scratch.free();
@@ -60,7 +60,7 @@ static void realloc_scratch(occa::device &device, dlong Nbytes)
 }
 
 // findpts_eval
-static void realloc_scratch(occa::device &device, dlong pn, dlong nFields)
+static void reallocScratch(occa::device &device, dlong pn, dlong nFields)
 {
 
   const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
@@ -104,7 +104,7 @@ static void realloc_scratch(occa::device &device, dlong pn, dlong nFields)
     std::free(buffer);
   }
 }
-void findpts_local(int *const code,
+void findptsLocal(int *const code,
                    int *const el,
                    double *const r,
                    double *const dist2,
@@ -122,7 +122,7 @@ void findpts_local(int *const code,
   alloc_size += 3 * (sizeof(dfloat *));
   alloc_size += 6 * sizeof(dfloat);
   if (alloc_size > o_scratch.size()) {
-    realloc_scratch(device, alloc_size);
+    reallocScratch(device, alloc_size);
   }
 
   dlong byteOffset = 0;
@@ -191,7 +191,7 @@ void findpts_local(int *const code,
 }
 
 template <typename OutputType = evalOutPt_t<1>>
-void findpts_local_eval_internal(OutputType *opt,
+void findptsLocalEvalInternal(OutputType *opt,
                                  const evalSrcPt_t *spt,
                                  const int pn,
                                  const int nFields,
@@ -207,7 +207,7 @@ void findpts_local_eval_internal(OutputType *opt,
 
   const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
   if (Nbytes > o_scratch.size() || h_out.size() == 0) {
-    realloc_scratch(device, pn, nFields);
+    reallocScratch(device, pn, nFields);
   }
 
   dlong byteOffset = 0;
@@ -244,7 +244,7 @@ void findpts_local_eval_internal(OutputType *opt,
   }
 }
 template <typename OutputType = evalOutPt_t<1>>
-void findpts_eval_impl(double *const out_base,
+void findptsEvalImpl(double *const out_base,
                        const int *const code_base,
                        const int *const proc_base,
                        const int *const el_base,
@@ -296,7 +296,7 @@ void findpts_eval_impl(double *const out_base,
     outpt.n = n;
     spt = (evalSrcPt_t *)src.ptr;
     opt = (OutputType *)outpt.ptr;
-    findpts_local_eval_internal(opt, spt, src.n, nFields, inputOffset, outputOffset, o_in, findptsData);
+    findptsLocalEvalInternal(opt, spt, src.n, nFields, inputOffset, outputOffset, o_in, findptsData);
     spt = (evalSrcPt_t *)src.ptr;
     opt = (OutputType *)outpt.ptr;
     for (; n; --n, ++spt, ++opt) {
@@ -502,7 +502,7 @@ void findpts(findpts_data_t *const findPtsData,
   struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
   if (npt) {
-    findpts_local(code_base, el_base, r_base, dist2_base, x_base, npt, fd);
+    findptsLocal(code_base, el_base, r_base, dist2_base, x_base, npt, fd);
   }
   /* send unfound and border points to global hash cells */
   {
@@ -613,7 +613,7 @@ void findpts(findpts_data_t *const findPtsData,
         }
       }
 
-      findpts_local(codeArr.data(),
+      findptsLocal(codeArr.data(),
                     elArr.data(),
                     rArr.data(),
                     dist2Arr.data(),
@@ -694,7 +694,7 @@ void findptsEval(const dlong npt,
 #define FINDPTS_EVAL(fieldSize)                           \
 {                                                         \
   if (nFields == (fieldSize)) {                           \
-    findpts_eval_impl<evalOutPt_t<(fieldSize)>>(out_base, \
+    findptsEvalImpl<evalOutPt_t<(fieldSize)>>(out_base, \
                       findPtsData->code_base,             \
                       findPtsData->proc_base,             \
                       findPtsData->el_base,               \
