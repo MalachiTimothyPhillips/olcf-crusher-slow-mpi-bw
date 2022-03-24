@@ -5,10 +5,10 @@
 ////// OBBOX //////
 
 /* positive when possibly inside */
-static dfloat obbox_axis_test(const obbox_t *const b, const dfloat x[p_D])
+static dfloat obbox_axis_test(const obbox_t *const b, const dfloat x[3])
 {
   dfloat test = 1;
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     dfloat b_d = (x[d] - b->x[d].min) * (b->x[0].max - x[0]);
     test = test < 0 ? test : b_d;
   }
@@ -16,22 +16,22 @@ static dfloat obbox_axis_test(const obbox_t *const b, const dfloat x[p_D])
 }
 
 /* positive when possibly inside */
-static dfloat obbox_test(const obbox_t *const b, const dfloat x[p_D])
+static dfloat obbox_test(const obbox_t *const b, const dfloat x[3])
 {
   const dfloat bxyz = obbox_axis_test(b, x);
   if (bxyz < 0) {
     return bxyz;
   }
   else {
-    dfloat dxyz[p_D];
-    for (dlong d = 0; d < p_D; ++d) {
+    dfloat dxyz[3];
+    for (dlong d = 0; d < 3; ++d) {
       dxyz[d] = x[d] - b->c0[d];
     }
     dfloat test = 1;
-    for (dlong d = 0; d < p_D; ++d) {
+    for (dlong d = 0; d < 3; ++d) {
       dfloat rst = 0;
-      for (dlong e = 0; e < p_D; ++e) {
-        rst += b->A[d * p_D + e] * dxyz[e];
+      for (dlong e = 0; e < 3; ++e) {
+        rst += b->A[d * 3 + e] * dxyz[e];
       }
       dfloat brst = (rst + 1) * (1 - rst);
       test = test < 0 ? test : brst;
@@ -42,11 +42,11 @@ static dfloat obbox_test(const obbox_t *const b, const dfloat x[p_D])
 
 ////// HASH //////
 
-static dlong hash_index(const findptsLocalHashData_t *p, const dfloat x[p_D])
+static dlong hash_index(const findptsLocalHashData_t *p, const dfloat x[3])
 {
   const dlong n = p->hash_n;
   dlong sum = 0;
-  for (dlong d = p_D - 1; d >= 0; --d) {
+  for (dlong d = 3 - 1; d >= 0; --d) {
     sum *= n;
     dlong i = (dlong)floor((x[d] - p->bnd[d].min) * p->fac[d]);
     sum += i < 0 ? 0 : (n - 1 < i ? n - 1 : i);
@@ -77,7 +77,7 @@ static void lin_solve_sym_2(dfloat x[2], const dfloat A[3], const dfloat y[2])
   x[1] = idet * (A[0] * y[1] - A[1] * y[0]);
 }
 
-static dfloat norm2(const dfloat x[p_D]) { return x[0] * x[0] + x[1] * x[1] + x[2] * x[2]; }
+static dfloat norm2(const dfloat x[3]) { return x[0] * x[0] + x[1] * x[1] + x[2] * x[2]; }
 
 /* the bit structure of flags is CTTSSRR
    the C bit --- 1<<6 --- is set when the point is converged
@@ -85,7 +85,7 @@ static dfloat norm2(const dfloat x[p_D]) { return x[0] * x[0] + x[1] * x[1] + x[
          1 = 01b if r is constrained at -1
          2 = 10b if r is constrained at +1
    SS, TT are similarly for s and t constraints
-   TT is ignored, but treated as set when p_D==2
+   TT is ignored, but treated as set when 3==2
 */
 
 #define CONVERGED_FLAG (1u << 6)
@@ -94,7 +94,7 @@ static dfloat norm2(const dfloat x[p_D]) { return x[0] * x[0] + x[1] * x[1] + x[
 static dlong num_constrained(const dlong flags)
 {
   const dlong y = flags | flags >> 1;
-  return (y & 1u) + (y >> 2 & 1u) + (((p_D == 2) | y >> 4) & 1u);
+  return (y & 1u) + (y >> 2 & 1u) + (((3 == 2) | y >> 4) & 1u);
 }
 
 /* assumes x = 0, 1, or 2 */
@@ -132,12 +132,12 @@ static dlong point_index(const dlong x) { return ((x >> 1) & 1u) | ((x >> 2) & 2
 // workspace is a shared workspace
 // side_init indicates the mode the workspace is set to
 static findptsElementGFace_t
-get_face(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong fi, dfloat *workspace, dlong &side_init, dlong j)
+get_face(const dfloat *elx[3], dfloat *wtend[3], dlong fi, dfloat *workspace, dlong &side_init, dlong j)
 {
   const dlong dn = fi >> 1, d1 = plus_1_mod_3(dn), d2 = plus_2_mod_3(dn);
   const dlong side_n = fi & 1;
   findptsElementGFace_t face;
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     face.x[d] = workspace + d * p_Nfp;
     face.dxdn[d] = workspace + (3 + d) * p_Nfp;
   }
@@ -147,7 +147,7 @@ get_face(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong fi, dfloat *workspace
     const dlong elx_stride[3] = {1, p_Nq, p_Nq * p_Nq};
 #define ELX(d, j, k, l) elx[d][j * elx_stride[d1] + k * elx_stride[d2] + l * elx_stride[dn]]
     if (j < p_Nq) {
-      for (dlong d = 0; d < p_D; ++d) {
+      for (dlong d = 0; d < 3; ++d) {
         for (dlong k = 0; k < p_Nq; ++k) {
           // copy first/last entries in normal direction
           face.x[d][j + k * p_Nq] = ELX(d, j, k, side_n * (p_Nq - 1));
@@ -168,7 +168,7 @@ get_face(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong fi, dfloat *workspace
 }
 
 static findptsElementGEdge_t
-get_edge(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong ei, dfloat *workspace, dlong &side_init, dlong j)
+get_edge(const dfloat *elx[3], dfloat *wtend[3], dlong ei, dfloat *workspace, dlong &side_init, dlong j)
 {
   findptsElementGEdge_t edge;
   const dlong de = ei >> 2, dn1 = plus_1_mod_3(de), dn2 = plus_2_mod_3(de);
@@ -177,9 +177,9 @@ get_edge(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong ei, dfloat *workspace
   const dlong in1 = side_n1 * (p_Nq - 1), in2 = side_n2 * (p_Nq - 1);
   const dfloat *wt1 = wtend[dn1] + side_n1 * p_Nq * 3;
   const dfloat *wt2 = wtend[dn2] + side_n2 * p_Nq * 3;
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     edge.x[d] = workspace + d * p_Nq;
-    edge.dxdn1[d] = workspace + (p_D + d) * p_Nq;
+    edge.dxdn1[d] = workspace + (3 + d) * p_Nq;
     edge.dxdn2[d] = workspace + (6 + d) * p_Nq;
     edge.d2xdn1[d] = workspace + (7 + d) * p_Nq;
     edge.d2xdn2[d] = workspace + (8 + d) * p_Nq;
@@ -190,7 +190,7 @@ get_edge(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong ei, dfloat *workspace
     if (j < p_Nq) {
       const dlong elx_stride[3] = {1, p_Nq, p_Nq * p_Nq};
 #define ELX(d, j, k, l) elx[d][j * elx_stride[de] + k * elx_stride[dn1] + l * elx_stride[dn2]]
-      for (dlong d = 0; d < p_D; ++d) {
+      for (dlong d = 0; d < 3; ++d) {
         // copy first/last entries in normal directions
         edge.x[d][j] = ELX(d, j, in1, in2);
         // tensor product between elx (w/ first/last entries in second direction)
@@ -218,39 +218,39 @@ get_edge(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong ei, dfloat *workspace
   }
   return edge;
 }
-static findptsElementGPT_t get_pt(const dfloat *elx[p_D], dfloat *wtend[p_D], dlong pi)
+static findptsElementGPT_t get_pt(const dfloat *elx[3], dfloat *wtend[3], dlong pi)
 {
   const dlong side_n1 = pi & 1, side_n2 = (pi >> 1) & 1, side_n3 = (pi >> 2) & 1;
   const dlong in1 = side_n1 * (p_Nq - 1), in2 = side_n2 * (p_Nq - 1), in3 = side_n3 * (p_Nq - 1);
-  const dlong hes_stride = (p_D + 1) * p_D / 2;
+  const dlong hes_stride = (3 + 1) * 3 / 2;
   findptsElementGPT_t pt;
 
 #define ELX(d, j, k, l) elx[d][j + k * p_Nq + l * p_Nq * p_Nq]
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     pt.x[d] = ELX(d, side_n1 * (p_Nq - 1), side_n2 * (p_Nq - 1), side_n3 * (p_Nq - 1));
 
     dfloat *wt1 = wtend[0] + p_Nq * (1 + 3 * side_n1);
     dfloat *wt2 = wtend[1] + p_Nq * (1 + 3 * side_n2);
     dfloat *wt3 = wtend[2] + p_Nq * (1 + 3 * side_n3);
 
-    for (dlong i = 0; i < p_D; ++i)
-      pt.jac[p_D * d + i] = 0;
+    for (dlong i = 0; i < 3; ++i)
+      pt.jac[3 * d + i] = 0;
     for (dlong i = 0; i < hes_stride; ++i)
       pt.hes[hes_stride * d + i] = 0;
 
     for (dlong j = 0; j < p_Nq; ++j) {
-      pt.jac[p_D * d + 0] += wt1[j] * ELX(d, j, in2, in3);
+      pt.jac[3 * d + 0] += wt1[j] * ELX(d, j, in2, in3);
       pt.hes[hes_stride * d] += wt1[p_Nq + j] * ELX(d, j, in2, in3);
     }
 
     const dlong hes_off = hes_stride * d + hes_stride / 2;
     for (dlong k = 0; k < p_Nq; ++k) {
-      pt.jac[p_D * d + 1] += wt2[k] * ELX(d, in1, k, in3);
+      pt.jac[3 * d + 1] += wt2[k] * ELX(d, in1, k, in3);
       pt.hes[hes_off] += wt2[p_Nq + k] * ELX(d, in1, k, in3);
     }
 
     for (dlong l = 0; l < p_Nq; ++l) {
-      pt.jac[p_D * d + 2] += wt3[l] * ELX(d, in1, in2, l);
+      pt.jac[3 * d + 2] += wt3[l] * ELX(d, in1, in2, l);
       pt.hes[hes_stride * d + 5] += wt3[p_Nq + l] * ELX(d, in1, in2, l);
     }
 
@@ -283,14 +283,14 @@ static findptsElementGPT_t get_pt(const dfloat *elx[p_D], dfloat *wtend[p_D], dl
    sets out->dist2, out->index, out->x, out->oldr in any event,
    leaving out->r, out->dr, out->flags to be set when returning 0 */
 bool reject_prior_step_q(findptsElementPoint_t *out,
-                         const dfloat resid[p_D],
+                         const dfloat resid[3],
                          const findptsElementPoint_t *p,
                          const dfloat tol)
 {
   const dfloat dist2 = norm2(resid);
   const dfloat decr = p->dist2 - dist2;
   const dfloat pred = p->dist2p;
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     out->x[d] = p->x[d];
     out->oldr[d] = p->r[d];
   }
@@ -316,7 +316,7 @@ bool reject_prior_step_q(findptsElementPoint_t *out,
     dfloat v2 = fabs(p->r[2] - p->oldr[2]);
     out->tr = (v1 > v2 ? (v0 > v1 ? v0 : v1) : (v0 > v2 ? v0 : v2)) / 4;
     out->dist2 = p->dist2;
-    for (dlong d = 0; d < p_D; ++d)
+    for (dlong d = 0; d < 3; ++d)
       out->r[d] = p->oldr[d];
     out->flags = p->flags >> 7;
     out->dist2p = -DBL_MAX;
@@ -478,7 +478,7 @@ newton_vol_fin:
     out->dist2p = resid[0] * resid[0] + resid[1] * resid[1] + resid[2] * resid[2] -
                   (res0 * res0 + res1 * res1 + res2 * res2);
   }
-  for (dlong d = 0; d < p_D; ++d) {
+  for (dlong d = 0; d < 3; ++d) {
     dlong f = flags >> (2 * d) & 3u;
     out->r[d] = f == 0 ? r0[d] + dr[d] : (f == 1 ? -1 : 1);
   }
@@ -657,11 +657,11 @@ newton_edge_fin:
   out->flags = flags | new_flags | (p->flags << 7);
 }
 
-void seed_j(const dfloat *elx[p_D],
-            const dfloat x[p_D],
-            // dfloat *z[p_D],
+void seed_j(const dfloat *elx[3],
+            const dfloat x[3],
+            // dfloat *z[3],
             dfloat dist2[p_Nq],
-            dfloat *r[p_D],
+            dfloat *r[3],
             const int j)
 {
   if (j >= p_Nq)
@@ -676,8 +676,8 @@ void seed_j(const dfloat *elx[p_D],
       dfloat zs = z[k];
 
       const dlong jkl = j + k * p_Nq + l * p_Nq * p_Nq;
-      dfloat dx[p_D];
-      for (dlong d = 0; d < p_D; ++d) {
+      dfloat dx[3];
+      for (dlong d = 0; d < 3; ++d) {
         dx[d] = x[d] - elx[d][jkl];
       }
       const dfloat dist2_jkl = norm2(dx);
@@ -691,14 +691,14 @@ void seed_j(const dfloat *elx[p_D],
   }
 }
 
-dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
-                    @ restrict const dfloat *Jr,
-                    @ restrict const dfloat *Dr,
-                    @ restrict const dfloat *Js,
-                    @ restrict const dfloat *Ds,
-                    @ restrict const dfloat *Jt,
-                    @ restrict const dfloat *Dt,
-                    @ restrict const dfloat *u,
+dfloat tensor_ig3_j(@restrict dfloat *g_partials,
+                    @restrict const dfloat *Jr,
+                    @restrict const dfloat *Dr,
+                    @restrict const dfloat *Js,
+                    @restrict const dfloat *Ds,
+                    @restrict const dfloat *Jt,
+                    @restrict const dfloat *Dt,
+                    @restrict const dfloat *u,
                     const dlong j)
 {
   dfloat uJtJs = 0.0;
@@ -723,34 +723,40 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
   return uJtJs * Jr[j];
 }
 
-@kernel void findptsLocal(dlong *const code_base,
-                           @ restrict dlong *const el_base,
-                           @ restrict dfloat *const r_base,
-                           @ restrict dfloat *const dist2_base,
-                           const dfloat *const x_base[p_D],
+@kernel void findptsLocal(
                            const dlong npt,
-                           @ restrict const dfloat *xCoord,
-                           @ restrict const dfloat *yCoord,
-                           @ restrict const dfloat *zCoord,
-                           dfloat *wtend[p_D],
-                           @ restrict const dfloat *c,
-                           @ restrict const dfloat *A,
-                           @ restrict const dfloat *minBound,
-                           @ restrict const dfloat *maxBound,
+                           const dfloat tol,
+                           @restrict const dfloat * x,
+                           @restrict const dfloat * y,
+                           @restrict const dfloat * z,
+                           @restrict const dfloat *xElemCoord,
+                           @restrict const dfloat *yElemCoord,
+                           @restrict const dfloat *zElemCoord,
+                           @restrict dfloat * wtend_x,
+                           @restrict dfloat * wtend_y,
+                           @restrict dfloat * wtend_z,
+                           @restrict const dfloat *c,
+                           @restrict const dfloat *A,
+                           @restrict const dfloat *minBound,
+                           @restrict const dfloat *maxBound,
                            const dlong hash_n,
-                           const dfloat hashMin[p_D],
-                           const dfloat hashFac[p_D],
-                           @ restrict dlong *hashOffset,
-                           const dfloat tol)
+                           const dfloat hashMin[3],
+                           const dfloat hashFac[3],
+                           @restrict dlong *hashOffset,
+                           dlong *const code_base,
+                           @restrict dlong *const el_base,
+                           @restrict dfloat *const r_base,
+                           @restrict dfloat *const dist2_base
+)
 {
 #define MAX_CONST(a, b) (((a) > (b)) ? (a) : (b))
 #define INNER_SIZE 32
 
   for (dlong i = 0; i < npt; ++i; @outer) {
-    @shared dfloat r_workspace[MAX_CONST(4, p_Nq + 1) * (p_D * p_D + 2 * p_D) + p_D * 2 * p_Nq];
+    @shared dfloat r_workspace[MAX_CONST(4, p_Nq + 1) * (3 * 3 + 2 * 3) + 3 * 2 * p_Nq];
     @shared findptsElementPoint_t el_pts[2];
 
-#define CONSTRAINT_SIZE MAX_CONST(p_Nq *p_Nq * 6, p_Nq * p_D * 3)
+#define CONSTRAINT_SIZE MAX_CONST(p_Nq *p_Nq * 6, p_Nq * 3 * 3)
     @shared dfloat constraint_workspace[CONSTRAINT_SIZE];
     @exclusive dlong constraint_init;
 
@@ -764,11 +770,9 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
     }
     @barrier("local");
 
-    dfloat x_i[p_D];
-    for (dlong d = 0; d < p_D; ++d) {
-      // x_i[d] = (*CATD(dfloat, x, i, d));
-      x_i[d] = x_base[d][i];
-    }
+    dfloat x_i[3] = {x[i], y[i], z[i]};
+    dfloat *wtend[3] = {&wtend_x[0], &wtend_y[0], &wtend_z[0]};
+
     dlong *code_i = code_base + i;
     dlong *el_i = el_base + i;
     dfloat *r_i = r_base + 3 * i;
@@ -806,11 +810,11 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
       if (obbox_test(&box, x_i) >= 0) {
         //// findpts_local ////
         {
-          const dfloat *elx[p_D];
+          const dfloat *elx[3];
 
-          elx[0] = xCoord + el * p_Np;
-          elx[1] = yCoord + el * p_Np;
-          elx[2] = zCoord + el * p_Np;
+          elx[0] = xElemCoord + el * p_Np;
+          elx[1] = yElemCoord + el * p_Np;
+          elx[2] = zElemCoord + el * p_Np;
 
           //// findpts_el ////
           {
@@ -820,7 +824,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 fpt->dist2p = 0;
                 fpt->tr = 1;
               }
-              if (j < p_D)
+              if (j < 3)
                 fpt->x[j] = x_i[j];
               constraint_init = 0;
             }
@@ -828,8 +832,8 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
             //// seed ////
             {
               dfloat *dist2_temp = r_workspace_ptr;
-              dfloat *r_temp[p_D];
-              for (dlong d = 0; d < p_D; ++d)
+              dfloat *r_temp[3];
+              for (dlong d = 0; d < 3; ++d)
                 r_temp[d] = dist2_temp + (1 + d) * p_Nq;
               for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
                 seed_j(elx, x_i, dist2_temp, r_temp, j);
@@ -842,7 +846,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                   for (dlong j = 0; j < p_Nq; ++j) {
                     if (dist2_temp[j] < fpt->dist2) {
                       fpt->dist2 = dist2_temp[j];
-                      for (dlong d = 0; d < p_D; ++d)
+                      for (dlong d = 0; d < 3; ++d)
                         fpt->r[d] = r_temp[d][j];
                     }
                   }
@@ -858,7 +862,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 tmp->tr = 1;
                 tmp->flags = 0;
               }
-              if (j < p_D) {
+              if (j < 3) {
                 tmp->x[j] = fpt->x[j];
                 tmp->r[j] = fpt->r[j];
               }
@@ -931,11 +935,11 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 dfloat *wt1 = r_workspace_ptr;
                 dfloat *wt2 = wt1 + 3 * p_Nq;
                 dfloat *resid = wt2 + 3 * p_Nq;
-                dfloat *jac = resid + p_D;
-                dfloat *resid_temp = jac + p_D * p_D;
-                dfloat *jac_temp = resid_temp + p_D * p_Nq;
-                dfloat *hes = jac_temp + p_D * p_D * p_Nq;
-                dfloat *hes_temp = hes + p_D;
+                dfloat *jac = resid + 3;
+                dfloat *resid_temp = jac + 3 * 3;
+                dfloat *jac_temp = resid_temp + 3 * p_Nq;
+                dfloat *hes = jac_temp + 3 * 3 * p_Nq;
+                dfloat *hes_temp = hes + 3;
                 for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
                   if (j < p_Nq) {
                     lagrange_eval_second_derivative(wt1, tmp->r[d1], j);
@@ -965,29 +969,29 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                       sums_k[3] += du[qp + k * p_Nq] * J2[k];
                     }
 
-                    resid_temp[p_D * qp + d] = sums_k[0] * J1[qp];
-                    jac_temp[p_D * p_D * qp + p_D * d + d1] = sums_k[0] * D1[qp];
-                    jac_temp[p_D * p_D * qp + p_D * d + d2] = sums_k[1] * J1[qp];
-                    jac_temp[p_D * p_D * qp + p_D * d + dn] = sums_k[3] * J1[qp];
-                    hes_temp[p_D * qp] = sums_k[0] * DD1[qp];
-                    hes_temp[p_D * qp + 1] = sums_k[1] * D1[qp];
-                    hes_temp[p_D * qp + 2] = sums_k[2] * J1[qp];
+                    resid_temp[3 * qp + d] = sums_k[0] * J1[qp];
+                    jac_temp[3 * 3 * qp + 3 * d + d1] = sums_k[0] * D1[qp];
+                    jac_temp[3 * 3 * qp + 3 * d + d2] = sums_k[1] * J1[qp];
+                    jac_temp[3 * 3 * qp + 3 * d + dn] = sums_k[3] * J1[qp];
+                    hes_temp[3 * qp] = sums_k[0] * DD1[qp];
+                    hes_temp[3 * qp + 1] = sums_k[1] * D1[qp];
+                    hes_temp[3 * qp + 2] = sums_k[2] * J1[qp];
                   }
                 }
                 @barrier("local");
                 // TODO consider binary reduction
                 for (dlong l = 0; l < INNER_SIZE; ++l; @inner) {
-                  if (l < p_D) {
+                  if (l < 3) {
                     resid[l] = fpt->x[l];
                     for (dlong j = 0; j < p_Nq; ++j)
-                      resid[l] -= resid_temp[l + j * p_D];
+                      resid[l] -= resid_temp[l + j * 3];
                   }
-                  if (l < p_D * p_D) {
+                  if (l < 3 * 3) {
                     jac[l] = 0;
                     for (dlong j = 0; j < p_Nq; ++j)
-                      jac[l] += jac_temp[l + j * p_D * p_D];
+                      jac[l] += jac_temp[l + j * 3 * 3];
                   }
-                  if (l < p_D) {
+                  if (l < 3) {
                     hes[l] = 0;
                     for (dlong j = 0; j < p_Nq; ++j)
                       hes[l] += hes_temp[l + 3 * j];
@@ -1014,20 +1018,20 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 d_j[0] = de;
                 d_j[1] = dn1;
                 d_j[2] = dn2;
-                const dlong hes_count = 2 * p_D - 1; // p_D=3 ? 5 : 1;
+                const dlong hes_count = 2 * 3 - 1; // 3=3 ? 5 : 1;
 
                 dfloat *wt = r_workspace_ptr;
                 dfloat *resid = wt + 3 * p_Nq;
-                dfloat *jac = resid + p_D;
-                dfloat *hes_T = jac + p_D * p_D;
-                dfloat *hes = hes_T + hes_count * p_D;
+                dfloat *jac = resid + 3;
+                dfloat *hes_T = jac + 3 * 3;
+                dfloat *hes = hes_T + hes_count * 3;
                 findptsElementGEdge_t edge;
                 for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
                   edge = get_edge(elx, wtend, ei, constraint_workspace, constraint_init, j);
                 }
                 @barrier("local");
                 // TODO consider optimizing this using the internal structure of findptsElementGEdge_t
-                const dfloat *const *e_x[p_D + 3] =
+                const dfloat *const *e_x[3 + 3] =
                     {edge.x, edge.x, edge.dxdn1, edge.dxdn2, edge.d2xdn1, edge.d2xdn2};
                 for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
                   if (j < p_Nq) {
@@ -1037,26 +1041,26 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 @barrier("local");
 
                 for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
-                  const dlong d = j % p_D;
-                  const dlong row = j / p_D;
-                  if (j < (p_D + 1) * p_D) {
+                  const dlong d = j % 3;
+                  const dlong row = j / 3;
+                  if (j < (3 + 1) * 3) {
                     // resid and jac_T
                     // [0, 1, 0, 0]
                     dfloat *wt_j = wt + (row == 1 ? p_Nq : 0);
                     const dfloat *x = e_x[row][d];
                     dfloat sum = 0.0;
                     for (dlong k = 0; k < p_Nq; ++k) {
-                      // resid+p_D == jac_T
+                      // resid+3 == jac_T
                       sum += wt_j[k] * x[k];
                     }
-                    if (j < p_D) {
+                    if (j < 3) {
                       resid[j] = tmp->x[j] - sum;
                     }
                     else {
-                      jac[d * p_D + d_j[row - 1]] = sum;
+                      jac[d * 3 + d_j[row - 1]] = sum;
                     }
                   }
-                  if (j < hes_count * p_D) {
+                  if (j < hes_count * 3) {
                     // Hes_T is transposed version (i.e. in col major)
 
                     // n1*[2, 1, 1, 0, 0]
@@ -1073,7 +1077,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 for (dlong j = 0; j < INNER_SIZE; ++j; @inner) {
                   if (j < hes_count) {
                     hes[j] = 0.0;
-                    for (dlong d = 0; d < p_D; ++d) {
+                    for (dlong d = 0; d < 3; ++d) {
                       hes[j] += resid[d] * hes_T[j * 3 + d];
                     }
                   }
@@ -1084,12 +1088,12 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                   break;
 
                 /* check constraint */
-                dfloat steep[p_D - 1];
-                for (dlong k = 0; k < p_D - 1; ++k) {
+                dfloat steep[3 - 1];
+                for (dlong k = 0; k < 3 - 1; ++k) {
                   dlong dn = d_j[k + 1];
                   steep[k] = 0;
-                  for (dlong d = 0; d < p_D; ++d) {
-                    steep[k] += jac[dn + d * p_D] * resid[d];
+                  for (dlong d = 0; d < 3; ++d) {
+                    steep[k] += jac[dn + d * 3] * resid[d];
                   }
                   steep[k] *= tmp->r[dn];
                 }
@@ -1120,16 +1124,16 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 const findptsElementGPT_t gpt = get_pt(elx, wtend, pi);
                 const dfloat *const pt_x = gpt.x, *const jac = gpt.jac, *const hes = gpt.hes;
 
-                dfloat resid[p_D], steep[p_D];
-                for (dlong d = 0; d < p_D; ++d) {
+                dfloat resid[3], steep[3];
+                for (dlong d = 0; d < 3; ++d) {
                   resid[d] = fpt->x[d] - pt_x[d];
                 }
                 if (reject_prior_step_q(fpt, resid, tmp, tol))
                   break;
-                for (dlong d = 0; d < p_D; ++d) {
+                for (dlong d = 0; d < 3; ++d) {
                   steep[d] = 0;
-                  for (dlong e = 0; d < p_D; ++d) {
-                    steep[d] += jac[d + e * p_D] * resid[d];
+                  for (dlong e = 0; d < 3; ++d) {
+                    steep[d] += jac[d + e * 3] * resid[d];
                   }
                   steep[d] *= tmp->r[d];
                 }
@@ -1213,7 +1217,7 @@ dfloat tensor_ig3_j(@ restrict dfloat *g_partials,
                 *code_i = converged_internal ? CODE_INTERNAL : CODE_BORDER;
                 *dist2_i = fpt->dist2;
               }
-              if (j < p_D)
+              if (j < 3)
                 r_i[j] = fpt->r[j];
             }
             @barrier("local");

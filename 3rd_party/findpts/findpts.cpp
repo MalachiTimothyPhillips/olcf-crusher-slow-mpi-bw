@@ -117,72 +117,68 @@ void findptsLocal(int *const code,
 
   occa::device &device = findptsData->device;
 
-  dlong worksize = 2 * sizeof(dlong) + 7 * sizeof(dfloat);
-  dlong alloc_size = worksize * pn + 3 * (sizeof(dfloat *) + sizeof(dlong));
-  alloc_size += 3 * (sizeof(dfloat *));
-  alloc_size += 6 * sizeof(dfloat);
-  if (alloc_size > o_scratch.size()) {
-    reallocScratch(device, alloc_size);
+  dlong Nbytes = 0;
+  Nbytes += pn * sizeof(dlong); // code
+  Nbytes += pn * sizeof(dlong); // element
+  Nbytes += pn * sizeof(dfloat); // dist2
+  Nbytes += 3 * pn * sizeof(dfloat); // r,s,t data
+  Nbytes += 3 * pn * sizeof(dfloat); // x,y,z coordinates
+
+  if (Nbytes > o_scratch.size()) {
+    reallocScratch(device, Nbytes);
   }
 
   dlong byteOffset = 0;
 
   occa::memory o_code = o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
+
   occa::memory o_el = o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
+
   occa::memory o_r = o_scratch + byteOffset;
   byteOffset += 3 * sizeof(dfloat) * pn;
+
   occa::memory o_dist2 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
-  occa::memory o_x = o_scratch + byteOffset;
-  byteOffset += 3 * sizeof(dfloat *);
+
   occa::memory o_x0 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
+
   occa::memory o_x1 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
+
   occa::memory o_x2 = o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
-  occa::memory o_wtend = o_scratch + byteOffset;
-  byteOffset += 3 * sizeof(dfloat *);
-  occa::memory o_hashMin = o_scratch + byteOffset;
-  byteOffset += 3 * sizeof(dfloat);
-  occa::memory o_hashFac = o_scratch + byteOffset;
-  byteOffset += 3 * sizeof(dfloat);
 
-  o_hashMin.copyFrom(findptsData->hashMin, 3 * sizeof(dfloat));
-  o_hashFac.copyFrom(findptsData->hashFac, 3 * sizeof(dfloat));
-
-  dfloat *x_d[3] = {(double *)o_x0.ptr(), (double *)o_x1.ptr(), (double *)o_x2.ptr()};
-  o_x.copyFrom(x_d, 3 * sizeof(dfloat *));
   o_x0.copyFrom(x[0], sizeof(dfloat) * pn);
   o_x1.copyFrom(x[1], sizeof(dfloat) * pn);
   o_x2.copyFrom(x[2], sizeof(dfloat) * pn);
 
-  dfloat *wtend_d[3] = {(double *)findptsData->o_wtend_x.ptr(),
-                        (double *)findptsData->o_wtend_y.ptr(),
-                        (double *)findptsData->o_wtend_z.ptr()};
-  o_wtend.copyFrom(wtend_d, 3 * sizeof(dfloat *));
-
-  findptsData->localKernel(o_code,
-                            o_el,
-                            o_r,
-                            o_dist2,
-                            o_x,
-                            pn,
+  findptsData->localKernel(pn,
+                            findptsData->tol,
+                            o_x0,
+                            o_x1,
+                            o_x2,
                             findptsData->o_x,
                             findptsData->o_y,
                             findptsData->o_z,
-                            o_wtend,
+                            findptsData->o_wtend_x,
+                            findptsData->o_wtend_y,
+                            findptsData->o_wtend_z,
                             findptsData->o_c,
                             findptsData->o_A,
                             findptsData->o_min,
                             findptsData->o_max,
                             findptsData->hash_n,
-                            o_hashMin,
-                            o_hashFac,
+                            findptsData->o_hashMin,
+                            findptsData->o_hashFac,
                             findptsData->o_offset,
-                            findptsData->tol);
+                            o_code,
+                            o_el,
+                            o_r,
+                            o_dist2);
+
 
   o_code.copyTo(code, sizeof(dlong) * pn);
   o_el.copyTo(el, sizeof(dlong) * pn);
@@ -420,11 +416,17 @@ findpts_t *findptsSetup(MPI_Comm comm,
   }
 
   auto hash = findpts_data->local.hd;
+  dfloat hashMin[3];
+  dfloat hashFac[3];
   for (int d = 0; d < 3; ++d) {
-    handle->hashMin[d] = hash.bnd[d].min;
-    handle->hashFac[d] = hash.fac[d];
+    hashMin[d] = hash.bnd[d].min;
+    hashFac[d] = hash.fac[d];
   }
   handle->hash_n = hash.hash_n;
+  handle->o_hashMin = device.malloc(3 * sizeof(dfloat));
+  handle->o_hashFac = device.malloc(3 * sizeof(dfloat));
+  handle->o_hashMin.copyFrom(hashMin, 3 * sizeof(dfloat));
+  handle->o_hashFac.copyFrom(hashFac, 3 * sizeof(dfloat));
 
   handle->device = device;
   auto kernels = initFindptsKernels(comm, device, 3, Nq);

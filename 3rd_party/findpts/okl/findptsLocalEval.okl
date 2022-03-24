@@ -89,10 +89,10 @@
                                 const dlong Nfields,
                                 const dlong fieldOffset,
                                 const dlong outputOffset,
-                                @ restrict const dlong *elIdx,
-                                @ restrict const dfloat *rst,
-                                @ restrict const dfloat *fld,
-                                @ restrict dfloat *out)
+                                @restrict const dlong *elIdx,
+                                @restrict const dfloat *rst,
+                                @restrict const dfloat *fld,
+                                @restrict dfloat *out)
 {
   for (int field = 0; field < Nfields; field++; @outer(1)) {
     for (int pb = 0; pb < (npts + p_nptsBlock - 1) / p_nptsBlock; pb++; @outer(0)) {

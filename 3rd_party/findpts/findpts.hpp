@@ -37,11 +37,12 @@ struct findpts_t {
   occa::memory o_min;
   occa::memory o_max;
 
+  // hash data
   occa::memory o_offset;
-
-  dfloat hashMin[3];
-  dfloat hashFac[3];
   dlong hash_n;
+
+  occa::memory o_hashMin;
+  occa::memory o_hashFac;
 };
 
 struct findpts_data_t {
