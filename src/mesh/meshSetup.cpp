@@ -3,28 +3,6 @@
 #include "meshNekReader.hpp"
 #include <string>
 
-namespace{
-void meshVolume(mesh_t* meshV, mesh_t* meshT){
-
-  dfloat volume = 0.0;
-  const auto Np = meshT->Np;
-  const auto Nggeo = meshT->Nggeo;
-
-  for(dlong e = 0; e < meshT->Nelements; ++e) {
-    
-    // only count contribution of fluid domain
-    if(!meshT->elementInfo[e]){
-      for(dlong n = 0; n < Np; ++n){
-          volume += meshT->ggeo[Nggeo * Np * e + n + Np * GWJID];
-      }
-    }
-  }
-
-  MPI_Allreduce(MPI_IN_PLACE, &volume, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-  meshV->volume = volume;
-}
-}
-
 void meshVOccaSetup3D(mesh_t* mesh, occa::properties &kernelInfo);
 mesh_t *createMeshV(MPI_Comm comm,
                     int N,
@@ -327,6 +305,7 @@ mesh_t *createMeshMG(mesh_t* _mesh,
     //mesh->o_DT.free();
     //mesh->o_ggeo.free();
   }
+
   return mesh;
 }
 
@@ -367,9 +346,6 @@ mesh_t *createMeshV(
   mesh->z = meshT->z;
 
   meshHaloPhysicalNodes(mesh);
-
-  // compute volume of fluid mesh
-  meshVolume(mesh, meshT);
 
   // meshGeometricFactorsHex3D(mesh);
   mesh->vgeo = meshT->vgeo;
@@ -413,6 +389,20 @@ mesh_t *createMeshV(
   mesh->oogs = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsDfloat, NULL, OOGS_AUTO);
 
   mesh->computeInvLMM();
+
+  // compute V mesh volume
+  dfloat volume = 0.0;
+  const auto Np = mesh->Np;
+  const auto Nggeo = mesh->Nggeo;
+  for(dlong e = 0; e < mesh->Nelements; ++e) {
+    for(dlong n = 0; n < Np; ++n){
+        volume += mesh->ggeo[Nggeo * Np * e + n + Np * GWJID];
+    }
+  }
+
+  MPI_Allreduce(MPI_IN_PLACE, &volume, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+  mesh->volume = volume;
+
 
   return mesh;
 }
