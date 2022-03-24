@@ -94,9 +94,13 @@ void adjustDt(nrs_t* nrs, int tstep)
     if(!initialTimeStepProvided){
       if(CFL > TOLToZero)
       {
+        std::cout << "Setting dt based on CFL\n";
+        std::cout << "target = " << targetCFL << ", actual = " << CFL << ", current dt = " << nrs->dt[0] << "\n";
         nrs->dt[0] = targetCFL / CFL * nrs->dt[0];
         nrs->unitTimeCFL = CFL/nrs->dt[0];
+        std::cout << "unitTimeCFL = " << nrs->unitTimeCFL << "\n";
       } else {
+        std::cout << "Setting dt from userf\n";
         // estimate from userf
         if(udf.uEqnSource) {
           platform->linAlg->fillKernel(nrs->fieldOffset * nrs->NVfields, 0.0, nrs->o_FU);

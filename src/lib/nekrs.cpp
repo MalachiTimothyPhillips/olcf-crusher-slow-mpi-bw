@@ -230,6 +230,7 @@ double dt(int tstep)
       double initialDt = 0.0;
       platform->options.getArgs("DT", initialDt);
       if(initialDt > 0.0){
+        std::cout << "initial dt specified!\n";
         nrs->dt[0] = initialDt;
         return nrs->dt[0];
       }
