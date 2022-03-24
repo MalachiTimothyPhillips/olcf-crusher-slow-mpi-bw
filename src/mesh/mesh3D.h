@@ -39,9 +39,6 @@ void meshParallelConnect3D(mesh_t *mesh);
 // compute geometric factors for local to physical map
 void meshGeometricFactorsHex3D(mesh_t *mesh);
 
-// compute mesh volume
-void meshVolume(mesh_t *meshV, mesh_t* meshT);
-
 void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh);
 
 void meshPhysicalNodesHex3D(mesh_t *mesh);
