@@ -59,11 +59,6 @@ dfloat ellipticUpdatePCG(elliptic_t* elliptic,
     for(int n = 0; n < Nblock; ++n)
       rdotr1 += elliptic->tmpNormr[n];
   }
-  MPI_Request request;
-  MPI_Iallreduce(MPI_IN_PLACE, &rdotr1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm, &request);
-#ifdef ELLIPTIC_ENABLE_TIMER
-    //platform->timer.toc("dotp");
-#endif
 
   // x <= x + alpha*p
   platform->linAlg->axpbyMany(
@@ -75,7 +70,10 @@ dfloat ellipticUpdatePCG(elliptic_t* elliptic,
     1.0,
     o_x);
 
-  MPI_Wait(&request, MPI_STATUS_IGNORE);
+  MPI_Allreduce(MPI_IN_PLACE, &rdotr1, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+#ifdef ELLIPTIC_ENABLE_TIMER
+    //platform->timer.toc("dotp");
+#endif
 
   platform->flopCounter->add(elliptic->name + " ellipticUpdatePC",
                              elliptic->Nfields * static_cast<double>(mesh->Nlocal) * 6 + mesh->Nlocal);
