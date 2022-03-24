@@ -43,38 +43,33 @@ static occa::memory o_scratch;
 static occa::memory h_out;
 static occa::memory h_r;
 static occa::memory h_el;
+static occa::memory h_dist2;
+static occa::memory h_code;
+
+// TODO: need to verify no shadowed variables...
 static dfloat *out;
 static dfloat *r;
 static dlong *el;
+static dfloat *dist2;
+static dlong *code;
 
-// findpts, do not allocate pinned memory
-static void reallocScratch(occa::device &device, dlong Nbytes)
-{
-  if (o_scratch.size())
-    o_scratch.free();
-  {
-    void *buffer = std::calloc(Nbytes, 1);
-    o_scratch = device.malloc(Nbytes, buffer);
-    std::free(buffer);
-  }
-}
+// TODO: use pinned memory...
 
 // findpts_eval
-static void reallocScratch(occa::device &device, dlong pn, dlong nFields)
+static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
 {
+  if(pn == 0) return;
 
-  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
+  dlong Nbytes = 0;
+  Nbytes += pn * sizeof(dlong); // code
+  Nbytes += pn * sizeof(dlong); // element
+  Nbytes += pn * sizeof(dfloat); // dist2
+  Nbytes += 3 * pn * sizeof(dfloat); // r,s,t data
+  Nbytes += 3 * pn * sizeof(dfloat); // x,y,z coordinates
+  Nbytes += nOutputFields * pn * sizeof(dfloat); // output buffer
 
-  if (h_out.size())
-    h_out.free();
-  if (h_r.size())
-    h_r.free();
-  if (h_el.size())
-    h_el.free();
-
-  if (Nbytes > o_scratch.size()) {
-    if (o_scratch.size())
-      o_scratch.free();
+  if(Nbytes > o_scratch.size()){
+    if(o_scratch.size()) o_scratch.free();
     void *buffer = std::calloc(Nbytes, 1);
     o_scratch = device.malloc(Nbytes, buffer);
     std::free(buffer);
@@ -83,24 +78,48 @@ static void reallocScratch(occa::device &device, dlong pn, dlong nFields)
   occa::properties props;
   props["host"] = true;
 
-  {
-    void *buffer = std::calloc(nFields * pn * sizeof(dfloat), 1);
-    h_out = device.malloc(nFields * pn * sizeof(dfloat), buffer, props);
-    out = (dfloat *)h_out.ptr();
-    std::free(buffer);
-  }
-
-  {
-    void *buffer = std::calloc(3 * pn * sizeof(dfloat), 1);
-    h_r = device.malloc(3 * pn * sizeof(dfloat), buffer, props);
+  const auto NbytesR = 3 * pn * sizeof(dfloat);
+  if(NbytesR > h_r.size()){
+    if(h_r.size()) h_r.free();
+    void *buffer = std::calloc(NbytesR, 1);
+    h_r = device.malloc(NbytesR, buffer, props);
     r = (dfloat *)h_r.ptr();
     std::free(buffer);
   }
 
-  {
-    void *buffer = std::calloc(pn * sizeof(dlong), 1);
-    h_el = device.malloc(pn * sizeof(dlong), buffer, props);
+  const auto NbytesEl = pn * sizeof(dlong);
+  if(NbytesEl > h_el.size()){
+    if(h_el.size()) h_el.free();
+    void *buffer = std::calloc(NbytesEl, 1);
+    h_el = device.malloc(NbytesEl, buffer, props);
     el = (dlong *)h_el.ptr();
+    std::free(buffer);
+  }
+
+  const auto NbytesCode = pn * sizeof(dlong);
+  if(NbytesCode > h_code.size()){
+    if(h_code.size()) h_code.free();
+    void *buffer = std::calloc(NbytesCode, 1);
+    h_code = device.malloc(NbytesCode, buffer, props);
+    code = (dlong *)h_code.ptr();
+    std::free(buffer);
+  }
+
+  const auto NbytesDist2 = pn * sizeof(dfloat);
+  if(NbytesDist2 > h_dist2.size()){
+    if(h_dist2.size()) h_dist2.free();
+    void *buffer = std::calloc(NbytesDist2, 1);
+    h_dist2 = device.malloc(NbytesDist2, buffer, props);
+    dist2 = (dfloat *)h_dist2.ptr();
+    std::free(buffer);
+  }
+
+  const auto NbytesOut = nOutputFields * pn * sizeof(dfloat);
+  if(NbytesOut > h_out.size() && NbytesOut > 0){
+    if(h_out.size()) h_out.free();
+    void *buffer = std::calloc(NbytesOut, 1);
+    h_out = device.malloc(NbytesOut, buffer, props);
+    out = (dfloat *)h_out.ptr();
     std::free(buffer);
   }
 }
@@ -117,16 +136,7 @@ void findptsLocal(int *const code,
 
   occa::device &device = findptsData->device;
 
-  dlong Nbytes = 0;
-  Nbytes += pn * sizeof(dlong); // code
-  Nbytes += pn * sizeof(dlong); // element
-  Nbytes += pn * sizeof(dfloat); // dist2
-  Nbytes += 3 * pn * sizeof(dfloat); // r,s,t data
-  Nbytes += 3 * pn * sizeof(dfloat); // x,y,z coordinates
-
-  if (Nbytes > o_scratch.size()) {
-    reallocScratch(device, Nbytes);
-  }
+  manageBuffers(device, pn, 0);
 
   dlong byteOffset = 0;
 
@@ -201,10 +211,7 @@ void findptsLocalEvalInternal(OutputType *opt,
 
   occa::device &device = findptsData->device;
 
-  const auto Nbytes = (3 * pn + nFields * pn) * sizeof(dfloat) + pn * sizeof(dlong);
-  if (Nbytes > o_scratch.size() || h_out.size() == 0) {
-    reallocScratch(device, pn, nFields);
-  }
+  manageBuffers(device, pn, nFields);
 
   dlong byteOffset = 0;
 
