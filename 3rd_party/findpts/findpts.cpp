@@ -126,7 +126,9 @@ void findptsLocal(int *const code,
                    int *const el,
                    double *const r,
                    double *const dist2,
-                   const double *const x[3],
+                   const double *const x,
+                   const double *const y,
+                   const double *const z,
                    const int pn,
                    findpts_t* findptsData)
 {
@@ -151,24 +153,24 @@ void findptsLocal(int *const code,
   occa::memory o_dist2 = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x0 = pool::o_scratch + byteOffset;
+  occa::memory o_x = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x1 = pool::o_scratch + byteOffset;
+  occa::memory o_y = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x2 = pool::o_scratch + byteOffset;
+  occa::memory o_z = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  o_x0.copyFrom(x[0], sizeof(dfloat) * pn);
-  o_x1.copyFrom(x[1], sizeof(dfloat) * pn);
-  o_x2.copyFrom(x[2], sizeof(dfloat) * pn);
+  o_x.copyFrom(x, sizeof(dfloat) * pn);
+  o_y.copyFrom(y, sizeof(dfloat) * pn);
+  o_z.copyFrom(z, sizeof(dfloat) * pn);
 
   findptsData->localKernel(pn,
                             findptsData->tol,
-                            o_x0,
-                            o_x1,
-                            o_x2,
+                            o_x,
+                            o_y,
+                            o_z,
                             findptsData->o_x,
                             findptsData->o_y,
                             findptsData->o_z,
@@ -494,7 +496,9 @@ struct outPt_t {
 };
 
 void findpts(findpts_data_t *const findPtsData,
-             const dfloat *const x_base[],
+             const dfloat *const x_base,
+             const dfloat *const y_base,
+             const dfloat *const z_base,
              const dlong npt,
              findpts_t *const fd)
 {
@@ -509,7 +513,7 @@ void findpts(findpts_data_t *const findPtsData,
   struct array hash_pt, srcPt_t, outPt_t;
   /* look locally first */
   if (npt) {
-    findptsLocal(code_base, el_base, r_base, dist2_base, x_base, npt, fd);
+    findptsLocal(code_base, el_base, r_base, dist2_base, x_base, y_base, z_base, npt, fd);
   }
   /* send unfound and border points to global hash cells */
   {
@@ -518,9 +522,10 @@ void findpts(findpts_data_t *const findPtsData,
     const double *xp[D];
     struct srcPt_t *pt;
 
-    for (int d = 0; d < D; ++d) {
-      xp[d] = x_base[d];
-    }
+    xp[0] = x_base;
+    xp[1] = y_base;
+    xp[2] = z_base;
+
     array_init(struct srcPt_t, &hash_pt, npt);
     pt = (struct srcPt_t *)hash_pt.ptr;
 
@@ -611,20 +616,19 @@ void findpts(findpts_data_t *const findPtsData,
       std::vector<double> x1(srcPt_t.n, 0.0);
       std::vector<double> x2(srcPt_t.n, 0.0);
 
-      // pack position data into arrays
-      double *spt_x_base[3] = {x0.data(), x1.data(), x2.data()};
-
       for (int point = 0; point < srcPt_t.n; ++point) {
-        for (int d = 0; d < 3; ++d) {
-          spt_x_base[d][point] = spt[point].x[d];
-        }
+        x0[point] = spt[point].x[0];
+        x1[point] = spt[point].x[1];
+        x2[point] = spt[point].x[2];
       }
 
       findptsLocal(codeArr.data(),
                     elArr.data(),
                     rArr.data(),
                     dist2Arr.data(),
-                    spt_x_base,
+                    x0.data(),
+                    x1.data(),
+                    x2.data(),
                     srcPt_t.n,
                     fd);
 

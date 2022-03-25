@@ -95,14 +95,19 @@ findpts_t *findptsSetup(MPI_Comm comm,
                         const dfloat newt_tol,
                         occa::device &device);
 void findptsFree(findpts_t *fd);
-void findpts(findpts_data_t *findPtsData, const dfloat *const x_base[], const dlong npt, findpts_t *const fd);
+void findpts(findpts_data_t *findPtsData,
+             const dfloat *const x,
+             const dfloat *const y, 
+             const dfloat *const z,
+             const dlong npt,
+             findpts_t *const fd);
 
 void findptsEval(const dlong npt,
                  occa::memory o_in,
                  findpts_t *fd,
                  findpts_data_t *findPtsData,
-
                  dfloat *out_base);
+
 void findptsEval(const dlong npt,
                  const dlong nFields,
                  const dlong inputOffset,

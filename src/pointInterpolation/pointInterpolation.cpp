@@ -49,10 +49,9 @@ void pointInterpolation_t::find(bool printWarnings)
     platform->timer.tic("pointInterpolation_t::find", 1);
   }
 
-  dfloat * x[3] = {_x, _y, _z};
   const auto n = nPoints;
 
-  findpts(&data_, x, n, findpts_);
+  findpts(&data_, _x, _y, _z, n, findpts_);
 
   if (printWarnings) {
     dlong nFail = 0;
@@ -61,16 +60,16 @@ void pointInterpolation_t::find(bool printWarnings)
         if (data_.dist2_base[in] > 10 * newton_tol) {
           nFail += 1;
           if (nFail < 5) {
-            std::cerr << " WARNING: point on boundary or outside the mesh xy[z]d^2: " << x[0][in] << ","
-                      << x[1][in] << ", " << x[2][in] << ", " << data_.dist2_base[in] << std::endl;
+            std::cerr << " WARNING: point on boundary or outside the mesh xy[z]d^2: " << _x[in] << ","
+                      << _y[in] << ", " << _z[in] << ", " << data_.dist2_base[in] << std::endl;
           }
         }
       }
       else if (data_.code_base[in] == 2) {
         nFail += 1;
         if (nFail < 5) {
-          std::cerr << " WARNING: point not within mesh xy[z]: " << x[0][in] << "," << x[1][in] << ", "
-                    << x[2][in] << std::endl;
+          std::cerr << " WARNING: point not within mesh xy[z]: " << _x[in] << "," << _y[in] << ", "
+                    << _z[in] << std::endl;
         }
       }
     }
