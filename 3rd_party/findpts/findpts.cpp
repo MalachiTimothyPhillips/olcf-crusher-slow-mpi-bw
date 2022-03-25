@@ -41,21 +41,19 @@ SOFTWARE.
 namespace{
 
 namespace pool{
-  static occa::memory o_scratch;
-  static occa::memory h_out;
-  static occa::memory h_r;
-  static occa::memory h_el;
-  static occa::memory h_dist2;
-  static occa::memory h_code;
-  
-  static dfloat *out;
-  static dfloat *r;
-  static dlong *el;
-  static dfloat *dist2;
-  static dlong *code;
-};
+static occa::memory o_scratch;
+static occa::memory h_out;
+static occa::memory h_r;
+static occa::memory h_el;
+static occa::memory h_dist2;
+static occa::memory h_code;
 
-// findpts_eval
+static dfloat *out;
+static dfloat *r;
+static dlong *el;
+static dfloat *dist2;
+static dlong *code;
+
 static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
 {
   if(pn == 0) return;
@@ -123,6 +121,7 @@ static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
     std::free(buffer);
   }
 }
+} // namespace
 void findptsLocal(int *const code,
                    int *const el,
                    double *const r,
@@ -136,7 +135,7 @@ void findptsLocal(int *const code,
 
   occa::device &device = findptsData->device;
 
-  manageBuffers(device, pn, 0);
+  pool::manageBuffers(device, pn, 0);
 
   dlong byteOffset = 0;
 
@@ -211,7 +210,7 @@ void findptsLocalEvalInternal(OutputType *opt,
 
   occa::device &device = findptsData->device;
 
-  manageBuffers(device, pn, nFields);
+  pool::manageBuffers(device, pn, nFields);
 
   dlong byteOffset = 0;
 
