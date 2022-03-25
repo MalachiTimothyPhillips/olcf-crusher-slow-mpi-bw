@@ -116,9 +116,9 @@ static void findInterpPoints(nrs_t* nrs){
   dfloat *nullptr_3[3] = {nullptr, nullptr, nullptr};
   for(dlong sess = 0; sess < nsessions; ++sess) {
     findpts(findPtsData,
-               (sess == sessionID) ? nullptr : interpX + 0 * npt,
-               (sess == sessionID) ? nullptr : interpX + 1 * npt,
-               (sess == sessionID) ? nullptr : interpX + 2 * npt,
+               interpX + 0 * npt,
+               interpX + 1 * npt,
+               interpX + 2 * npt,
                (sess == sessionID) ? 0 : npt,
                ogsHandles[sess]);
   }
