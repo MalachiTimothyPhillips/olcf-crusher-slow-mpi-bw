@@ -39,21 +39,21 @@ SOFTWARE.
 #define CODE_NOT_FOUND 2
 
 namespace{
-static occa::memory o_scratch;
-static occa::memory h_out;
-static occa::memory h_r;
-static occa::memory h_el;
-static occa::memory h_dist2;
-static occa::memory h_code;
 
-// TODO: need to verify no shadowed variables...
-static dfloat *out;
-static dfloat *r;
-static dlong *el;
-static dfloat *dist2;
-static dlong *code;
-
-// TODO: use pinned memory...
+namespace pool{
+  static occa::memory o_scratch;
+  static occa::memory h_out;
+  static occa::memory h_r;
+  static occa::memory h_el;
+  static occa::memory h_dist2;
+  static occa::memory h_code;
+  
+  static dfloat *out;
+  static dfloat *r;
+  static dlong *el;
+  static dfloat *dist2;
+  static dlong *code;
+};
 
 // findpts_eval
 static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
@@ -68,10 +68,10 @@ static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
   Nbytes += 3 * pn * sizeof(dfloat); // x,y,z coordinates
   Nbytes += nOutputFields * pn * sizeof(dfloat); // output buffer
 
-  if(Nbytes > o_scratch.size()){
-    if(o_scratch.size()) o_scratch.free();
+  if(Nbytes > pool::o_scratch.size()){
+    if(pool::o_scratch.size()) pool::o_scratch.free();
     void *buffer = std::calloc(Nbytes, 1);
-    o_scratch = device.malloc(Nbytes, buffer);
+    pool::o_scratch = device.malloc(Nbytes, buffer);
     std::free(buffer);
   }
 
@@ -79,47 +79,47 @@ static void manageBuffers(occa::device &device, dlong pn, dlong nOutputFields)
   props["host"] = true;
 
   const auto NbytesR = 3 * pn * sizeof(dfloat);
-  if(NbytesR > h_r.size()){
-    if(h_r.size()) h_r.free();
+  if(NbytesR > pool::h_r.size()){
+    if(pool::h_r.size()) pool::h_r.free();
     void *buffer = std::calloc(NbytesR, 1);
-    h_r = device.malloc(NbytesR, buffer, props);
-    r = (dfloat *)h_r.ptr();
+    pool::h_r = device.malloc(NbytesR, buffer, props);
+    pool::r = (dfloat *)pool::h_r.ptr();
     std::free(buffer);
   }
 
   const auto NbytesEl = pn * sizeof(dlong);
-  if(NbytesEl > h_el.size()){
-    if(h_el.size()) h_el.free();
+  if(NbytesEl > pool::h_el.size()){
+    if(pool::h_el.size()) pool::h_el.free();
     void *buffer = std::calloc(NbytesEl, 1);
-    h_el = device.malloc(NbytesEl, buffer, props);
-    el = (dlong *)h_el.ptr();
+    pool::h_el = device.malloc(NbytesEl, buffer, props);
+    pool::el = (dlong *)pool::h_el.ptr();
     std::free(buffer);
   }
 
   const auto NbytesCode = pn * sizeof(dlong);
-  if(NbytesCode > h_code.size()){
-    if(h_code.size()) h_code.free();
+  if(NbytesCode > pool::h_code.size()){
+    if(pool::h_code.size()) pool::h_code.free();
     void *buffer = std::calloc(NbytesCode, 1);
-    h_code = device.malloc(NbytesCode, buffer, props);
-    code = (dlong *)h_code.ptr();
+    pool::h_code = device.malloc(NbytesCode, buffer, props);
+    pool::code = (dlong *)pool::h_code.ptr();
     std::free(buffer);
   }
 
   const auto NbytesDist2 = pn * sizeof(dfloat);
-  if(NbytesDist2 > h_dist2.size()){
-    if(h_dist2.size()) h_dist2.free();
+  if(NbytesDist2 > pool::h_dist2.size()){
+    if(pool::h_dist2.size()) pool::h_dist2.free();
     void *buffer = std::calloc(NbytesDist2, 1);
-    h_dist2 = device.malloc(NbytesDist2, buffer, props);
-    dist2 = (dfloat *)h_dist2.ptr();
+    pool::h_dist2 = device.malloc(NbytesDist2, buffer, props);
+    pool::dist2 = (dfloat *)pool::h_dist2.ptr();
     std::free(buffer);
   }
 
   const auto NbytesOut = nOutputFields * pn * sizeof(dfloat);
-  if(NbytesOut > h_out.size() && NbytesOut > 0){
-    if(h_out.size()) h_out.free();
+  if(NbytesOut > pool::h_out.size() && NbytesOut > 0){
+    if(pool::h_out.size()) pool::h_out.free();
     void *buffer = std::calloc(NbytesOut, 1);
-    h_out = device.malloc(NbytesOut, buffer, props);
-    out = (dfloat *)h_out.ptr();
+    pool::h_out = device.malloc(NbytesOut, buffer, props);
+    pool::out = (dfloat *)pool::h_out.ptr();
     std::free(buffer);
   }
 }
@@ -140,25 +140,25 @@ void findptsLocal(int *const code,
 
   dlong byteOffset = 0;
 
-  occa::memory o_code = o_scratch + byteOffset;
+  occa::memory o_code = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
 
-  occa::memory o_el = o_scratch + byteOffset;
+  occa::memory o_el = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dlong) * pn;
 
-  occa::memory o_r = o_scratch + byteOffset;
+  occa::memory o_r = pool::o_scratch + byteOffset;
   byteOffset += 3 * sizeof(dfloat) * pn;
 
-  occa::memory o_dist2 = o_scratch + byteOffset;
+  occa::memory o_dist2 = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x0 = o_scratch + byteOffset;
+  occa::memory o_x0 = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x1 = o_scratch + byteOffset;
+  occa::memory o_x1 = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
-  occa::memory o_x2 = o_scratch + byteOffset;
+  occa::memory o_x2 = pool::o_scratch + byteOffset;
   byteOffset += sizeof(dfloat) * pn;
 
   o_x0.copyFrom(x[0], sizeof(dfloat) * pn);
@@ -215,34 +215,34 @@ void findptsLocalEvalInternal(OutputType *opt,
 
   dlong byteOffset = 0;
 
-  auto o_out = o_scratch;
+  auto o_out = pool::o_scratch;
   byteOffset += nFields * pn * sizeof(dfloat);
 
-  auto o_r = o_scratch + byteOffset;
+  auto o_r = pool::o_scratch + byteOffset;
   byteOffset += 3 * pn * sizeof(dfloat);
 
-  auto o_el = o_scratch + byteOffset;
+  auto o_el = pool::o_scratch + byteOffset;
   byteOffset += pn * sizeof(dlong);
 
   // pack host buffers
   for (int point = 0; point < pn; ++point) {
     for (int component = 0; component < 3; ++component) {
-      r[3 * point + component] = spt[point].r[component];
+      pool::r[3 * point + component] = spt[point].r[component];
     }
-    el[point] = spt[point].el;
+    pool::el[point] = spt[point].el;
   }
 
-  o_r.copyFrom(r, 3 * pn * sizeof(dfloat));
-  o_el.copyFrom(el, pn * sizeof(dlong));
+  o_r.copyFrom(pool::r, 3 * pn * sizeof(dfloat));
+  o_el.copyFrom(pool::el, pn * sizeof(dlong));
 
   findptsData->localEvalKernel(pn, nFields, inputOffset, pn, o_el, o_r, o_in, o_out);
 
-  o_out.copyTo(out, nFields * pn * sizeof(dfloat));
+  o_out.copyTo(pool::out, nFields * pn * sizeof(dfloat));
 
   // unpack buffer
   for (int point = 0; point < pn; ++point) {
     for (int field = 0; field < nFields; ++field) {
-      opt[point].out[field] = out[point + field * pn];
+      opt[point].out[field] = pool::out[point + field * pn];
     }
   }
 }
