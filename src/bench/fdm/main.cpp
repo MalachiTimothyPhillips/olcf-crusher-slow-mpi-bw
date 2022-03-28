@@ -210,18 +210,12 @@ int main(int argc, char** argv)
   props["defines/p_restrict"] = 0;
   props["defines/p_knl"] = 0;
 
-  std::string kernelName = "fusedFDM";
-  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  std::string fileName = 
-    installDir + "/okl/elliptic/" + kernelName + ext;
-
-  fdmKernel = platform->device.buildKernel(fileName, props, true);
-
   auto oldKernelProps = props;
   oldKernelProps["defines/p_knl"] = -1;
 
-  kernelName = "fusedFDM";
-  fileName = installDir + "/okl/elliptic/" + kernelName + ext;
+  std::string kernelName = "fusedFDM";
+  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
+  std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
   oldFdmKernel = platform->device.buildKernel(fileName, oldKernelProps, true);
 
   // populate arrays
@@ -249,41 +243,55 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
 
-  // warm-up
-  auto elapsedAndError = run(10, true);
-  auto elapsed = elapsedAndError.first;
-  auto error = elapsedAndError.second;
-  const int elapsedTarget = 10;
-  if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+  constexpr int Nkernels = 1;
 
-  // ***** 
-  elapsedAndError = run(Ntests, false);
-  // ***** 
+  for(int knl = 0; knl < Nkernels; ++knl){
+    auto newProps = props;
+    newProps["defines/p_knl"] = knl;
 
-  elapsed = elapsedAndError.first;
+    kernelName = "fusedFDM";
+    fileName = 
+      installDir + "/okl/elliptic/" + kernelName + ext;
+
+    fdmKernel = platform->device.buildKernel(fileName, newProps, true);
+
+    // warm-up
+    auto elapsedAndError = run(10, true);
+    auto elapsed = elapsedAndError.first;
+    auto error = elapsedAndError.second;
+    const int elapsedTarget = 10;
+    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+
+    // ***** 
+    elapsedAndError = run(Ntests, false);
+    // ***** 
+
+    elapsed = elapsedAndError.first;
  
-  // print statistics
-  const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
+    // print statistics
+    const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
 
-  size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
-  const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
+    size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
+    const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
 
-  double flopsPerElem = 12 * Nq * Np + Np;
-  const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
+    double flopsPerElem = 12 * Nq * Np + Np;
+    const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
 
-  if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << N
-              << " Nelements=" << size * Nelements
-              << " error=" << error
-              << " elapsed time=" << elapsed
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
+    if(rank == 0)
+      std::cout << "MPItasks=" << size
+                << " OMPthreads=" << Nthreads
+                << " NRepetitions=" << Ntests
+                << " N=" << N
+                << " Nelements=" << size * Nelements
+                << " error=" << error
+                << " elapsed time=" << elapsed
+                << " wordSize=" << 8*wordSize
+                << " GDOF/s=" << GDOFPerSecond
+                << " GB/s=" << bw
+                << " GFLOPS/s=" << gflops
+                << " kernel=" << knl
+                << "\n";
+  }
 
   MPI_Finalize();
   exit(0);
