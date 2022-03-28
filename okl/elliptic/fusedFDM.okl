@@ -2458,6 +2458,7 @@
 }
 
 
+#if p_Nq_e % 2 == 0
 // only correct for even p_Nq_e
 @kernel void fusedFDM_v8(const dlong Nelements,
 #if p_overlap
@@ -2795,6 +2796,8 @@
   
   }
 }
+
+#endif
 
 
 @kernel void fusedFDM_v9(const dlong Nelements,
