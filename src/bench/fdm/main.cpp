@@ -243,7 +243,7 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
 
-  constexpr int Nkernels = 1;
+  constexpr int Nkernels = 10;
 
   for(int knl = 0; knl < Nkernels; ++knl){
     auto newProps = props;
