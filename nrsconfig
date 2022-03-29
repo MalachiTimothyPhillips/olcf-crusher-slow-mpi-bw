@@ -1,5 +1,18 @@
 #!/bin/bash
 set -e -a
+EXTERNAL_OCCA=ON
+EXTERNAL_BLASLAPACK=ON
+
+# NEKRS_GPU_MPI=0
+OCCA_CXX=icpx
+OCCA_CXXFLAGS="-O3"
+OCCA_DPCPP_COMPILER_FLAGS="-O3 -ffp-contract=fast"
+
+# BUILD_TYPE=Release
+NEKRS_INSTALL_DIR=`pwd`/install
+
+ONEAPI_ROOT=
+PREFIX_PATHS="${ONEAPI_ROOT};${ONEAPI_ROOT}/include/sycl;${ONEAPI_ROOT}/compiler;${OCCA_DIR}"
 
 : ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
 
@@ -41,7 +54,8 @@ cd ${NEKRS_BUILD_DIR}
 cmake -Wno-dev \
       -Wfatal-errors \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-      -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+      -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+      -DCMAKE_PREFIX_PATH="${PREFIX_PATHS}" \
       -DCMAKE_Fortran_COMPILER="${NEKRS_FC}" \
       -DCMAKE_C_COMPILER="${NEKRS_CC}" \
       -DCMAKE_CXX_COMPILER="${NEKRS_CXX}" \
