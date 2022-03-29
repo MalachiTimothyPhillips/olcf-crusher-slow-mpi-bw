@@ -252,6 +252,10 @@ int main(int argc, char** argv)
     auto newProps = props;
     newProps["defines/p_knl"] = knl;
 
+    if(platform->device.mode() == "HIP"){
+      props["defines/OCCA_USE_HIP"] = 1;
+    }
+
     kernelName = "fusedFDM";
     fileName = 
       installDir + "/okl/elliptic/" + kernelName + ext;
