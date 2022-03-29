@@ -63,19 +63,6 @@ set(GPU_MPI "0" CACHE STRING "GPU aware MPI")
 ###############################################################################
 # Check compiler/MPI vendor, version and Fortran/C compatibility              #
 ###############################################################################
-
-macro(check_compiler_version compiler_version)
-  if("${compiler}" STREQUAL "GNU")
-    if(${compiler_version} LESS 6.2)
-      message(FATAL_ERROR "NekRS only supports GNU compiler versions >= 6.2")
-    endif()
-  endif()
-endmacro()
-
-check_compiler_version("${CMAKE_CXX_COMPILER_VERSION}")
-check_compiler_version("${CMAKE_C_COMPILER_VERSION}")
-check_compiler_version("${CMAKE_Fortran_COMPILER_VERSION}")
-
 ## Sanity checks for MPI
 set(MPI_C_COMPILER ${CMAKE_C_COMPILER})
 set(MPI_CXX_COMPILER ${CMAKE_CXX_COMPILER})
