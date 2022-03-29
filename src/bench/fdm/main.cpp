@@ -247,7 +247,7 @@ int main(int argc, char** argv)
 
   // v8 is only valid for even p_Nq_e
 
-  for(int knl = 0; knl < Nkernels; ++knl){
+  for(int knl = 0; knl <= Nkernels; ++knl){
     if(knl == 8 && Nq % 2 == 1) continue;
     auto newProps = props;
     newProps["defines/p_knl"] = knl;
