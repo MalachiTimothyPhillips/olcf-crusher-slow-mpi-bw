@@ -47,6 +47,7 @@ alignment_t computeAlignment(mesh_t *mesh, dlong element, dlong face)
 }
 } // namespace
 
+static bool meshConditionsDerived = false;
 static std::set<std::string> fields;
 // stores for every (field, boundaryID) pair a bcID
 static std::map<std::pair<std::string, int>, int> bToBc;
@@ -182,6 +183,62 @@ void setup(std::vector<std::string> slist, std::string field)
     v_setup(field, slist);
   else if (field.compare(0, 6, "scalar") == 0)
     s_setup(field, slist);
+}
+
+bool useDerivedMeshBoundaryConditions()
+{
+  return meshConditionsDerived;
+}
+
+void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
+{
+  if (velocityBounds.size() == 0 || velocityBounds[0].compare("none") == 0) return;
+
+  meshConditionsDerived = true;
+
+  const std::string field = "mesh";
+
+  fields.insert(field);
+
+  for(int i = 0; i < velocityBounds.size(); i++) {
+    std::string key = velocityBounds[i];
+    if (key.compare("p") == 0) key = "periodic";
+    if (key.compare("w") == 0) key = "zerovalue";
+    if (key.compare("wall") == 0) key = "zerovalue";
+    if (key.compare("inlet") == 0) key = "zerovalue";
+    if (key.compare("v") == 0) key = "zerovalue";
+    if (key.compare("mv") == 0) key = "fixedvalue";
+
+    // all other bounds map to SYM
+    if (key.compare("outlet") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("outflow") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("o") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("slipx") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("slipy") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("slipz") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("symx") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("symy") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("symz") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("sym") == 0) key = "zeronvalue/zerogradient";
+    if (key.compare("shl") == 0)
+      key = "zeronvalue/zerogradient";
+
+    if (vBcTextToID.find(key) == vBcTextToID.end()) {
+      std::cout << "Invalid bcType " << "\'" << key << "\'" << "!\n";
+      ABORT(1);
+    }
+
+    try
+    {
+      bToBc[make_pair(field, i)] = vBcTextToID.at(key);
+    }
+    catch (const std::out_of_range& oor)
+    {
+      std::cout << "Out of Range error: " << oor.what() << "!\n";
+      ABORT(1);
+    }
+  }
+
 }
 
 int id(int bid, std::string field)

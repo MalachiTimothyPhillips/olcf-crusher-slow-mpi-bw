@@ -1664,7 +1664,13 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       sList = serializeString(m_bcMap,',');
       bcMap::setup(sList, "mesh");
     } else {
-      bcInPar = 0;
+      // use derived mapping based on fluid boundary conditions
+      std::string v_bcMap;
+      if(par->extract("velocity", "boundarytypemap", v_bcMap)) {
+        std::vector<std::string> sList;
+        sList = serializeString(m_bcMap,',');
+        bcMap::deriveMeshBoundaryConditions(sList);
+      }
     }
  
     std::string meshPartitioner;
@@ -1914,6 +1920,8 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
   } else {
     options.setArgs("VELOCITY", "FALSE");
   }
+
+  // MESH
 
   // SCALARS
   int nscal = 0;
