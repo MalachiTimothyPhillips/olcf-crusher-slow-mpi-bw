@@ -243,7 +243,7 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
 
-  constexpr int Nkernels = 10;
+  constexpr int Nkernels = 11;
 
   // v8 is only valid for even p_Nq_e
 
