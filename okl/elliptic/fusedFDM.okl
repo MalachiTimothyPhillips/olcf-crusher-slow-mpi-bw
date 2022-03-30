@@ -15,6 +15,7 @@
 #else
 #define fusedFDM_v10 fusedFDM
 #endif
+#endif
 
 // in the case of benchmarking, allow this define to select the kernel
 // (overrides above kernel selection)
