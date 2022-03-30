@@ -7,6 +7,7 @@
 #include "udf.hpp"
 #include "io.hpp"
 #include "platform.hpp"
+#include "bcMap.hpp"
 
 UDF udf = {NULL, NULL, NULL, NULL};
 
@@ -45,6 +46,10 @@ void oudfFindDirichlet(std::string &field)
     if (platform->comm.mpiRank == 0) 
      std::cout << "WARNING: Cannot find oudf function: pressureDirichletConditions!\n";
     // ABORT(EXIT_FAILURE); this bc is optional 
+  }
+  if(field == "mesh" && !meshVelocityDirichletConditions && !bcMap::useDerivedMeshBoundaryConditions()) {
+    if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: meshVelocityDirichletConditions!\n";
+    ABORT(EXIT_FAILURE);
   }
 }
 
