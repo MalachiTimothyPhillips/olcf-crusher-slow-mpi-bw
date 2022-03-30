@@ -10,6 +10,17 @@ void velocityDirichletConditions(bcData *bc)
   bc->w = w;
 }
 
+void meshVelocityDirichletConditions(bcData *bc)
+{
+  const dfloat u = 0.0;
+  const dfloat v = p_AMP*sin(p_OMEGA*bc->time);
+  const dfloat w = 0.0;
+
+  bc->u = u * cos(p_ROT) - v * sin(p_ROT);
+  bc->v = u * sin(p_ROT) + v * cos(p_ROT);
+  bc->w = w;
+}
+
 @kernel void userVp(const dlong Nelements,
                     const dlong uOffset,
                     const dlong sOffset,
