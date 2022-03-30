@@ -9,6 +9,7 @@ nekdata_private nekData;
 static int rank;
 static setupAide* options;
 static nrs_t *nrs;
+static bool nek_is_setup;
 
 static void (* usrdat_ptr)(void);
 static void (* usrdat2_ptr)(void);

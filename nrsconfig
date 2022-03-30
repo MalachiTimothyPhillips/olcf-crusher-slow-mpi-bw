@@ -3,19 +3,20 @@ set -e -a
 EXTERNAL_OCCA=ON
 EXTERNAL_BLASLAPACK=ON
 
-# NEKRS_GPU_MPI=0
+NEKRS_GPU_MPI=0
 OCCA_CXX=icpx
 OCCA_CXXFLAGS="-O3"
-OCCA_DPCPP_COMPILER_FLAGS="-O3 -ffp-contract=fast"
+OCCA_DPCPP_COMPILER_FLAGS="-O3 -ffp-contract=fast -fdebug-info-for-profiling -gline-tables-only"
 
 # BUILD_TYPE=Release
 NEKRS_INSTALL_DIR=`pwd`/install
 
-ONEAPI_ROOT=
+ONEAPI_ROOT=${CMPROOT}/linux
 PREFIX_PATHS="${ONEAPI_ROOT};${ONEAPI_ROOT}/include/sycl;${ONEAPI_ROOT}/compiler;${OCCA_DIR}"
 
 : ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
 
+: ${BUILD_TYPE:="RelWithDebInfo"}
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}
 : ${NEKRS_FC:="mpif77"}
