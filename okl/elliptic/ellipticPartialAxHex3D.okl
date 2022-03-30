@@ -322,13 +322,15 @@
 #endif
 
 @kernel void ellipticPartialAxHex3D_v1(const dlong Nelements,
-                        @restrict const  dlong  *  elementList,
-                        @restrict const  dlong  *  GlobalToLocal,
-                        @restrict const  dfloat *  ggeo,
-                        @restrict const  dfloat *  D,
-                        const dfloat lambda,
-                        @restrict const  dfloat *  q,
-                        @restrict dfloat *  Aq){
+                                    const dlong offset,
+                                    const dlong loffset,
+                                    @restrict const dlong*  elementList,
+                                    @restrict const dfloat* ggeo,
+                                    @restrict const dfloat* D,
+                                    @restrict const dfloat* S,
+                                    @restrict const dfloat* lambda,
+                                    @restrict const dfloat* q,
+                                    @restrict       dfloat* Aq){
 
   for(dlong e=0; e<Nelements; e++; @outer(0)){
 
@@ -360,7 +362,7 @@
         // load pencil of u into register
         #pragma unroll p_Nq
         for (int k=0;k<p_Nq;k++) {
-          const dlong id = GlobalToLocal[base + k*p_Nq*p_Nq];
+          const dlong id = base + k*p_Nq*p_Nq;
           r_u[k] = (id!=-1) ? q[id] : 0.0;
         }
 
@@ -372,7 +374,7 @@
     }
 
     // Layer by layer
-#if OCCA_USE_CUDA==1
+#ifdef smXX
     // only force some type of unrolling in CUDA mode
     #pragma unroll p_Nq
 #endif
@@ -388,14 +390,21 @@
       for(int j=0;j<p_Nq;++j;@inner(1)){
         for(int i=0;i<p_Nq;++i;@inner(0)){
           // prefetch geometric factors
-          const dlong gbase = p_Nggeo*(element*p_Np + k*p_Nq*p_Nq + j*p_Nq + i);
-          const dfloat r_GwJ = ggeo[gbase+p_GWJID];
-          const dfloat r_G00 = ggeo[gbase+p_G00ID];
-          const dfloat r_G01 = ggeo[gbase+p_G01ID];
-          const dfloat r_G11 = ggeo[gbase+p_G11ID];
-          const dfloat r_G12 = ggeo[gbase+p_G12ID];
-          const dfloat r_G02 = ggeo[gbase+p_G02ID];
-          const dfloat r_G22 = ggeo[gbase+p_G22ID];
+          const dlong gbase = element * p_Nggeo * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+
+          const dfloat r_G00 = ggeo[gbase + p_G00ID * p_Np];
+          const dfloat r_G01 = ggeo[gbase + p_G01ID * p_Np];
+          const dfloat r_G02 = ggeo[gbase + p_G02ID * p_Np];
+
+          const dfloat r_G11 = ggeo[gbase + p_G11ID * p_Np];
+          const dfloat r_G12 = ggeo[gbase + p_G12ID * p_Np];
+          const dfloat r_G22 = ggeo[gbase + p_G22ID * p_Np];
+
+#ifdef p_poisson
+          const dfloat r_GwJ = 0;
+#else
+          const dfloat r_GwJ = ggeo[gbase + p_GWJID * p_Np];
+#endif
 
           dfloat ur = 0.f;
           dfloat us = 0.f;
@@ -412,11 +421,16 @@
             us   += s_D[j][m]*s_q[m][i];
           }
 
+          const dfloat lambda0 = lambda[0*loffset];
+
           s_w[j][i] = (r_G01*ur + r_G11*us + r_G12*ut);
           s_v[j][i] = (r_G00*ur + r_G01*us + r_G02*ut);
-          r_GDut    = (r_G02*ur + r_G12*us + r_G22*ut);
-
-          r_Auk = r_GwJ*lambda*r_u[k];
+          r_GDut    = lambda0*(r_G02*ur + r_G12*us + r_G22*ut);
+#ifdef p_poisson
+          r_Auk = 0.0;
+#else
+          r_Auk = r_GwJ*lambda[1*loffset]*r_u[k];
+#endif
         }
       }
 
@@ -497,13 +511,23 @@
 #endif
 
 @kernel void ellipticPartialAxHex3D_v2(const dlong Nelements,
-                        @restrict const  dlong  *  elementList,
-                        @restrict const  dlong  *  GlobalToLocal,
-                        @restrict const  dfloat *  ggeo,
-                        @restrict const  dfloat *  D,
-                        const dfloat lambda,
-                        @restrict const  dfloat *  q,
-                              @restrict dfloat *  Aq){
+                                    const dlong offset,
+                                    const dlong loffset,
+                                    @restrict const dlong*  elementList,
+                                    @restrict const dfloat* ggeo,
+                                    @restrict const dfloat* D,
+                                    @restrict const dfloat* S,
+                                    @restrict const dfloat* lambda,
+                                    @restrict const dfloat* q,
+                                    @restrict       dfloat* Aq){
+//@kernel void ellipticPartialAxHex3D_v2(const dlong Nelements,
+//                        @restrict const  dlong  *  elementList,
+//                        @restrict const  dlong  *  GlobalToLocal,
+//                        @restrict const  dfloat *  ggeo,
+//                        @restrict const  dfloat *  D,
+//                        const dfloat lambda,
+//                        @restrict const  dfloat *  q,
+//                              @restrict dfloat *  Aq){
 
   for(dlong eo=0; eo<Nelements; eo+=p_NelementsPerBlk; @outer(0)){
 
@@ -541,7 +565,7 @@
             // load pencil of u into register
             #pragma unroll p_Nq
             for (int k=0;k<p_Nq;k++) {
-              const dlong id = GlobalToLocal[base + k*p_Nq*p_Nq];
+              const dlong id = base + k*p_Nq*p_Nq;
               r_u[k] = (id!=-1) ? q[id] : 0.0;
             }
 
@@ -555,7 +579,7 @@
     }
 
     // Layer by layer
-#if OCCA_USE_CUDA==1
+#ifdef smXX
     // only force some type of unrolling in CUDA mode
     #pragma unroll p_Nq
 #endif
@@ -578,15 +602,21 @@
 
             if(r_e<Nelements){
               // prefetch geometric factors
-              const dlong gbase = p_Nggeo*(element*p_Np + k*p_Nq*p_Nq + j*p_Nq + i);
+              const dlong gbase = element * p_Nggeo * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
 
-              r_GwJ = ggeo[gbase+p_GWJID];
-              r_G00 = ggeo[gbase+p_G00ID];
-              r_G01 = ggeo[gbase+p_G01ID];
-              r_G11 = ggeo[gbase+p_G11ID];
-              r_G12 = ggeo[gbase+p_G12ID];
-              r_G02 = ggeo[gbase+p_G02ID];
-              r_G22 = ggeo[gbase+p_G22ID];
+              r_G00 = ggeo[gbase + p_G00ID * p_Np];
+              r_G01 = ggeo[gbase + p_G01ID * p_Np];
+              r_G02 = ggeo[gbase + p_G02ID * p_Np];
+
+              r_G11 = ggeo[gbase + p_G11ID * p_Np];
+              r_G12 = ggeo[gbase + p_G12ID * p_Np];
+              r_G22 = ggeo[gbase + p_G22ID * p_Np];
+
+#ifdef p_poisson
+              r_GwJ = 0;
+#else
+              r_GwJ = ggeo[gbase + p_GWJID * p_Np];
+#endif
             }
 
             dfloat ur = 0.f;
@@ -604,11 +634,18 @@
               us   += s_D[j][m]*s_q[es][m][i];
             }
 
+            const dfloat lambda0 = lambda[0*loffset];
+
             s_w[es][j][i] = (r_G01*ur + r_G11*us + r_G12*ut);
             s_v[es][j][i] = (r_G00*ur + r_G01*us + r_G02*ut);
-            r_GDut        = (r_G02*ur + r_G12*us + r_G22*ut);
+            r_GDut        = lambda0*(r_G02*ur + r_G12*us + r_G22*ut);
 
-            r_Auk = r_GwJ*lambda*r_u[k];
+#ifdef p_poisson
+          r_Auk = 0.0;
+#else
+          const dfloat lambda1 = lambda[1*loffset];
+          r_Auk = r_GwJ * lambda1 * r_u[k];
+#endif
           }
         }
       }
@@ -719,7 +756,7 @@
 
           if(r_e<Nelements){
             element = elementList[r_e];
-            const dlong id = GlobalToLocal[i + j*p_Nq + k*p_Nq*p_Nq + element*p_Np];
+            const dlong id = i + j*p_Nq + k*p_Nq*p_Nq + element*p_Np;
             if (id!=-1)
               s_q[es][k][j][i] = q[id];
             else
@@ -734,18 +771,25 @@
         for(int i=0;i<p_Nq;++i;@inner(0)){
 
           if(r_e<Nelements){
-            const dlong gbase = p_Nggeo*(element*p_Np + i + j*p_Nq + k*p_Nq*p_Nq);
 
             // 't' terms
             dfloat tmp=0.0;
 
-            r_wJ = ggeo[gbase+p_GWJID];
-            const dfloat G00 = ggeo[gbase+p_G00ID];
-            const dfloat G01 = ggeo[gbase+p_G01ID];
-            const dfloat G11 = ggeo[gbase+p_G11ID];
-            const dfloat G02 = ggeo[gbase+p_G02ID];
-            const dfloat G12 = ggeo[gbase+p_G12ID];
-            const dfloat G22 = ggeo[gbase+p_G22ID];
+            const dlong gbase = element * p_Nggeo * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
+
+            const dfloat G00 = ggeo[gbase + p_G00ID * p_Np];
+            const dfloat G01 = ggeo[gbase + p_G01ID * p_Np];
+            const dfloat G02 = ggeo[gbase + p_G02ID * p_Np];
+
+            const dfloat G11 = ggeo[gbase + p_G11ID * p_Np];
+            const dfloat G12 = ggeo[gbase + p_G12ID * p_Np];
+            const dfloat G22 = ggeo[gbase + p_G22ID * p_Np];
+
+#ifdef p_poisson
+            const dfloat r_wJ = 0;
+#else
+            const dfloat r_wJ = ggeo[gbase + p_GWJID * p_Np];
+#endif
 
             // #pragma unroll p_Unr
             for(int m = 0; m < p_Nq; ++m) {
@@ -783,7 +827,7 @@
 
             s_Gqr[es][k][j][i] += G01*tmp;
             s_Gqs[es][k][j][i] += G11*tmp;
-            s_Gqt[es][k][j][i] += G12*tmp;
+            s_Gqt[es][k][j][i] += lambda[0*loffset]*G12*tmp;
           }
         }
       }
@@ -794,7 +838,11 @@
         for(int i=0;i<p_Nq;++i;@inner(0)){
 
           if(r_e<Nelements){
-            dfloat tmpAp = s_q[es][k][j][i]*lambda*r_wJ;
+#ifdef p_poisson
+            dfloat tmpAp = 0.0;
+#else
+            dfloat tmpAp = s_q[es][k][j][i]*lambda[1*loffset]*r_wJ;
+#endif
 
             // use same matrix for both slices
             // #pragma unroll p_Unr
