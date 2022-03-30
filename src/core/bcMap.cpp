@@ -185,16 +185,6 @@ void setup(std::vector<std::string> slist, std::string field)
     s_setup(field, slist);
 }
 
-bool useDerivedMeshBoundaryConditions()
-{
-  const bool useNek5000StyleBounds = (size(0) == 0) && (size(1) == 0);
-  if(useNek5000StyleBounds){
-    return true;
-  } else {
-    return meshConditionsDerived;
-  }
-}
-
 void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
 {
   if (velocityBounds.size() == 0 || velocityBounds[0].compare("none") == 0) return;
@@ -324,6 +314,7 @@ int type(int bid, std::string field)
       bcType = ZERO_NORMAL;
     if (bcID == 8)
       bcType = ZERO_NORMAL;
+    if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("y-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -339,6 +330,7 @@ int type(int bid, std::string field)
       bcType = ZERO_NORMAL;
     if (bcID == 8)
       bcType = ZERO_NORMAL;
+    if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("z-mesh") == 0) {
     const int bcID = bToBc[{"mesh", bid - 1}];
     if (bcID == 1) bcType = DIRICHLET;
@@ -354,6 +346,7 @@ int type(int bid, std::string field)
       bcType = ZERO_NORMAL;
     if (bcID == 8)
       bcType = ZERO_NORMAL;
+    if (bcID == 2) oudfFindDirichlet(field);
   } else if (field.compare("pressure") == 0) {
     const int bcID = bToBc[{"velocity", bid - 1}];
     if (bcID == 1)
@@ -414,6 +407,17 @@ int size(int isTmesh)
 {
   return isTmesh ? nbid[1] : nbid[0];
 }
+
+bool useDerivedMeshBoundaryConditions()
+{
+  const bool useNek5000StyleBounds = (size(0) == 0) && (size(1) == 0);
+  if(useNek5000StyleBounds){
+    return true;
+  } else {
+    return meshConditionsDerived;
+  }
+}
+
 
 void check(mesh_t* mesh)
 {

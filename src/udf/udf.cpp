@@ -47,7 +47,7 @@ void oudfFindDirichlet(std::string &field)
      std::cout << "WARNING: Cannot find oudf function: pressureDirichletConditions!\n";
     // ABORT(EXIT_FAILURE); this bc is optional 
   }
-  if(field == "mesh" && !meshVelocityDirichletConditions && !bcMap::useDerivedMeshBoundaryConditions()) {
+  if(field.find("mesh") != std::string::npos && !meshVelocityDirichletConditions && !bcMap::useDerivedMeshBoundaryConditions()) {
     if (platform->comm.mpiRank == 0) std::cout << "Cannot find oudf function: meshVelocityDirichletConditions!\n";
     ABORT(EXIT_FAILURE);
   }
