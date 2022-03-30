@@ -1668,7 +1668,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       std::string v_bcMap;
       if(par->extract("velocity", "boundarytypemap", v_bcMap)) {
         std::vector<std::string> sList;
-        sList = serializeString(m_bcMap,',');
+        sList = serializeString(v_bcMap,',');
         bcMap::deriveMeshBoundaryConditions(sList);
       }
     }
