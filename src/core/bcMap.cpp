@@ -52,6 +52,7 @@ static std::set<std::string> fields;
 // stores for every (field, boundaryID) pair a bcID
 static std::map<std::pair<std::string, int>, int> bToBc;
 static int nbid[] = {0, 0};
+static bool useNek5000StyleBounds = true;
 
 static std::map<std::string, int> vBcTextToID = {
     {"periodic", 0},
@@ -169,6 +170,8 @@ namespace bcMap
 void setup(std::vector<std::string> slist, std::string field)
 {
   if (slist.size() == 0 || slist[0].compare("none") == 0) return;
+
+  useNek5000StyleBounds = true;
 
   fields.insert(field);
 
@@ -410,7 +413,6 @@ int size(int isTmesh)
 
 bool useDerivedMeshBoundaryConditions()
 {
-  const bool useNek5000StyleBounds = (size(0) == 0) && (size(1) == 0);
   if(useNek5000StyleBounds){
     return true;
   } else {
