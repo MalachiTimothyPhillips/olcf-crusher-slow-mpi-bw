@@ -187,7 +187,12 @@ void setup(std::vector<std::string> slist, std::string field)
 
 bool useDerivedMeshBoundaryConditions()
 {
-  return meshConditionsDerived;
+  const bool useNek5000StyleBounds = (size(0) == 0) && (size(1) == 0);
+  if(useNek5000StyleBounds){
+    return true;
+  } else {
+    return meshConditionsDerived;
+  }
 }
 
 void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
