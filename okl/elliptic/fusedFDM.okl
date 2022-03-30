@@ -5,6 +5,7 @@
 #else
 #define fusedFDM_v11 fusedFDM
 #endif
+#endif
 
 #ifdef gfxXX
 #if p_Nq_e == 3 || p_Nq_e == 4
