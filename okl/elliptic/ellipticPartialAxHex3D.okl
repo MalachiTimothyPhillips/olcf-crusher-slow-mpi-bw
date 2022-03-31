@@ -467,6 +467,42 @@
   }
 }
 
+#if defined(FP32)
+// from FDM kernel...
+// need to use this for FP32...
+#if p_Nq==2
+#define p_NelementsPerBlk 63
+#elif p_Nq==3
+#define p_NelementsPerBlk 27
+#elif p_Nq==4
+#define p_NelementsPerBlk 15
+#elif p_Nq==5
+#define p_NelementsPerBlk 9
+#elif p_Nq==6
+#define p_NelementsPerBlk 7
+#elif p_Nq==7
+#define p_NelementsPerBlk 5
+#elif p_Nq==8
+#define p_NelementsPerBlk 5
+#elif p_Nq==9
+#define p_NelementsPerBlk 3
+#elif p_Nq==10
+#define p_NelementsPerBlk 5
+#elif p_Nq==11
+#define p_NelementsPerBlk 3
+#elif p_Nq==12
+#define p_NelementsPerBlk 3
+#elif p_Nq==13
+#define p_NelementsPerBlk 3
+#elif p_Nq==14
+#define p_NelementsPerBlk 3
+#elif p_Nq==15
+#define p_NelementsPerBlk 3
+#else
+#define p_NelementsPerBlk 1
+#endif
+
+#else
 
 // 2D, blocked version
 #if p_N==1
@@ -501,6 +537,8 @@
 #define p_NelementsPerBlk 1
 #else
 #define p_NelementsPerBlk 1
+#endif
+
 #endif
 
 //padding for bank conflicts
@@ -682,6 +720,43 @@
 }
 
 // 3D thread structure, good for low orders
+
+#if defined(FP32)
+// from FDM kernel
+#if p_Nq==2
+#define p_NelementsPerBlk 63
+#elif p_Nq==3
+#define p_NelementsPerBlk 27
+#elif p_Nq==4
+#define p_NelementsPerBlk 15
+#elif p_Nq==5
+#define p_NelementsPerBlk 9
+#elif p_Nq==6
+#define p_NelementsPerBlk 7
+#elif p_Nq==7
+#define p_NelementsPerBlk 5
+#elif p_Nq==8
+#define p_NelementsPerBlk 5
+#elif p_Nq==9
+#define p_NelementsPerBlk 3
+#elif p_Nq==10
+#define p_NelementsPerBlk 5
+#elif p_Nq==11
+#define p_NelementsPerBlk 3
+#elif p_Nq==12
+#define p_NelementsPerBlk 3
+#elif p_Nq==13
+#define p_NelementsPerBlk 3
+#elif p_Nq==14
+#define p_NelementsPerBlk 3
+#elif p_Nq==15
+#define p_NelementsPerBlk 3
+#else
+#define p_NelementsPerBlk 1
+#endif
+
+#else
+
 #if p_N==1
 #define p_NelementsPerBlk 8
 #elif p_N==2
@@ -700,6 +775,8 @@
 #define p_NelementsPerBlk 1
 #endif
 
+#endif
+
 @kernel void ellipticPartialAxHex3D_v3(const dlong Nelements,
                                     const dlong offset,
                                     const dlong loffset,
@@ -712,7 +789,7 @@
                                     @restrict       dfloat* Aq)
 {
 //padding for bank conflicts
-#if p_Nq==8 || p_Nq==4
+#if (p_Nq==8 || p_Nq==4) && defined(smXX)
 #define p_pad 1
 #else
 #define p_pad 0
