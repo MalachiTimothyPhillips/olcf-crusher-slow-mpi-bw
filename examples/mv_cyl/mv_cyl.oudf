@@ -12,13 +12,9 @@ void velocityDirichletConditions(bcData *bc)
 
 void meshVelocityDirichletConditions(bcData *bc)
 {
-  const dfloat u = bc->u;
-  const dfloat v = bc->v;
-  const dfloat w = bc->w;
-
-  bc->u = u * cos(p_ROT) - v * sin(p_ROT);
-  bc->v = u * sin(p_ROT) + v * cos(p_ROT);
-  bc->w = w;
+  bc->meshu = bc->u;
+  bc->meshv = bc->v;
+  bc->meshw = bc->w;
 }
 
 @kernel void userVp(const dlong Nelements,
