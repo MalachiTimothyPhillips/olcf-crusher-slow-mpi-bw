@@ -101,7 +101,9 @@ static void v_setup(std::string field, std::vector<std::string> slist)
     if (key.compare("w") == 0) key = "zerovalue";
     if (key.compare("wall") == 0) key = "zerovalue";
     if (key.compare("inlet") == 0) key = "fixedvalue";
-    if (key.compare("v") == 0 || key.compare("mv") == 0) key = "fixedvalue";
+    if (key.compare("v") == 0) key = "fixedvalue";
+    if (key.compare("mv") == 0) key = "fixedvalue";
+    if (key.compare("fixedvalue+moving") == 0) key = "fixedvalue";
     if (key.compare("outlet") == 0) key = "zerogradient";
     if (key.compare("outflow") == 0) key = "zerogradient";
     if (key.compare("o") == 0) key = "zerogradient";
@@ -206,6 +208,7 @@ void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
     if (key.compare("inlet") == 0) key = "zerovalue";
     if (key.compare("v") == 0) key = "zerovalue";
     if (key.compare("mv") == 0) key = "fixedvalue";
+    if (key.compare("fixedvalue+moving") == 0) key = "fixedvalue";
 
     // all other bounds map to SYM
     if (key.compare("outlet") == 0) key = "zeronvalue/zerogradient";
