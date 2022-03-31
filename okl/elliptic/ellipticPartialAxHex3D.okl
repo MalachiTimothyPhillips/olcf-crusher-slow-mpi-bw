@@ -1,5 +1,3 @@
-#define referenceImplementation ellipticPartialAxHex3D
-
 #ifdef p_knl
 #if p_knl==0
 #define ellipticPartialAxHex3D_v0 ellipticPartialAxHex3D
@@ -12,6 +10,8 @@
 #else
 #define referenceImplementation ellipticPartialAxHex3D
 #endif
+#else
+#define referenceImplementation ellipticPartialAxHex3D
 #endif
 
 @kernel void referenceImplementation(const dlong Nelements,
@@ -520,14 +520,6 @@
                                     @restrict const dfloat* lambda,
                                     @restrict const dfloat* q,
                                     @restrict       dfloat* Aq){
-//@kernel void ellipticPartialAxHex3D_v2(const dlong Nelements,
-//                        @restrict const  dlong  *  elementList,
-//                        @restrict const  dlong  *  GlobalToLocal,
-//                        @restrict const  dfloat *  ggeo,
-//                        @restrict const  dfloat *  D,
-//                        const dfloat lambda,
-//                        @restrict const  dfloat *  q,
-//                              @restrict dfloat *  Aq){
 
   for(dlong eo=0; eo<Nelements; eo+=p_NelementsPerBlk; @outer(0)){
 
