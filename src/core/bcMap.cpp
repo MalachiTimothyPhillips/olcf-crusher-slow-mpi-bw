@@ -190,9 +190,9 @@ void setup(std::vector<std::string> slist, std::string field)
     s_setup(field, slist);
 }
 
-void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
+void deriveMeshBoundaryConditions(std::vector<std::string> velocityBCs)
 {
-  if (velocityBounds.size() == 0 || velocityBounds[0].compare("none") == 0) return;
+  if (velocityBCs.size() == 0 || velocityBCs[0].compare("none") == 0) return;
 
   meshConditionsDerived = true;
 
@@ -200,8 +200,8 @@ void deriveMeshBoundaryConditions(std::vector<std::string> velocityBounds)
 
   fields.insert(field);
 
-  for(int i = 0; i < velocityBounds.size(); i++) {
-    std::string key = velocityBounds[i];
+  for(int i = 0; i < velocityBCs.size(); i++) {
+    std::string key = velocityBCs[i];
     if (key.compare("p") == 0) key = "periodic";
     if (key.compare("w") == 0) key = "zerovalue";
     if (key.compare("wall") == 0) key = "zerovalue";
