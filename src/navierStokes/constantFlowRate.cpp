@@ -36,6 +36,7 @@ static dfloat lengthScale;
 static dfloat baseFlowRate;
 static dfloat currentFlowRate;
 static dfloat postCorrectionFlowRate;
+static dfloat flowRate;
 
 } // namespace
 
@@ -88,7 +89,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
   dfloat *flowDirection = nrs->flowDirection;
-  const dfloat flowRate = nrs->flowRate;
+  flowRate = nrs->flowRate;
 
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 
@@ -633,7 +634,9 @@ void printInfo(mesh_t* mesh, bool verboseInfo)
 
   dfloat currentRate = currentFlowRate;
   dfloat finalFlowRate = postCorrectionFlowRate;
-  dfloat err = std::abs(currentRate - finalFlowRate);
+  dfloat userSpecifiedFlowRate = flowRate * mesh->volume / lengthScale;
+
+  dfloat err = std::abs(userSpecifiedFlowRate - finalFlowRate);
 
   // scale is invariant to uBulk/volumetric flow rate, since it's a unitless ratio
   dfloat scale = constantFlowScale;
@@ -644,7 +647,8 @@ void printInfo(mesh_t* mesh, bool verboseInfo)
     // put in bulk terms, instead of volumetric
     currentRate *= lengthScale / mesh->volume;
     finalFlowRate *= lengthScale / mesh->volume;
-    err = std::abs(currentRate - finalFlowRate);
+    userSpecifiedFlowRate = flowRate;
+    err = std::abs(userSpecifiedFlowRate - finalFlowRate);
   }
   if(verboseInfo) 
     printf("  flowRate : %s0 %.2e  %s %.2e  err %.2e  scale %.2e\n",
