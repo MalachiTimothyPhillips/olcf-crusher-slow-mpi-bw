@@ -173,7 +173,7 @@ void setup(std::vector<std::string> slist, std::string field)
 {
   if (slist.size() == 0 || slist[0].compare("none") == 0) return;
 
-  useNek5000StyleBounds = true;
+  useNek5000StyleBounds = false;
 
   fields.insert(field);
 
