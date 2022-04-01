@@ -964,58 +964,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       ellipticSolveSetup(nrs->meshSolver);
     }
   }
-#if 0
-  // set I.C. for U, W
-  if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY"))
-  {
-    double startTime;
-    platform->options.getArgs("START TIME", startTime);
-    platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, -1.0*std::numeric_limits<dfloat>::max(), platform->o_mempool.slice0);
-    for (int sweep = 0; sweep < 2; sweep++) {
-      nrs->velocityDirichletBCKernel(mesh->Nelements,
-                                     nrs->fieldOffset,
-                                     startTime,
-                                     mesh->o_sgeo,
-                                     mesh->o_x,
-                                     mesh->o_y,
-                                     mesh->o_z,
-                                     mesh->o_vmapM,
-                                     mesh->o_EToB,
-                                     nrs->o_EToB,
-                                     nrs->o_usrwrk,
-                                     nrs->o_U,
-                                     platform->o_mempool.slice0);
-      if (sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
-      if (sweep == 1) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
-    }
-    platform->o_mempool.slice3.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-
-    platform->linAlg->fill(nrs->NVfields*nrs->fieldOffset, 0.0, platform->o_mempool.slice0);
-    for (int sweep = 0; sweep < 2; sweep++) {
-      nrs->meshV->velocityDirichletKernel(mesh->Nelements,
-                                          nrs->fieldOffset,
-                                          mesh->o_sgeo,
-                                          mesh->o_vmapM,
-                                          nrs->o_EToBMesh,
-                                          platform->o_mempool.slice3,
-                                          platform->o_mempool.slice0);
-      //take care of Neumann-Dirichlet shared edges across elements
-      if(sweep == 0) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
-      if(sweep == 1) oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
-    }
-    oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-    platform->linAlg->axmyMany(
-      mesh->Nlocal,
-      nrs->NVfields,
-      nrs->fieldOffset,
-      0,
-      1.0,
-      nrs->meshSolver->o_invDegree,
-      platform->o_mempool.slice0
-    );
-    mesh->o_U.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  }
-#endif
 
 }
 
