@@ -923,6 +923,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     if(options.compareArgs("MESH SOLVER", "ELASTICITY")){
 
+      bool unalignedBoundary = bcMap::unalignedBoundary(mesh->cht, "mesh");
+      if (unalignedBoundary) {
+        if (platform->comm.mpiRank == 0){
+          printf("ERROR: unaligned SYM boundary condition are currently not supported with the mesh solver.\n");
+        }
+        ABORT(EXIT_FAILURE);
+      }
+
       if (platform->comm.mpiRank == 0) printf("================ ELLIPTIC SETUP MESH ================\n");
       int* uvwMeshBCType = (int*) calloc(3 * NBCType, sizeof(int));
       int* uMeshBCType = uvwMeshBCType + 0 * NBCType;
