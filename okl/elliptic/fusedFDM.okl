@@ -533,7 +533,7 @@
 }
 #endif
 
-#ifdef p_knl == 2
+#if p_knl == 2
 // blocked kernel, formerly known as "v9"
 // tends to be good for low orders on AMD
 @kernel void fusedFDM(const dlong Nelements,

@@ -13,49 +13,8 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
-#include "kernelBenchmarker.hpp"
-
-namespace {
-
-size_t wordSize = 8;
-
-occa::kernel fdmKernel;
-occa::kernel oldFdmKernel;
-
-occa::memory o_Sx;
-occa::memory o_Sy;
-occa::memory o_Sz;
-occa::memory o_invL;
-occa::memory o_u;
-occa::memory o_Su;
-occa::memory o_SuGold;
-
-int Np; 
-int Nelements;
-
-void* (*randAlloc)(int);
-
-void* rand32Alloc(int N)
-{
-  float* v = (float*) malloc(N * sizeof(float));
-
-  for(int n = 0; n < N; ++n)
-    v[n] = drand48();
-
-  return v;
-}
-
-void* rand64Alloc(int N)
-{
-  double* v = (double*) malloc(N * sizeof(double));
-
-  for(int n = 0; n < N; ++n)
-    v[n] = drand48();
-
-  return v;
-}
-
-} // namespace
+#include "mesh.h"
+#include "benchFDM.hpp"
 
 int main(int argc, char** argv)
 {
@@ -70,6 +29,9 @@ int main(int argc, char** argv)
 
   int err = 0;
   int cmdCheck = 0;
+
+  int wordSize = 8;
+  int Nelements;
 
   int N;
   int okl = 1;
@@ -139,7 +101,6 @@ int main(int argc, char** argv)
   const int Np = Nq * Nq * Nq;
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
-  const int Nthreads =  omp_get_max_threads();
 
   // build+load kernel
   occa::properties props = platform->kernelInfo + meshKernelProperties(N-2); // regular, non-extended mesh
@@ -152,87 +113,14 @@ int main(int argc, char** argv)
 
   // always benchmark ASM
   props["defines/p_restrict"] = 0;
-  props["defines/p_knl"] = 0;
 
-  auto oldKernelProps = props;
-  oldKernelProps["defines/p_knl"] = -1;
+  // populate dummy mesh struct to pass Nelements/Nq
+  mesh_t dummyMesh;
+  dummyMesh.Nelements = Nelements;
+  dummyMesh.Nq = Nq;
+  dummyMesh.Np = Np;
 
-  std::string kernelName = "fusedFDM";
-  const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
-  oldFdmKernel = platform->device.buildKernel(fileName, oldKernelProps, true);
-
-  // populate arrays
-  randAlloc = &rand64Alloc; 
-  if(wordSize == 4) randAlloc = &rand32Alloc;
-
-  void *Sx   = randAlloc(Nelements * Nq * Nq);
-  void *Sy   = randAlloc(Nelements * Nq * Nq);
-  void *Sz   = randAlloc(Nelements * Nq * Nq);
-  void *invL = randAlloc(Nelements * Np);
-  void *Su   = randAlloc(Nelements * Np);
-  void *u    = randAlloc(Nelements * Np);
-
-  o_Sx = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sx);
-  free(Sx);
-  o_Sy = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sy);
-  free(Sy);
-  o_Sz = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sz);
-  free(Sz);
-  o_invL = platform->device.malloc(Nelements * Np * wordSize, invL);
-  free(invL);
-  o_Su = platform->device.malloc(Nelements * Np * wordSize, Su);
-  o_SuGold = platform->device.malloc(Nelements * Np * wordSize, Su);
-  free(Su);
-  o_u = platform->device.malloc(Nelements * Np * wordSize, u);
-  free(u);
-
-  constexpr int Nkernels = 12;
-  std::vector<int> kernelVariants;
-  if (platform->serial) {
-    kernelVariants.push_back(0);
-  }
-  else {
-    for (int knl = 0; knl < Nkernels; ++knl) {
-      if (knl == 8 && Nq % 2 == 1)
-        continue;
-      kernelVariants.push_back(knl);
-    }
-  }
-
-  auto fdmKernelBuilder = [&](int kernelVariant) {
-    auto newProps = props;
-    newProps["defines/p_knl"] = kernelVariant;
-
-    kernelName = "fusedFDM";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ext;
-
-    return platform->device.buildKernel(fileName, newProps, true);
-  };
-
-  const dfloat tol = 1e-8;
-
-  auto kernelRunner = [&](occa::kernel &kernel) { kernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u); };
-
-  auto printPerformanceInfo = [&](int kernelVariant, double elapsed) {
-    // print statistics
-    const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
-
-    size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
-    const double bw = (size * Nelements * bytesPerElem / elapsed) / 1.e9;
-
-    double flopsPerElem = 12 * Nq * Np + Np;
-    const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
-
-    if (rank == 0) {
-      std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests
-                << " N=" << N << " Nelements=" << size * Nelements << " elapsed time=" << elapsed
-                << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
-                << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
-    }
-  };
-
-  benchmarkKernel(fdmKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants);
+  pickFDMKernel(props, dummyMesh, true, Ntests, 10.0);
 
   MPI_Finalize();
   exit(0);

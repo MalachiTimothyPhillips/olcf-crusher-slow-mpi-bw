@@ -20,11 +20,15 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
 std::pair<occa::kernel, double>
 benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
                 std::function<void(occa::kernel &)> kernelRunner,
-                std::function<void(int kernelVariant, double tKernel)> kernelTimingCallback,
-                const std::vector<int> &kernelVariants)
+                std::function<void(int kernelVariant, double tKernel, int Ntests)> kernelTimingCallback,
+                const std::vector<int> &kernelVariants,
+                int Ntests,
+                double targetTime)
 {
   occa::kernel fastestKernel;
   double fastestTime = std::numeric_limits<double>::max();
+  const auto saveNtests = Ntests;
+  const auto saveTargetTime = targetTime;
   for (auto &&kernelVariant : kernelVariants) {
 
     auto candidateKernel = kernelBuilder(kernelVariant);
@@ -33,8 +37,12 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
     double elapsed = run(10, kernelRunner, candidateKernel);
 
     // evaluation
-    const double targetTime = 1.0;
-    const int Ntests = static_cast<int>(targetTime / elapsed);
+    if(saveTargetTime <= 0.0){
+      targetTime = 1.0;
+    }
+    if(saveNtests <= 0){
+      Ntests = targetTime / elapsed;
+    }
     const double candidateKernelTiming = run(Ntests, kernelRunner, candidateKernel);
 
     if (candidateKernelTiming < fastestTime) {
@@ -42,7 +50,7 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
       fastestKernel = candidateKernel;
     }
 
-    kernelTimingCallback(kernelVariant, candidateKernelTiming);
+    kernelTimingCallback(kernelVariant, candidateKernelTiming, Ntests);
   }
 
   return std::make_pair(fastestKernel, fastestTime);
