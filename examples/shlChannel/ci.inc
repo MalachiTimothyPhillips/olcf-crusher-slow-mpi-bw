@@ -10,9 +10,9 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("POLYNOMIAL DEGREE", std::string("7"));
   options.setArgs("RESTART FROM FILE", std::string("0"));
   options.setArgs("SOLUTION OUTPUT INTERVAL", "0");
-  options.setArgs("VISCOSITY", std::string("10.0"));
+  options.setArgs("VISCOSITY", std::string("1e-2"));
   options.setArgs("DENSITY", std::string("1"));
-  options.setArgs("END TIME", std::string("0.3"));
+  options.setArgs("END TIME", std::string("0.05"));
   options.setArgs("DT", std::string("1e-3"));
   options.setArgs("SUBCYCLING STEPS", std::string("0"));
   options.setArgs("VELOCITY BLOCK SOLVER", "TRUE");
