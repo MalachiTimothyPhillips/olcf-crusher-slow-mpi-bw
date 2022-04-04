@@ -15,9 +15,17 @@ c-----------------------------------------------------------------------
       include 'NEKUSE'
       include 'CASEDATA'
 
+      real h_tilde, vx_tilde, vy_tilde ! in rotated coordinate frame
 
-      ux   = 1.0*cos(P_ROT)
-      uy   = 1.0*sin(P_ROT)
+      h_tilde = ym1(i,1,1,1) * cos(P_ROT) - xm1(i,1,1,1) * sin(P_ROT)
+      uxex = 1.5 * (1.0 - h_tilde ** 2.0)
+      uyex = 0.0
+
+      vx_tilde = uxex * cos(P_ROT) - uyex * sin(P_ROT)
+      vy_tilde = uyex * cos(P_ROT) + uxex * sin(P_ROT)
+
+      ux   = vx_tilde
+      uy   = vy_tilde
       uz   = 0.0
 
       return
