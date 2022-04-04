@@ -34,7 +34,7 @@
 #include <sstream>
 #include <exception>
 #include "platform.hpp"
-#include "kernelTuner.hpp"
+#include "kernelBenchmarker.hpp"
 
 struct ElementLengths
 {
