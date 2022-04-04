@@ -65,9 +65,19 @@
           const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
           const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
 
-          W[idM + 0 * offset] = Rtn1 * t1x + Rtn2 * t2x;
-          W[idM + 1 * offset] = Rtn1 * t1y + Rtn2 * t2y;
-          W[idM + 2 * offset] = Rtn1 * t1z + Rtn2 * t2z;
+          const dfloat results_x = Rtn1 * t1x + Rtn2 * t2x;
+          const dfloat results_y = Rtn1 * t1y + Rtn2 * t2y;
+          const dfloat results_z = Rtn1 * t1z + Rtn2 * t2z;
+
+          // check U\dot n condition
+          const dfloat dot = results_x * nx + results_y * ny + results_z * nz;
+          if(sqrt(dot*dot) > 1e-8){
+            printf("mesh velocityDirichletBCHex3D: UdotN = 0 violated, dot = %g, bid = %d!\n", dot, bid);
+          }
+
+          W[idM + 0 * offset] = results_x;
+          W[idM + 1 * offset] = results_y;
+          W[idM + 2 * offset] = results_z;
         }
         else if(bcType == 4) {
           W[idM + 0 * offset] = 0.0;
