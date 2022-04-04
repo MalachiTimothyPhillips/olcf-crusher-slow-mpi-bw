@@ -68,12 +68,12 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     const auto uxex = 1.5 * (1.0 - h_tilde * h_tilde);
     const dfloat uyex = 0.0;
 
-    if(std::abs(vx_tilde) > floorTol){
-      LInfError_x = std::max(LInfError_x, std::abs(uxex - vx_tilde));
+    if(std::abs(uxex) > floorTol){
+      LInfError_x = std::max(LInfError_x, std::abs(uxex - vx_tilde) / std::abs(uxex));
     }
 
-    if(std::abs(vy_tilde) > floorTol){
-      LInfError_y = std::max(LInfError_y, std::abs(uyex - vy_tilde));
+    if(std::abs(uyex) > floorTol){
+      LInfError_y = std::max(LInfError_y, std::abs(uyex - vy_tilde) / std::abs(uyex));
     }
   }
 
