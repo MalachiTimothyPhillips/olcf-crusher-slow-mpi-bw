@@ -38,6 +38,10 @@ static dfloat currentFlowRate;
 static dfloat postCorrectionFlowRate;
 static dfloat flowRate;
 
+static int fromBID;
+static int toBID;
+static dfloat flowDirection[3];
+
 } // namespace
 
 namespace ConstantFlowRate {
@@ -88,7 +92,6 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
-  dfloat *flowDirection = nrs->flowDirection;
   platform->options.getArgs("FLOW RATE", flowRate);
 
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
@@ -144,13 +147,16 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
       lengthScale = maxCoord - minCoord;
     } else {
 
+      platform->options.getArgs("CONSTANT FLOW FROM BID", fromBID);
+      platform->options.getArgs("CONSTANT FLOW TO BID", toBID);
+
       occa::memory o_centroid = platform->o_mempool.slice0;
       occa::memory o_counts = platform->o_mempool.slice3;
       platform->linAlg->fill(
           mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
       nrs->computeFaceCentroidKernel(mesh->Nelements,
-          nrs->fromBID,
+          fromBID,
           mesh->o_EToB,
           mesh->o_vmapM,
           mesh->o_x,
@@ -186,7 +192,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
           mesh->Nelements * mesh->Nfaces * 3, 0.0, o_centroid);
       platform->linAlg->fill(mesh->Nelements * mesh->Nfaces, 0.0, o_counts);
       nrs->computeFaceCentroidKernel(mesh->Nelements,
-          nrs->toBID,
+          toBID,
           mesh->o_EToB,
           mesh->o_vmapM,
           mesh->o_x,
@@ -302,9 +308,9 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
 
   nrs->computeFieldDotNormalKernel(mesh->Nlocal,
       nrs->fieldOffset,
-      nrs->flowDirection[0],
-      nrs->flowDirection[1],
-      nrs->flowDirection[2],
+      flowDirection[0],
+      flowDirection[1],
+      flowDirection[2],
       nrs->o_U,
       o_currentFlowRate);
 
@@ -321,9 +327,9 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   if (recomputeBaseFlowRate) {
     nrs->computeFieldDotNormalKernel(mesh->Nlocal,
         nrs->fieldOffset,
-        nrs->flowDirection[0],
-        nrs->flowDirection[1],
-        nrs->flowDirection[2],
+        flowDirection[0],
+        flowDirection[1],
+        flowDirection[2],
         nrs->o_Uc,
         o_baseFlowRate);
     flops += 5 * mesh->Nlocal;
@@ -358,9 +364,9 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   // compute flow rate after correction as diagnostic
   nrs->computeFieldDotNormalKernel(mesh->Nlocal,
       nrs->fieldOffset,
-      nrs->flowDirection[0],
-      nrs->flowDirection[1],
-      nrs->flowDirection[2],
+      flowDirection[0],
+      flowDirection[1],
+      flowDirection[2],
       nrs->o_U,
       o_currentFlowRate);
 
@@ -387,7 +393,6 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time) {
 
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
-  dfloat *flowDirection = nrs->flowDirection;
 
   double flops = 0.0;
 
@@ -508,7 +513,7 @@ void compute(nrs_t *nrs, double lengthScale, dfloat time) {
 
     for (int dim = 0; dim < ndim; ++dim) {
       const dlong offset = dim * nrs->fieldOffset;
-      const dfloat n_dim = nrs->flowDirection[dim];
+      const dfloat n_dim = flowDirection[dim];
       platform->linAlg->axpby(
           mesh->Nlocal, n_dim, o_BF, 1.0, o_RhsVel, offset, offset);
     }
