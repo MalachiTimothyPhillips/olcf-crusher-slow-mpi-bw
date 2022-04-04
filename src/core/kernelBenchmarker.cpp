@@ -17,9 +17,9 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
   return (MPI_Wtime() - start) / Nsamples;
 }
 } // namespace
-std::pair<occa::kernel, double> tuneKernel(std::function<std::string(int kernelNumber)> kernelNamer,
-                                           std::function<void(occa::kernel &)> kernelRunner,
-                                           int NKernels)
+std::pair<occa::kernel, double> benchmarkKernel(std::function<std::string(int kernelNumber)> kernelNamer,
+                                                std::function<void(occa::kernel &)> kernelRunner,
+                                                int NKernels)
 {
   occa::kernel fastestKernel;
   double fastestTime = std::numeric_limits<double>::max();

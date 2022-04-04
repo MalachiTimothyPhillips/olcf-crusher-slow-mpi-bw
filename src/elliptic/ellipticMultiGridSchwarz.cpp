@@ -948,7 +948,7 @@ void MGLevel::build(
           };
 
       const int NFDMKernels = 12;
-      auto kernelAndTime = tuneKernel(fdmKernelNamer, runFDMKernel, NFDMKernels);
+      auto kernelAndTime = benchmarkKernel(fdmKernelNamer, runFDMKernel, NFDMKernels);
       fusedFDMKernel = kernelAndTime.first;
     }
 
