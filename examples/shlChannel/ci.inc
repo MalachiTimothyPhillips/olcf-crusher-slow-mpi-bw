@@ -82,7 +82,7 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
   LInfError_x = errors[0];
   LInfError_y = errors[1];
 
-  const dfloat tol = 1e-7;
+  const dfloat tol = 1e-5;
 
   if(platform->comm.mpiRank == 0){
     std::cout << "LInfError in Vx: " << LInfError_x << "\n";
