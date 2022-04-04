@@ -89,7 +89,7 @@ bool apply(nrs_t *nrs, int tstep, dfloat time) {
   constexpr int ndim = 3;
   mesh_t *mesh = nrs->meshV;
   dfloat *flowDirection = nrs->flowDirection;
-  flowRate = nrs->flowRate;
+  platform->options.getArgs("FLOW RATE", flowRate);
 
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 

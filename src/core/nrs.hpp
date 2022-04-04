@@ -72,7 +72,6 @@ struct nrs_t
   dfloat flowDirection[3];
   int fromBID;
   int toBID;
-  dfloat flowRate;
 
   //RK Subcycle Data
   int nRK;

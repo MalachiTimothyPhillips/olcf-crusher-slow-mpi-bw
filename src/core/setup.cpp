@@ -162,7 +162,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   if(platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE"))
   {
-    platform->options.getArgs("FLOW RATE", nrs->flowRate);
     nrs->fromBID = -1;
     nrs->toBID = -1;
     platform->options.getArgs("CONSTANT FLOW FROM BID", nrs->fromBID);
