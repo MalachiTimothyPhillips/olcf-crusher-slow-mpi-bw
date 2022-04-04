@@ -67,19 +67,9 @@
             const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
             const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
 
-            const dfloat results_x = Rtn1 * t1x + Rtn2 * t2x;
-            const dfloat results_y = Rtn1 * t1y + Rtn2 * t2y;
-            const dfloat results_z = Rtn1 * t1z + Rtn2 * t2z;
-
-            // check U\dot n condition
-            const dfloat dot = results_x * nx + results_y * ny + results_z * nz;
-            if(sqrt(dot*dot) > 1e-8){
-              printf("velocityDirichletBCHex3D: UdotN = 0 violated, dot = %g, bid = %d!\n", dot, bid);
-            }
-
-            UH[idM + 0 * offset] = results_x;
-            UH[idM + 1 * offset] = results_y;
-            UH[idM + 2 * offset] = results_z;
+            UH[idM + 0 * offset] = Rtn1 * t1x + Rtn2 * t2x;
+            UH[idM + 1 * offset] = Rtn1 * t1y + Rtn2 * t2y;
+            UH[idM + 2 * offset] = Rtn1 * t1z + Rtn2 * t2z;
           }else if(bcType == 4) {
             UH[idM + 0 * offset] = 0.0;
           }else if(bcType == 5) {

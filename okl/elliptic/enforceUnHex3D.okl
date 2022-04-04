@@ -24,10 +24,6 @@
 
         if(bcType == p_ZERO_NORMAL) {
 
-          const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
-          const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
-          const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
-
           const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
           const dfloat t1y = sgeo[sid * p_Nsgeo + p_T1YID];
           const dfloat t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
@@ -44,21 +40,9 @@
           const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
           const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
 
-          const outputType results_x = outputType(Rtn1 * t1x + Rtn2 * t2x);
-          const outputType results_y = outputType(Rtn1 * t1y + Rtn2 * t2y);
-          const outputType results_z = outputType(Rtn1 * t1z + Rtn2 * t2z);
-
-          // check U\dot n condition
-          const dfloat dot = results_x * nx + results_y * ny + results_z * nz;
-          if(sqrt(dot*dot) > 1e-8){
-            printf("enforceUnHex3D: UdotN = 0 violated, dot = %g, bid = %d!\n", dot, bid);
-          }
-
-          U[idM + 0 * offset] = results_x;
-          U[idM + 1 * offset] = results_y;
-          U[idM + 2 * offset] = results_z;
-
-
+          U[idM + 0 * offset] = outputType(Rtn1 * t1x + Rtn2 * t2x);
+          U[idM + 1 * offset] = outputType(Rtn1 * t1y + Rtn2 * t2y);
+          U[idM + 2 * offset] = outputType(Rtn1 * t1z + Rtn2 * t2z);
         }
       }
       @barrier("global");
