@@ -17,16 +17,17 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
   return (MPI_Wtime() - start) / Nsamples;
 }
 } // namespace
-std::pair<occa::kernel, double> benchmarkKernel(std::function<std::string(int kernelNumber)> kernelNamer,
-                                                std::function<void(occa::kernel &)> kernelRunner,
-                                                int NKernels)
+std::pair<occa::kernel, double>
+benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
+                std::function<void(occa::kernel &)> kernelRunner,
+                std::function<void(int kernelVariant, double tKernel)> kernelTimingCallback,
+                const std::vector<int> &kernelVariants)
 {
   occa::kernel fastestKernel;
   double fastestTime = std::numeric_limits<double>::max();
-  for (int kernelNumber = 0; kernelNumber < NKernels; ++kernelNumber) {
+  for (auto &&kernelVariant : kernelVariants) {
 
-    std::string candiateKernelName = kernelNamer(kernelNumber);
-    auto candidateKernel = platform->kernels.get(candiateKernelName);
+    auto candidateKernel = kernelBuilder(kernelVariant);
 
     // warmup
     double elapsed = run(10, kernelRunner, candidateKernel);
@@ -40,6 +41,8 @@ std::pair<occa::kernel, double> benchmarkKernel(std::function<std::string(int ke
       fastestTime = candidateKernelTiming;
       fastestKernel = candidateKernel;
     }
+
+    kernelTimingCallback(kernelVariant, candidateKernelTiming);
   }
 
   return std::make_pair(fastestKernel, fastestTime);

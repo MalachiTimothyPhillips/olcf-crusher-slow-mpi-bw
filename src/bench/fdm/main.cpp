@@ -13,6 +13,8 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
+#include "kernelBenchmarker.hpp"
+
 namespace {
 
 size_t wordSize = 8;
@@ -29,65 +31,7 @@ occa::memory o_Su;
 occa::memory o_SuGold;
 
 int Np; 
-int Nelements; 
-
-template<typename FloatingPointType>
-double checkCorrectnessImpl(occa::memory & o_a, occa::memory & o_b){
-  FloatingPointType linfError = 0.0;
-
-  std::vector<FloatingPointType> results_a(Np * Nelements, 0.0);
-  std::vector<FloatingPointType> results_b(Np * Nelements, 0.0);
-  o_a.copyTo(results_a.data(), Np * Nelements * sizeof(FloatingPointType));
-  o_b.copyTo(results_b.data(), Np * Nelements * sizeof(FloatingPointType));
-
-  for(int i = 0; i < Np * Nelements; ++i){
-    linfError = std::max(linfError, std::abs(results_a[i] - results_b[i]));
-  }
-
-  return static_cast<double>(linfError);
-}
-
-double checkCorrectness(occa::memory & o_a, occa::memory & o_b)
-{
-  double linfError = -100.0;
-  if(wordSize == 4){
-    linfError = checkCorrectnessImpl<float>(o_a, o_b);
-  }
-  
-  if(wordSize == 8){
-    linfError = checkCorrectnessImpl<double>(o_a, o_b);
-  }
-
-  MPI_Allreduce(MPI_IN_PLACE, &linfError, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-  return linfError;
-}
-
-std::pair<double, double> run(int Ntests, bool performCorrectnessCheck = false)
-{
-
-  double error = -100.0;
-  
-  if(performCorrectnessCheck){
-    // correctness check
-    oldFdmKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u);
-    fdmKernel(Nelements, o_SuGold, o_Sx, o_Sy, o_Sz, o_invL, o_u);
-
-    error = checkCorrectness(o_Su, o_SuGold);
-  }
-
-  platform->device.finish();
-  MPI_Barrier(MPI_COMM_WORLD);
-  const double start = MPI_Wtime();
-
-  for(int test = 0; test < Ntests; ++test) {
-    fdmKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u);
-  }
-
-  platform->device.finish();
-  MPI_Barrier(MPI_COMM_WORLD);
-  return std::make_pair((MPI_Wtime() - start) / Ntests, error);
-} 
+int Nelements;
 
 void* (*randAlloc)(int);
 
@@ -243,38 +187,34 @@ int main(int argc, char** argv)
   o_u = platform->device.malloc(Nelements * Np * wordSize, u);
   free(u);
 
-  constexpr int Nkernels = 11;
-
-  // v8 is only valid for even p_Nq_e
-
-  for(int knl = 0; knl <= Nkernels; ++knl){
-    if(knl == 8 && Nq % 2 == 1) continue;
-    auto newProps = props;
-    newProps["defines/p_knl"] = knl;
-
-    if(platform->device.mode() == "HIP"){
-      props["defines/OCCA_USE_HIP"] = 1;
+  constexpr int Nkernels = 12;
+  std::vector<int> kernelVariants;
+  if (platform->serial) {
+    kernelVariants.push_back(0);
+  }
+  else {
+    for (int knl = 0; knl < Nkernels; ++knl) {
+      if (knl == 8 && Nq % 2 == 1)
+        continue;
+      kernelVariants.push_back(knl);
     }
+  }
+
+  auto fdmKernelBuilder = [&](int kernelVariant) {
+    auto newProps = props;
+    newProps["defines/p_knl"] = kernelVariant;
 
     kernelName = "fusedFDM";
-    fileName = 
-      installDir + "/okl/elliptic/" + kernelName + ext;
+    fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
-    fdmKernel = platform->device.buildKernel(fileName, newProps, true);
+    return platform->device.buildKernel(fileName, newProps, true);
+  };
 
-    // warm-up
-    auto elapsedAndError = run(10, true);
-    auto elapsed = elapsedAndError.first;
-    auto error = elapsedAndError.second;
-    const int elapsedTarget = 10;
-    if(Ntests < 0) Ntests = elapsedTarget/elapsed;
+  const dfloat tol = 1e-8;
 
-    // ***** 
-    elapsedAndError = run(Ntests, false);
-    // ***** 
+  auto kernelRunner = [&](occa::kernel &kernel) { kernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u); };
 
-    elapsed = elapsedAndError.first;
- 
+  auto printPerformanceInfo = [&](int kernelVariant, double elapsed) {
     // print statistics
     const dfloat GDOFPerSecond = (size * Nelements * (N* N * N) / elapsed) / 1.e9;
 
@@ -284,21 +224,15 @@ int main(int argc, char** argv)
     double flopsPerElem = 12 * Nq * Np + Np;
     const double gflops = (size * flopsPerElem * Nelements / elapsed) / 1.e9;
 
-    if(rank == 0)
-      std::cout << "MPItasks=" << size
-                << " OMPthreads=" << Nthreads
-                << " NRepetitions=" << Ntests
-                << " N=" << N
-                << " Nelements=" << size * Nelements
-                << " error=" << error
-                << " elapsed time=" << elapsed
-                << " wordSize=" << 8*wordSize
-                << " GDOF/s=" << GDOFPerSecond
-                << " GB/s=" << bw
-                << " GFLOPS/s=" << gflops
-                << " kernel=" << knl
-                << "\n";
-  }
+    if (rank == 0) {
+      std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests
+                << " N=" << N << " Nelements=" << size * Nelements << " elapsed time=" << elapsed
+                << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
+                << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
+    }
+  };
+
+  benchmarkKernel(fdmKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants);
 
   MPI_Finalize();
   exit(0);
