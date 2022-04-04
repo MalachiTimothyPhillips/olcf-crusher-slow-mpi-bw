@@ -2,7 +2,6 @@
 #include <utility>
 #include <functional>
 
-std::pair<occa::kernel, double> tuneKernel(std::function<occa::kernel(occa::properties &props)> kernelBuilder,
-                                           std::function<void(occa::kernel)> kernelRunner,
-                                           occa::properties baseProps,
+std::pair<occa::kernel, double> tuneKernel(std::function<std::string(int kernelNumber)> kernelNamer,
+                                           std::function<void(occa::kernel &)> kernelRunner,
                                            int NKernels);

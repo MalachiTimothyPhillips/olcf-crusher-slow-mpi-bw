@@ -34,6 +34,7 @@
 #include <sstream>
 #include <exception>
 #include "platform.hpp"
+#include "kernelTuner.hpp"
 
 struct ElementLengths
 {
@@ -876,7 +877,81 @@ void MGLevel::build(
   {
     const std::string suffix = std::string("_") + std::to_string(Nq_e-1) + std::string("pfloat");
     preFDMKernel = platform->kernels.get("preFDM" + suffix);
-    fusedFDMKernel = platform->kernels.get("fusedFDM" + suffix);
+
+    if (platform->serial) {
+      fusedFDMKernel = platform->kernels.get("fusedFDM" + suffix);
+    }
+    else {
+
+      auto fdmKernelNamer = [&](int kernelNumber) {
+        std::string kernelNumberStr = std::to_string(kernelNumber);
+        return "fusedFDM" + kernelNumberStr + suffix;
+      };
+
+      auto runFDMKernel =
+          [&](occa::kernel &fdmKernel) {
+            if (options.compareArgs("MULTIGRID SMOOTHER", "RAS")) {
+              auto &o_Su = o_work2;
+              if (!overlap) {
+                fdmKernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, elliptic->o_invDegree, o_work1);
+              }
+              else if (overlap && mesh->NglobalGatherElements) {
+                fdmKernel(mesh->NglobalGatherElements,
+                          mesh->o_globalGatherElementList,
+                          o_Su,
+                          o_Sx,
+                          o_Sy,
+                          o_Sz,
+                          o_invL,
+                          elliptic->o_invDegree,
+                          o_work1);
+              }
+
+              if (overlap && mesh->NlocalGatherElements) {
+                fdmKernel(mesh->NlocalGatherElements,
+                          mesh->o_localGatherElementList,
+                          o_Su,
+                          o_Sx,
+                          o_Sy,
+                          o_Sz,
+                          o_invL,
+                          elliptic->o_invDegree,
+                          o_work1);
+              }
+            }
+            else {
+              if (!overlap) {
+                fdmKernel(Nelements, o_work2, o_Sx, o_Sy, o_Sz, o_invL, o_work1);
+              }
+              else if (overlap && mesh->NglobalGatherElements) {
+                fdmKernel(mesh->NglobalGatherElements,
+                          mesh->o_globalGatherElementList,
+                          o_work2,
+                          o_Sx,
+                          o_Sy,
+                          o_Sz,
+                          o_invL,
+                          o_work1);
+              }
+
+              if (overlap && mesh->NlocalGatherElements) {
+                fdmKernel(mesh->NlocalGatherElements,
+                          mesh->o_localGatherElementList,
+                          o_work2,
+                          o_Sx,
+                          o_Sy,
+                          o_Sz,
+                          o_invL,
+                          o_work1);
+              }
+            }
+          };
+
+      const int NFDMKernels = 12;
+      auto kernelAndTime = tuneKernel(fdmKernelNamer, runFDMKernel, NFDMKernels);
+      fusedFDMKernel = kernelAndTime.first;
+    }
+
     postFDMKernel = platform->kernels.get("postFDM" + suffix);
   }
 

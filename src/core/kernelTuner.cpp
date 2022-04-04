@@ -17,18 +17,16 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
   return (MPI_Wtime() - start) / Nsamples;
 }
 } // namespace
-std::pair<occa::kernel, double> tuneKernel(std::function<occa::kernel(occa::properties &props)> kernelBuilder,
+std::pair<occa::kernel, double> tuneKernel(std::function<std::string(int kernelNumber)> kernelNamer,
                                            std::function<void(occa::kernel &)> kernelRunner,
-                                           occa::properties baseProps,
                                            int NKernels)
 {
   occa::kernel fastestKernel;
   double fastestTime = std::numeric_limits<double>::max();
   for (int kernelNumber = 0; kernelNumber < NKernels; ++kernelNumber) {
-    auto props = baseProps;
-    props["defines/p_knl"] = kernelNumber;
 
-    auto candidateKernel = kernelBuilder(props);
+    std::string candiateKernelName = kernelNamer(kernelNumber);
+    auto candidateKernel = platform->kernels.get(candiateKernelName);
 
     // warmup
     double elapsed = run(10, kernelRunner, candidateKernel);

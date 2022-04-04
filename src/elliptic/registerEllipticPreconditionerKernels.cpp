@@ -159,9 +159,22 @@ void registerSchwarzKernels(const std::string &section, int N) {
     platform->kernels.add(
         "preFDM" + suffix, fileName, properties, suffix);
 
-    fileName = oklpath + "fusedFDM" + extension;
-    platform->kernels.add(
-        "fusedFDM" + suffix, fileName, properties, suffix);
+    if (serial) {
+      fileName = oklpath + "fusedFDM" + extension;
+      platform->kernels.add("fusedFDM" + suffix, fileName, properties, suffix);
+    }
+    else {
+      int NFDMKernels = 12; // v0 through v11
+      for (int kernelNumber = 0; kernelNumber < NFDMKernels; kernelNumber++) {
+        fileName = oklpath + "fusedFDM" + extension;
+        auto fusedFDMProps = properties;
+        fusedFDMProps["defines/p_knl"] = kernelNumber;
+        platform->kernels.add("fusedFDM" + std::to_string(kernelNumber) + suffix,
+                              fileName,
+                              properties,
+                              suffix);
+      }
+    }
 
     fileName = oklpath + "postFDM" + extension;
     platform->kernels.add(
