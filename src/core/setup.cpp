@@ -926,7 +926,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       bool unalignedBoundary = bcMap::unalignedBoundary(mesh->cht, "mesh");
       if (unalignedBoundary) {
         if (platform->comm.mpiRank == 0){
-          printf("ERROR: unaligned SYM boundary condition are currently not supported with the mesh solver.\n");
+          printf("ERROR: unaligned SYM/SHL boundary condition are currently not supported with the mesh solver.\n");
         }
         ABORT(EXIT_FAILURE);
       }
