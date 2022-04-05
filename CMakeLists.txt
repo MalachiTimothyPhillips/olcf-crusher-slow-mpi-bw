@@ -191,8 +191,8 @@ set(SRC
     src/utils/mysort.cpp
     src/utils/parallelSort.cpp
     src/utils/tinyexpr.c
+    src/utils/setupAide.cpp
     src/core/numberActiveFields.cpp
-    src/core/setupAide.cpp
     src/core/printHeader.cpp
     src/navierStokes/cfl.cpp
     src/regularization/filter.cpp
@@ -209,6 +209,7 @@ set(SRC
     src/cds/cds.cpp
     src/cds/registerCdsKernels.cpp
     src/io/parReader.cpp
+    src/io/re2Reader.cpp
     src/core/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
@@ -229,6 +230,7 @@ set(SRC
     src/udf/udf.cpp
     src/udf/compileUDFKernels.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
+    src/postProcessing/planarAvg.cpp
     ${BENCH_SOURCES}
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
@@ -267,6 +269,7 @@ target_include_directories(nekrs-lib
   src/timeStepper
   src/navierStokes
   src/cds
+  src/postProcessing
   ${BENCH_SOURCE_DIR}
   ${BENCH_SOURCE_DIR}/core
   ${BENCH_SOURCE_DIR}/fdm
