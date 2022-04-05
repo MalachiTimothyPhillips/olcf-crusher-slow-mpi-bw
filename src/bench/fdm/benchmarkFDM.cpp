@@ -110,7 +110,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
       }
     };
 
-    auto kernel = benchmarkKernel(fdmKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants, Ntests, elapsedTarget);
+    auto kernelAndTime = benchmarkKernel(fdmKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants, Ntests, elapsedTarget);
 
     free(o_Sx);
     free(o_Sy);
@@ -121,7 +121,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
     free(o_invDegree);
     free(o_elementList);
 
-    return kernel;
+    return kernelAndTime;
 
   };
 

@@ -163,7 +163,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
     platform->kernels.add(
         "preFDM" + suffix, fileName, properties, suffix);
 
-#if 1
     int nelgt, nelgv;
     const std::string meshFile = platform->options.getArgs("MESH FILE");
     re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
@@ -171,12 +170,8 @@ void registerSchwarzKernels(const std::string &section, int N) {
 
     auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
-    std::cout << fdmProps << "\n";
-    platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
-#else
     fileName = oklpath + "fusedFDM" + extension;
-    platform->kernels.add("fusedFDM" + suffix, fileName, properties, suffix);
-#endif
+    platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
 
     fileName = oklpath + "postFDM" + extension;
     platform->kernels.add(
