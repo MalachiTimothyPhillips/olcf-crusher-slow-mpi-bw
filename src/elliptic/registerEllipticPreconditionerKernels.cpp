@@ -318,6 +318,8 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
   constexpr int elementType = HEXAHEDRA;
 
   {
+    // TODO: consolidate logic into, e.g., a single lambda
+#if 0
     occa::properties AxKernelInfo = kernelInfo;
 
     if(poissonEquation) AxKernelInfo["defines/p_poisson"] = 1;
@@ -349,6 +351,52 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
         AxKernelInfo["defines/dfloat"] = dfloatString;
       }
     }
+#else
+    constexpr int Nfields = 1;
+    int nelgt, nelgv;
+    const std::string meshFile = platform->options.getArgs("MESH FILE");
+    re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
+    const int NelemBenchmark = nelgv/platform->comm.mpiCommSize;
+
+    occa::properties AxKernelInfo = kernelInfo;
+    const std::string poissonPrefix = poissonEquation ? "poisson-" : "";
+    bool firstPass = true;
+    const auto Nq = N+1;
+    for(auto&& coeffField : {true,false}){
+      for(auto&& floatString : {std::string(dfloatString), std::string(pfloatString)}){
+
+        dlong wordSize = 8;
+        if(floatString.find("float") != std::string::npos){
+          wordSize = 4;
+        }
+
+        const int mediumVerbosityLevel = 1;
+        if(platform->comm.mpiRank == 0 && firstPass){
+          std::cout << "Benchmarking Ax kernel...\n";
+          firstPass = false;
+        }
+
+        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1);
+
+        auto axProps = axKernel.properties();
+
+        const std::string suffix = coeffField ? "CoeffHex3D" : "Hex3D";
+
+        if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
+          kernelName = "ellipticPartialAxTrilinear" + suffix;
+        else
+          kernelName = "ellipticPartialAx" + suffix;
+
+        fileName = oklpath + kernelName + fileNameExtension;
+
+        const std::string kernelSuffix = gen_suffix(floatString.c_str());
+        platform->kernels.add(poissonPrefix + kernelName + kernelSuffix,
+            fileName,
+            axProps,
+            kernelSuffix);
+      }
+    }
+#endif
   }
 
   {
