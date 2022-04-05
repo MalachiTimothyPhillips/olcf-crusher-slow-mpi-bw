@@ -14,7 +14,7 @@
 #include "configReader.hpp"
 
 #include "mesh.h"
-#include "benchFDM.hpp"
+#include "pickFDMKernel.hpp"
 
 int main(int argc, char** argv)
 {

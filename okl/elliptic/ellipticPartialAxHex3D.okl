@@ -1,3 +1,9 @@
+#ifndef p_knl
+#define p_knl 0
+#endif
+
+#if p_knl == 0
+// base nekRS kernel
 @kernel void ellipticPartialAxHex3D(const dlong Nelements,
                                     const dlong offset,
                                     const dlong loffset,
@@ -145,3 +151,4 @@
     }
   }
 }
+#endif

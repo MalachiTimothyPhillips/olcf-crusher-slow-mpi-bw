@@ -11,6 +11,7 @@ set(ELLIPTIC_SOURCES
         ${ELLIPTIC_SOURCE_DIR}/ellipticUpdateJacobi.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticSEMFEM.cpp
         ${ELLIPTIC_SOURCE_DIR}/pickFDMKernel.cpp
+        ${ELLIPTIC_SOURCE_DIR}/pickAxHex3DKernel.cpp
         ${ELLIPTIC_SOURCE_DIR}/registerEllipticKernels.cpp
         ${ELLIPTIC_SOURCE_DIR}/registerEllipticPreconditionerKernels.cpp
         ${ELLIPTIC_SOURCE_DIR}/ellipticBuildPreconditionerKernels.cpp

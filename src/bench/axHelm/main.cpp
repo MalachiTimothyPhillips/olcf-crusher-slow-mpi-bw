@@ -11,6 +11,8 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
+#include "pickAxHex3DKernel.hpp"
+
 namespace {
 
 occa::kernel axKernel;
@@ -208,6 +210,19 @@ int main(int argc, char** argv)
   }
   kernelName += "Hex3D";
   if (Ndim > 1) kernelName += "_N" + std::to_string(Ndim);
+
+  if(kernelName == "ellipticPartialAxHex3D"){
+
+    mesh_t dummyMesh;
+
+    dummyMesh.Nelements = Nelements;
+    dummyMesh.Nq = Nq;
+    dummyMesh.Np = Np;
+
+    pickAxHex3DKernel(props, dummyMesh, true, Ntests, 10.0);
+    MPI_Finalize();
+    exit(0);
+  }
    
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
   const std::string fileName = 

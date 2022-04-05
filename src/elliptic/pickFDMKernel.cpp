@@ -81,8 +81,6 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
       return platform->device.buildKernel(fileName, newProps, true);
     };
 
-    const dfloat tol = 1e-8;
-
     auto kernelRunner = [&](occa::kernel &kernel) { kernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u); };
 
     auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests) {
