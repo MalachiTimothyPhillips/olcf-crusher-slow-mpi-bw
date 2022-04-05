@@ -1,5 +1,6 @@
 #include <kernelRequestManager.hpp>
 #include <platform.hpp>
+#include <functional>
 kernelRequestManager_t::kernelRequestManager_t(const platform_t& m_platform)
 : kernelsProcessed(false),
   platformRef(m_platform)
@@ -37,7 +38,7 @@ kernelRequestManager_t::add(kernelRequest_t request, bool checkUnique)
   fileNameToRequestMap[fileName].insert(request);
 }
 occa::kernel
-kernelRequestManager_t::get(const std::string& request, bool checkValid) const
+kernelRequestManager_t::get(const std::string& request, bool checkValid)
 {
   if(checkValid){
     bool issueError = 0;
@@ -65,7 +66,7 @@ kernelRequestManager_t::get(const std::string& request, bool checkValid) const
     }
   }
 
-  return requestToKernelMap.at(request);
+  return requestToKernelMap.at(request).get();
 }
 
 
@@ -110,14 +111,22 @@ kernelRequestManager_t::compile()
       if(fileId % ranksCompiling == rank){
         const std::string fileName = kernelFiles[fileId];
         for(auto && kernelRequest : fileNameToRequest[fileName]){
-          const std::string requestName = kernelRequest.requestName;
-          const std::string fileName = kernelRequest.fileName;
-          const std::string suffix = kernelRequest.suffix;
-          const occa::properties props = kernelRequest.props;
+          const std::string& requestName = kernelRequest.requestName;
+          const std::string& fileName = kernelRequest.fileName;
+          const std::string& suffix = kernelRequest.suffix;
+          const occa::properties& props = kernelRequest.props;
 
           // MPI staging already handled
-          auto kernel = device.buildKernel(fileName, props, suffix, false);
-          requestToKernel[requestName] = kernel;
+          // auto kernel = device.buildKernel(fileName, props, suffix, false);
+          // requestToKernel[requestName] = kernel;
+          // std::future<occa::kernel> kernel_future = std::async(
+          // std::launch::async,
+          // [&]() {return device.buildKernel(fileName, props, suffix, false);}
+          // );
+          requestToKernel[requestName] = std::async(
+          std::launch::async,
+          [&]() {return device.buildKernel(fileName, props, suffix, false);}
+          );
         }
       }
     }
@@ -129,13 +138,22 @@ kernelRequestManager_t::compile()
     {
       const std::string requestName = kernelRequest.requestName;
       if(requestToKernel.count(requestName) == 0){
-        const std::string fileName = kernelRequest.fileName;
-        const std::string suffix = kernelRequest.suffix;
-        const occa::properties props = kernelRequest.props;
+        const std::string& fileName = kernelRequest.fileName;
+        const std::string& suffix = kernelRequest.suffix;
+        const occa::properties& props = kernelRequest.props;
 
         // MPI staging already handled
-        auto kernel = device.buildKernel(fileName, props, suffix, false);
-        requestToKernel[requestName] = kernel;
+        // auto kernel = device.buildKernel(fileName, props, suffix, false);
+        // requestToKernel[requestName] = kernel;
+        // std::future<occa::kernel> kernel_future = std::async(
+        //   std::launch::async,
+        //   [&]() {return device.buildKernel(fileName, props, suffix, false);}
+        // );
+        // requestToKernel[requestName] = std::move(kernel_future);
+        requestToKernel[requestName] = std::async(
+          std::launch::async,
+          [&]() {return device.buildKernel(fileName, props, suffix, false);}
+        );
       }
     }
   };

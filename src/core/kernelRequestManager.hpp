@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <future>
 
 class platform_t;
 
@@ -62,7 +63,7 @@ public:
   void compile();
 
   occa::kernel
-  get(const std::string& request, bool checkValid = true) const;
+  get(const std::string& request, bool checkValid = true);
 
   bool
   processed() const { return kernelsProcessed; }
@@ -71,7 +72,8 @@ private:
   const platform_t& platformRef;
   bool kernelsProcessed;
   std::set<kernelRequest_t> kernels;
-  std::map<std::string, occa::kernel> requestToKernelMap;
+  // std::map<std::string, occa::kernel> requestToKernelMap;
+  std::map<std::string, std::future<occa::kernel>> requestToKernelMap;
   std::map<std::string, std::set<kernelRequest_t>> fileNameToRequestMap;
 
   void add(kernelRequest_t request, bool assertUnique = true);
