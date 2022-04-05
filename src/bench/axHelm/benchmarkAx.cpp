@@ -88,6 +88,11 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
     }
     else {
       for (int knl = 0; knl < Nkernels; ++knl) {
+
+        // v3 requires Nq^3 < 1024 (max threads/thread block on CUDA/HIP)
+        if(knl == 3 && Np > 1024) continue;
+        // v6 requires Nq % 2 == 0
+        if(knl == 6 && Nq % 2 == 1) continue;
         kernelVariants.push_back(knl);
       }
     }
