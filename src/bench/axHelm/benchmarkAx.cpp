@@ -81,7 +81,7 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
     auto o_lambda = platform->device.malloc(2 * Np * Nelements * wordSize, lambda.data());
 
     int Nkernels = 1;
-    if(kernelName == "ellipticPartialAxHex3D") Nkernels = 7;
+    if(kernelName == "ellipticPartialAxHex3D") Nkernels = 8;
     std::vector<int> kernelVariants;
     if (platform->serial) {
       kernelVariants.push_back(0);
