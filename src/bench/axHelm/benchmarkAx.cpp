@@ -156,6 +156,7 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
                     << " GDOF/s=" << GDOFPerSecond
                     << " GB/s=" << bw
                     << " GFLOPS/s=" << gflops
+                    << " kernel=" << kernelVariant
                     << "\n";
         }
       }
