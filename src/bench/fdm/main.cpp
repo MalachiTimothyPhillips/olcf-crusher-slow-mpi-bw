@@ -113,7 +113,8 @@ int main(int argc, char** argv)
   // always benchmark ASM
   props["defines/p_restrict"] = 0;
 
-  benchmarkFDM(props, Nelements, Nq, true, Ntests, 10.0);
+  const int highVerbosityLevel = 2;
+  benchmarkFDM(props, Nelements, Nq, highVerbosityLevel, Ntests, 10.0);
 
   MPI_Finalize();
   exit(0);

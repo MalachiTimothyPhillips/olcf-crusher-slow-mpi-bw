@@ -168,7 +168,8 @@ void registerSchwarzKernels(const std::string &section, int N) {
     re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
     const int NelemBenchmark = nelgv/platform->comm.mpiCommSize;
 
-    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true, 0, 0.1);
+    const int mediumVerbosityLevel = 1;
+    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, mediumVerbosityLevel, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
     fileName = oklpath + "fusedFDM" + extension;
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);

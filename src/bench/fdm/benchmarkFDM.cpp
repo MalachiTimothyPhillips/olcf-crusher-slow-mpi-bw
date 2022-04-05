@@ -8,7 +8,7 @@
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 
-occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int Nq, bool verbose, int Ntests, double elapsedTarget)
+occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int Nq, int verbosity, int Ntests, double elapsedTarget)
 {
   const auto N = Nq-1;
   const auto Np = Nq * Nq * Nq;
@@ -98,15 +98,15 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
       const double gflops = (NGlobalElements * flopsPerElem / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
-      // verbosity levels:
-      // 0: nothing
-      // 1: typical benchmark information for *fastest* // <- default nekRS
-      // 2: typical benchmark information for all kernels // <- benchmarks, nekRS (verbose = true)
-      if (platform->comm.mpiRank == 0 && verbose) {
-        std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests // remove for (1)
-                  << " N=" << N << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
-                  << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
-                  << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
+      if (platform->comm.mpiRank == 0) {
+        if(verbosity > 1){
+          std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
+        }
+        if(verbosity > 0){
+          std::cout << " N=" << N << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
+                    << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
+                    << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
+        }
       }
     };
 
