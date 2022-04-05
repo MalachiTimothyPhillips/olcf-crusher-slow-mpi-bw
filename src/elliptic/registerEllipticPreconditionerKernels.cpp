@@ -376,10 +376,6 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
           firstPass = false;
         }
 
-        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1);
-
-        auto axProps = axKernel.properties();
-
         const std::string suffix = coeffField ? "CoeffHex3D" : "Hex3D";
 
         if (platform->options.compareArgs("ELEMENT MAP", "TRILINEAR"))
@@ -388,6 +384,11 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
           kernelName = "ellipticPartialAx" + suffix;
 
         fileName = oklpath + kernelName + fileNameExtension;
+
+        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1);
+
+        auto axProps = axKernel.properties();
+
 
         const std::string kernelSuffix = gen_suffix(floatString.c_str());
         platform->kernels.add(poissonPrefix + kernelName + kernelSuffix,
