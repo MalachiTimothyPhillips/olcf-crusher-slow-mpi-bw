@@ -166,6 +166,7 @@ void registerSchwarzKernels(const std::string &section, int N) {
     const dlong NelemBenchmark = 4096;
     auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true);
     auto fdmProps = fdmKernel.properties();
+    std::cout << fdmProps << "\n";
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
 #else
     fileName = oklpath + "fusedFDM" + extension;
@@ -420,7 +421,9 @@ void registerEllipticPreconditionerKernels(std::string section, int poissonEquat
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
-  registerMultiGridKernels(section, poissonEquation);
-  registerSEMFEMKernels(section, N, poissonEquation);
+  if(poissonEquation == 1){
+    registerMultiGridKernels(section, poissonEquation);
+    registerSEMFEMKernels(section, N, poissonEquation);
+  }
   registerJacobiKernels(section, poissonEquation);
 }
