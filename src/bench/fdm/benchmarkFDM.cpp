@@ -8,39 +8,55 @@
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 
-occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int Nq, int verbosity, int Ntests, double elapsedTarget)
+occa::kernel benchmarkFDM(int wordSize, int Nelements, int Nq_e,
+  bool useRAS,
+  bool overlap,
+  int verbosity,
+  int Ntests,
+  double elapsedTarget)
 {
+  const auto Nq = Nq_e - 2;
+  const auto N_e = Nq_e - 1;
   const auto N = Nq-1;
-  const auto Np = Nq * Nq * Nq;
+  const auto Np_e = Nq_e * Nq_e * Nq_e;
 
-  // infer from baseProps what type to use for benchmarking
-  const std::string floatingPointType = static_cast<std::string>(baseProps["defines/pfloat"]);
-  const int overlap = static_cast<int>(baseProps["defines/p_overlap"]);
-  const int useRAS = static_cast<int>(baseProps["defines/p_restrict"]);
+  occa::properties props = platform->kernelInfo + meshKernelProperties(N); // regular, non-extended mesh
+  if(wordSize == 4) props["defines/pfloat"] = "float";
+  else props["defines/pfloat"] = "dfloat";
+
+  props["defines/p_Nq_e"] = Nq_e;
+  props["defines/p_Np_e"] = Np_e;
+  props["defines/p_overlap"] = overlap;
+
+  if(useRAS){
+    props["defines/p_restrict"] = 1;
+  } else {
+    props["defines/p_restrict"] = 0;
+  }
 
   auto benchmarkFDMWithPrecision = [&](auto sampleWord){
     using FPType = decltype(sampleWord);
     const auto wordSize = sizeof(FPType);
-    auto Sx   = randomVector<FPType>(Nelements * Nq * Nq);
-    auto Sy   = randomVector<FPType>(Nelements * Nq * Nq);
-    auto Sz   = randomVector<FPType>(Nelements * Nq * Nq);
-    auto invL = randomVector<FPType>(Nelements * Np);
-    auto Su   = randomVector<FPType>(Nelements * Np);
-    auto u    = randomVector<FPType>(Nelements * Np);
-    auto invDegree    = randomVector<FPType>(Nelements * Np);
+    auto Sx   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
+    auto Sy   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
+    auto Sz   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
+    auto invL = randomVector<FPType>(Nelements * Np_e);
+    auto Su   = randomVector<FPType>(Nelements * Np_e);
+    auto u    = randomVector<FPType>(Nelements * Np_e);
+    auto invDegree    = randomVector<FPType>(Nelements * Np_e);
 
     // elementList[e] = e
     std::vector<int> elementList(Nelements);
     std::iota(elementList.begin(), elementList.end(), 0);
     auto o_elementList = platform->device.malloc(Nelements * sizeof(int), elementList.data());
 
-    auto o_Sx = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sx.data());
-    auto o_Sy = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sy.data());
-    auto o_Sz = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sz.data());
-    auto o_invL = platform->device.malloc(Nelements * Np * wordSize, invL.data());
-    auto o_Su = platform->device.malloc(Nelements * Np * wordSize, Su.data());
-    auto o_u = platform->device.malloc(Nelements * Np * wordSize, u.data());
-    auto o_invDegree = platform->device.malloc(Nelements * Np * wordSize, invDegree.data());
+    auto o_Sx = platform->device.malloc(Nelements * Nq_e * Nq_e * wordSize, Sx.data());
+    auto o_Sy = platform->device.malloc(Nelements * Nq_e * Nq_e * wordSize, Sy.data());
+    auto o_Sz = platform->device.malloc(Nelements * Nq_e * Nq_e * wordSize, Sz.data());
+    auto o_invL = platform->device.malloc(Nelements * Np_e * wordSize, invL.data());
+    auto o_Su = platform->device.malloc(Nelements * Np_e * wordSize, Su.data());
+    auto o_u = platform->device.malloc(Nelements * Np_e * wordSize, u.data());
+    auto o_invDegree = platform->device.malloc(Nelements * Np_e * wordSize, invDegree.data());
 
     constexpr int Nkernels = 5;
     std::vector<int> kernelVariants;
@@ -56,7 +72,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
     const std::string installDir(getenv("NEKRS_HOME"));
 
     auto fdmKernelBuilder = [&](int kernelVariant) {
-      auto newProps = baseProps;
+      auto newProps = props;
       newProps["defines/p_knl"] = kernelVariant;
 
       const std::string kernelName = "fusedFDM";
@@ -89,12 +105,12 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
 
 
       // print statistics
-      const double GDOFPerSecond = (NGlobalElements * (N* N * N) / elapsed) / 1.e9;
+      const double GDOFPerSecond = (NGlobalElements * (N_e*N_e*N_e) / elapsed) / 1.e9;
 
-      size_t bytesPerElem = (3 * Np + 3 * Nq * Nq) * wordSize;
+      size_t bytesPerElem = (3 * Np_e + 3 * Nq_e * Nq_e) * wordSize;
       const double bw = (NGlobalElements * bytesPerElem / elapsed) / 1.e9;
 
-      double flopsPerElem = 12 * Nq * Np + Np;
+      double flopsPerElem = 12 * Nq_e * Np_e + Np_e;
       const double gflops = (NGlobalElements * flopsPerElem / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
@@ -103,7 +119,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
           std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
         }
         if(verbosity > 0){
-          std::cout << " N=" << N << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
+          std::cout << " N=" << N_e << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
                     << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
                     << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
         }
@@ -138,7 +154,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
 
   occa::kernel kernel;
 
-  if(floatingPointType.find("float") != std::string::npos){
+  if(wordSize == sizeof(float)){
     float p = 0.0;
     auto kernelAndTime = benchmarkFDMWithPrecision(p);
     kernel = kernelAndTime.first;

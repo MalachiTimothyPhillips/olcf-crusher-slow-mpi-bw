@@ -101,20 +101,8 @@ int main(int argc, char** argv)
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
 
-  // build+load kernel
-  occa::properties props = platform->kernelInfo + meshKernelProperties(N-2); // regular, non-extended mesh
-  if(wordSize == 4) props["defines/pfloat"] = "float";
-  else props["defines/pfloat"] = "dfloat";
-
-  props["defines/p_Nq_e"] = Nq;
-  props["defines/p_Np_e"] = Np;
-  props["defines/p_overlap"] = 0;
-
-  // always benchmark ASM
-  props["defines/p_restrict"] = 0;
-
   const int highVerbosityLevel = 2;
-  benchmarkFDM(props, Nelements, Nq, highVerbosityLevel, Ntests, 10.0);
+  benchmarkFDM(wordSize, Nelements, Nq, false, false, highVerbosityLevel, Ntests, 10.0);
 
   MPI_Finalize();
   exit(0);

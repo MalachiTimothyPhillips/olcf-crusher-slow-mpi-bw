@@ -152,12 +152,13 @@ void registerSchwarzKernels(const std::string &section, int N) {
     properties["defines/p_Nq"] = Nq;
     properties["defines/p_Nq_e"] = Nq_e;
     properties["defines/p_restrict"] = 0;
+    bool useRAS = platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER", "RAS");
     const std::string suffix =
         std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
     properties["defines/p_overlap"] = (int)overlap;
-    if (platform->options.compareArgs(
-            optionsPrefix + "MULTIGRID SMOOTHER", "RAS"))
+    if(useRAS){
       properties["defines/p_restrict"] = 1;
+    }
 
     fileName = oklpath + "preFDM" + extension;
     platform->kernels.add(
@@ -172,7 +173,7 @@ void registerSchwarzKernels(const std::string &section, int N) {
     if(platform->comm.mpiRank == 0){
       std::cout << "Benchmarking FDM kernel...\n";
     }
-    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, mediumVerbosityLevel, 0, 0.1);
+    auto fdmKernel = benchmarkFDM(sizeof(pfloat), NelemBenchmark, Nq_e, useRAS, static_cast<int>(overlap), mediumVerbosityLevel, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
     fileName = oklpath + "fusedFDM" + extension;
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
