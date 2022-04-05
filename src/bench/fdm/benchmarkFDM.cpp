@@ -44,7 +44,7 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
     auto invL = randomVector<FPType>(Nelements * Np_e);
     auto Su   = randomVector<FPType>(Nelements * Np_e);
     auto u    = randomVector<FPType>(Nelements * Np_e);
-    auto invDegree    = randomVector<FPType>(Nelements * Np_e);
+    auto invDegree    = randomVector<dfloat>(Nelements * Np_e);
 
     // elementList[e] = e
     std::vector<int> elementList(Nelements);
@@ -57,7 +57,7 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
     auto o_invL = platform->device.malloc(Nelements * Np_e * wordSize, invL.data());
     auto o_Su = platform->device.malloc(Nelements * Np_e * wordSize, Su.data());
     auto o_u = platform->device.malloc(Nelements * Np_e * wordSize, u.data());
-    auto o_invDegree = platform->device.malloc(Nelements * Np_e * wordSize, invDegree.data());
+    auto o_invDegree = platform->device.malloc(Nelements * Np_e * sizeof(dfloat), invDegree.data());
 
     constexpr int Nkernels = 5;
     std::vector<int> kernelVariants;
