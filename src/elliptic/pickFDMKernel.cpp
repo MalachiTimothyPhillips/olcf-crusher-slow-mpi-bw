@@ -1,4 +1,4 @@
-#include "benchFDM.hpp"
+#include "pickFDMKernel.hpp"
 #include <random>
 #include <vector>
 #include <algorithm>
