@@ -426,6 +426,7 @@ void registerEllipticPreconditionerKernels(std::string section, int poissonEquat
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
+  // TODO: relax this restriction
   if(poissonEquation == 1){
     registerMultiGridKernels(section, poissonEquation);
     registerSEMFEMKernels(section, N, poissonEquation);
