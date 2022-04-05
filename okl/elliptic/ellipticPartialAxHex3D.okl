@@ -617,7 +617,7 @@
 #if defined(FP32)
 // from FDM kernel
 #if p_Nq == 2
-#define p_NelementsPerBlk 63
+#define p_NelementsPerBlk 27
 #elif p_Nq == 3
 #define p_NelementsPerBlk 27
 #elif p_Nq == 4
