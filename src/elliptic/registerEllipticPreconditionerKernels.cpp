@@ -169,6 +169,9 @@ void registerSchwarzKernels(const std::string &section, int N) {
     const int NelemBenchmark = nelgv/platform->comm.mpiCommSize;
 
     const int mediumVerbosityLevel = 1;
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Benchmarking FDM kernel...\n";
+    }
     auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, mediumVerbosityLevel, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
     fileName = oklpath + "fusedFDM" + extension;

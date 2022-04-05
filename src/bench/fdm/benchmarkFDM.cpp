@@ -82,7 +82,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
       }
     };
 
-    auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests) {
+    auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
 
       double NGlobalElements = Nelements;
       MPI_Allreduce(MPI_IN_PLACE, &NGlobalElements, 1, MPI_DOUBLE, MPI_SUM, platform->comm.mpiComm);
@@ -98,7 +98,7 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
       const double gflops = (NGlobalElements * flopsPerElem / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
-      if (platform->comm.mpiRank == 0) {
+      if (platform->comm.mpiRank == 0 && !skipPrint) {
         if(verbosity > 1){
           std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
         }
@@ -110,7 +110,18 @@ occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int 
       }
     };
 
-    auto kernelAndTime = benchmarkKernel(fdmKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants, Ntests, elapsedTarget);
+    auto printCallBack = [&](int kernelVariant, double elapsed, int Ntests) {
+      printPerformanceInfo(kernelVariant, elapsed, Ntests, verbosity < 2);
+    };
+
+    auto kernelAndTime = benchmarkKernel(fdmKernelBuilder, kernelRunner, printCallBack, kernelVariants, Ntests, elapsedTarget);
+
+    int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
+    
+    // print only the fastest kernel
+    if(verbosity == 1){
+      printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
+    }
 
     free(o_Sx);
     free(o_Sy);

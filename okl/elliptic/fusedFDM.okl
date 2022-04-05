@@ -3,17 +3,17 @@
 #endif
 
 #if p_knl == 0
-#define fusedFDM fusedFDM_v0
+#define fusedFDM_v0 fusedFDM
 #elif p_knl == 1
-#define fusedFDM fusedFDM_v1
+#define fusedFDM_v1 fusedFDM
 #elif p_knl == 2
-#define fusedFDM fusedFDM_v2
+#define fusedFDM_v2 fusedFDM
 #elif p_knl == 3
-#define fusedFDM fusedFDM_v3
+#define fusedFDM_v3 fusedFDM
 #elif p_knl == 4
-#define fusedFDM fusedFDM_v4
+#define fusedFDM_v4 fusedFDM
 #else
-#define fusedFDM fusedFDM_v4
+#define fusedFDM_v4 fusedFDM
 #endif
 
 
