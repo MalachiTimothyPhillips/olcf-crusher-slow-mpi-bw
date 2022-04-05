@@ -1,5 +1,6 @@
 #include "occa.hpp"
-occa::kernel benchmarkFDM(int wordSize, int Nelements, int Nq_e,
+occa::kernel benchmarkFDM(int Nelements, int Nq_e,
+  int wordSize,
   bool useRAS,
   bool overlap,
   int verbosity = 0,

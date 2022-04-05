@@ -1,30 +1,60 @@
 #include "benchmarkAx.hpp"
 #include <vector>
 #include <iostream>
-#include "mesh.h"
+#include <numeric>
 #include "nrs.hpp"
 
 #include "kernelBenchmarker.hpp"
 #include "benchmarkUtils.hpp"
 #include "omp.h"
 
-occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, bool verbose, int Ntests, double elapsedTarget)
+occa::kernel benchmarkAx(int Nelements, int Nq, int Ng, 
+  bool constCoeff,
+  bool poisson,
+  bool computeGeom,
+  int wordSize,
+  int Ndim,
+  int verbosity,
+  int Ntests,
+  double elapsedTarget)
 {
-  const auto Nelements = mesh.Nelements;
-  const auto Nq = mesh.Nq;
   const auto N = Nq-1;
   const auto Np = Nq * Nq * Nq;
+  const auto Nq_g = Ng+1;
+  const int Np_g = Nq_g * Nq_g * Nq_g;
 
-  // infer from baseProps what type to use for benchmarking
-  const std::string floatingPointType = static_cast<std::string>(baseProps["defines/dfloat"]);
+  occa::properties props = platform->kernelInfo + meshKernelProperties(N);
+  if(wordSize == 4) props["defines/dfloat"] = "float";
+  if(Ng != N) {
+    props["defines/p_Nq_g"] = Nq_g;
+    props["defines/p_Np_g"] = Np_g;
+  }
+  if(poisson) props["defines/p_poisson"] = 1;
+
+  std::string kernelName = "elliptic";
+  if(Ndim > 1) kernelName += "Block";
+  kernelName += "PartialAx";
+  if(!constCoeff) kernelName += "Coeff";
+  if(Ng != N) {
+    if(computeGeom) {
+      if(Ng == 1) {
+        kernelName += "Trilinear";
+      } else {
+        printf("Unsupported g-order=%d\n", Ng);
+        exit(1);
+      }
+    } else {
+      printf("for now g-order != p-order requires --computeGeom!\n");
+      exit(1);
+      kernelName += "Ngeom";
+    } 
+  }
+  kernelName += "Hex3D";
+  if (Ndim > 1) kernelName += "_N" + std::to_string(Ndim);
 
   auto benchmarkAxWithPrecision = [&](auto sampleWord){
     using FPType = decltype(sampleWord);
     const auto wordSize = sizeof(FPType);
-    const int Ndim = 1;
-    const int Np_g = Np;
-    const int Ng = N;
-    const int Nq_g = Nq;
     constexpr int p_Nggeo {7};
 
     auto DrV    = randomVector<FPType>(Nq * Nq);
@@ -35,10 +65,9 @@ occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, 
     auto gllwz  = randomVector<FPType>(2 * Nq_g);
     auto lambda = randomVector<FPType>(2 * Np * Nelements);
 
+    // elementList[e] = e
     std::vector<dlong> elementList(Nelements);
-    for(int e = 0; e < Nelements; ++e){
-      elementList[e] = e;
-    }
+    std::iota(elementList.begin(), elementList.end(), 0);
     auto o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList.data());
 
     auto o_D = platform->device.malloc(Nq * Nq * wordSize, DrV.data());
@@ -65,10 +94,9 @@ occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, 
     const std::string installDir(getenv("NEKRS_HOME"));
 
     auto axKernelBuilder = [&](int kernelVariant) {
-      auto newProps = baseProps;
+      auto newProps = props;
       newProps["defines/p_knl"] = kernelVariant;
 
-      const std::string kernelName = "ellipticPartialAxHex3D";
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
@@ -78,12 +106,16 @@ occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, 
     auto kernelRunner = [&](occa::kernel &kernel) {
       const int loffset = 0;
       const int offset = Nelements * Np;
-      kernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
+      if(computeGeom){
+        kernel(Nelements, offset, loffset, o_elementList, o_exyz, o_gllwz, o_D, o_S, o_lambda, o_q, o_Aq);
+      } else {
+        kernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
+      }
     };
 
-    auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests) {
+    auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
 
-      const bool BKmode = true;
+      const bool BKmode = constCoeff && poisson;
 
       double NGlobalElements = Nelements;
       MPI_Allreduce(MPI_IN_PLACE, &NGlobalElements, 1, MPI_DOUBLE, MPI_SUM, platform->comm.mpiComm);
@@ -93,33 +125,48 @@ occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, 
 
       size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
       bytesMoved += 6 * Np_g * wordSize; // geo
-      if(!BKmode) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
+      if(!constCoeff) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
       const double bw = (NGlobalElements * bytesMoved / elapsed) / 1.e9;
 
       double flopCount = Np * 12 * Nq + 15 * Np;
-      if(!BKmode) flopCount += 5 * Np;
+      if(!constCoeff) flopCount += 5 * Np;
       const double gflops = Ndim * (flopCount * NGlobalElements / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
-      if(platform->comm.mpiRank == 0 && verbose){
-        std::cout << "MPItasks=" << platform->comm.mpiCommSize
-                  << " OMPthreads=" << Nthreads
-                  << " NRepetitions=" << Ntests
-                  << " Ndim=" << Ndim
-                  << " N=" << N
-                  << " Ng=" << Ng
-                  << " Nelements=" << NGlobalElements
-                  << " elapsed time=" << elapsed
-                  << " bkMode=" << BKmode
-                  << " wordSize=" << 8*wordSize
-                  << " GDOF/s=" << GDOFPerSecond
-                  << " GB/s=" << bw
-                  << " GFLOPS/s=" << gflops
-                  << "\n";
+      if(platform->comm.mpiRank == 0 && !skipPrint){
+        if(verbosity > 1){
+          std::cout << "MPItasks=" << platform->comm.mpiCommSize
+                    << " OMPthreads=" << Nthreads
+                    << " NRepetitions=" << Ntests;
+        }
+        if(verbosity > 0){
+          std::cout << " Ndim=" << Ndim
+                    << " N=" << N
+                    << " Ng=" << Ng
+                    << " Nelements=" << NGlobalElements
+                    << " elapsed time=" << elapsed
+                    << " bkMode=" << BKmode
+                    << " wordSize=" << 8*wordSize
+                    << " GDOF/s=" << GDOFPerSecond
+                    << " GB/s=" << bw
+                    << " GFLOPS/s=" << gflops
+                    << "\n";
+        }
       }
     };
 
-    auto kernel = benchmarkKernel(axKernelBuilder, kernelRunner, printPerformanceInfo, kernelVariants, Ntests, elapsedTarget);
+    auto printCallBack = [&](int kernelVariant, double elapsed, int Ntests) {
+      printPerformanceInfo(kernelVariant, elapsed, Ntests, verbosity < 2);
+    };
+
+    auto kernelAndTime = benchmarkKernel(axKernelBuilder, kernelRunner, printCallBack, kernelVariants, Ntests, elapsedTarget);
+    int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
+    
+    // print only the fastest kernel
+    if(verbosity == 1){
+      printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
+    }
+
 
     free(o_D);
     free(o_S);
@@ -129,14 +176,15 @@ occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, 
     free(o_exyz);
     free(o_gllwz);
     free(o_lambda);
+    free(o_elementList);
 
-    return kernel;
+    return kernelAndTime;
 
   };
 
   occa::kernel kernel;
 
-  if(floatingPointType.find("float") != std::string::npos){
+  if(wordSize == sizeof(float)){
     float p = 0.0;
     auto kernelAndTime = benchmarkAxWithPrecision(p);
     kernel = kernelAndTime.first;

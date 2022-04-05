@@ -102,7 +102,7 @@ int main(int argc, char** argv)
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
 
   const int highVerbosityLevel = 2;
-  benchmarkFDM(wordSize, Nelements, Nq, false, false, highVerbosityLevel, Ntests, 10.0);
+  benchmarkFDM(Nelements, Nq, wordSize, false, false, highVerbosityLevel, Ntests, 10.0);
 
   MPI_Finalize();
   exit(0);

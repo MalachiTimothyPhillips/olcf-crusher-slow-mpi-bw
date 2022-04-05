@@ -173,7 +173,7 @@ void registerSchwarzKernels(const std::string &section, int N) {
     if(platform->comm.mpiRank == 0){
       std::cout << "Benchmarking FDM kernel...\n";
     }
-    auto fdmKernel = benchmarkFDM(sizeof(pfloat), NelemBenchmark, Nq_e, useRAS, static_cast<int>(overlap), mediumVerbosityLevel, 0, 0.1);
+    auto fdmKernel = benchmarkFDM(NelemBenchmark, Nq_e, sizeof(pfloat), useRAS, static_cast<int>(overlap), mediumVerbosityLevel, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
     fileName = oklpath + "fusedFDM" + extension;
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
