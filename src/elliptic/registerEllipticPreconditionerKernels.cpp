@@ -4,6 +4,8 @@
 #include "benchmarkFDM.hpp"
 #include "benchmarkAx.hpp"
 
+#include "re2Reader.hpp"
+
 namespace {
 
 void registerJacobiKernels(const std::string &section, int poissonEquation) {
@@ -162,9 +164,12 @@ void registerSchwarzKernels(const std::string &section, int N) {
         "preFDM" + suffix, fileName, properties, suffix);
 
 #if 1
-    // TODO: how to set this?
-    const dlong NelemBenchmark = 4096;
-    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true);
+    int nelgt, nelgv;
+    const std::string meshFile = platform->options.getArgs("MESH FILE");
+    re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
+    const int NelemBenchmark = nelgv/platform->comm.mpiCommSize;
+
+    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true, 0, 0.1);
     auto fdmProps = fdmKernel.properties();
     std::cout << fdmProps << "\n";
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
