@@ -13,8 +13,7 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
-#include "mesh.h"
-#include "pickFDMKernel.hpp"
+#include "benchmarkFDM.hpp"
 
 int main(int argc, char** argv)
 {
@@ -114,13 +113,7 @@ int main(int argc, char** argv)
   // always benchmark ASM
   props["defines/p_restrict"] = 0;
 
-  // populate dummy mesh struct to pass Nelements/Nq
-  mesh_t dummyMesh;
-  dummyMesh.Nelements = Nelements;
-  dummyMesh.Nq = Nq;
-  dummyMesh.Np = Np;
-
-  pickFDMKernel(props, dummyMesh, true, Ntests, 10.0);
+  benchmarkFDM(props, Nelements, Nq, true, Ntests, 10.0);
 
   MPI_Finalize();
   exit(0);

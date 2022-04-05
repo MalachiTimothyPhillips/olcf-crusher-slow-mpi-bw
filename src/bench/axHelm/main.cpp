@@ -11,7 +11,7 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
-#include "pickAxHex3DKernel.hpp"
+#include "benchmarkAx.hpp"
 
 namespace {
 
@@ -211,6 +211,14 @@ int main(int argc, char** argv)
   kernelName += "Hex3D";
   if (Ndim > 1) kernelName += "_N" + std::to_string(Ndim);
 
+  // TODO: consolidate...
+#if 0
+  // constCoeffPoison == Bkmode
+  benchmarkAx(Nelements, Nq, constCoeffPoisson, wordSize, ...);
+  MPI_Finalize();
+  exit();
+#endif
+
   if(kernelName == "ellipticPartialAxHex3D"){
 
     mesh_t dummyMesh;
@@ -219,7 +227,9 @@ int main(int argc, char** argv)
     dummyMesh.Nq = Nq;
     dummyMesh.Np = Np;
 
-    pickAxHex3DKernel(props, dummyMesh, true, Ntests, 10.0);
+    //pickAxHex3DKernel(props, dummyMesh, true, Ntests, 10.0);
+    // TODO: support more kernels than just "ellipticPartialAxHex3D"
+    benchmarkAx(props, dummyMesh, true, Ntests, 10.0);
     MPI_Finalize();
     exit(0);
   }

@@ -1,46 +1,24 @@
-#include "pickFDMKernel.hpp"
-#include <random>
+#include "benchmarkFDM.hpp"
 #include <vector>
-#include <algorithm>
+#include <numeric>
 #include <iostream>
-#include <vector>
-#include "mesh.h"
 #include "nrs.hpp"
 
+#include "benchmarkUtils.hpp"
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 
-namespace{
-template<typename T>
-std::vector<T> randomVector(int N)
+occa::kernel benchmarkFDM(const occa::properties& baseProps, int Nelements, int Nq, bool verbose, int Ntests, double elapsedTarget)
 {
-
-  std::default_random_engine dev;
-  std::uniform_real_distribution<T> dist{0.0, 1.0};
-  
-  auto gen = [&dist, &dev](){
-                 return dist(dev);
-             };
-
-  std::vector<T> vec(N);
-  std::generate(vec.begin(), vec.end(), gen);
-
-  return vec;
-}
-}
-
-
-occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh, bool verbose, int Ntests, double elapsedTarget)
-{
-  const auto Nelements = mesh.Nelements;
-  const auto Nq = mesh.Nq;
   const auto N = Nq-1;
   const auto Np = Nq * Nq * Nq;
 
   // infer from baseProps what type to use for benchmarking
   const std::string floatingPointType = static_cast<std::string>(baseProps["defines/pfloat"]);
+  const int overlap = static_cast<int>(baseProps["defines/p_overlap"]);
+  const int useRAS = static_cast<int>(baseProps["defines/p_restrict"]);
 
-  auto pickFDMKernelWithPrecision = [&](auto sampleWord){
+  auto benchmarkFDMWithPrecision = [&](auto sampleWord){
     using FPType = decltype(sampleWord);
     const auto wordSize = sizeof(FPType);
     auto Sx   = randomVector<FPType>(Nelements * Nq * Nq);
@@ -49,6 +27,12 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
     auto invL = randomVector<FPType>(Nelements * Np);
     auto Su   = randomVector<FPType>(Nelements * Np);
     auto u    = randomVector<FPType>(Nelements * Np);
+    auto invDegree    = randomVector<FPType>(Nelements * Np);
+
+    // elementList[e] = e
+    std::vector<int> elementList(Nelements);
+    std::iota(elementList.begin(), elementList.end(), 0);
+    auto o_elementList = platform->device.malloc(Nelements * sizeof(int), elementList.data());
 
     auto o_Sx = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sx.data());
     auto o_Sy = platform->device.malloc(Nelements * Nq * Nq * wordSize, Sy.data());
@@ -56,6 +40,7 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
     auto o_invL = platform->device.malloc(Nelements * Np * wordSize, invL.data());
     auto o_Su = platform->device.malloc(Nelements * Np * wordSize, Su.data());
     auto o_u = platform->device.malloc(Nelements * Np * wordSize, u.data());
+    auto o_invDegree = platform->device.malloc(Nelements * Np * wordSize, invDegree.data());
 
     constexpr int Nkernels = 5;
     std::vector<int> kernelVariants;
@@ -81,7 +66,21 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
       return platform->device.buildKernel(fileName, newProps, true);
     };
 
-    auto kernelRunner = [&](occa::kernel &kernel) { kernel(Nelements, o_Su, o_Sx, o_Sy, o_Sz, o_invL, o_u); };
+    auto kernelRunner = [&](occa::kernel &kernel) { 
+      if(useRAS){
+        if(!overlap){
+          kernel(Nelements, o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_invDegree,o_u);
+        } else {
+          kernel(Nelements, o_elementList, o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_invDegree,o_u);
+        }
+      } else {
+        if(!overlap){
+          kernel(Nelements, o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_u);
+        } else {
+          kernel(Nelements, o_elementList, o_Su,o_Sx,o_Sy,o_Sz,o_invL,o_u);
+        }
+      }
+    };
 
     auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests) {
 
@@ -99,8 +98,12 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
       const double gflops = (NGlobalElements * flopsPerElem / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
+      // verbosity levels:
+      // 0: nothing
+      // 1: typical benchmark information for *fastest* // <- default nekRS
+      // 2: typical benchmark information for all kernels // <- benchmarks, nekRS (verbose = true)
       if (platform->comm.mpiRank == 0 && verbose) {
-        std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests
+        std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests // remove for (1)
                   << " N=" << N << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
                   << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
                   << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
@@ -115,6 +118,8 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
     free(o_invL);
     free(o_Su);
     free(o_u);
+    free(o_invDegree);
+    free(o_elementList);
 
     return kernel;
 
@@ -124,11 +129,11 @@ occa::kernel pickFDMKernel(const occa::properties& baseProps, const mesh_t& mesh
 
   if(floatingPointType.find("float") != std::string::npos){
     float p = 0.0;
-    auto kernelAndTime = pickFDMKernelWithPrecision(p);
+    auto kernelAndTime = benchmarkFDMWithPrecision(p);
     kernel = kernelAndTime.first;
   } else {
     double p = 0.0;
-    auto kernelAndTime = pickFDMKernelWithPrecision(p);
+    auto kernelAndTime = benchmarkFDMWithPrecision(p);
     kernel = kernelAndTime.first;
   }
 

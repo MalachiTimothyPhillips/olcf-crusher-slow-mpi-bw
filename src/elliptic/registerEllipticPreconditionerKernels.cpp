@@ -1,6 +1,8 @@
 #include <compileKernels.hpp>
 #include "nrs.hpp"
 #include "elliptic.h"
+#include "benchmarkFDM.hpp"
+#include "benchmarkAx.hpp"
 
 namespace {
 
@@ -159,8 +161,16 @@ void registerSchwarzKernels(const std::string &section, int N) {
     platform->kernels.add(
         "preFDM" + suffix, fileName, properties, suffix);
 
+#if 1
+    // TODO: how to set this?
+    const dlong NelemBenchmark = 4096;
+    auto fdmKernel = benchmarkFDM(properties, NelemBenchmark, Nq_e, true);
+    auto fdmProps = fdmKernel.properties();
+    platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
+#else
     fileName = oklpath + "fusedFDM" + extension;
     platform->kernels.add("fusedFDM" + suffix, fileName, properties, suffix);
+#endif
 
     fileName = oklpath + "postFDM" + extension;
     platform->kernels.add(

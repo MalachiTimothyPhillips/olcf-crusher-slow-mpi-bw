@@ -2,9 +2,12 @@
 #define p_knl 0
 #endif
 
+// TODO: rename with versions
+
+
 #if p_knl == 0
 // old, nekRS baseline FDM kernel
-@kernel void fusedFDM(const dlong Nelements,
+@kernel void fusedFDM_v0(const dlong Nelements,
 #if p_overlap
                       @restrict const dlong *elementList,
 #endif

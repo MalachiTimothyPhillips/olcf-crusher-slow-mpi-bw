@@ -1,36 +1,14 @@
-#include "pickAxHex3DKernel.hpp"
-#include <random>
+#include "benchmarkAx.hpp"
 #include <vector>
-#include <algorithm>
 #include <iostream>
-#include <vector>
 #include "mesh.h"
 #include "nrs.hpp"
 
 #include "kernelBenchmarker.hpp"
+#include "benchmarkUtils.hpp"
 #include "omp.h"
 
-namespace{
-template<typename T>
-std::vector<T> randomVector(int N)
-{
-
-  std::default_random_engine dev;
-  std::uniform_real_distribution<T> dist{0.0, 1.0};
-  
-  auto gen = [&dist, &dev](){
-                 return dist(dev);
-             };
-
-  std::vector<T> vec(N);
-  std::generate(vec.begin(), vec.end(), gen);
-
-  return vec;
-}
-}
-
-
-occa::kernel pickAxHex3DKernel(const occa::properties& baseProps, const mesh_t& mesh, bool verbose, int Ntests, double elapsedTarget)
+occa::kernel benchmarkAx(const occa::properties& baseProps, const mesh_t& mesh, bool verbose, int Ntests, double elapsedTarget)
 {
   const auto Nelements = mesh.Nelements;
   const auto Nq = mesh.Nq;
@@ -40,7 +18,7 @@ occa::kernel pickAxHex3DKernel(const occa::properties& baseProps, const mesh_t& 
   // infer from baseProps what type to use for benchmarking
   const std::string floatingPointType = static_cast<std::string>(baseProps["defines/dfloat"]);
 
-  auto pickAxHex3DKernelWithPrecision = [&](auto sampleWord){
+  auto benchmarkAxWithPrecision = [&](auto sampleWord){
     using FPType = decltype(sampleWord);
     const auto wordSize = sizeof(FPType);
     const int Ndim = 1;
@@ -160,11 +138,11 @@ occa::kernel pickAxHex3DKernel(const occa::properties& baseProps, const mesh_t& 
 
   if(floatingPointType.find("float") != std::string::npos){
     float p = 0.0;
-    auto kernelAndTime = pickAxHex3DKernelWithPrecision(p);
+    auto kernelAndTime = benchmarkAxWithPrecision(p);
     kernel = kernelAndTime.first;
   } else {
     double p = 0.0;
-    auto kernelAndTime = pickAxHex3DKernelWithPrecision(p);
+    auto kernelAndTime = benchmarkAxWithPrecision(p);
     kernel = kernelAndTime.first;
   }
 

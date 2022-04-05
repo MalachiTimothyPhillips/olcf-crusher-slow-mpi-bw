@@ -173,6 +173,7 @@ include(config/nek5000.cmake)
 ###############################################################################
 
 
+include(config/bench.cmake)
 include(config/mesh.cmake)
 include(config/elliptic.cmake)
 include(config/gslib.cmake)
@@ -211,7 +212,6 @@ set(SRC
     src/core/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
-    src/core/kernelBenchmarker.cpp
     src/core/flopCounter.cpp
     src/core/kernelRequestManager.cpp
     src/core/device.cpp
@@ -229,6 +229,7 @@ set(SRC
     src/udf/udf.cpp
     src/udf/compileUDFKernels.cpp
     src/nekInterface/nekInterfaceAdapter.cpp
+    ${BENCH_SOURCES}
     ${MESH_SOURCES}
     ${PARALMOND_SOURCES}
     ${ELLIPTIC_SOURCES}
@@ -266,6 +267,11 @@ target_include_directories(nekrs-lib
   src/timeStepper
   src/navierStokes
   src/cds
+  ${BENCH_SOURCE_DIR}
+  ${BENCH_SOURCE_DIR}/core
+  ${BENCH_SOURCE_DIR}/fdm
+  ${BENCH_SOURCE_DIR}/axHelm
+  ${BENCH_SOURCE_DIR}/advsub
   ${MESH_SOURCE_DIR}
   ${NEKINTERFACEDIR}
   ${OGS_SOURCE_DIR}/include

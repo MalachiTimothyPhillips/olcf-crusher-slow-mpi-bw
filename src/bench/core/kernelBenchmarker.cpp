@@ -1,6 +1,7 @@
 #include "kernelBenchmarker.hpp"
 #include <limits>
 #include "nrs.hpp"
+
 namespace {
 double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa::kernel &kernel)
 {
@@ -20,7 +21,7 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
 std::pair<occa::kernel, double>
 benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
                 std::function<void(occa::kernel &)> kernelRunner,
-                std::function<void(int kernelVariant, double tKernel, int Ntests)> kernelTimingCallback,
+                std::function<void(int kernelVariant, double tKernel, int Ntests)> printCallback,
                 const std::vector<int> &kernelVariants,
                 int Ntests,
                 double targetTime)
@@ -50,7 +51,7 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
       fastestKernel = candidateKernel;
     }
 
-    kernelTimingCallback(kernelVariant, candidateKernelTiming, Ntests);
+    printCallback(kernelVariant, candidateKernelTiming, Ntests);
   }
 
   return std::make_pair(fastestKernel, fastestTime);
