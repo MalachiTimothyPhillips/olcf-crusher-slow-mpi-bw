@@ -51,19 +51,19 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
       }
     }
 
+    const std::string installDir(getenv("NEKRS_HOME"));
     // only a single choice, no need to run benchmark
-    if(kernelVariant.size() == 1 && !requiresBenchmark){
+    if(kernelVariants.size() == 1 && !requiresBenchmark){
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariant;
+      newProps["defines/p_knl"] = kernelVariants.back();
 
       const std::string kernelName = "fusedFDM";
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
-      return platform->device.buildKernel(fileName, newProps, true);
+      return std::make_pair(platform->device.buildKernel(fileName, newProps, true), -1.0);
     }
 
-    const std::string installDir(getenv("NEKRS_HOME"));
     auto Sx   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
     auto Sy   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
     auto Sz   = randomVector<FPType>(Nelements * Nq_e * Nq_e);

@@ -80,12 +80,12 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
     // only a single choice, no need to run benchmark
     if(kernelVariants.size() == 1 && !requiresBenchmark){
       auto newProps = props;
-      newProps["defines/p_knl"] = 0;
+      newProps["defines/p_knl"] = kernelVariants.back();
 
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
-      return platform->device.buildKernel(fileName, newProps, true);
+      return std::make_pair(platform->device.buildKernel(fileName, newProps, true), -1.0);
     }
 
     auto DrV    = randomVector<FPType>(Nq * Nq);
