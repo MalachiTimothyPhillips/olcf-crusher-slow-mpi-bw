@@ -14,7 +14,8 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
   bool overlap,
   int verbosity,
   int Ntests,
-  double elapsedTarget)
+  double elapsedTarget,
+  bool requiresBenchmark)
 {
   const auto Nq = Nq_e - 2;
   const auto N_e = Nq_e - 1;
@@ -38,6 +39,31 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
   auto benchmarkFDMWithPrecision = [&](auto sampleWord){
     using FPType = decltype(sampleWord);
     const auto wordSize = sizeof(FPType);
+
+    constexpr int Nkernels = 5;
+    std::vector<int> kernelVariants;
+    if (platform->serial) {
+      kernelVariants.push_back(0);
+    }
+    else {
+      for (int knl = 0; knl < Nkernels; ++knl) {
+        kernelVariants.push_back(knl);
+      }
+    }
+
+    // only a single choice, no need to run benchmark
+    if(kernelVariant.size() == 1 && !requiresBenchmark){
+      auto newProps = props;
+      newProps["defines/p_knl"] = kernelVariant;
+
+      const std::string kernelName = "fusedFDM";
+      const std::string ext = platform->serial ? ".c" : ".okl";
+      const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
+
+      return platform->device.buildKernel(fileName, newProps, true);
+    }
+
+    const std::string installDir(getenv("NEKRS_HOME"));
     auto Sx   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
     auto Sy   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
     auto Sz   = randomVector<FPType>(Nelements * Nq_e * Nq_e);
@@ -58,19 +84,6 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
     auto o_Su = platform->device.malloc(Nelements * Np_e * wordSize, Su.data());
     auto o_u = platform->device.malloc(Nelements * Np_e * wordSize, u.data());
     auto o_invDegree = platform->device.malloc(Nelements * Np_e * sizeof(dfloat), invDegree.data());
-
-    constexpr int Nkernels = 5;
-    std::vector<int> kernelVariants;
-    if (platform->serial) {
-      kernelVariants.push_back(0);
-    }
-    else {
-      for (int knl = 0; knl < Nkernels; ++knl) {
-        kernelVariants.push_back(knl);
-      }
-    }
-
-    const std::string installDir(getenv("NEKRS_HOME"));
 
     auto fdmKernelBuilder = [&](int kernelVariant) {
       auto newProps = props;

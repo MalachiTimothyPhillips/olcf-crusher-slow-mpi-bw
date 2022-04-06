@@ -173,7 +173,7 @@ void registerSchwarzKernels(const std::string &section, int N) {
     if(platform->comm.mpiRank == 0){
       std::cout << "Benchmarking FDM kernel...\n";
     }
-    auto fdmKernel = benchmarkFDM(NelemBenchmark, Nq_e, sizeof(pfloat), useRAS, static_cast<int>(overlap), mediumVerbosityLevel, 0, 0.1);
+    auto fdmKernel = benchmarkFDM(NelemBenchmark, Nq_e, sizeof(pfloat), useRAS, static_cast<int>(overlap), mediumVerbosityLevel, 0, 0.1, false);
     auto fdmProps = fdmKernel.properties();
     fileName = oklpath + "fusedFDM" + extension;
     platform->kernels.add("fusedFDM" + suffix, fileName, fdmProps, suffix);
@@ -262,7 +262,7 @@ void registerFineLevelKernels(const std::string &section, int N, int poissonEqua
           firstPass = false;
         }
 
-        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1);
+        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1, false);
 
         auto axProps = axKernel.properties();
 
@@ -385,7 +385,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
 
         fileName = oklpath + kernelName + fileNameExtension;
 
-        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1);
+        auto axKernel = benchmarkAx(NelemBenchmark, Nq, Nq-1, coeffField, poissonEquation, false, wordSize, Nfields, 1, 0, 0.1, false);
 
         auto axProps = axKernel.properties();
 

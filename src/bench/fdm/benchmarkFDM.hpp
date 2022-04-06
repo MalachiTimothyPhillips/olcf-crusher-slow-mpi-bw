@@ -5,4 +5,5 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
   bool overlap,
   int verbosity = 0,
   int Ntests = 0,
-  double elapsedTarget = 1.0);
+  double elapsedTarget = 1.0,
+  bool requiresBenchmark = false);

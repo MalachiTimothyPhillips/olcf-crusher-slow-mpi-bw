@@ -126,7 +126,7 @@ int main(int argc, char** argv)
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
   const int highVerbosityLevel = 2;
-  benchmarkAx(Nelements, Nq, Ng, poisson, constCoeff, computeGeom, wordSize, Ndim, highVerbosityLevel, Ntests, 10.0);
+  benchmarkAx(Nelements, Nq, Ng, poisson, constCoeff, computeGeom, wordSize, Ndim, highVerbosityLevel, Ntests, 10.0, true);
   MPI_Finalize();
   exit(0);
 }

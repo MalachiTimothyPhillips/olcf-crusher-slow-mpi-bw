@@ -16,7 +16,8 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
   int Ndim,
   int verbosity,
   int Ntests,
-  double elapsedTarget)
+  double elapsedTarget,
+  bool requiresBenchmark)
 {
   const auto N = Nq-1;
   const auto Np = Nq * Nq * Nq;
@@ -57,6 +58,36 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
     const auto wordSize = sizeof(FPType);
     constexpr int p_Nggeo {7};
 
+    int Nkernels = 1;
+    if(kernelName == "ellipticPartialAxHex3D") Nkernels = 8;
+    std::vector<int> kernelVariants;
+    if (platform->serial) {
+      kernelVariants.push_back(0);
+    }
+    else {
+      for (int knl = 0; knl < Nkernels; ++knl) {
+
+        // v3 requires Nq^3 < 1024 (max threads/thread block on CUDA/HIP)
+        if(knl == 3 && Np > 1024) continue;
+        // v6 requires Nq % 2 == 0
+        if(knl == 6 && Nq % 2 == 1) continue;
+        kernelVariants.push_back(knl);
+      }
+    }
+
+    const std::string installDir(getenv("NEKRS_HOME"));
+
+    // only a single choice, no need to run benchmark
+    if(kernelVariants.size() == 1 && !requiresBenchmark){
+      auto newProps = props;
+      newProps["defines/p_knl"] = 0;
+
+      const std::string ext = platform->serial ? ".c" : ".okl";
+      const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
+
+      return platform->device.buildKernel(fileName, newProps, true);
+    }
+
     auto DrV    = randomVector<FPType>(Nq * Nq);
     auto ggeo   = randomVector<FPType>(Np_g * Nelements * p_Nggeo);
     auto q      = randomVector<FPType>((Ndim * Np) * Nelements);
@@ -79,25 +110,6 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
     auto o_gllwz = platform->device.malloc(2 * Nq_g * wordSize, gllwz.data());
 
     auto o_lambda = platform->device.malloc(2 * Np * Nelements * wordSize, lambda.data());
-
-    int Nkernels = 1;
-    if(kernelName == "ellipticPartialAxHex3D") Nkernels = 8;
-    std::vector<int> kernelVariants;
-    if (platform->serial) {
-      kernelVariants.push_back(0);
-    }
-    else {
-      for (int knl = 0; knl < Nkernels; ++knl) {
-
-        // v3 requires Nq^3 < 1024 (max threads/thread block on CUDA/HIP)
-        if(knl == 3 && Np > 1024) continue;
-        // v6 requires Nq % 2 == 0
-        if(knl == 6 && Nq % 2 == 1) continue;
-        kernelVariants.push_back(knl);
-      }
-    }
-
-    const std::string installDir(getenv("NEKRS_HOME"));
 
     auto axKernelBuilder = [&](int kernelVariant) {
       auto newProps = props;
