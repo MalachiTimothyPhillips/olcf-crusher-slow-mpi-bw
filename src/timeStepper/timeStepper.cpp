@@ -324,9 +324,9 @@ void applyDirichlet(nrs_t *nrs, double time)
                                                    platform->o_mempool.slice6, nrs->o_P);
  
     if (nrs->uvwSolver) {
+      applyUnZero(nrs->uvwSolver, platform->o_mempool.slice7);
       if (nrs->uvwSolver->Nmasked) nrs->maskCopyKernel(nrs->uvwSolver->Nmasked, 0*nrs->fieldOffset, nrs->uvwSolver->o_maskIds,
                                                        platform->o_mempool.slice7, nrs->o_U);
-      applyUnZero(nrs->uvwSolver, nrs->o_U);
     } else {
       if (nrs->uSolver->Nmasked) nrs->maskCopyKernel(nrs->uSolver->Nmasked, 0*nrs->fieldOffset, nrs->uSolver->o_maskIds,
                                                      platform->o_mempool.slice7, nrs->o_U);
@@ -359,9 +359,9 @@ void applyDirichlet(nrs_t *nrs, double time)
       if(sweep == 0) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if(sweep == 1) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
     }
+    applyUnZero(nrs->meshSolver, platform->o_mempool.slice3);
     if (nrs->meshSolver->Nmasked) nrs->maskCopyKernel(nrs->meshSolver->Nmasked, 0*nrs->fieldOffset, nrs->meshSolver->o_maskIds,
         platform->o_mempool.slice3, mesh->o_U);
-    applyUnZero(nrs->meshSolver, mesh->o_U);
   }
 }
 
