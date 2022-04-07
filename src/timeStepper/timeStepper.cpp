@@ -247,9 +247,8 @@ void applyDirichlet(nrs_t *nrs, double time)
     }
   }
 
-
-  auto applyUnZero = [&](elliptic_t* solver, occa::memory& o_x)
-  {
+  auto applyUnZero = [&](elliptic_t *solver, occa::memory &o_x) {
+#if 0
     mesh_t* mesh = solver->mesh;
     if (solver->UNormalZero) {
       dlong Nelems = mesh->NlocalGatherElements;
@@ -283,9 +282,11 @@ void applyDirichlet(nrs_t *nrs, double time)
                                 o_x);
       }
     }
+#else
+    ellipticEnforceUnZero(solver, o_x); // TODO
+#endif
   };
 
-  
   if(nrs->flow) {
     mesh_t* mesh = nrs->meshV;
 

@@ -1,4 +1,4 @@
-@kernel void rescaleVector(const dlong N,
+@kernel void unitVector(const dlong N,
                    const dlong fieldOffset,
                    @restrict dfloat *v)
 {

@@ -185,7 +185,7 @@ public:
                     occa::memory &o_y,
                     occa::memory &o_z);
 
-  void rescaleVector(const dlong N, const dlong fieldOffset, occa::memory &o_v);
+  void unitVector(const dlong N, const dlong fieldOffset, occa::memory &o_v);
 
   occa::kernel fillKernel;
   occa::kernel absKernel;
@@ -225,7 +225,7 @@ public:
   occa::kernel weightedInnerProdManyKernel;
   occa::kernel weightedInnerProdMultiKernel;
   occa::kernel crossProductKernel;
-  occa::kernel rescaleVectorKernel;
+  occa::kernel unitVectorKernel;
 };
 
 #endif

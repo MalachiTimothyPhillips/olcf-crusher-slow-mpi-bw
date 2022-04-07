@@ -27,8 +27,7 @@ SOFTWARE.
                 @restrict const dfloat *w,
                 @restrict const dlong *faceNodes,
                 @restrict const dfloat *vgeo,
-                @restrict dfloat *sgeo,
-                @restrict dfloat *normals){
+                @restrict dfloat *sgeo){
 
   for(dlong e=0;e<Nelements;++e;@outer(0)){ /* for each element */
 
@@ -115,10 +114,6 @@ SOFTWARE.
         sgeo[sgid + p_T2XID] = vt2x;
         sgeo[sgid + p_T2YID] = vt2y;
         sgeo[sgid + p_T2ZID] = vt2z;
-
-        normals[m + p_Np*e + 0 * Nelements * p_Np] = nx;
-        normals[m + p_Np*e + 1 * Nelements * p_Np] = ny;
-        normals[m + p_Np*e + 2 * Nelements * p_Np] = nz;
       }
     }
   }

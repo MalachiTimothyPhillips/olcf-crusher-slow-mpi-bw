@@ -65,11 +65,6 @@ void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh)
   mesh->sgeo =
       (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) * mesh->Nsgeo * mesh->Nfp * mesh->Nfaces,
                        sizeof(dfloat));
-  mesh->normals = (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) * 3 * mesh->Np, sizeof(dfloat));
-  mesh->tangentials1 =
-      (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) * 3 * mesh->Np, sizeof(dfloat));
-  mesh->tangentials2 =
-      (dfloat *)calloc((mesh->Nelements + mesh->totalHaloPairs) * 3 * mesh->Np, sizeof(dfloat));
 
   dfloat* xre = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
   dfloat* xse = (dfloat*) calloc(mesh->Np, sizeof(dfloat));
@@ -237,83 +232,8 @@ void meshSurfaceGeometricFactorsHex3D(mesh_t *mesh)
         mesh->sgeo[base + T2XID] = vt2x;
         mesh->sgeo[base + T2YID] = vt2y;
         mesh->sgeo[base + T2ZID] = vt2z;
-
-        mesh->normals[n + e * mesh->Np + 0 * mesh->Nlocal] = nx;
-        mesh->normals[n + e * mesh->Np + 1 * mesh->Nlocal] = ny;
-        mesh->normals[n + e * mesh->Np + 2 * mesh->Nlocal] = nz;
       }
     }
-  }
-
-  ogsGatherScatter(mesh->normals + 0 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-  ogsGatherScatter(mesh->normals + 1 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-  ogsGatherScatter(mesh->normals + 2 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-
-  auto rescaleVector = [&](dfloat *vec) {
-    const dfloat tol = 1e-8;
-    for (int i = 0; i < mesh->Nlocal; ++i) {
-      const dfloat nx = mesh->normals[i + 0 * mesh->Nlocal];
-      const dfloat ny = mesh->normals[i + 1 * mesh->Nlocal];
-      const dfloat nz = mesh->normals[i + 2 * mesh->Nlocal];
-      const dfloat mag = std::sqrt(nx * nx + ny * ny + nz * nz);
-      if (mag > tol) {
-        const dfloat invMag = 1.0 / mag;
-        vec[i + 0 * mesh->Nlocal] *= invMag;
-        vec[i + 1 * mesh->Nlocal] *= invMag;
-        vec[i + 2 * mesh->Nlocal] *= invMag;
-      }
-    }
-  };
-
-  rescaleVector(mesh->normals);
-
-  for (int i = 0; i < mesh->Nlocal; ++i) {
-    const dfloat nx = mesh->normals[i + 0 * mesh->Nlocal];
-    const dfloat ny = mesh->normals[i + 1 * mesh->Nlocal];
-    const dfloat nz = mesh->normals[i + 2 * mesh->Nlocal];
-
-    const dfloat magN = std::sqrt(nx * nx + ny * ny + nz * nz);
-    const dfloat tolN = 1e-6;
-    if (magN > tolN) {
-      const dfloat tol = 1e-4;
-      dfloat vt1x = 0, vt1y = 0, vt1z = 0;
-      if (std::abs(std::abs(nz) - 1.0) < tol) {
-        vt1x = 1.0;
-        vt1y = 0.0;
-        vt1z = 0.0;
-      }
-      else {
-        const dfloat mag = std::sqrt(nx * nx + ny * ny);
-        vt1x = -ny / mag;
-        vt1y = nx / mag;
-        vt1z = 0.0;
-      }
-
-      mesh->tangentials1[i + 0 * mesh->Nlocal] = vt1x;
-      mesh->tangentials1[i + 1 * mesh->Nlocal] = vt1y;
-      mesh->tangentials1[i + 2 * mesh->Nlocal] = vt1z;
-    }
-  }
-
-  ogsGatherScatter(mesh->tangentials1 + 0 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-  ogsGatherScatter(mesh->tangentials1 + 1 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-  ogsGatherScatter(mesh->tangentials1 + 2 * mesh->Nlocal, ogsDfloat, ogsAdd, mesh->ogs);
-
-  rescaleVector(mesh->tangentials1);
-
-  // compute cross product
-  for (int i = 0; i < mesh->Nlocal; ++i) {
-    const dfloat v1x = mesh->normals[i + 0 * mesh->Nlocal];
-    const dfloat v1y = mesh->normals[i + 1 * mesh->Nlocal];
-    const dfloat v1z = mesh->normals[i + 2 * mesh->Nlocal];
-
-    const dfloat v2x = mesh->tangentials1[i + 0 * mesh->Nlocal];
-    const dfloat v2y = mesh->tangentials1[i + 1 * mesh->Nlocal];
-    const dfloat v2z = mesh->tangentials1[i + 2 * mesh->Nlocal];
-
-    mesh->tangentials2[i + 0 * mesh->Nlocal] = v1y * v2z - v1z * v2y;
-    mesh->tangentials2[i + 1 * mesh->Nlocal] = v1z * v2x - v1x * v2z;
-    mesh->tangentials2[i + 2 * mesh->Nlocal] = v1x * v2y - v1y * v2x;
   }
 
   free(xre);

@@ -1,79 +1,103 @@
 #include <elliptic.h>
 #include <ellipticApplyMask.hpp>
+void ellipticEnforceUnZero(elliptic_t *solver, occa::memory &o_x, std::string precision)
+{
+  auto *mesh = solver->mesh;
+  ellipticEnforceUnZero(solver, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_x, precision);
+  ellipticEnforceUnZero(solver, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_x, precision);
+}
+
+void ellipticEnforceUnZero(elliptic_t *solver,
+                           dlong Nelements,
+                           occa::memory &o_elemList,
+                           occa::memory &o_x,
+                           std::string precision)
+{
+  auto *mesh = solver->mesh;
+  if (solver->o_avgNormal.size() == 0 || solver->recomputeAvgNormals) {
+    solver->recomputeAvgNormals = false;
+
+    if (solver->o_avgNormal.size() == 0) {
+      solver->o_avgNormal = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+      solver->o_avgTangential1 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+      solver->o_avgTangential2 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+    }
+
+    solver->copySYMNormalKernel(mesh->Nlocal,
+                                solver->Ntotal,
+                                mesh->o_sgeo,
+                                mesh->o_EToB,
+                                solver->o_BCType,
+                                solver->o_avgNormal);
+
+    oogs::startFinish(solver->o_avgNormal, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+
+    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgNormal);
+
+    solver->volumetricTangentialKernel(mesh->Nlocal,
+                                       solver->Ntotal,
+                                       solver->o_avgNormal,
+                                       solver->o_avgTangential1);
+
+    oogs::startFinish(solver->o_avgTangential1, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential1);
+
+    platform->linAlg->crossProduct(mesh->Nlocal,
+                                   solver->Ntotal,
+                                   solver->o_avgNormal,
+                                   solver->o_avgTangential1,
+                                   solver->o_avgTangential2);
+    oogs::startFinish(solver->o_avgTangential2, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential2);
+  }
+
+  occa::kernel &enforceUnKernel =
+      (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
+  if (Nelements > 0) {
+    enforceUnKernel(Nelements,
+                    solver->Ntotal,
+                    o_elemList,
+                    solver->o_avgNormal,
+                    solver->o_avgTangential1,
+                    solver->o_avgTangential2,
+                    mesh->o_vmapM,
+                    mesh->o_EToB,
+                    solver->o_BCType,
+                    o_x);
+  }
+}
+
 void applyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;
-  occa::kernel &enforceUnKernel =
-      (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
 
   if (solver->UNormalZero) {
-    dlong Nelems = mesh->NlocalGatherElements;
-
-    if (Nelems > 0) {
-      occa::memory &o_elemList = solver->mesh->o_localGatherElementList;
-      enforceUnKernel(Nelems,
-                      solver->Ntotal,
-                      o_elemList,
-                      mesh->o_normals,
-                      mesh->o_tangentials1,
-                      mesh->o_tangentials2,
-                      mesh->o_vmapM,
-                      mesh->o_EToB,
-                      solver->o_BCType,
-                      o_x);
-    }
-
-    Nelems = mesh->NglobalGatherElements;
-    if (Nelems > 0) {
-      occa::memory &o_elemList = solver->mesh->o_globalGatherElementList;
-      enforceUnKernel(Nelems,
-                      solver->Ntotal,
-                      o_elemList,
-                      mesh->o_normals,
-                      mesh->o_tangentials1,
-                      mesh->o_tangentials2,
-                      mesh->o_vmapM,
-                      mesh->o_EToB,
-                      solver->o_BCType,
-                      o_x);
-    }
+    ellipticEnforceUnZero(solver, o_x, precision);
   }
 
   const dlong Nmasked = solver->Nmasked;
   occa::memory &o_maskIds = solver->o_maskIds;
-  if (Nmasked)
+  if (Nmasked) {
     maskKernel(Nmasked, o_maskIds, o_x);
+  }
 }
 void applyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;
-  occa::kernel &enforceUnKernel =
-      (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
 
   if (solver->UNormalZero) {
     dlong Nelems = mesh->NlocalGatherElements;
-
-    if (Nelems > 0) {
-      occa::memory &o_elemList = solver->mesh->o_localGatherElementList;
-      enforceUnKernel(Nelems,
-                      solver->Ntotal,
-                      o_elemList,
-                      mesh->o_normals,
-                      mesh->o_tangentials1,
-                      mesh->o_tangentials2,
-                      mesh->o_vmapM,
-                      mesh->o_EToB,
-                      solver->o_BCType,
-                      o_x);
-    }
+    occa::memory &o_elemList = solver->mesh->o_localGatherElementList;
+    ellipticEnforceUnZero(solver, Nelems, o_elemList, o_x, precision);
   }
 
   const dlong Nmasked = solver->NmaskedLocal;
   occa::memory &o_maskIds = solver->o_maskIdsLocal;
-  if (Nmasked)
+  if (Nmasked) {
     maskKernel(Nmasked, o_maskIds, o_x);
+  }
 }
 
 void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
@@ -88,21 +112,10 @@ void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precis
 
   if (solver->UNormalZero) {
     const dlong Nelems = mesh->NglobalGatherElements;
-
-    if (Nelems > 0) {
-      occa::memory &o_elemList = solver->mesh->o_globalGatherElementList;
-      enforceUnKernel(Nelems,
-                      solver->Ntotal,
-                      o_elemList,
-                      mesh->o_normals,
-                      mesh->o_tangentials1,
-                      mesh->o_tangentials2,
-                      mesh->o_vmapM,
-                      mesh->o_EToB,
-                      solver->o_BCType,
-                      o_x);
-    }
+    occa::memory &o_elemList = solver->mesh->o_globalGatherElementList;
+    ellipticEnforceUnZero(solver, Nelems, o_elemList, o_x, precision);
   }
-  if (Nmasked)
+  if (Nmasked) {
     maskKernel(Nmasked, o_maskIds, o_x);
+  }
 }
