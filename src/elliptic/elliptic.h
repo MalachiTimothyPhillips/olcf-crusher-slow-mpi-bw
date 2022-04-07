@@ -188,7 +188,8 @@ struct elliptic_t
   occa::kernel copySYMNormalKernel;
   occa::kernel volumetricTangentialKernel;
 
-private:
+  // TODO: re-enable?
+  // private:
   friend void ellipticEnforceUnZero(elliptic_t *solver, occa::memory &o_x, std::string precision);
   friend void ellipticEnforceUnZero(elliptic_t *solver,
                                     dlong Nelements,
