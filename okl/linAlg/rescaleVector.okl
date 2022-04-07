@@ -1,6 +1,6 @@
-@kernel void renormVector(const dlong N,
+@kernel void rescaleVector(const dlong N,
                    const dlong fieldOffset,
-                   @restrict dfloat *v){
+                   @restrict dfloat *v)
 {
   for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
 
