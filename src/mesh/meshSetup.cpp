@@ -148,8 +148,6 @@ mesh_t *createMesh(MPI_Comm comm,
   // global nodes
   meshGlobalIds(mesh);
   bcMap::check(mesh);
-  bcMap::checkBoundaryAlignment(mesh);
-  bcMap::remapUnalignedBoundaries(mesh);
 
   meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np, mesh->globalIds, platform->comm.mpiComm, OOGS_AUTO, 0);
 
@@ -157,6 +155,9 @@ mesh_t *createMesh(MPI_Comm comm,
   meshSurfaceGeometricFactorsHex3D(mesh);
 
   meshOccaSetup3D(mesh, platform->options, kernelInfo);
+
+  bcMap::checkBoundaryAlignment(mesh);
+  bcMap::remapUnalignedBoundaries(mesh);
 
   int err = 0;
   int Nfine;
@@ -364,12 +365,13 @@ mesh_t *createMeshV(
   mesh->globalIds = meshT->globalIds;
 
   bcMap::check(mesh);
-  bcMap::checkBoundaryAlignment(mesh);
-  bcMap::remapUnalignedBoundaries(mesh);
 
   meshVOccaSetup3D(mesh, kernelInfo);
 
   meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np, mesh->globalIds, platform->comm.mpiComm, OOGS_AUTO, 0);
+
+  bcMap::checkBoundaryAlignment(mesh);
+  bcMap::remapUnalignedBoundaries(mesh);
 
   int err = 0;
   int Nfine;
