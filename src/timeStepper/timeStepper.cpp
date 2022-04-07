@@ -257,26 +257,30 @@ void applyDirichlet(nrs_t *nrs, double time)
       if (Nelems > 0) {
         occa::memory &o_elemList = solver->mesh->o_localGatherElementList;
         solver->enforceUnKernel(Nelems,
-                        solver->Ntotal,
-                        o_elemList,
-                        mesh->o_sgeo,
-                        mesh->o_vmapM,
-                        mesh->o_EToB,
-                        solver->o_BCType,
-                        o_x);
+                                solver->Ntotal,
+                                o_elemList,
+                                mesh->o_normals,
+                                mesh->o_tangentials1,
+                                mesh->o_tangentials2,
+                                mesh->o_vmapM,
+                                mesh->o_EToB,
+                                solver->o_BCType,
+                                o_x);
       }
 
       Nelems = mesh->NglobalGatherElements;
       if (Nelems > 0) {
         occa::memory &o_elemList = solver->mesh->o_globalGatherElementList;
         solver->enforceUnKernel(Nelems,
-                        solver->Ntotal,
-                        o_elemList,
-                        mesh->o_sgeo,
-                        mesh->o_vmapM,
-                        mesh->o_EToB,
-                        solver->o_BCType,
-                        o_x);
+                                solver->Ntotal,
+                                o_elemList,
+                                mesh->o_normals,
+                                mesh->o_tangentials1,
+                                mesh->o_tangentials2,
+                                mesh->o_vmapM,
+                                mesh->o_EToB,
+                                solver->o_BCType,
+                                o_x);
       }
     }
   };
@@ -301,11 +305,14 @@ void applyDirichlet(nrs_t *nrs, double time)
                                      nrs->o_usrwrk,
                                      nrs->o_U,
                                      platform->o_mempool.slice6);
- 
+
       nrs->velocityDirichletBCKernel(mesh->Nelements,
                                      nrs->fieldOffset,
                                      time,
                                      mesh->o_sgeo,
+                                     mesh->o_normals,
+                                     mesh->o_tangentials1,
+                                     mesh->o_tangentials2,
                                      mesh->o_x,
                                      mesh->o_y,
                                      mesh->o_z,
@@ -315,7 +322,7 @@ void applyDirichlet(nrs_t *nrs, double time)
                                      nrs->o_usrwrk,
                                      nrs->o_U,
                                      platform->o_mempool.slice7);
- 
+
       if (sweep == 0) oogs::startFinish(platform->o_mempool.slice6, 1+nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if (sweep == 1) oogs::startFinish(platform->o_mempool.slice6, 1+nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
     }
@@ -346,6 +353,9 @@ void applyDirichlet(nrs_t *nrs, double time)
                                           time,
                                           bcMap::useDerivedMeshBoundaryConditions(),
                                           mesh->o_sgeo,
+                                          mesh->o_normals,
+                                          mesh->o_tangentials1,
+                                          mesh->o_tangentials2,
                                           mesh->o_x,
                                           mesh->o_y,
                                           mesh->o_z,
