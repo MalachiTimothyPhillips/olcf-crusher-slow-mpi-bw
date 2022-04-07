@@ -116,9 +116,9 @@ SOFTWARE.
         sgeo[sgid + p_T2YID] = vt2y;
         sgeo[sgid + p_T2ZID] = vt2z;
 
-        normal[m + p_Np*e + 0 * Nelements * p_Np] = nx;
-        normal[m + p_Np*e + 1 * Nelements * p_Np] = ny;
-        normal[m + p_Np*e + 2 * Nelements * p_Np] = nz;
+        normals[m + p_Np*e + 0 * Nelements * p_Np] = nx;
+        normals[m + p_Np*e + 1 * Nelements * p_Np] = ny;
+        normals[m + p_Np*e + 2 * Nelements * p_Np] = nz;
       }
     }
   }
