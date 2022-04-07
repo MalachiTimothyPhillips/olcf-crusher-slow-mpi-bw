@@ -100,6 +100,14 @@ void meshOccaPopulateDeviceHex3D(mesh_t *mesh, setupAide &newOptions, occa::prop
   mesh->o_sgeo =
     platform->device.malloc(mesh->Nelements * mesh->Nfaces * mesh->Nfp * mesh->Nsgeo * sizeof(dfloat),
                         mesh->sgeo);
+  mesh->o_normals = platform->device.malloc(mesh->Nelements * 3 * mesh->Np * sizeof(dfloat), mesh->normals);
+
+  mesh->o_tangentials1 =
+      platform->device.malloc(mesh->Nelements * 3 * mesh->Np * sizeof(dfloat), mesh->tangentials1);
+
+  mesh->o_tangentials2 =
+      platform->device.malloc(mesh->Nelements * 3 * mesh->Np * sizeof(dfloat), mesh->tangentials2);
+
   mesh->o_ggeo =
     platform->device.malloc(mesh->Nelements * mesh->Np * mesh->Nggeo * sizeof(dfloat),
                         mesh->ggeo);

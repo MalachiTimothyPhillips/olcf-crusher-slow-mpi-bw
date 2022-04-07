@@ -24,10 +24,11 @@ SOFTWARE.
 
 */
 @kernel void surfaceGeometricFactorsHex3D(const dlong Nelements,
-                const dfloat *w,
-                const dlong *faceNodes,
-                const dfloat *vgeo,
-                dfloat *sgeo){
+                @restrict const dfloat *w,
+                @restrict const dlong *faceNodes,
+                @restrict const dfloat *vgeo,
+                @restrict dfloat *sgeo,
+                @restrict dfloat *normals){
 
   for(dlong e=0;e<Nelements;++e;@outer(0)){ /* for each element */
 
@@ -114,6 +115,10 @@ SOFTWARE.
         sgeo[sgid + p_T2XID] = vt2x;
         sgeo[sgid + p_T2YID] = vt2y;
         sgeo[sgid + p_T2ZID] = vt2z;
+
+        normal[m + p_Np*e + 0 * Nelements * p_Np] = nx;
+        normal[m + p_Np*e + 1 * Nelements * p_Np] = ny;
+        normal[m + p_Np*e + 2 * Nelements * p_Np] = nz;
       }
     }
   }

@@ -111,6 +111,7 @@ void linAlg_t::setup()
     weightedInnerProdManyKernel = kernels.get("weightedInnerProdMany");
     weightedInnerProdMultiKernel = kernels.get("weightedInnerProdMulti");
     crossProductKernel = kernels.get("crossProduct");
+    rescaleVectorKernel = kernels.get("rescaleVector");
   }
 }
 
@@ -953,4 +954,9 @@ void linAlg_t::crossProduct(const dlong N,
                             occa::memory &o_z)
 {
   crossProductKernel(N, fieldOffset, o_x, o_y, o_z);
+}
+
+void linAlg_t::rescaleVector(const dlong N, const dlong fieldOffset, occa::memory &o_v)
+{
+  rescaleVectorKernel(N, fieldOffset, o_v);
 }

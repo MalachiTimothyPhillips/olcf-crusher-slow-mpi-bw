@@ -190,6 +190,14 @@ struct mesh_t
   occa::memory o_vgeo, o_sgeo;
   occa::memory o_vmapM, o_vmapP, o_mapP;
 
+  // volume based normals and tangentials
+  dfloat *normals;
+  dfloat *tangentials1;
+  dfloat *tangentials2;
+  occa::memory o_normals;
+  occa::memory o_tangentials1;
+  occa::memory o_tangentials2;
+
   occa::memory o_EToB, o_x, o_y, o_z;
 
   // cubature (for wadg)
@@ -222,6 +230,7 @@ struct mesh_t
 
   occa::kernel geometricFactorsKernel;
   occa::kernel surfaceGeometricFactorsKernel;
+  occa::kernel volumetricTangentialsKernel;
   occa::kernel cubatureGeometricFactorsKernel;
   occa::kernel nStagesSumVectorKernel;
   occa::kernel velocityDirichletKernel;

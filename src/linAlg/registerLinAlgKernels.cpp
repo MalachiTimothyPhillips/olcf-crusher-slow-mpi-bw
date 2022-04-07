@@ -51,6 +51,7 @@ void registerLinAlgKernels()
       {"weightedInnerProdMany", true},
       {"weightedInnerProdMulti", false},
       {"crossProduct", false},
+      {"rescaleVector", false},
   };
 
   std::string kernelName;

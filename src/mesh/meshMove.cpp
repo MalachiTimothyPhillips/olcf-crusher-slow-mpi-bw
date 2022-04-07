@@ -62,7 +62,15 @@ void mesh_t::update()
     volume = platform->linAlg->sum(Nelements * Np, o_LMM, platform->comm.mpiComm);
 
     computeInvLMM();
-    surfaceGeometricFactorsKernel(Nelements, o_gllw, o_faceNodes, o_vgeo, o_sgeo);
+    surfaceGeometricFactorsKernel(Nelements, o_gllw, o_faceNodes, o_vgeo, o_sgeo, o_normals);
+    oogs::startFinish(o_normals, 3, Nlocal, ogsDfloat, ogsAdd, oogs);
+    platform->linAlg->rescaleVector(Nlocal, Nlocal, o_normals);
+
+    volumetricTangentialsKernel(Nlocal, o_normals, o_tangentials1);
+    oogs::startFinish(o_tangentials1, 3, Nlocal, ogsDfloat, ogsAdd, oogs);
+    platform->linAlg->rescaleVector(Nlocal, Nlocal, o_tangentials1);
+
+    platform->linAlg->crossProduct(Nlocal, Nlocal, o_normals, o_tangentials1, o_tangentials2);
 
     double flopsSurfaceGeometricFactors = 32 * Nq * Nq;
     flopsSurfaceGeometricFactors *= static_cast<double>(Nelements);

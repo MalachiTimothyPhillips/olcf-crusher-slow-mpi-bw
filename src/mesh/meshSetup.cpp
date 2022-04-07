@@ -145,18 +145,18 @@ mesh_t *createMesh(MPI_Comm comm,
   // connect face nodes (find trace indices)
   meshConnectFaceNodes3D(mesh);
 
-  // compute surface geofacs (including halo)
-  meshSurfaceGeometricFactorsHex3D(mesh);
-
   // global nodes
   meshGlobalIds(mesh);
   bcMap::check(mesh);
   bcMap::checkBoundaryAlignment(mesh);
   bcMap::remapUnalignedBoundaries(mesh);
 
-  meshOccaSetup3D(mesh, platform->options, kernelInfo);
-
   meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np, mesh->globalIds, platform->comm.mpiComm, OOGS_AUTO, 0);
+
+  // compute surface geofacs (including halo)
+  meshSurfaceGeometricFactorsHex3D(mesh);
+
+  meshOccaSetup3D(mesh, platform->options, kernelInfo);
 
   int err = 0;
   int Nfine;
@@ -261,10 +261,11 @@ mesh_t *createMeshMG(mesh_t* _mesh,
   meshGeometricFactorsHex3D(mesh);
 
   meshConnectFaceNodes3D(mesh);
-  meshSurfaceGeometricFactorsHex3D(mesh);
 
   meshGlobalIds(mesh);
   meshParallelGatherScatterSetup(mesh, mesh->Nelements * mesh->Np, mesh->globalIds, platform->comm.mpiComm, OOGS_AUTO, 0);
+
+  meshSurfaceGeometricFactorsHex3D(mesh);
 
   mesh->o_x = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->x);
   mesh->o_y = platform->device.malloc(mesh->Np * mesh->Nelements * sizeof(dfloat), mesh->y);
@@ -351,6 +352,9 @@ mesh_t *createMeshV(
   mesh->vgeo = meshT->vgeo;
   mesh->cubvgeo = meshT->cubvgeo;
   mesh->ggeo = meshT->ggeo;
+  mesh->normals = meshT->normals;
+  mesh->tangentials1 = meshT->tangentials1;
+  mesh->tangentials2 = meshT->tangentials2;
 
   // connect face nodes (find trace indices)
   // find vmapM, vmapP, mapP based on EToE and EToF
@@ -442,6 +446,7 @@ void meshVOccaSetup3D(mesh_t* mesh, occa::properties &kernelInfo)
 void loadKernels(mesh_t* mesh)
 {
   const std::string meshPrefix = "mesh-";
+  mesh->volumetricTangentialsKernel = platform->kernels.get(meshPrefix + "volumetricTangentials");
   mesh->avgBIDValueKernel = platform->kernels.get(meshPrefix + "avgBIDValue");
   mesh->velocityDirichletKernel = platform->kernels.get(meshPrefix + "velocityDirichletBCHex3D");
   mesh->geometricFactorsKernel = platform->kernels.get(meshPrefix + "geometricFactorsHex3D");
