@@ -484,6 +484,14 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
           (s - 2) * NbyteScalar);
     }
     mesh->move();
+
+    {
+      if (nrs->uvwSolver)
+        nrs->uvwSolver->recomputeAvgNormals = true;
+      if (nrs->meshSolver)
+        nrs->meshSolver->recomputeAvgNormals = true;
+    }
+
     if (nrs->cht)
       nrs->meshV->computeInvLMM();
     for (int s = std::max(nrs->nEXT, mesh->nAB); s > 1; s--) {
