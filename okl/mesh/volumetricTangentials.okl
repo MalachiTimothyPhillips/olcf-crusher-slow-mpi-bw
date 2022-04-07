@@ -1,6 +1,6 @@
 @kernel void volumetricTangentials(const dlong N,
                    @restrict const dfloat *normals,
-                   @restrict dfloat *tangentials){
+                   @restrict dfloat *tangentials)
 {
   for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
 
