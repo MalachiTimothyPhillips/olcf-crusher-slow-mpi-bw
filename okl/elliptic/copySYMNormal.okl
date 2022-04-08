@@ -1,3 +1,4 @@
+// Shared element edge of type p_ZERO_NORMAL is not supported.
 @kernel void copySYMNormal(const dlong Nelements,
                                          const dlong offset,
                                          @restrict const dfloat*  sgeo,
