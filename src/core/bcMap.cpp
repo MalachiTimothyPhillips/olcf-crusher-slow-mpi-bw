@@ -469,6 +469,7 @@ void setBcMap(std::string field, int* map, int nIDs)
   else
     nbid[0] = nIDs;
 
+  fields.insert(field);
   for(int i = 0; i < nIDs; i++) bToBc[make_pair(field, i)] = map[i];
 }
 namespace {
@@ -494,8 +495,9 @@ void checkOpposingFaces(mesh_t *mesh)
         int bc = id(bid, field);
 
         // only applicable for unaligned SYM/SHL boundaries
-        if (bc != 7 || bc != 8)
+        if (bc != 7 && bc != 8)
           continue;
+
         for (int of = 0; of < mesh->Nfaces; of++) {
           if (of == opposing)
             continue;
