@@ -198,6 +198,7 @@ struct elliptic_t
                                     std::string precision);
 
   // volume-averaged normal/tangentials over SYM/SHL faces
+  occa::memory o_isSYM;
   occa::memory o_avgNormal;
   occa::memory o_avgTangential1;
   occa::memory o_avgTangential2;

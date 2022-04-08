@@ -5,7 +5,8 @@
                                          @restrict const dlong*  vmapM,
                                          @restrict const int*  EToB,
                                          @restrict const int*  BToBCType,
-                                         @restrict dfloat*  normal)
+                                         @restrict dfloat*  normal,
+                                         @restrict dfloat* isSYM)
 {
   for(dlong e = 0; e < Nelements; e++; @outer(0)) {
 
@@ -23,6 +24,8 @@
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
           const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
           const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
+
+          isSYM[idM] = 1.0;
 
           normal[idM + 0 * offset] = nx;
           normal[idM + 1 * offset] = ny;

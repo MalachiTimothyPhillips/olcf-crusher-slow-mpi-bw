@@ -1,7 +1,7 @@
 @kernel void volumetricTangential(const dlong N,
                    const dlong fieldOffset,
                    @restrict const dfloat *normals,
-                   @restrict dfloat *tangentials)
+                   @restrict dfloat *tangential)
 {
   for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
 
@@ -18,16 +18,16 @@
       const dfloat tol = 1e-3;
 
       if(abs(abs(nz)-1) < tol){
-        tangentials[n + 0 * fieldOffset] = 1.0;
-        tangentials[n + 1 * fieldOffset] = 0.0;
-        tangentials[n + 2 * fieldOffset] = 0.0;
+        tangential[n + 0 * fieldOffset] = 1.0;
+        tangential[n + 1 * fieldOffset] = 0.0;
+        tangential[n + 2 * fieldOffset] = 0.0;
       }
       else{
         const dfloat mag = sqrt(nx * nx + ny * ny);
         const dfloat invMag = 1.0 / mag;
-        tangentials[n + 0 * fieldOffset] = -ny * invMag;
-        tangentials[n + 1 * fieldOffset] =  nx * invMag;
-        tangentials[n + 2 * fieldOffset] =  0.0;
+        tangential[n + 0 * fieldOffset] = -ny * invMag;
+        tangential[n + 1 * fieldOffset] =  nx * invMag;
+        tangential[n + 2 * fieldOffset] =  0.0;
       }
     }
 

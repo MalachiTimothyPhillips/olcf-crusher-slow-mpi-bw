@@ -24,6 +24,7 @@ void ellipticConstructAvgNormal(elliptic_t *solver)
     solver->o_avgNormal = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
     solver->o_avgTangential1 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
     solver->o_avgTangential2 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+    solver->o_isSYM = platform->device.malloc(mesh->Nlocal * sizeof(dfloat));
   }
 
   solver->copySYMNormalKernel(mesh->Nelements,
@@ -32,7 +33,18 @@ void ellipticConstructAvgNormal(elliptic_t *solver)
                               mesh->o_vmapM,
                               mesh->o_EToB,
                               solver->o_BCType,
-                              solver->o_avgNormal);
+                              solver->o_avgNormal,
+                              solver->o_isSYM);
+  oogs::startFinish(solver->o_isSYM, 1, solver->Ntotal, ogsDfloat, ogsMin, solver->oogs);
+
+  // collocate with mask
+  auto o_nx = solver->o_avgNormal + 0 * solver->Ntotal * sizeof(dfloat);
+  auto o_ny = solver->o_avgNormal + 1 * solver->Ntotal * sizeof(dfloat);
+  auto o_nz = solver->o_avgNormal + 2 * solver->Ntotal * sizeof(dfloat);
+
+  platform->linAlg->axmy(mesh->Nlocal, 1.0, solver->o_isSYM, o_nx);
+  platform->linAlg->axmy(mesh->Nlocal, 1.0, solver->o_isSYM, o_ny);
+  platform->linAlg->axmy(mesh->Nlocal, 1.0, solver->o_isSYM, o_nz);
 
   oogs::startFinish(solver->o_avgNormal, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
 

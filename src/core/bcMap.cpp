@@ -682,7 +682,9 @@ void remapUnalignedBoundaries(mesh_t *mesh)
     for (int bid = 1; bid <= nid; ++bid) {
       int canRemap = remapBID[bid];
       MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
-      if (canRemap) {
+      // if (canRemap) {
+      if (false) {
+        std::cout << "Remapping SYM boundary!\n";
 
         auto alignmentType = alignmentBID[bid];
 
