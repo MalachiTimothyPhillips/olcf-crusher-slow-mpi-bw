@@ -209,7 +209,6 @@ void ellipticSolveSetup(elliptic_t* elliptic)
     elliptic->enforceUnKernel = platform->kernels.get("enforceUn");
     elliptic->enforceUnPfloatKernel = platform->kernels.get("enforceUnPfloat");
 
-    ellipticConstructAvgNormal(elliptic);
   }
 
   {

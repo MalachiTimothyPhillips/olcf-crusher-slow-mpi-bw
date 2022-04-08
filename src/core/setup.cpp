@@ -733,6 +733,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->uvwSolver);
+      if(nrs->uvwSolver->UNormalZero){
+        ellipticConstructAvgNormal(nrs->uvwSolver);
+      }
     } else {
       nrs->uSolver = new elliptic_t();
       nrs->uSolver->blockSolver = 0;
@@ -942,6 +945,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->meshSolver);
+      if(nrs->meshSolver->UNormalZero){
+        ellipticConstructAvgNormal(nrs->meshSolver);
+      }
     }
   }
 
