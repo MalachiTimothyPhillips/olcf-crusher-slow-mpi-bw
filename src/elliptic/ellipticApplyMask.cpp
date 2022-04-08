@@ -26,7 +26,7 @@ void ellipticConstructAvgNormal(elliptic_t *solver)
     solver->o_avgTangential2 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
   }
 
-  solver->copySYMNormalKernel(mesh->Nlocal,
+  solver->copySYMNormalKernel(mesh->Nelements,
                               solver->Ntotal,
                               mesh->o_sgeo,
                               mesh->o_vmapM,
