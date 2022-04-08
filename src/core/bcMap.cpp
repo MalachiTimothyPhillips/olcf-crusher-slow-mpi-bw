@@ -649,6 +649,9 @@ void checkBoundaryAlignment(mesh_t *mesh)
 
 void remapUnalignedBoundaries(mesh_t *mesh)
 {
+  if (platform->options.compareArgs("STRESSFORMULATION", "TRUE"))
+    return;
+
   for (auto &&field : fields) {
     if (field != std::string("velocity") && field != std::string("mesh"))
       continue;
@@ -682,9 +685,7 @@ void remapUnalignedBoundaries(mesh_t *mesh)
     for (int bid = 1; bid <= nid; ++bid) {
       int canRemap = remapBID[bid];
       MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
-      // if (canRemap) {
-      if (false) {
-        // std::cout << "Remapping SYM boundary!\n";
+      if (canRemap) {
 
         auto alignmentType = alignmentBID[bid];
 
