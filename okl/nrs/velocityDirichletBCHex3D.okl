@@ -55,24 +55,24 @@
         if(bcType > 0) {
           if(bcType == 7 || bcType == 8) {
 
-            const dfloat t1x = tangentials1[idM + 0 * offset];
-            const dfloat t1y = tangentials1[idM + 1 * offset];
-            const dfloat t1z = tangentials1[idM + 2 * offset];
+            //const dfloat t1x = tangentials1[idM + 0 * offset];
+            //const dfloat t1y = tangentials1[idM + 1 * offset];
+            //const dfloat t1z = tangentials1[idM + 2 * offset];
 
-            const dfloat t2x = tangentials2[idM + 0 * offset];
-            const dfloat t2y = tangentials2[idM + 1 * offset];
-            const dfloat t2z = tangentials2[idM + 2 * offset];
+            //const dfloat t2x = tangentials2[idM + 0 * offset];
+            //const dfloat t2y = tangentials2[idM + 1 * offset];
+            //const dfloat t2z = tangentials2[idM + 2 * offset];
 
-            const dfloat u = U[idM + 0 * offset];
-            const dfloat v = U[idM + 1 * offset];
-            const dfloat w = U[idM + 2 * offset];
+            //const dfloat u = U[idM + 0 * offset];
+            //const dfloat v = U[idM + 1 * offset];
+            //const dfloat w = U[idM + 2 * offset];
 
-            const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
-            const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
+            //const dfloat Rtn1 = (u * t1x + v * t1y + w * t1z);
+            //const dfloat Rtn2 = (u * t2x + v * t2y + w * t2z);
 
-            UH[idM + 0 * offset] = Rtn1 * t1x + Rtn2 * t2x;
-            UH[idM + 1 * offset] = Rtn1 * t1y + Rtn2 * t2y;
-            UH[idM + 2 * offset] = Rtn1 * t1z + Rtn2 * t2z;
+            //UH[idM + 0 * offset] = Rtn1 * t1x + Rtn2 * t2x;
+            //UH[idM + 1 * offset] = Rtn1 * t1y + Rtn2 * t2y;
+            //UH[idM + 2 * offset] = Rtn1 * t1z + Rtn2 * t2z;
           }else if(bcType == 4) {
             UH[idM + 0 * offset] = 0.0;
           }else if(bcType == 5) {
