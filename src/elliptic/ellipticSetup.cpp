@@ -204,8 +204,12 @@ void ellipticSolveSetup(elliptic_t* elliptic)
   {
     mesh->maskKernel = platform->kernels.get("mask");
     mesh->maskPfloatKernel = platform->kernels.get("maskPfloat");
+    elliptic->volumetricTangentialKernel = platform->kernels.get("volumetricTangential");
+    elliptic->copySYMNormalKernel = platform->kernels.get("copySYMNormal");
     elliptic->enforceUnKernel = platform->kernels.get("enforceUn");
     elliptic->enforceUnPfloatKernel = platform->kernels.get("enforceUnPfloat");
+
+    ellipticConstructAvgNormal(elliptic);
   }
 
   {

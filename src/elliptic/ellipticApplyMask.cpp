@@ -7,49 +7,65 @@ void ellipticEnforceUnZero(elliptic_t *solver, occa::memory &o_x, std::string pr
   ellipticEnforceUnZero(solver, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_x, precision);
 }
 
+void ellipticConstructAvgNormal(elliptic_t *solver)
+{
+  bool bail = solver->o_avgNormal.size() != 0;
+  bail &= !solver->recomputeAvgNormals;
+  bail |= !solver->UNormalZero;
+  if (bail) {
+    return;
+  }
+
+  auto *mesh = solver->mesh;
+
+  solver->recomputeAvgNormals = false;
+
+  if (solver->o_avgNormal.size() == 0) {
+    solver->o_avgNormal = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+    solver->o_avgTangential1 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+    solver->o_avgTangential2 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
+  }
+
+  solver->copySYMNormalKernel(mesh->Nlocal,
+                              solver->Ntotal,
+                              mesh->o_sgeo,
+                              mesh->o_vmapM,
+                              mesh->o_EToB,
+                              solver->o_BCType,
+                              solver->o_avgNormal);
+
+  oogs::startFinish(solver->o_avgNormal, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+
+  platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgNormal);
+
+  solver->volumetricTangentialKernel(mesh->Nlocal,
+                                     solver->Ntotal,
+                                     solver->o_avgNormal,
+                                     solver->o_avgTangential1);
+
+  oogs::startFinish(solver->o_avgTangential1, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+  platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential1);
+
+  platform->linAlg->crossProduct(mesh->Nlocal,
+                                 solver->Ntotal,
+                                 solver->o_avgNormal,
+                                 solver->o_avgTangential1,
+                                 solver->o_avgTangential2);
+  oogs::startFinish(solver->o_avgTangential2, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
+  platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential2);
+}
+
 void ellipticEnforceUnZero(elliptic_t *solver,
                            dlong Nelements,
                            occa::memory &o_elemList,
                            occa::memory &o_x,
                            std::string precision)
 {
-  auto *mesh = solver->mesh;
   if (solver->o_avgNormal.size() == 0 || solver->recomputeAvgNormals) {
-    solver->recomputeAvgNormals = false;
-
-    if (solver->o_avgNormal.size() == 0) {
-      solver->o_avgNormal = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
-      solver->o_avgTangential1 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
-      solver->o_avgTangential2 = platform->device.malloc(3 * solver->Ntotal * sizeof(dfloat));
-    }
-
-    solver->copySYMNormalKernel(mesh->Nlocal,
-                                solver->Ntotal,
-                                mesh->o_sgeo,
-                                mesh->o_EToB,
-                                solver->o_BCType,
-                                solver->o_avgNormal);
-
-    oogs::startFinish(solver->o_avgNormal, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
-
-    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgNormal);
-
-    solver->volumetricTangentialKernel(mesh->Nlocal,
-                                       solver->Ntotal,
-                                       solver->o_avgNormal,
-                                       solver->o_avgTangential1);
-
-    oogs::startFinish(solver->o_avgTangential1, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
-    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential1);
-
-    platform->linAlg->crossProduct(mesh->Nlocal,
-                                   solver->Ntotal,
-                                   solver->o_avgNormal,
-                                   solver->o_avgTangential1,
-                                   solver->o_avgTangential2);
-    oogs::startFinish(solver->o_avgTangential2, 3, solver->Ntotal, ogsDfloat, ogsAdd, solver->oogs);
-    platform->linAlg->unitVector(mesh->Nlocal, solver->Ntotal, solver->o_avgTangential2);
+    ellipticConstructAvgNormal(solver);
   }
+
+  auto *mesh = solver->mesh;
 
   occa::kernel &enforceUnKernel =
       (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;

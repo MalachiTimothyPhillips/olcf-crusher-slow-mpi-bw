@@ -1,5 +1,6 @@
 @kernel void copySYMNormal(const dlong Nelements,
                                          const dlong offset,
+                                         @restrict const dlong*  sgeo,
                                          @restrict const dlong*  vmapM,
                                          @restrict const int*  EToB,
                                          @restrict const int*  BToBCType,

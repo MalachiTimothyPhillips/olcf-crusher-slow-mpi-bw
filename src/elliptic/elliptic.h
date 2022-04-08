@@ -206,6 +206,8 @@ struct elliptic_t
 #include "ellipticMultiGrid.h"
 #include "ellipticSolutionProjection.h"
 
+void ellipticConstructAvgNormal(elliptic_t *solver);
+
 void ellipticEnforceUnZero(elliptic_t *solver,
                            dlong Nelements,
                            occa::memory &o_elemList,
