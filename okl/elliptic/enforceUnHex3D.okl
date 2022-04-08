@@ -26,13 +26,13 @@
 
         if(bcType == p_ZERO_NORMAL) {
 
-          const dfloat t1x = tangentials1[idM + 0 * Nelements * p_Np];
-          const dfloat t1y = tangentials1[idM + 1 * Nelements * p_Np];
-          const dfloat t1z = tangentials1[idM + 2 * Nelements * p_Np];
+          const dfloat t1x = tangentials1[idM + 0 * offset];
+          const dfloat t1y = tangentials1[idM + 1 * offset];
+          const dfloat t1z = tangentials1[idM + 2 * offset];
 
-          const dfloat t2x = tangentials2[idM + 0 * Nelements * p_Np];
-          const dfloat t2y = tangentials2[idM + 1 * Nelements * p_Np];
-          const dfloat t2z = tangentials2[idM + 2 * Nelements * p_Np];
+          const dfloat t2x = tangentials2[idM + 0 * offset];
+          const dfloat t2y = tangentials2[idM + 1 * offset];
+          const dfloat t2z = tangentials2[idM + 2 * offset];
 
 
           const dfloat u = U[idM + 0 * offset];
