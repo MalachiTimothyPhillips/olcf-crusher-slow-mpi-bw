@@ -246,9 +246,43 @@ void applyDirichlet(nrs_t *nrs, double time)
         cds->solver[is]->o_maskIds, platform->o_mempool.slice2, o_Si);
     }
   }
+
+
+  auto applyUnZero = [&](elliptic_t* solver, occa::memory& o_x)
+  {
+    mesh_t* mesh = solver->mesh;
+    if (solver->UNormalZero) {
+      dlong Nelems = mesh->NlocalGatherElements;
+
+      if (Nelems > 0) {
+        occa::memory &o_elemList = solver->mesh->o_localGatherElementList;
+        solver->enforceUnKernel(Nelems,
+                        solver->Ntotal,
+                        o_elemList,
+                        mesh->o_sgeo,
+                        mesh->o_vmapM,
+                        solver->o_EToB,
+                        o_x);
+      }
+
+      Nelems = mesh->NglobalGatherElements;
+      if (Nelems > 0) {
+        occa::memory &o_elemList = solver->mesh->o_globalGatherElementList;
+        solver->enforceUnKernel(Nelems,
+                        solver->Ntotal,
+                        o_elemList,
+                        mesh->o_sgeo,
+                        mesh->o_vmapM,
+                        solver->o_EToB,
+                        o_x);
+      }
+    }
+  };
+
   
   if(nrs->flow) {
     mesh_t* mesh = nrs->meshV;
+
     platform->linAlg->fill((1+nrs->NVfields)*nrs->fieldOffset, -1.0*std::numeric_limits<dfloat>::max(), 
                            platform->o_mempool.slice6);
     for (int sweep = 0; sweep < 2; sweep++) {
@@ -288,8 +322,10 @@ void applyDirichlet(nrs_t *nrs, double time)
                                                    platform->o_mempool.slice6, nrs->o_P);
  
     if (nrs->uvwSolver) {
+      applyUnZero(nrs->uvwSolver, platform->o_mempool.slice7);
       if (nrs->uvwSolver->Nmasked) nrs->maskCopyKernel(nrs->uvwSolver->Nmasked, 0*nrs->fieldOffset, nrs->uvwSolver->o_maskIds,
                                                        platform->o_mempool.slice7, nrs->o_U);
+      applyUnZero(nrs->uvwSolver, nrs->o_U);
     } else {
       if (nrs->uSolver->Nmasked) nrs->maskCopyKernel(nrs->uSolver->Nmasked, 0*nrs->fieldOffset, nrs->uSolver->o_maskIds,
                                                      platform->o_mempool.slice7, nrs->o_U);
@@ -322,8 +358,10 @@ void applyDirichlet(nrs_t *nrs, double time)
       if(sweep == 0) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMax, nrs->gsh);
       if(sweep == 1) oogs::startFinish(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
     }
+    applyUnZero(nrs->meshSolver, platform->o_mempool.slice3);
     if (nrs->meshSolver->Nmasked) nrs->maskCopyKernel(nrs->meshSolver->Nmasked, 0*nrs->fieldOffset, nrs->meshSolver->o_maskIds,
         platform->o_mempool.slice3, mesh->o_U);
+    applyUnZero(nrs->meshSolver, mesh->o_U);
   }
 }
 
@@ -508,7 +546,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
       udf.executeStep(nrs, timeNew, tstep);
     platform->timer.toc("udfExecuteStep");
 
-    if(!nrs->converged) printInfo(nrs, timeNew, tstep, 0, 0);
+    if(!nrs->converged) printInfo(nrs, timeNew, tstep);
   } while (!nrs->converged);
 
   nrs->dt[2] = nrs->dt[1];
@@ -871,14 +909,16 @@ void fluidSolve(
 
 }
 
-void printInfo(nrs_t *nrs, dfloat time, int tstep, double elapsedStep, double elapsed)
+void printInfo(nrs_t *nrs, dfloat time, int tstep)
 {
   cds_t *cds = nrs->cds;
 
+  const double elapsedStep = platform->timer.query("elapsedStep", "DEVICE:MAX");
+  const double elapsed = platform->timer.query("elapsedStepSum", "DEVICE:MAX");
   bool verboseInfo = platform->options.compareArgs("VERBOSE SOLVER INFO", "TRUE");
-
   const dfloat cfl = computeCFL(nrs);
   dfloat divUErrVolAvg, divUErrL2;
+
   if (verboseInfo){
     computeDivUErr(nrs, divUErrVolAvg, divUErrL2);
   }
@@ -1045,7 +1085,7 @@ void printInfo(nrs_t *nrs, dfloat time, int tstep, double elapsedStep, double el
     for(int is = 0; is < nrs->Nscalar; is++)
       if(cds->compute[is]) printf("  S: %d", cds->solver[is]->Niter);
 
-    if(elapsedStep != 0) 
+    if(nrs->converged)
       printf("  elapsedStep= %.2es  elapsed= %.5es", elapsedStep, elapsed);
 
     printf("\n");
