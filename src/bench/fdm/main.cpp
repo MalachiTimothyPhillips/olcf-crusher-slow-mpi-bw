@@ -102,7 +102,13 @@ int main(int argc, char** argv)
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD);
 
   const int verbosity = 2;
-  benchmarkFDM(Nelements, Nq, wordSize, false, false, verbosity, Ntests, 10.0, true);
+  if (Ntests != -1) {
+    benchmarkFDM(Nelements, Nq, wordSize, false, false, verbosity, Ntests, true);
+  }
+  else {
+    const double targetTime = 10.0;
+    benchmarkFDM(Nelements, Nq, wordSize, false, false, verbosity, targetTime, true);
+  }
 
   MPI_Finalize();
   exit(0);

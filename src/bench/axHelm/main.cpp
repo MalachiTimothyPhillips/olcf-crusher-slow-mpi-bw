@@ -126,18 +126,23 @@ int main(int argc, char** argv)
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD);
   const int verbosity = 2;
-  benchmarkAx(Nelements,
-              Nq,
-              Ng,
-              poisson,
-              constCoeff,
-              computeGeom,
-              wordSize,
-              Ndim,
-              verbosity,
-              Ntests,
-              10.0,
-              true);
+  if (Ntests != -1) {
+    benchmarkAx(Nelements, Nq, Ng, poisson, constCoeff, computeGeom, wordSize, Ndim, verbosity, Ntests, true);
+  }
+  else {
+    const double targetTime = 10.0;
+    benchmarkAx(Nelements,
+                Nq,
+                Ng,
+                poisson,
+                constCoeff,
+                computeGeom,
+                wordSize,
+                Ndim,
+                verbosity,
+                targetTime,
+                true);
+  }
   MPI_Finalize();
   exit(0);
 }

@@ -8,14 +8,15 @@
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 
-occa::kernel benchmarkFDM(int Nelements, int Nq_e,
-  int wordSize,
-  bool useRAS,
-  bool overlap,
-  int verbosity,
-  int Ntests,
-  double elapsedTarget,
-  bool requiresBenchmark)
+template <typename T>
+occa::kernel benchmarkFDM(int Nelements,
+                          int Nq_e,
+                          int wordSize,
+                          bool useRAS,
+                          bool overlap,
+                          int verbosity,
+                          T NtestsOrTargetTime,
+                          bool requiresBenchmark)
 {
   const auto Nq = Nq_e - 2;
   const auto N_e = Nq_e - 1;
@@ -144,7 +145,8 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
       printPerformanceInfo(kernelVariant, elapsed, Ntests, verbosity < 2);
     };
 
-    auto kernelAndTime = benchmarkKernel(fdmKernelBuilder, kernelRunner, printCallBack, kernelVariants, Ntests, elapsedTarget);
+    auto kernelAndTime =
+        benchmarkKernel(fdmKernelBuilder, kernelRunner, printCallBack, kernelVariants, NtestsOrTargetTime);
 
     int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
     
@@ -179,5 +181,22 @@ occa::kernel benchmarkFDM(int Nelements, int Nq_e,
   }
 
   return kernel;
-
 }
+
+template occa::kernel benchmarkFDM<int>(int Nelements,
+                                        int Nq_e,
+                                        int wordSize,
+                                        bool useRAS,
+                                        bool overlap,
+                                        int verbosity,
+                                        int Ntests,
+                                        bool requiresBenchmark);
+
+template occa::kernel benchmarkFDM<double>(int Nelements,
+                                           int Nq_e,
+                                           int wordSize,
+                                           bool useRAS,
+                                           bool overlap,
+                                           int verbosity,
+                                           double targetTime,
+                                           bool requiresBenchmark);

@@ -8,16 +8,18 @@
 #include "randomVector.hpp"
 #include "omp.h"
 
-occa::kernel benchmarkAx(int Nelements, int Nq, int Ng, 
-  bool constCoeff,
-  bool poisson,
-  bool computeGeom,
-  int wordSize,
-  int Ndim,
-  int verbosity,
-  int Ntests,
-  double elapsedTarget,
-  bool requiresBenchmark)
+template <typename T>
+occa::kernel benchmarkAx(int Nelements,
+                         int Nq,
+                         int Ng,
+                         bool constCoeff,
+                         bool poisson,
+                         bool computeGeom,
+                         int wordSize,
+                         int Ndim,
+                         int verbosity,
+                         T NtestsOrTargetTime,
+                         bool requiresBenchmark)
 {
   const auto N = Nq-1;
   const auto Np = Nq * Nq * Nq;
@@ -178,7 +180,8 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
       printPerformanceInfo(kernelVariant, elapsed, Ntests, verbosity < 2);
     };
 
-    auto kernelAndTime = benchmarkKernel(axKernelBuilder, kernelRunner, printCallBack, kernelVariants, Ntests, elapsedTarget);
+    auto kernelAndTime =
+        benchmarkKernel(axKernelBuilder, kernelRunner, printCallBack, kernelVariants, NtestsOrTargetTime);
     int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
     
     // print only the fastest kernel
@@ -214,5 +217,28 @@ occa::kernel benchmarkAx(int Nelements, int Nq, int Ng,
   }
 
   return kernel;
-
 }
+
+template occa::kernel benchmarkAx<int>(int Nelements,
+                                       int Nq,
+                                       int Ng,
+                                       bool constCoeff,
+                                       bool poisson,
+                                       bool computeGeom,
+                                       int wordSize,
+                                       int Ndim,
+                                       int verbosity,
+                                       int Ntests,
+                                       bool requiresBenchmark = false);
+
+template occa::kernel benchmarkAx<double>(int Nelements,
+                                          int Nq,
+                                          int Ng,
+                                          bool constCoeff,
+                                          bool poisson,
+                                          bool computeGeom,
+                                          int wordSize,
+                                          int Ndim,
+                                          int verbosity,
+                                          double targetTime,
+                                          bool requiresBenchmark = false);
