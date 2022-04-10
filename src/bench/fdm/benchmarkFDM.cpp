@@ -4,7 +4,7 @@
 #include <iostream>
 #include "nrs.hpp"
 
-#include "benchmarkUtils.hpp"
+#include "randomVector.hpp"
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 

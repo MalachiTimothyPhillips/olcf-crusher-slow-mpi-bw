@@ -5,7 +5,7 @@
 #include "nrs.hpp"
 
 #include "kernelBenchmarker.hpp"
-#include "benchmarkUtils.hpp"
+#include "randomVector.hpp"
 #include "omp.h"
 
 occa::kernel benchmarkAx(int Nelements, int Nq, int Ng, 
