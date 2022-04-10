@@ -180,7 +180,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
                                   useRAS,
                                   static_cast<int>(overlap),
                                   verbosity,
-                                  0,
                                   0.2,
                                   false);
     auto fdmProps = fdmKernel.properties();
@@ -281,7 +280,6 @@ void registerFineLevelKernels(const std::string &section, int N, int poissonEqua
                                     wordSize,
                                     Nfields,
                                     verbosity,
-                                    0,
                                     0.2,
                                     false);
 
@@ -391,7 +389,6 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
           wordSize = 4;
         }
 
-        const int verbosity = 1;
         if(platform->comm.mpiRank == 0 && firstPass){
           std::cout << "Benchmarking Ax kernel...\n";
           firstPass = false;
@@ -417,7 +414,6 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
                                     wordSize,
                                     Nfields,
                                     verbosity,
-                                    0,
                                     0.2,
                                     false);
 
