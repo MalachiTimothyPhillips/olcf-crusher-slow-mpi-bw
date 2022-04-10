@@ -99,10 +99,10 @@ int main(int argc, char** argv)
   const int Nq = N + 1;
   const int Np = Nq * Nq * Nq;
 
-  platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
+  platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD);
 
-  const int highVerbosityLevel = 2;
-  benchmarkFDM(Nelements, Nq, wordSize, false, false, highVerbosityLevel, Ntests, 10.0, true);
+  const int verbosity = 2;
+  benchmarkFDM(Nelements, Nq, wordSize, false, false, verbosity, Ntests, 10.0, true);
 
   MPI_Finalize();
   exit(0);

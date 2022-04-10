@@ -391,7 +391,7 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
           wordSize = 4;
         }
 
-        const int mediumVerbosityLevel = 1;
+        const int verbosity = 1;
         if(platform->comm.mpiRank == 0 && firstPass){
           std::cout << "Benchmarking Ax kernel...\n";
           firstPass = false;
