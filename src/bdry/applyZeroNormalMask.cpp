@@ -1,6 +1,5 @@
 #include "nrs.hpp"
 #include "applyZeroNormalMask.hpp"
-#include
 
 void applyZeroNormalMask(nrs_t *nrs,
                          dlong Nelements,

@@ -7,17 +7,14 @@ void ellipticOgs(mesh_t *mesh,
                  dlong offset,
                  int *BCType,
                  int BCTypeOffset,
-                 bool &UNormalZero,
                  dlong &Nmasked,
                  occa::memory &o_maskIds,
                  dlong &NmaskedLocal,
                  occa::memory &o_maskIdsLocal,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
-                 occa::memory &o_BCType,
                  ogs_t **ogs)
 {
-  UNormalZero = false;
   const int Nlocal = (nFields == 1) ? mNlocal : nFields * offset;
   const int largeNumber = 1 << 20;
 
@@ -54,9 +51,6 @@ void ellipticOgs(mesh_t *mesh,
       }
       else if (mapB[n + fld * offset] == DIRICHLET) { // Dirichlet boundary
         Nmasked++;
-      }
-      else if (mapB[n + fld * offset] == ZERO_NORMAL) {
-        UNormalZero = true;
       }
     }
   }
@@ -141,6 +135,4 @@ void ellipticOgs(mesh_t *mesh,
     free(maskedGlobalIds);
   }
   free(maskIds);
-
-  o_BCType = platform->device.malloc(BCTypeOffset * nFields * sizeof(int), BCType);
 }

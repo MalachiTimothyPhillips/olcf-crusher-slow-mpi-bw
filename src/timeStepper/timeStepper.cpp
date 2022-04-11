@@ -14,6 +14,7 @@
 #include "udf.hpp"
 #include "bcMap.hpp"
 #include "applyDirichlet.hpp"
+#include "createZeroNormalMask.hpp"
 
 namespace {
 

@@ -1,4 +1,5 @@
 #include "createZeroNormalMask.hpp"
+#include "applyZeroNormalMask.hpp"
 #include "nrs.hpp"
 #include "meshSetup.hpp"
 #include "nekInterfaceAdapter.hpp"

@@ -2,6 +2,7 @@
 #include <ellipticApplyMask.hpp>
 void ellipticApplyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
+  mesh_t *mesh = solver->mesh;
   ellipticApplyMask(solver, mesh->Nelements, mesh->o_elementList, o_x, precision);
 }
 void ellipticApplyMask(elliptic_t *solver,
@@ -12,8 +13,6 @@ void ellipticApplyMask(elliptic_t *solver,
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;
-  occa::kernel &enforceUnKernel =
-      (precision != dfloatString) ? solver->enforceUnPfloatKernel : solver->enforceUnKernel;
 
   const dlong Nmasked = solver->NmaskedGlobal;
   occa::memory &o_maskIds = solver->o_maskIdsGlobal;

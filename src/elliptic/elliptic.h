@@ -258,13 +258,11 @@ void ellipticOgs(mesh_t *mesh,
                  dlong offset,
                  int *BCType,
                  int BCTypeOffset,
-                 bool &UNormalZero,
                  dlong &Nmasked,
                  occa::memory &o_maskIds,
                  dlong &NmaskedLocal,
                  occa::memory &o_maskIdsLocal,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
-                 occa::memory &o_BCType,
                  ogs_t **ogs);
 #endif
