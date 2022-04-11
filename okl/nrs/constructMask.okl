@@ -5,7 +5,7 @@
                                          @restrict const dlong*  vmapM,
                                          @restrict const int*  EToB,
                                          @restrict const dfloat*  normal,
-                                         @restrict const dfloat* isSYM)
+                                         @restrict dfloat* mask)
 {
   for(dlong e = 0; e < Nelements; e++; @outer(0)) {
 
@@ -35,11 +35,11 @@
           const dfloat diff = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
           const dfloat tol = 1e-6;
           if(diff > tol) {
-            o_mask[idM + 0 * nrs->fieldOffset] = 0.0;
+            mask[idM + 0 * offset] = 0.0;
 
             // TODO: need to zero out one of the tangentials, but not sure which one...
-            o_mask[idM + 1 * nrs->fieldOffset] = 0.0;
-            o_mask[idM + 2 * nrs->fieldOffset] = 0.0;
+            mask[idM + 1 * offset] = 0.0;
+            mask[idM + 2 * offset] = 0.0;
           }
 
         }
