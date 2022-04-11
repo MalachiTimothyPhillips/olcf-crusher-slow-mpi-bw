@@ -95,7 +95,7 @@ void ellipticEnforceUnZero(elliptic_t *solver,
   }
 }
 
-void applyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
+void ellipticApplyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;
@@ -110,7 +110,7 @@ void applyMask(elliptic_t *solver, occa::memory &o_x, std::string precision)
     maskKernel(Nmasked, o_maskIds, o_x);
   }
 }
-void applyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
+void ellipticApplyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;
@@ -128,7 +128,7 @@ void applyMaskInterior(elliptic_t *solver, occa::memory &o_x, std::string precis
   }
 }
 
-void applyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
+void ellipticApplyMaskExterior(elliptic_t *solver, occa::memory &o_x, std::string precision)
 {
   mesh_t *mesh = solver->mesh;
   occa::kernel &maskKernel = (precision != dfloatString) ? mesh->maskPfloatKernel : mesh->maskKernel;

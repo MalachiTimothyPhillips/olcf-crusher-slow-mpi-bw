@@ -176,6 +176,8 @@ struct elliptic_t
 
   SolutionProjection* solutionProjection;
   GmresData *gmresData;
+
+  std::function<void(dlong Nelements, occa::memory &o_elementList, occa::memory &o_x)> applyZeroNormalMask;
 };
 
 #include "ellipticMultiGrid.h"
