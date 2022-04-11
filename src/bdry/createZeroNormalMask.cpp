@@ -4,7 +4,7 @@
 #include "nrssys.hpp"
 #include "platform.hpp"
 
-// pre: o_EToB allocated
+// pre: o_EToB allocated, capacity mesh->Nfaces * mesh->Nelements dfloat words
 //      o_mask allocated, capacity 3 nrs->fieldOffset dfloat words
 void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask)
 {
@@ -37,5 +37,13 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   platform->linAlg->unitVector(mesh->Nlocal, nrs->fieldOffset, o_avgNormal);
 
-  nrs->constructMaskKernel(mesh->Nlocal, nrs->fieldOffset, o_avgNormal, o_mask);
+  platform->linAlg->fill(3 * nrs->fieldOffset, 1.0, o_mask);
+
+  nrs->constructMaskKernel(mesh->Nlocal,
+                           nrs->fieldOffset,
+                           mesh->o_sgeo,
+                           mesh->o_vmapM,
+                           o_EToB,
+                           o_avgNormal,
+                           o_mask);
 }

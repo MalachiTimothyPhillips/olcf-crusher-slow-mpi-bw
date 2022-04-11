@@ -320,12 +320,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     }
     mesh->move();
 
-    {
-      if (nrs->uvwSolver)
-        nrs->uvwSolver->recomputeAvgNormals = true;
-      if (nrs->meshSolver)
-        nrs->meshSolver->recomputeAvgNormals = true;
-    }
+    createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
 
     if (nrs->cht)
       nrs->meshV->computeInvLMM();

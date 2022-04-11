@@ -4,8 +4,8 @@
                                          @restrict const dfloat*  sgeo,
                                          @restrict const dlong*  vmapM,
                                          @restrict const int*  EToB,
-                                         @restrict dfloat*  normal,
-                                         @restrict dfloat* isSYM)
+                                         @restrict const dfloat*  normal,
+                                         @restrict const dfloat* isSYM)
 {
   for(dlong e = 0; e < Nelements; e++; @outer(0)) {
 
@@ -22,12 +22,26 @@
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
           const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
           const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
+          const dfloat volNx = normal[idM + 0 * offset];
+          const dfloat volNy = normal[idM + 1 * offset];
+          const dfloat volNz = normal[idM + 2 * offset];
 
-          isSYM[idM] = 1.0;
+          // compare volumetric and face based normals
+          // if they differ (e.g., an edge between two faces at a different angle),
+          // apply zero to the mask
+          const dfloat diffx = nx - volNx;
+          const dfloat diffy = ny - volNy;
+          const dfloat diffz = nz - volNz;
+          const dfloat diff = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+          const dfloat tol = 1e-6;
+          if(diff > tol) {
+            o_mask[idM + 0 * nrs->fieldOffset] = 0.0;
 
-          normal[idM + 0 * offset] = nx;
-          normal[idM + 1 * offset] = ny;
-          normal[idM + 2 * offset] = nz;
+            // TODO: need to zero out one of the tangentials, but not sure which one...
+            o_mask[idM + 1 * nrs->fieldOffset] = 0.0;
+            o_mask[idM + 2 * nrs->fieldOffset] = 0.0;
+          }
+
         }
       }
       @barrier("global");
