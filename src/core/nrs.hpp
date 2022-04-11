@@ -178,6 +178,8 @@ struct nrs_t
   // masks
   occa::memory o_zeroNormalMaskVelocity;
   occa::memory o_zeroNormalMaskMeshVelocity;
+  occa::kernel copySYMNormalKernel;
+  occa::kernel constructMaskKernel;
 
   occa::properties *kernelInfo;
 };
