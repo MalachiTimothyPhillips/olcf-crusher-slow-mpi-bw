@@ -279,7 +279,6 @@ void registerFineLevelKernels(const std::string &section, int N, int poissonEqua
   registerCommonMGPreconditionerKernels(N, kernelInfo, poissonEquation);
 
   registerAxKernels(section, N, poissonEquation);
-
   registerSchwarzKernels(section, N);
 }
 void registerSEMFEMKernels(const std::string &section, int N, int poissonEquation);
@@ -311,7 +310,6 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
   const std::string fileNameExtension = (serial) ? ".c" : ".okl";
 
   constexpr int elementType = HEXAHEDRA;
-  registerAxKernels(section, N, poissonEquation);
 
   {
     // sizes for the coarsen and prolongation kernels. degree NFine to degree N
@@ -343,6 +341,13 @@ void registerMultigridLevelKernels(const std::string &section, int Nf, int N, in
         coarsenProlongateKernelInfo,
         orderSuffix);
   }
+
+  const std::string optionsPrefix = createOptionsPrefix(section);
+  if (N == 1 && platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
+    return;
+  }
+
+  registerAxKernels(section, N, poissonEquation);
   registerSchwarzKernels(section, N);
 }
 void registerMultiGridKernels(const std::string &section, int poissonEquation) {
