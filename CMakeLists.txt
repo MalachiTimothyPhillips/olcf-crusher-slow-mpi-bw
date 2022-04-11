@@ -258,6 +258,7 @@ target_compile_definitions(nekrs-lib PUBLIC
 target_include_directories(nekrs-lib 
   PUBLIC 
   ${CMAKE_CURRENT_BINARY_DIR}
+  src/bdry
   src/core
   src/utils
   src/lib

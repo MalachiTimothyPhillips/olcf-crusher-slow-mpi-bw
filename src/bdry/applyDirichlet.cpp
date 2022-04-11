@@ -1,5 +1,6 @@
 #include "nrs.hpp"
 #include "applyDirichlet.hpp"
+#include "bcMap.hpp"
 
 void applyDirichlet(nrs_t *nrs, double time)
 {
