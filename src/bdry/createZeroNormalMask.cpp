@@ -39,7 +39,7 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   platform->linAlg->fill(3 * nrs->fieldOffset, 1.0, o_mask);
 
-  nrs->constructMaskKernel(mesh->Nlocal,
+  nrs->constructMaskKernel(mesh->Nelements,
                            nrs->fieldOffset,
                            mesh->o_sgeo,
                            mesh->o_vmapM,
