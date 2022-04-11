@@ -588,7 +588,7 @@
 #ifdef gfxXX
 #define p_Nblk 3
 #else
-#define p_Nbl 1
+#define p_Nblk 1
 #endif
 #elif p_Nq_e == 10
 #ifdef gfxXX
