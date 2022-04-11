@@ -1,3 +1,4 @@
+#include "createZeroNormalMask.hpp"
 #include "nrs.hpp"
 #include "meshSetup.hpp"
 #include "nekInterfaceAdapter.hpp"
@@ -739,8 +740,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->uvwSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->uvwSolver);
-      if(nrs->uvwSolver->UNormalZero){
-        ellipticConstructAvgNormal(nrs->uvwSolver);
+      if (unalignedBoundary) {
+        nrs->o_zeroNormalMaskVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
+        createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
       }
     } else {
       nrs->uSolver = new elliptic_t();
@@ -951,8 +953,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       nrs->meshSolver->poisson = 0;
 
       ellipticSolveSetup(nrs->meshSolver);
-      if(nrs->meshSolver->UNormalZero){
-        ellipticConstructAvgNormal(nrs->meshSolver);
+      if (unalignedBoundary) {
+        nrs->o_zeroNormalMaskMeshVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
+        createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskMeshVelocity);
       }
     }
   }
