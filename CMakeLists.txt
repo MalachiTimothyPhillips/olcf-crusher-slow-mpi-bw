@@ -201,6 +201,7 @@ set(SRC
     src/core/setup.cpp
     src/core/alignment.cpp
     src/core/registerNrsKernels.cpp
+    src/bdry/applyDirichlet.cpp
     src/timeStepper/timeStepper.cpp
     src/timeStepper/subCycling.cpp
     src/navierStokes/tombo.cpp
