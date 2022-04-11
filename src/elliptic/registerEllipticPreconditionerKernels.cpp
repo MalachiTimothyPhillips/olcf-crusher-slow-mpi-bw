@@ -245,9 +245,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
 
     bool verbose = platform->options.compareArgs("VERBOSE", "TRUE");
     const int verbosity = verbose ? 2 : 1;
-    if(platform->comm.mpiRank == 0){
-      std::cout << "Benchmarking FDM kernel...\n";
-    }
     auto fdmKernel = benchmarkFDM(NelemBenchmark,
                                   Nq_e,
                                   sizeof(pfloat),

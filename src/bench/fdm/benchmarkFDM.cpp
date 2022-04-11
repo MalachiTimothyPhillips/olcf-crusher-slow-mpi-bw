@@ -130,6 +130,9 @@ occa::kernel benchmarkFDM(int Nelements,
       const int Nthreads =  omp_get_max_threads();
 
       if (platform->comm.mpiRank == 0 && !skipPrint) {
+        if(verbosity > 0){
+          std::cout << "FDM:";
+        }
         if(verbosity > 1){
           std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
         }

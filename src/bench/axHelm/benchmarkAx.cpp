@@ -154,8 +154,11 @@ occa::kernel benchmarkAx(int Nelements,
       const int Nthreads =  omp_get_max_threads();
 
       if(platform->comm.mpiRank == 0 && !skipPrint){
+        if(verbosity > 0){
+          std::cout << "Ax:";
+        }
         if(verbosity > 1){
-          std::cout << "MPItasks=" << platform->comm.mpiCommSize
+          std::cout << " MPItasks=" << platform->comm.mpiCommSize
                     << " OMPthreads=" << Nthreads
                     << " NRepetitions=" << Ntests;
         }
