@@ -175,46 +175,11 @@ struct elliptic_t
   int* levels;
 
   SolutionProjection* solutionProjection;
-  GmresData* gmresData;
-
-  bool UNormalZero;
-
-  occa::kernel enforceUnKernel;
-  occa::kernel enforceUnPfloatKernel;
-  occa::memory o_BCType;
-
-  bool recomputeAvgNormals = false;
-
-  occa::kernel copySYMNormalKernel;
-  occa::kernel volumetricTangentialKernel;
-
-  // TODO: re-enable?
-  // private:
-  friend void ellipticEnforceUnZero(elliptic_t *solver, occa::memory &o_x, std::string precision);
-  friend void ellipticEnforceUnZero(elliptic_t *solver,
-                                    dlong Nelements,
-                                    occa::memory &o_elemList,
-                                    occa::memory &o_x,
-                                    std::string precision);
-
-  // volume-averaged normal/tangentials over SYM/SHL faces
-  occa::memory o_isSYM;
-  occa::memory o_avgNormal;
-  occa::memory o_avgTangential1;
-  occa::memory o_avgTangential2;
+  GmresData *gmresData;
 };
 
 #include "ellipticMultiGrid.h"
 #include "ellipticSolutionProjection.h"
-
-void ellipticConstructAvgNormal(elliptic_t *solver);
-
-void ellipticEnforceUnZero(elliptic_t *solver,
-                           dlong Nelements,
-                           occa::memory &o_elemList,
-                           occa::memory &o_x,
-                           std::string precision);
-void ellipticEnforceUnZero(elliptic_t *solver, occa::memory &o_x, std::string precision);
 
 elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* elliptic);
 

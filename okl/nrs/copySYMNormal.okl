@@ -1,0 +1,37 @@
+// Shared element edge of type p_ZERO_NORMAL is not supported.
+@kernel void copySYMNormal(const dlong Nelements,
+                                         const dlong offset,
+                                         @restrict const dfloat*  sgeo,
+                                         @restrict const dlong*  vmapM,
+                                         @restrict const int*  EToB,
+                                         @restrict dfloat*  normal,
+                                         @restrict dfloat* isSYM)
+{
+  for(dlong e = 0; e < Nelements; e++; @outer(0)) {
+
+    for(int f = 0; f < p_Nfaces; f++) {
+      for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
+        const int n = m + f * p_Nfp;
+        const int sk = e * p_Nfp * p_Nfaces + n;
+        const dlong sid  = e * p_Nfaces * p_Nfp + n;
+        const dlong idM = vmapM[sk];
+        const dlong bcType = EToB[f + p_Nfaces * e];
+
+        if(bcType == 7 || bcType == 8) {
+
+          const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
+          const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
+          const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
+
+          isSYM[idM] = 1.0;
+
+          normal[idM + 0 * offset] = nx;
+          normal[idM + 1 * offset] = ny;
+          normal[idM + 2 * offset] = nz;
+        }
+      }
+      @barrier("global");
+    }
+  }
+
+}
