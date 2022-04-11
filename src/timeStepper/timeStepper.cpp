@@ -320,7 +320,9 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     }
     mesh->move();
 
-    createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
+    if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
+      createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
+    }
 
     if (nrs->cht)
       nrs->meshV->computeInvLMM();

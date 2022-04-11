@@ -1,5 +1,6 @@
 #include "nrs.hpp"
 #include "applyDirichlet.hpp"
+#include "applyZeroNormalMask.hpp"
 #include "bcMap.hpp"
 
 void applyDirichlet(nrs_t *nrs, double time)
@@ -48,10 +49,6 @@ void applyDirichlet(nrs_t *nrs, double time)
                             o_Si);
     }
   }
-
-  auto applyUnZero = [&](elliptic_t *solver, occa::memory &o_x) {
-    ellipticEnforceUnZero(solver, o_x, std::string(dfloatString));
-  };
 
   if (nrs->flow) {
     mesh_t *mesh = nrs->meshV;
@@ -113,7 +110,9 @@ void applyDirichlet(nrs_t *nrs, double time)
                           nrs->o_P);
 
     if (nrs->uvwSolver) {
-      applyUnZero(nrs->uvwSolver, platform->o_mempool.slice7);
+      if (bcMap::unalignedBoundary(mesh->cht, "velocity")) {
+        applyZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, nrs->o_U);
+      }
       if (nrs->uvwSolver->Nmasked)
         nrs->maskCopyKernel(nrs->uvwSolver->Nmasked,
                             0 * nrs->fieldOffset,
@@ -180,7 +179,10 @@ void applyDirichlet(nrs_t *nrs, double time)
                           ogsMin,
                           nrs->gsh);
     }
-    applyUnZero(nrs->meshSolver, platform->o_mempool.slice3);
+
+    if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
+      applyZeroNormalMask(nrs, nrs->o_EToBMeshVelocity, nrs->o_zeroNormalMaskMeshVelocity, mesh->o_U);
+    }
     if (nrs->meshSolver->Nmasked)
       nrs->maskCopyKernel(nrs->meshSolver->Nmasked,
                           0 * nrs->fieldOffset,
