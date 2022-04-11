@@ -28,9 +28,6 @@
                                          const dfloat time,
                                          const bool useDerivedBoundaryCondition,
                                          @restrict const dfloat*  sgeo,
-                                         @restrict const dfloat*  normals,
-                                         @restrict const dfloat*  tangentials1,
-                                         @restrict const dfloat*  tangentials2,
                                          @restrict const dfloat*  x,
                                          @restrict const dfloat*  y,
                                          @restrict const dfloat*  z,
@@ -53,13 +50,17 @@
 
         if(bcType == 7) {
 
-          const dfloat t1x = tangentials1[idM + 0 * offset];
-          const dfloat t1y = tangentials1[idM + 1 * offset];
-          const dfloat t1z = tangentials1[idM + 2 * offset];
+          const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
+          const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
+          const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
 
-          const dfloat t2x = tangentials2[idM + 0 * offset];
-          const dfloat t2y = tangentials2[idM + 1 * offset];
-          const dfloat t2z = tangentials2[idM + 2 * offset];
+          const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
+          const dfloat t1y = sgeo[sid * p_Nsgeo + p_T1YID];
+          const dfloat t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
+
+          const dfloat t2x = sgeo[sid * p_Nsgeo + p_T2XID];
+          const dfloat t2y = sgeo[sid * p_Nsgeo + p_T2YID];
+          const dfloat t2z = sgeo[sid * p_Nsgeo + p_T2ZID];
 
           const dfloat u = U[idM + 0 * offset];
           const dfloat v = U[idM + 1 * offset];
