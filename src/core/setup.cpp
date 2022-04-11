@@ -746,6 +746,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
         createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
+
+        nrs->uvwSolver->applyZeroNormalMask = [nrs](dlong Nelements,
+                                                    occa::memory &o_elementList,
+                                                    occa::memory &o_x) {
+          applyZeroNormalMask(nrs, Nelements, o_elementList, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, o_x);
+        };
       }
     } else {
       nrs->uSolver = new elliptic_t();
@@ -959,6 +965,15 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskMeshVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
         createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskMeshVelocity);
+        nrs->meshSolver->applyZeroNormalMask =
+            [nrs](dlong Nelements, occa::memory &o_elementList, occa::memory &o_x) {
+              applyZeroNormalMask(nrs,
+                                  Nelements,
+                                  o_elementList,
+                                  nrs->o_EToBMeshVelocity,
+                                  nrs->o_zeroNormalMaskMeshVelocity,
+                                  o_x);
+            };
       }
     }
   }

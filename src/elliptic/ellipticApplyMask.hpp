@@ -6,9 +6,10 @@
 
 class elliptic_t;
 
+void ellipticApplyMask(elliptic_t *solver, occa::memory &o_x, std::string precision);
 void ellipticApplyMask(elliptic_t *solver,
                        dlong Nelements,
                        occa::memory &o_elementList,
                        occa::memory &o_x,
-                       std::string precision)
+                       std::string precision);
 #endif
