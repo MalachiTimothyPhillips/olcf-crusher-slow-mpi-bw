@@ -181,6 +181,8 @@ struct nrs_t
   occa::kernel copySYMNormalKernel;
   occa::kernel constructMaskKernel;
 
+  occa::kernel applyZeroNormalMaskKernel;
+
   occa::properties *kernelInfo;
 };
 

@@ -476,6 +476,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       kernelName = "constructMask";
       nrs->constructMaskKernel = platform->kernels.get(section + kernelName);
 
+      kernelName = "applyZeroNormalMask";
+      nrs->applyZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
+
       kernelName = "velocityDirichletBC" + suffix;
       nrs->velocityDirichletBCKernel =
         platform->kernels.get( section + kernelName);

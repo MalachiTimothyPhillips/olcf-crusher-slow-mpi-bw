@@ -179,6 +179,10 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, kernelInfo);
 
+    kernelName = "applyZeroNormalMask";
+    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, kernelInfo);
+
     kernelName = "velocityDirichletBC" + suffix;
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(
