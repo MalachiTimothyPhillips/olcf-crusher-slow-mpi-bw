@@ -74,11 +74,11 @@ void applyDirichlet(nrs_t *nrs, double time)
                                      nrs->o_U,
                                      platform->o_mempool.slice6);
 
-      occa::memory o_nothing;
       nrs->velocityDirichletBCKernel(mesh->Nelements,
                                      nrs->fieldOffset,
                                      time,
                                      mesh->o_sgeo,
+                                     nrs->o_zeroNormalMaskVelocity,
                                      mesh->o_x,
                                      mesh->o_y,
                                      mesh->o_z,
@@ -154,6 +154,7 @@ void applyDirichlet(nrs_t *nrs, double time)
                                           time,
                                           bcMap::useDerivedMeshBoundaryConditions(),
                                           mesh->o_sgeo,
+                                          nrs->o_zeroNormalMaskMeshVelocity,
                                           mesh->o_x,
                                           mesh->o_y,
                                           mesh->o_z,
