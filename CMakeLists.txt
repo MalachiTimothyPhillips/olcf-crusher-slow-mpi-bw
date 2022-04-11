@@ -203,6 +203,7 @@ set(SRC
     src/core/registerNrsKernels.cpp
     src/bdry/applyDirichlet.cpp
     src/bdry/applyZeroNormalMask.cpp
+    src/bdry/createZeroNormalMask.cpp
     src/timeStepper/timeStepper.cpp
     src/timeStepper/subCycling.cpp
     src/navierStokes/tombo.cpp

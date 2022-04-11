@@ -175,6 +175,10 @@ struct nrs_t
   occa::memory o_EToB;
   occa::memory o_EToBMeshVelocity;
 
+  // masks
+  occa::memory o_zeroNormalMaskVelocity;
+  occa::memory o_zeroNormalMaskMeshVelocity;
+
   occa::properties *kernelInfo;
 };
 
