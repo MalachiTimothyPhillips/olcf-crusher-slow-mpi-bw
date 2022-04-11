@@ -137,20 +137,17 @@ occa::kernel benchmarkAx(int Nelements,
 
       const bool BKmode = constCoeff && poisson;
 
-      double NGlobalElements = Nelements;
-      MPI_Allreduce(MPI_IN_PLACE, &NGlobalElements, 1, MPI_DOUBLE, MPI_SUM, platform->comm.mpiComm);
-
       // print statistics
-      const dfloat GDOFPerSecond = (NGlobalElements * Ndim * (N * N * N) / elapsed) / 1.e9;
+      const dfloat GDOFPerSecond = (Nelements * Ndim * (N * N * N) / elapsed) / 1.e9;
 
       size_t bytesMoved = Ndim * 2 * Np * wordSize; // x, Ax
       bytesMoved += 6 * Np_g * wordSize; // geo
       if(!constCoeff) bytesMoved += 3 * Np * wordSize; // lambda1, lambda2, Jw
-      const double bw = (NGlobalElements * bytesMoved / elapsed) / 1.e9;
+      const double bw = (Nelements * bytesMoved / elapsed) / 1.e9;
 
       double flopCount = Np * 12 * Nq + 15 * Np;
       if(!constCoeff) flopCount += 5 * Np;
-      const double gflops = Ndim * (flopCount * NGlobalElements / elapsed) / 1.e9;
+      const double gflops = Ndim * (flopCount * Nelements / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
       if(platform->comm.mpiRank == 0 && !skipPrint){
@@ -166,7 +163,7 @@ occa::kernel benchmarkAx(int Nelements,
           std::cout << " Ndim=" << Ndim
                     << " N=" << N
                     << " Ng=" << Ng
-                    << " Nelements=" << NGlobalElements
+                    << " Nelements=" << Nelements
                     << " elapsed time=" << elapsed
                     << " bkMode=" << BKmode
                     << " wordSize=" << 8*wordSize

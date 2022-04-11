@@ -115,18 +115,14 @@ occa::kernel benchmarkFDM(int Nelements,
 
     auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
 
-      double NGlobalElements = Nelements;
-      MPI_Allreduce(MPI_IN_PLACE, &NGlobalElements, 1, MPI_DOUBLE, MPI_SUM, platform->comm.mpiComm);
-
-
       // print statistics
-      const double GDOFPerSecond = (NGlobalElements * (N_e*N_e*N_e) / elapsed) / 1.e9;
+      const double GDOFPerSecond = (Nelements * (N_e*N_e*N_e) / elapsed) / 1.e9;
 
       size_t bytesPerElem = (3 * Np_e + 3 * Nq_e * Nq_e) * wordSize;
-      const double bw = (NGlobalElements * bytesPerElem / elapsed) / 1.e9;
+      const double bw = (Nelements * bytesPerElem / elapsed) / 1.e9;
 
       double flopsPerElem = 12 * Nq_e * Np_e + Np_e;
-      const double gflops = (NGlobalElements * flopsPerElem / elapsed) / 1.e9;
+      const double gflops = (Nelements * flopsPerElem / elapsed) / 1.e9;
       const int Nthreads =  omp_get_max_threads();
 
       if (platform->comm.mpiRank == 0 && !skipPrint) {
@@ -137,7 +133,7 @@ occa::kernel benchmarkFDM(int Nelements,
           std::cout << "MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
         }
         if(verbosity > 0){
-          std::cout << " N=" << N_e << " Nelements=" << NGlobalElements << " elapsed time=" << elapsed
+          std::cout << " N=" << N_e << " Nelements=" << Nelements << " elapsed time=" << elapsed
                     << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond << " GB/s=" << bw
                     << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
         }
