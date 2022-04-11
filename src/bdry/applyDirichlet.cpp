@@ -111,7 +111,7 @@ void applyDirichlet(nrs_t *nrs, double time)
 
     if (nrs->uvwSolver) {
       if (bcMap::unalignedBoundary(mesh->cht, "velocity")) {
-        applyZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, nrs->o_U);
+        applyZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, platform->o_mempool.slice7);
       }
       if (nrs->uvwSolver->Nmasked)
         nrs->maskCopyKernel(nrs->uvwSolver->Nmasked,
@@ -119,6 +119,9 @@ void applyDirichlet(nrs_t *nrs, double time)
                             nrs->uvwSolver->o_maskIds,
                             platform->o_mempool.slice7,
                             nrs->o_U);
+      if (bcMap::unalignedBoundary(mesh->cht, "velocity")) {
+        applyZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, nrs->o_U);
+      }
     }
     else {
       if (nrs->uSolver->Nmasked)
@@ -181,7 +184,10 @@ void applyDirichlet(nrs_t *nrs, double time)
     }
 
     if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
-      applyZeroNormalMask(nrs, nrs->o_EToBMeshVelocity, nrs->o_zeroNormalMaskMeshVelocity, mesh->o_U);
+      applyZeroNormalMask(nrs,
+                          nrs->o_EToBMeshVelocity,
+                          nrs->o_zeroNormalMaskMeshVelocity,
+                          platform->o_mempool.slice3);
     }
     if (nrs->meshSolver->Nmasked)
       nrs->maskCopyKernel(nrs->meshSolver->Nmasked,
@@ -189,5 +195,8 @@ void applyDirichlet(nrs_t *nrs, double time)
                           nrs->meshSolver->o_maskIds,
                           platform->o_mempool.slice3,
                           mesh->o_U);
+    if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
+      applyZeroNormalMask(nrs, nrs->o_EToBMeshVelocity, nrs->o_zeroNormalMaskMeshVelocity, mesh->o_U);
+    }
   }
 }

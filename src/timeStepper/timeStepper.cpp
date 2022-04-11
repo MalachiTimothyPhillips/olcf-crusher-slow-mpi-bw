@@ -398,7 +398,8 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
       udf.executeStep(nrs, timeNew, tstep);
     platform->timer.toc("udfExecuteStep");
 
-    if(!nrs->converged) printInfo(nrs, timeNew, tstep, 0, 0);
+    if (!nrs->converged)
+      printInfo(nrs, timeNew, tstep);
   } while (!nrs->converged);
 
   nrs->dt[2] = nrs->dt[1];
@@ -761,14 +762,16 @@ void fluidSolve(
 
 }
 
-void printInfo(nrs_t *nrs, dfloat time, int tstep, double elapsedStep, double elapsed)
+void printInfo(nrs_t *nrs, dfloat time, int tstep)
 {
   cds_t *cds = nrs->cds;
 
+  const double elapsedStep = platform->timer.query("elapsedStep", "DEVICE:MAX");
+  const double elapsed = platform->timer.query("elapsed", "DEVICE:MAX");
   bool verboseInfo = platform->options.compareArgs("VERBOSE SOLVER INFO", "TRUE");
-
   const dfloat cfl = computeCFL(nrs);
   dfloat divUErrVolAvg, divUErrL2;
+
   if (verboseInfo){
     computeDivUErr(nrs, divUErrVolAvg, divUErrL2);
   }
@@ -935,7 +938,7 @@ void printInfo(nrs_t *nrs, dfloat time, int tstep, double elapsedStep, double el
     for(int is = 0; is < nrs->Nscalar; is++)
       if(cds->compute[is]) printf("  S: %d", cds->solver[is]->Niter);
 
-    if(elapsedStep != 0) 
+    if (nrs->converged)
       printf("  elapsedStep= %.2es  elapsed= %.5es", elapsedStep, elapsed);
 
     printf("\n");

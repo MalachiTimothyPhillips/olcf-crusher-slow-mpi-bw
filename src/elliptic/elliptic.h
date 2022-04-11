@@ -102,9 +102,6 @@ struct elliptic_t
 
   dfloat tau;
 
-  int* BCType;
-  int NBCType;
-
   bool allNeumann;
 
   // HOST shadow copies
@@ -122,6 +119,8 @@ struct elliptic_t
   occa::memory o_maskIds;
   occa::memory o_maskIdsGlobal;
   occa::memory o_maskIdsLocal;
+
+  occa::memory o_EToB;
 
   occa::memory o_x;
   occa::memory o_x0;
@@ -256,8 +255,7 @@ void ellipticOgs(mesh_t *mesh,
                  dlong mNlocal,
                  int nFields,
                  dlong offset,
-                 int *BCType,
-                 int BCTypeOffset,
+                 int *EToB,
                  dlong &Nmasked,
                  occa::memory &o_maskIds,
                  dlong &NmaskedLocal,
