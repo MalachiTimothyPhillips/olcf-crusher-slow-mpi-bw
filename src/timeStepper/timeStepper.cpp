@@ -327,7 +327,7 @@ void applyDirichlet(nrs_t *nrs, double time)
                                           mesh->o_z,
                                           mesh->o_vmapM,
                                           mesh->o_EToB,
-                                          nrs->o_EToBMesh,
+                                          nrs->o_EToBMeshVelocity,
                                           nrs->o_usrwrk,
                                           nrs->o_U,
                                           platform->o_mempool.slice3);

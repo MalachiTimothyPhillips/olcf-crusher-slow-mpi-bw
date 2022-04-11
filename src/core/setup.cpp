@@ -377,7 +377,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
         cnt++;
       }
     }
-    nrs->o_EToBMesh = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int),nrs->EToBMesh);
+    nrs->o_EToBMeshVelocity = device.malloc(mesh->Nelements * mesh->Nfaces * sizeof(int), nrs->EToBMesh);
   }
 
   if(platform->options.compareArgs("VELOCITY REGULARIZATION METHOD", "RELAXATION")){

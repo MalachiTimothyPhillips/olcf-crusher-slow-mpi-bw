@@ -173,7 +173,7 @@ struct nrs_t
   int* EToB;
   int* EToBMesh;
   occa::memory o_EToB;
-  occa::memory o_EToBMesh;
+  occa::memory o_EToBMeshVelocity;
 
   occa::properties *kernelInfo;
 };
