@@ -667,9 +667,6 @@ void checkBoundaryAlignment(mesh_t *mesh)
 
 void remapUnalignedBoundaries(mesh_t *mesh)
 {
-  if (platform->options.compareArgs("STRESSFORMULATION", "TRUE"))
-    return;
-
   for (auto &&field : fields) {
     if (field != std::string("velocity") && field != std::string("mesh"))
       continue;
