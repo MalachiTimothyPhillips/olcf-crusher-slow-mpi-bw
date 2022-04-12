@@ -697,6 +697,22 @@ void remapUnalignedBoundaries(mesh_t *mesh)
       }
     }
 
+    // if a single unaligned boundary with SYM/SHL is present, no remapping may occur.
+    int unalignedBoundaryPresent = 0;
+    for (int bid = 1; bid <= nid; ++bid) {
+      int canRemap = remapBID[bid];
+      int bc = id(bid, field);
+      bool unalignedBoundaryType = bc == 7 || bc == 8;
+      if (!canRemap && unalignedBoundaryType) {
+        unalignedBoundaryPresent++;
+      }
+    }
+
+    MPI_Allreduce(MPI_IN_PLACE, &unalignedBoundaryPresent, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+    if (unalignedBoundaryPresent > 0) {
+      return;
+    }
+
     for (int bid = 1; bid <= nid; ++bid) {
       int canRemap = remapBID[bid];
       MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
