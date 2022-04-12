@@ -1,3 +1,21 @@
+void crossProduct(const dfloat a[3], const dfloat b[3], dfloat c[3])
+{
+  c[0] = a[1] * b[2] - a[2] * b[1];
+  c[1] = a[2] * b[0] - a[0] * b[2];
+  c[2] = a[0] * b[1] - a[1] * b[0];
+
+  const dfloat mag = sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
+  const dfloat invMag = 1.0 / mag;
+  c[0] *= invMag;
+  c[1] *= invMag;
+  c[2] *= invMag;
+}
+
+dfloat dot(const dfloat a[3], const dfloat b[3])
+{
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
 // Shared element edge of type p_ZERO_NORMAL is not supported.
 @kernel void constructMask(const dlong Nelements,
                                          const dlong offset,
@@ -37,9 +55,45 @@
           if(diff > tol) {
             mask[idM + 0 * offset] = 0.0;
 
-            // TODO: need to zero out one of the tangentials, but not sure which one...
+            // zero out correct tangential
+            const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
+            const dfloat t1y = sgeo[sid * p_Nsgeo + p_T1YID];
+            const dfloat t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
+
+            const dfloat t2x = sgeo[sid * p_Nsgeo + p_T2XID];
+            const dfloat t2y = sgeo[sid * p_Nsgeo + p_T2YID];
+            const dfloat t2z = sgeo[sid * p_Nsgeo + p_T2ZID];
+
+            const dfloat volN[3] = {volNx, volNy, volNz};
+            const dfloat N[3] = {nx, ny, nz};
+            const dfloat T1[3] = {t1x, t1y, t1z};
+            const dfloat T2[3] = {t2x, t2y, t2z};
+
+            dfloat NCrossT1[3];
+            crossProduct(N, T1, NCrossT1);
+
+            dfloat volNCrossT1[3];
+            crossProduct(volN, T1, volNCrossT1);
+
+            dfloat T2CrossN[3];
+            crossProduct(T2, N, T2CrossN);
+
+            dfloat T2CrossVolN[3];
+            crossProduct(T2, volN, T2CrossVolN);
+
+            const dfloat dot1 = dot(NCrossT1, volNCrossT1);
+            const dfloat dot2 = dot(T2CrossN, T2CrossVolN);
+
             mask[idM + 1 * offset] = 0.0;
             mask[idM + 2 * offset] = 0.0;
+
+            const dfloat tolN = 1e-7;
+
+            if(dot1 < tolN || (1.0 - dot1) < tolN) {
+              mask[idM + 2 * offset] = 1.0;
+            } else if(dot2 < tolN || (1.0 - dot2) < tolN) {
+              mask[idM + 1 * offset] = 1.0;
+            }
           }
 
         }
