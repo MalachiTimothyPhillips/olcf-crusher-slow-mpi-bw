@@ -35,7 +35,7 @@ dfloat dot(const dfloat a[3], const dfloat b[3])
         const dlong idM = vmapM[sk];
         const dlong bcType = EToB[f + p_Nfaces * e];
 
-        if(bcType == 7 || bcType == 8) {
+        if(bcType == p_ZERO_NORMAL) {
 
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
           const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];

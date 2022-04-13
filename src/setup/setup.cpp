@@ -747,13 +747,17 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       ellipticSolveSetup(nrs->uvwSolver);
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
-        createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
+        createZeroNormalMask(nrs, nrs->uvwSolver->o_EToB, nrs->o_zeroNormalMaskVelocity);
 
-        nrs->uvwSolver->applyZeroNormalMask = [nrs](dlong Nelements,
-                                                    occa::memory &o_elementList,
-                                                    occa::memory &o_x) {
-          applyZeroNormalMask(nrs, Nelements, o_elementList, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity, o_x);
-        };
+        nrs->uvwSolver->applyZeroNormalMask =
+            [nrs](dlong Nelements, occa::memory &o_elementList, occa::memory &o_x) {
+              applyZeroNormalMask(nrs,
+                                  Nelements,
+                                  o_elementList,
+                                  nrs->uvwSolver->o_EToB,
+                                  nrs->o_zeroNormalMaskVelocity,
+                                  o_x);
+            };
       }
     }
     else {
@@ -989,13 +993,13 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       ellipticSolveSetup(nrs->meshSolver);
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskMeshVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
-        createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskMeshVelocity);
+        createZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_zeroNormalMaskMeshVelocity);
         nrs->meshSolver->applyZeroNormalMask =
             [nrs](dlong Nelements, occa::memory &o_elementList, occa::memory &o_x) {
               applyZeroNormalMask(nrs,
                                   Nelements,
                                   o_elementList,
-                                  nrs->o_EToBMeshVelocity,
+                                  nrs->meshSolver->o_EToB,
                                   nrs->o_zeroNormalMaskMeshVelocity,
                                   o_x);
             };
