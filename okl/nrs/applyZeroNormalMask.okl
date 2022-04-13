@@ -20,10 +20,6 @@
         const dlong idM = vmapM[sk];
         const dlong bcType = EToB[f + p_Nfaces * e];
 
-        if(bcType == 7){
-          printf("Oops! You used the wrong EToB!\n");
-        }
-
         if(bcType == p_ZERO_NORMAL) {
 
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
