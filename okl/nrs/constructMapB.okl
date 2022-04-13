@@ -11,7 +11,7 @@ int mymin(int a, int b){
     for(int m = 0; m < p_Nfp; ++m; @inner(0)) {
       for(int n = 0; n < p_Nq; ++n){
         const dlong qp = n + m * p_Nq;
-        mapB[qp] = p_largeNumber;
+        mapB[qp + e * p_Np] = p_largeNumber;
       }
     }
 
