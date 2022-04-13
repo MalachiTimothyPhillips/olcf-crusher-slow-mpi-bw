@@ -495,71 +495,7 @@ void setBcMap(std::string field, int* map, int nIDs)
   for (int i = 0; i < nIDs; i++)
     bToBc[make_pair(field, i)] = map[i];
 }
-namespace {
-void checkOpposingFaces(mesh_t *mesh)
-{
-  int nid = nbid[0];
-  if (mesh->cht)
-    nid = nbid[1];
 
-  bool bail = false;
-  std::map<int, int> opposingFaces = {{0, 5}, {1, 3}, {2, 4}, {3, 1}, {4, 2}, {5, 0}};
-  for (auto &&field : fields) {
-    if (field != std::string("velocity") && field != std::string("mesh"))
-      continue;
-
-    int err = 0;
-    std::vector<int> valid(nid, 1);
-
-    for (int e = 0; e < mesh->Nelements; e++) {
-      for (int f = 0; f < mesh->Nfaces; f++) {
-        const auto opposing = opposingFaces[f];
-        int bid = mesh->EToB[e * mesh->Nfaces + f];
-        int bc = id(bid, field);
-
-        // only applicable for unaligned SYM/SHL boundaries
-        if (bc != 7 && bc != 8)
-          continue;
-
-        for (int of = 0; of < mesh->Nfaces; of++) {
-          if (of == opposing)
-            continue;
-          if (of == f)
-            continue;
-          int obid = mesh->EToB[e * mesh->Nfaces + of];
-          int obc = id(obid, field);
-          if (obc == 7 || obc == 8) {
-            valid[bid - 1] = 0;
-            valid[obid - 1] = 0;
-            err = 1;
-            break;
-          }
-        }
-      }
-    }
-    MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
-
-    if (err > 0) {
-      bail = true;
-      MPI_Allreduce(MPI_IN_PLACE, valid.data(), nid, MPI_INT, MPI_MIN, platform->comm.mpiComm);
-      if (platform->comm.mpiRank == 0) {
-        std::cout << "Encountered shared SYM/SYM, SHL/SYM, or SHL/SHL edge within an element for field \""
-                  << field << "\".\n";
-        std::cout << "The following boundary IDs are :\n";
-        int bid = 1;
-        for (auto &&v : valid) {
-          if (v == 0)
-            std::cout << "\t" << bid << "\n";
-          bid++;
-        }
-      }
-    }
-  }
-  if (bail) {
-    ABORT(1);
-  }
-}
-} // namespace
 void checkBoundaryAlignment(mesh_t *mesh)
 {
   int nid = nbid[0];
@@ -661,8 +597,6 @@ void checkBoundaryAlignment(mesh_t *mesh)
   if (bail) {
     ABORT(1);
   }
-
-  checkOpposingFaces(mesh);
 }
 
 void remapUnalignedBoundaries(mesh_t *mesh)
