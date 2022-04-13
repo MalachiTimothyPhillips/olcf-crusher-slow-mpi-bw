@@ -171,12 +171,12 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     platform->kernels.add(
         section + kernelName, fileName, meshProps);
 
-    kernelName = "copySYMNormal";
-    fileName = oklpath + "nrs/" + kernelName + ".okl";
-    platform->kernels.add(section + kernelName, fileName, kernelInfoBC);
-
     auto zeroNormalProps = kernelInfoBC;
     zeroNormalProps["defines/p_ZERO_NORMAL"] = ZERO_NORMAL;
+    kernelName = "volumeAverageNormal";
+    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
+
     kernelName = "fixMask";
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, zeroNormalProps);

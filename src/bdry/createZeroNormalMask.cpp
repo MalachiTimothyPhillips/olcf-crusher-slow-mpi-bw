@@ -11,33 +11,19 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   auto mesh = nrs->meshV;
 
+  // TODO: fill o_mask appropriately to start
+
+  // normal + count (4 fields)
   auto o_avgNormal = platform->o_mempool.slice0;
-  auto o_isSYM = platform->o_mempool.slice3;
 
-  nrs->copySYMNormalKernel(mesh->Nelements,
-                           nrs->fieldOffset,
-                           mesh->o_sgeo,
-                           mesh->o_vmapM,
-                           o_EToB,
-                           o_avgNormal,
-                           o_isSYM);
+  nrs->volumeAverageNormalKernel(mesh->Nelements,
+                                 nrs->fieldOffset,
+                                 mesh->o_sgeo,
+                                 mesh->o_vmapM,
+                                 o_EToB,
+                                 o_avgNormal);
 
-  oogs::startFinish(o_isSYM, 1, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
-
-  // collocate with mask
-  auto o_nx = o_avgNormal + 0 * nrs->fieldOffset * sizeof(dfloat);
-  auto o_ny = o_avgNormal + 1 * nrs->fieldOffset * sizeof(dfloat);
-  auto o_nz = o_avgNormal + 2 * nrs->fieldOffset * sizeof(dfloat);
-
-  platform->linAlg->axmy(mesh->Nlocal, 1.0, o_isSYM, o_nx);
-  platform->linAlg->axmy(mesh->Nlocal, 1.0, o_isSYM, o_ny);
-  platform->linAlg->axmy(mesh->Nlocal, 1.0, o_isSYM, o_nz);
-
-  oogs::startFinish(o_avgNormal, 3, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-
-  platform->linAlg->unitVector(mesh->Nlocal, nrs->fieldOffset, o_avgNormal);
-
-  platform->linAlg->fill(3 * nrs->fieldOffset, 1.0, o_mask);
+  oogs::startFinish(o_avgNormal, 4, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
 
   nrs->fixMaskKernel(mesh->Nelements,
                      nrs->fieldOffset,
@@ -46,4 +32,6 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
                      o_EToB,
                      o_avgNormal,
                      o_mask);
+
+  oogs::startFinish(o_mask, 3, nrs->fieldOffset, ogsDfloat, ogsMin, nrs->gsh);
 }

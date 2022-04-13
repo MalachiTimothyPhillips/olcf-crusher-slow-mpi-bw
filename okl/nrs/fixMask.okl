@@ -40,21 +40,26 @@ dfloat dot(const dfloat a[3], const dfloat b[3])
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
           const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];
           const dfloat nz = sgeo[sid * p_Nsgeo + p_NZID];
-          const dfloat volNx = normal[idM + 0 * offset];
-          const dfloat volNy = normal[idM + 1 * offset];
-          const dfloat volNz = normal[idM + 2 * offset];
+          dfloat volNx = normal[idM + 0 * offset];
+          dfloat volNy = normal[idM + 1 * offset];
+          dfloat volNz = normal[idM + 2 * offset];
+          dfloat count = normal[idM + 3 * offset];
 
-          // compare volumetric and face based normals
-          // if they differ (e.g., an edge between two faces at a different angle),
-          // apply zero to the mask
-          const dfloat diffx = nx - volNx;
-          const dfloat diffy = ny - volNy;
-          const dfloat diffz = nz - volNz;
-          const dfloat diff = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
+          const dfloat invCount = 1.0 / count;
+          volNx *= invCount;
+          volNy *= invCount;
+          volNz *= invCount;
+
+          const dfloat volNMag = sqrt(volNx * volNx + volNy * volNy + volNz * volNz);
+
           const dfloat tol = 1e-6;
-          if(diff > tol) {
+          if(abs(1.0-volNMag) > tol) {
 
-            // zero out correct tangential
+            const dfloat invVolNMag = 1.0 / volNMag;
+            volNx *= invVolNMag;
+            volNy *= invVolNMag;
+            volNz *= invVolNMag;
+
             const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
             const dfloat t1y = sgeo[sid * p_Nsgeo + p_T1YID];
             const dfloat t1z = sgeo[sid * p_Nsgeo + p_T1ZID];
