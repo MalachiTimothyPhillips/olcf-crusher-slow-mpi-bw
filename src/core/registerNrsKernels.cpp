@@ -175,7 +175,7 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, kernelInfoBC);
 
-    kernelName = "constructMask";
+    kernelName = "fixMask";
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, kernelInfoBC);
 

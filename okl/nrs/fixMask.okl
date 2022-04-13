@@ -17,7 +17,7 @@ dfloat dot(const dfloat a[3], const dfloat b[3])
 }
 
 // Shared element edge of type p_ZERO_NORMAL is not supported.
-@kernel void constructMask(const dlong Nelements,
+@kernel void fixMask(const dlong Nelements,
                                          const dlong offset,
                                          @restrict const dfloat*  sgeo,
                                          @restrict const dlong*  vmapM,
