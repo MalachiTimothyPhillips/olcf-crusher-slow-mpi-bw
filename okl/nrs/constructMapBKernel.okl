@@ -1,5 +1,4 @@
-template<typename T>
-T mymin(T a, T b){
+int mymin(int a, int b){
   return a < b ? a : b;
 }
 
