@@ -191,9 +191,9 @@ void registerNrsKernels(occa::properties kernelInfoBC)
 
     auto constructMapBKernelInfo = meshProps;
     constructMapBKernelInfo["defines/p_largeNumber"] = 1 << 20;
-    kernelName = "constructMapBKernel";
+    kernelName = "constructMapB";
     fileName = oklpath + "nrs/" + kernelName + ".okl";
-    platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
+    platform->kernels.add(section + kernelName, fileName, constructMapBKernelInfo);
 
     auto zeroLargeNumberProps = platform->kernelInfo;
     zeroLargeNumberProps["defines/p_largeNumber"] = 1 << 20;

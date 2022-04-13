@@ -2,7 +2,7 @@ int mymin(int a, int b){
   return a < b ? a : b;
 }
 
-@kernel void constructMapBKernel(const dlong Nelements,
+@kernel void constructMapB(const dlong Nelements,
                                          @restrict const int*  EToB,
                                          @restrict const int*  faceNodes,
                                          @restrict int*  mapB)

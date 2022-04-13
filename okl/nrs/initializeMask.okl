@@ -1,5 +1,5 @@
 @kernel void initializeMask(const dlong N,
-                      const dlong offset
+                      const dlong offset,
                       @restrict const dlong*  mapB,
                       @restrict dfloat * mask)
 {
