@@ -53,7 +53,6 @@ dfloat dot(const dfloat a[3], const dfloat b[3])
           const dfloat diff = sqrt(diffx * diffx + diffy * diffy + diffz * diffz);
           const dfloat tol = 1e-6;
           if(diff > tol) {
-            mask[idM + 0 * offset] = 0.0;
 
             // zero out correct tangential
             const dfloat t1x = sgeo[sid * p_Nsgeo + p_T1XID];
@@ -84,15 +83,31 @@ dfloat dot(const dfloat a[3], const dfloat b[3])
             const dfloat dot1 = dot(NCrossT1, volNCrossT1);
             const dfloat dot2 = dot(T2CrossN, T2CrossVolN);
 
-            mask[idM + 1 * offset] = 0.0;
-            mask[idM + 2 * offset] = 0.0;
-
             const dfloat tolN = 1e-7;
 
             if(dot1 < tolN || (1.0 - dot1) < tolN) {
+              mask[idM + 0 * offset] = 0.0;
+              mask[idM + 1 * offset] = 0.0;
               mask[idM + 2 * offset] = 1.0;
+
             } else if(dot2 < tolN || (1.0 - dot2) < tolN) {
-              mask[idM + 1 * offset] = 1.0;
+              mask[idM + 0 * offset] = 0.0;
+              mask[idM + 1 * offset] = 0.0;
+              mask[idM + 2 * offset] = 1.0;
+
+              sgeo[sid * p_Nsgeo + p_T1XID] = T2[0];
+              sgeo[sid * p_Nsgeo + p_T1YID] = T2[1];
+              sgeo[sid * p_Nsgeo + p_T1ZID] = T2[2];
+
+              sgeo[sid * p_Nsgeo + p_T2XID] = T1[0];
+              sgeo[sid * p_Nsgeo + p_T2YID] = T1[1];
+              sgeo[sid * p_Nsgeo + p_T2ZID] = T1[2];
+
+            } else {
+              // corner
+              mask[idM + 0 * offset] = 0.0;
+              mask[idM + 1 * offset] = 0.0;
+              mask[idM + 2 * offset] = 0.0;
             }
           }
 
