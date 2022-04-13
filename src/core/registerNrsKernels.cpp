@@ -185,6 +185,22 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
 
+    kernelName = "initializeMask";
+    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
+
+    auto constructMapBKernelInfo = meshProps;
+    constructMapBKernelInfo["defines/p_largeNumber"] = 1 << 20;
+    kernelName = "constructMapBKernel";
+    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
+
+    auto zeroLargeNumberProps = platform->kernelInfo;
+    zeroLargeNumberProps["defines/p_largeNumber"] = 1 << 20;
+    kernelName = "zeroLargeNumber";
+    fileName = oklpath + "nrs/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, zeroLargeNumberProps);
+
     kernelName = "velocityDirichletBC" + suffix;
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(

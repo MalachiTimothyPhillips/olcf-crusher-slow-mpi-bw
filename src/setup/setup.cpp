@@ -475,14 +475,23 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     kernelName = "velocityRhs" + suffix;
     nrs->velocityRhsKernel = platform->kernels.get(section + kernelName);
 
-    kernelName = "copySYMNormal";
-    nrs->copySYMNormalKernel = platform->kernels.get(section + kernelName);
+    kernelName = "volumeAverageNormal";
+    nrs->volumeAverageNormalKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "fixMask";
     nrs->fixMaskKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "applyZeroNormalMask";
     nrs->applyZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
+
+    kernelName = "initializeMask";
+    nrs->initializeMaskKernel = platform->kernels.get(section + kernelName);
+
+    kernelName = "constructMapB";
+    nrs->constructMapBKernel = platform->kernels.get(section + kernelName);
+
+    kernelName = "zeroLargeNumber";
+    nrs->zeroLargeNumberKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "velocityDirichletBC" + suffix;
     nrs->velocityDirichletBCKernel = platform->kernels.get(section + kernelName);

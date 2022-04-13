@@ -11,7 +11,17 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   auto mesh = nrs->meshV;
 
-  // TODO: fill o_mask appropriately to start
+  auto o_mapB = platform->o_mempool.slice6;
+
+  nrs->constructMapBKernel(mesh->Nelements, o_EToB, mesh->o_faceNodes, o_mapB);
+
+  oogs::startFinish(o_mapB, 1, nrs->fieldOffset, ogsInt, ogsMin, nrs->gsh);
+
+  nrs->zeroLargeNumberKernel(mesh->Nlocal, o_mapB);
+
+  platform->linAlg->fill(3 * nrs->fieldOffset, 0.0, o_mask);
+
+  nrs->initializeMaskKernel(mesh->Nlocal, o_mapB, o_mask);
 
   // normal + count (4 fields)
   auto o_avgNormal = platform->o_mempool.slice0;

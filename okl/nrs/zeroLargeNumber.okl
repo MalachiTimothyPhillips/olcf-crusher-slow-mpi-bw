@@ -1,0 +1,9 @@
+@kernel void zeroLargeNumber(const dlong N,
+                      @restrict dlong*  v)
+{
+  for(dlong id=0;id<N;++id;@tile(p_blockSize,@outer,@inner)) {
+    if(v[id] == p_largeNumber) {
+      v[id] = 0;
+    }
+  }
+}
