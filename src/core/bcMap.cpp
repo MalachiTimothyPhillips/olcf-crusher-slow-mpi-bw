@@ -717,6 +717,9 @@ void remapUnalignedBoundaries(mesh_t *mesh)
       int canRemap = remapBID[bid];
       MPI_Allreduce(MPI_IN_PLACE, &canRemap, 1, MPI_INT, MPI_MIN, platform->comm.mpiComm);
       if (canRemap) {
+        if(platform->comm.mpiRank == 0 && platform->options.compareArgs("VERBOSE","TRUE")){
+          std::cout << "Remapping bid " << bid << " to an aligned type!\n";
+        }
 
         auto alignmentType = alignmentBID[bid];
 
