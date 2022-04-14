@@ -484,8 +484,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     kernelName = "applyZeroNormalMask";
     nrs->applyZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
 
-    kernelName = "initializeMask";
-    nrs->initializeMaskKernel = platform->kernels.get(section + kernelName);
+    kernelName = "initializeZeroNormalMask";
+    nrs->initializeZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "constructMapB";
     nrs->constructMapBKernel = platform->kernels.get(section + kernelName);

@@ -167,7 +167,7 @@ struct nrs_t {
   occa::kernel fixZeroNormalMaskKernel;
   occa::kernel constructMapBKernel;
   occa::kernel zeroLargeNumberKernel;
-  occa::kernel initializeMaskKernel;
+  occa::kernel initializeZeroNormalMaskKernel;
 
   occa::kernel applyZeroNormalMaskKernel;
 };

@@ -1,4 +1,4 @@
-@kernel void initializeMask(const dlong N,
+@kernel void initializeZeroNormalMask(const dlong N,
                       const dlong offset,
                       @restrict const dlong*  mapB,
                       @restrict dfloat * mask)
