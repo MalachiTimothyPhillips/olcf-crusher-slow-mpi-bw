@@ -31,7 +31,7 @@ void writeFactors(const mesh_t &mesh)
   std::string cache_dir;
   cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
   std::cout << "cache_dir: " << cache_dir << std::endl;
-  MPI_FINALIZE();
+  MPI_Finalize();
   exit(0);
 
   std::string udf_dir = cache_dir + "/udf";
@@ -69,6 +69,12 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int verbosity, T NtestsOrTarge
 {
   mesh_t mesh;
   mesh.Nelements = Nelements;
+
+  if (platform->comm.mpiRank == 0)
+    std::cout << "Attach debugger, then press enter to continue\n";
+  if (platform->comm.mpiRank == 0)
+    std::cin.get();
+  MPI_Barrier(platform->comm.mpiComm);
 
   // construct cubature derivative and interpolation operators
   meshLoadReferenceNodesHex3D(&mesh, Nq - 1, cubNq - 1);

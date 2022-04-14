@@ -11,6 +11,8 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
+#include "benchmarkAdvsub.hpp"
+
 namespace {
 
 occa::kernel subcyclingKernel;
@@ -293,7 +295,7 @@ int main(int argc, char** argv)
               << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
 
   // test file dump
-  bencmarkAdvSub(Nelements, Nq, cubNq, 2, 10.0, true);
+  benchmarkAdvsub(Nelements, Nq, cubNq, 2, 10.0, true);
 
   MPI_Finalize();
   exit(0);
