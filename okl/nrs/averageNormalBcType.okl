@@ -1,6 +1,7 @@
 // pre: normal is set to 0
 @kernel void averageNormalBcType(const dlong Nelements,
                                          const dlong offset,
+                                         const dlong bcTypeCheck,
                                          @restrict const dfloat*  sgeo,
                                          @restrict const dlong*  vmapM,
                                          @restrict const int*  EToB,
@@ -16,7 +17,7 @@
         const dlong idM = vmapM[sk];
         const dlong bcType = EToB[f + p_Nfaces * e];
 
-        if(bcType == p_ZERO_NORMAL) {
+        if(bcType == bcTypeCheck) {
 
           const dfloat nx = sgeo[sid * p_Nsgeo + p_NXID];
           const dfloat ny = sgeo[sid * p_Nsgeo + p_NYID];

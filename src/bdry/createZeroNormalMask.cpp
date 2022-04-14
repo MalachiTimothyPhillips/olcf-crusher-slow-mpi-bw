@@ -30,6 +30,7 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   nrs->averageNormalBcTypeKernel(mesh->Nelements,
                                  nrs->fieldOffset,
+                                 ZERO_NORMAL,
                                  mesh->o_sgeo,
                                  mesh->o_vmapM,
                                  o_EToB,
