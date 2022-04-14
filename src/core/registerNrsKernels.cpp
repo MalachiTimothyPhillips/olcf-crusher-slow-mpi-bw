@@ -190,18 +190,6 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
 
-    auto createEToBVKernelInfo = meshProps;
-    createEToBVKernelInfo["defines/p_largeNumber"] = 1 << 20;
-    kernelName = "createEToBV";
-    fileName = oklpath + "nrs/" + kernelName + ".okl";
-    platform->kernels.add(section + kernelName, fileName, createEToBVKernelInfo);
-
-    auto zeroLargeNumberProps = platform->kernelInfo;
-    zeroLargeNumberProps["defines/p_largeNumber"] = 1 << 20;
-    kernelName = "zeroLargeNumber";
-    fileName = oklpath + "nrs/" + kernelName + ".okl";
-    platform->kernels.add(section + kernelName, fileName, zeroLargeNumberProps);
-
     kernelName = "velocityDirichletBC" + suffix;
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(

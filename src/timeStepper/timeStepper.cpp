@@ -322,7 +322,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     mesh->move();
 
     if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
-      createZeroNormalMask(nrs, nrs->o_EToB, nrs->o_zeroNormalMaskVelocity);
+      createZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_EToBVMeshVelocity, nrs->o_zeroNormalMaskMeshVelocity);
     }
 
     if (nrs->cht)

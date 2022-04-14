@@ -201,6 +201,7 @@ set(SRC
     src/setup/setup.cpp
     src/core/alignment.cpp
     src/core/registerNrsKernels.cpp
+    src/bdry/createEToBV.cpp
     src/bdry/applyDirichlet.cpp
     src/bdry/applyZeroNormalMask.cpp
     src/bdry/createZeroNormalMask.cpp

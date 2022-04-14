@@ -1,4 +1,5 @@
 #include "createZeroNormalMask.hpp"
+#include "createEToBV.hpp"
 #include "applyZeroNormalMask.hpp"
 #include "nrs.hpp"
 #include "meshSetup.hpp"
@@ -487,12 +488,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     kernelName = "initializeZeroNormalMask";
     nrs->initializeZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
 
-    kernelName = "createEToBV";
-    nrs->createEToBVKernel = platform->kernels.get(section + kernelName);
-
-    kernelName = "zeroLargeNumber";
-    nrs->zeroLargeNumberKernel = platform->kernels.get(section + kernelName);
-
     kernelName = "velocityDirichletBC" + suffix;
     nrs->velocityDirichletBCKernel = platform->kernels.get(section + kernelName);
 
@@ -756,7 +751,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       ellipticSolveSetup(nrs->uvwSolver);
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
-        createZeroNormalMask(nrs, nrs->uvwSolver->o_EToB, nrs->o_zeroNormalMaskVelocity);
+        nrs->o_EToBVVelocity = platform->device.malloc(nrs->meshV->Nlocal * sizeof(dlong));
+        createEToBV(nrs->meshV, nrs->uvwSolver->EToB, nrs->o_EToBVVelocity);
+        createZeroNormalMask(nrs, nrs->uvwSolver->o_EToB, nrs->o_EToBVVelocity, nrs->o_zeroNormalMaskVelocity);
 
         nrs->uvwSolver->applyZeroNormalMask =
             [nrs](dlong Nelements, occa::memory &o_elementList, occa::memory &o_x) {
@@ -1002,7 +999,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       ellipticSolveSetup(nrs->meshSolver);
       if (unalignedBoundary) {
         nrs->o_zeroNormalMaskMeshVelocity = platform->device.malloc(3 * nrs->fieldOffset * sizeof(dfloat));
-        createZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_zeroNormalMaskMeshVelocity);
+        nrs->o_EToBVMeshVelocity = platform->device.malloc(nrs->meshV->Nlocal * sizeof(dlong));
+        createEToBV(nrs->meshV, nrs->meshSolver->EToB, nrs->o_EToBVMeshVelocity);
+        createZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_EToBVMeshVelocity, nrs->o_zeroNormalMaskMeshVelocity);
         nrs->meshSolver->applyZeroNormalMask =
             [nrs](dlong Nelements, occa::memory &o_elementList, occa::memory &o_x) {
               applyZeroNormalMask(nrs,

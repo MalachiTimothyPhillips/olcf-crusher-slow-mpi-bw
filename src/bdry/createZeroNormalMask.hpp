@@ -5,6 +5,6 @@
 
 class nrs_t;
 
-void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask);
+void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory& o_EToBV, occa::memory &o_mask);
 
 #endif
