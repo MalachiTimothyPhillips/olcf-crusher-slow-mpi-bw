@@ -292,6 +292,9 @@ int main(int argc, char** argv)
               << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
               << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
 
+  // test file dump
+  bencmarkAdvSub(Nelements, Nq, cubNq, 2, 10.0, true);
+
   MPI_Finalize();
   exit(0);
 }
