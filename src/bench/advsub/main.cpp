@@ -287,18 +287,10 @@ int main(int argc, char** argv)
   const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
 
   if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << N
-              << " cubN=" << cubN
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests << " N=" << N
+              << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
+              << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
 
   MPI_Finalize();
   exit(0);
