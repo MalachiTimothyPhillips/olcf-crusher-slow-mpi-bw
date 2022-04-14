@@ -15,7 +15,9 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   nrs->createEToBVKernel(mesh->Nelements, o_EToB, mesh->o_faceNodes, o_EToBV);
 
-  oogs::startFinish(o_EToBV, 1, nrs->fieldOffset, ogsInt, ogsMin, nrs->gsh);
+  // TODO: implement int type reductions in oogs
+  //oogs::startFinish(o_EToBV, 1, nrs->fieldOffset, ogsInt, ogsMin, nrs->gsh);
+  ogsGatherScatter(o_EToBV, ogsInt, ogsMin, nrs->gsh->ogs);
 
   nrs->zeroLargeNumberKernel(mesh->Nlocal, o_EToBV);
 
