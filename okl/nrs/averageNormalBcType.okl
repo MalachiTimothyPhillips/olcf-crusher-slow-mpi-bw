@@ -1,5 +1,5 @@
 // pre: normal is set to 0
-@kernel void volumeAverageNormal(const dlong Nelements,
+@kernel void averageNormalBcType(const dlong Nelements,
                                          const dlong offset,
                                          @restrict const dfloat*  sgeo,
                                          @restrict const dlong*  vmapM,

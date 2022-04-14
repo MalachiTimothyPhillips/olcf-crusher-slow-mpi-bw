@@ -163,7 +163,7 @@ struct nrs_t {
 
   occa::memory o_zeroNormalMaskVelocity;
   occa::memory o_zeroNormalMaskMeshVelocity;
-  occa::kernel volumeAverageNormalKernel;
+  occa::kernel averageNormalBcTypeKernel;
   occa::kernel fixZeroNormalMaskKernel;
   occa::kernel createEToBVKernel;
   occa::kernel zeroLargeNumberKernel;

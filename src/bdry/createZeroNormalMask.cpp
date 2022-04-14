@@ -28,7 +28,7 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
   // normal + count (4 fields)
   auto o_avgNormal = platform->o_mempool.slice0;
 
-  nrs->volumeAverageNormalKernel(mesh->Nelements,
+  nrs->averageNormalBcTypeKernel(mesh->Nelements,
                                  nrs->fieldOffset,
                                  mesh->o_sgeo,
                                  mesh->o_vmapM,

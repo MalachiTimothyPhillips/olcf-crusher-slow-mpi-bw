@@ -475,8 +475,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     kernelName = "velocityRhs" + suffix;
     nrs->velocityRhsKernel = platform->kernels.get(section + kernelName);
 
-    kernelName = "volumeAverageNormal";
-    nrs->volumeAverageNormalKernel = platform->kernels.get(section + kernelName);
+    kernelName = "averageNormalBcType";
+    nrs->averageNormalBcTypeKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "fixZeroNormalMask";
     nrs->fixZeroNormalMaskKernel = platform->kernels.get(section + kernelName);

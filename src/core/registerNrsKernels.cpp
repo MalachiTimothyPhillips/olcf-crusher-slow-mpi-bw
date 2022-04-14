@@ -174,7 +174,7 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     auto zeroNormalProps = kernelInfoBC;
     zeroNormalProps["defines/p_ZERO_NORMAL"] = ZERO_NORMAL;
     zeroNormalProps["defines/p_NO_OP"] = NO_OP;
-    kernelName = "volumeAverageNormal";
+    kernelName = "averageNormalBcType";
     fileName = oklpath + "nrs/" + kernelName + ".okl";
     platform->kernels.add(section + kernelName, fileName, zeroNormalProps);
 
