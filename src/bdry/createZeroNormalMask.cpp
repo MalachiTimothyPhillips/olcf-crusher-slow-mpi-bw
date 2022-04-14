@@ -35,7 +35,7 @@ void createZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask
 
   oogs::startFinish(o_avgNormal, 4, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
 
-  nrs->fixMaskKernel(mesh->Nelements,
+  nrs->fixZeroNormalMaskKernel(mesh->Nelements,
                      nrs->fieldOffset,
                      mesh->o_sgeo,
                      mesh->o_vmapM,

@@ -18,7 +18,7 @@ dfloat dot(const dfloat a0, const dfloat a1, const dfloat a2, const dfloat b0, c
   return a0 * b0 + a1 * b1 + a2 * b2;
 }
 
-@kernel void fixMask(const dlong Nelements,
+@kernel void fixZeroNormalMask(const dlong Nelements,
                                          const dlong offset,
                                          @restrict dfloat*  sgeo,
                                          @restrict const dlong*  vmapM,

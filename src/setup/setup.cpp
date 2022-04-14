@@ -478,8 +478,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     kernelName = "volumeAverageNormal";
     nrs->volumeAverageNormalKernel = platform->kernels.get(section + kernelName);
 
-    kernelName = "fixMask";
-    nrs->fixMaskKernel = platform->kernels.get(section + kernelName);
+    kernelName = "fixZeroNormalMask";
+    nrs->fixZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
 
     kernelName = "applyZeroNormalMask";
     nrs->applyZeroNormalMaskKernel = platform->kernels.get(section + kernelName);
