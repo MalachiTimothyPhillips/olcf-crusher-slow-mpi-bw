@@ -11,6 +11,8 @@
 #include "platform.hpp"
 #include "configReader.hpp"
 
+#include "benchmarkAdvsub.hpp"
+
 namespace {
 
 occa::kernel subcyclingKernel;
@@ -194,6 +196,14 @@ int main(int argc, char** argv)
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
   const int Nthreads =  omp_get_max_threads();
 
+#if 1
+  if(Ntests != -1){
+    benchmarkAdvsub(Nelements, Nq, cubNq, nEXT, dealias, 2, Ntests, true);
+  } else {
+    benchmarkAdvsub(Nelements, Nq, cubNq, nEXT, dealias, 2, 10.0, true);
+  }
+#else
+
   // build+load kernel
   occa::properties props = platform->kernelInfo + meshKernelProperties(N);
   static constexpr int nFields = 3;
@@ -287,18 +297,14 @@ int main(int argc, char** argv)
   const double gflops = (size * flopCount * Nelements / elapsed) / 1.e9;
 
   if(rank == 0)
-    std::cout << "MPItasks=" << size
-              << " OMPthreads=" << Nthreads
-              << " NRepetitions=" << Ntests
-              << " N=" << N
-              << " cubN=" << cubN
-              << " Nelements=" << size * Nelements
-              << " elapsed time=" << elapsed
-              << " wordSize=" << 8*wordSize
-              << " GDOF/s=" << GDOFPerSecond
-              << " GB/s=" << bw
-              << " GFLOPS/s=" << gflops
-              << "\n";
+    std::cout << "MPItasks=" << size << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests << " N=" << N
+              << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << size * Nelements
+              << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
+              << " GB/s=" << bw << " GFLOPS/s=" << gflops << "\n";
+
+  // test file dump
+  benchmarkAdvsub(Nelements, Nq, cubNq, 2, 10.0, true);
+#endif
 
   MPI_Finalize();
   exit(0);
