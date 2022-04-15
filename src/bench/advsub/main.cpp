@@ -185,7 +185,6 @@ int main(int argc, char** argv)
   const int Nq = N + 1;
   Np = Nq * Nq * Nq;
   const int cubNq = cubN + 1;
-  std::cout << "Nq = " << Nq << ", cubNq = " << cubNq << "\n";
   cubNp = cubNq * cubNq * cubNq;
   fieldOffset = Np * Nelements;
   const int pageW = ALIGN_SIZE / sizeof(dfloat);
@@ -196,6 +195,14 @@ int main(int argc, char** argv)
 
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
   const int Nthreads =  omp_get_max_threads();
+
+#if 1
+  if(Ntests != -1){
+    benchmarkAdvsub(Nelements, Nq, cubNq, nEXT, dealias, 2, Ntests, true);
+  } else {
+    benchmarkAdvsub(Nelements, Nq, cubNq, nEXT, dealias, 2, 10.0, true);
+  }
+#else
 
   // build+load kernel
   occa::properties props = platform->kernelInfo + meshKernelProperties(N);
@@ -297,6 +304,7 @@ int main(int argc, char** argv)
 
   // test file dump
   benchmarkAdvsub(Nelements, Nq, cubNq, 2, 10.0, true);
+#endif
 
   MPI_Finalize();
   exit(0);
