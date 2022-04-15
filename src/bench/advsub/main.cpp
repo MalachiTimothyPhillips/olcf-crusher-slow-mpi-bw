@@ -185,6 +185,7 @@ int main(int argc, char** argv)
   const int Nq = N + 1;
   Np = Nq * Nq * Nq;
   const int cubNq = cubN + 1;
+  std::cout << "Nq = " << Nq << ", cubNq = " << cubNq << "\n";
   cubNp = cubNq * cubNq * cubNq;
   fieldOffset = Np * Nelements;
   const int pageW = ALIGN_SIZE / sizeof(dfloat);

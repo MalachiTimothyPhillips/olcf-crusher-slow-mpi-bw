@@ -18,7 +18,9 @@ std::string dumpMatrix(const dfloat *mat, const int N, const int M, std::string 
   buffer << "const dfloat " << matName << "[" << N << "][" << M << "] = {\n";
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < M; ++j) {
-      buffer << mat[i * M + j] << ", ";
+      buffer << "  " << mat[i * M + j];
+      // omit last
+      if(i != (N-1) && j != (M-1)) buffer << ",";
     }
     buffer << "\n";
   }
@@ -29,10 +31,21 @@ std::string dumpMatrix(const dfloat *mat, const int N, const int M, std::string 
 void writeFactors(const mesh_t &mesh)
 {
   std::string cache_dir;
+  
+  if(!getenv("NEKRS_CACHE_DIR")){
+    // NEKRS_CACHE_DIR may not be set in the context of the benchmarker, so
+    // let's set it here to the OCCA_CACHE_DIR
+    if(getenv("OCCA_CACHE_DIR")){
+      // OCCA_CACHE_DIR is set, use that
+      setenv("NEKRS_CACHE_DIR", getenv("OCCA_CACHE_DIR"), 0);
+    } else {
+      // what else can we do at this point?
+      setenv("NEKRS_CACHE_DIR", getenv("PWD"), 0);
+    }
+  }
+
   cache_dir.assign(getenv("NEKRS_CACHE_DIR"));
   std::cout << "cache_dir: " << cache_dir << std::endl;
-  MPI_Finalize();
-  exit(0);
 
   std::string udf_dir = cache_dir + "/udf";
   const std::string dataFile = udf_dir + "/cubatureData.okl";
@@ -69,6 +82,12 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int verbosity, T NtestsOrTarge
 {
   mesh_t mesh;
   mesh.Nelements = Nelements;
+
+  for(int currRank = 0; currRank < platform->comm.mpiCommSize; ++currRank){
+    if(platform->comm.mpiRank == currRank) {
+      printf("rank %d: pid<%d>\n", platform->comm.mpiRank, ::getpid());
+    }
+  }
 
   if (platform->comm.mpiRank == 0)
     std::cout << "Attach debugger, then press enter to continue\n";
