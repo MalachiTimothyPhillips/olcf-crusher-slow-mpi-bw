@@ -157,7 +157,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
         std::cout << " MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
       }
       if(verbosity > 0){
-        std::cout << " N = " << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << Nelements
+        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << Nelements
                   << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
                   << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
       }
