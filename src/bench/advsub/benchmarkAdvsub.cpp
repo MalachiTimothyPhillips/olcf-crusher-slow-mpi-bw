@@ -48,6 +48,14 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   props["includes"] += interpDataFile.c_str();
   props["includes"] += diffInterpDataFile.c_str();
 
+  std::string fileName = 
+    installDir + "/okl/bench/advsub/readCubDMatrix.okl";
+  auto readCubDMatrixKernel = platform->device.buildKernel(fileName, props, true);
+
+  fileName = 
+    installDir + "/okl/bench/advsub/readIMatrix.okl";
+  auto readIMatrixKernel = platform->device.buildKernel(fileName, props, true);
+
   std::string kernelName;
   if(dealias){
     kernelName = "subCycleStrongCubatureVolumeHex3D";
@@ -56,7 +64,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   }
 
   const std::string ext = (platform->device.mode() == "Serial") ? ".c" : ".okl";
-  std::string fileName = 
+  fileName = 
     installDir + "/okl/nrs/" + kernelName + ext;
   
   // currently lacking a native implementation of the non-dealiased kernel
@@ -104,6 +112,10 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   auto o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv.data());
   auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
   auto o_Ud = platform->device.malloc(nFields * fieldOffset * wordSize, Ud.data());
+
+  // popular cubD, cubInterpT with correct data
+  readCubDMatrixKernel(o_cubD);
+  readIMatrixKernel(o_cubInterpT);
 
   auto kernelRunner = [&](occa::kernel & subcyclingKernel){
     const auto c0 = 0.1;
