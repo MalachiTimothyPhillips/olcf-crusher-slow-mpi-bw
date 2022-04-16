@@ -80,7 +80,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   auto advSubKernelBuilder = [&](int kernelVariant){
     auto newProps = props;
     newProps["defines/p_knl"] = kernelVariant;
-    return platform->device.buildKernel(fileName, props, true);
+    return platform->device.buildKernel(fileName, newProps, true);
   };
 
   const int wordSize = sizeof(dfloat);
