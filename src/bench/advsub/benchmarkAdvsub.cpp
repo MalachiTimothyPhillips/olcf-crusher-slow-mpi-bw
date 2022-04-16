@@ -75,6 +75,10 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
     // TODO: reduce number of kernel variants
     constexpr int Nkernels = 19;
     for(int i = 1; i < Nkernels; ++i){
+
+      // v12 requires cubNq <=13
+      if(i == 12 && cubNq > 13) continue;
+
       kernelVariants.push_back(i);
     }
   }
