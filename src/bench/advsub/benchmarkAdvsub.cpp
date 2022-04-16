@@ -14,6 +14,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
 {
   static constexpr int nFields = 3;
   const int N = Nq-1;
+  const int cubN = cubNq - 1;
   const int Np = Nq * Nq * Nq;
   const int cubNp = cubNq * cubNq * cubNq;
   int fieldOffset = Np * Nelements;
@@ -61,9 +62,123 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   // currently lacking a native implementation of the non-dealiased kernel
   if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
+  constexpr int Nkernels = 1;
+  std::vector<int> kernelVariants;
+  if(platform->serial){
+    kernelVariants.push_back(0);
+  } else {
+    kernelVariants.push_back(0);
+  }
+
+  if(kernelVariants.size() == 1 && !requiresBenchmark){
+    auto newProps = props;
+    newProps["defines/p_knl"] = kernelVariants.back();
+    return platform->device.buildKernel(fileName, newProps, true);
+  }
+
+  auto advSubKernelBuilder = [&](int kernelVariant){
+    auto newProps = props;
+    newProps["defines/p_knl"] = kernelVariant;
+    return platform->device.buildKernel(fileName, props, true);
+  };
+
+  const int wordSize = sizeof(dfloat);
+
+  auto invLMM   = randomVector<dfloat>(Nelements * Np);
+  auto cubD  = randomVector<dfloat>(cubNq * cubNq);
+  auto NU  = randomVector<dfloat>(nFields * fieldOffset);
+  auto conv  = randomVector<dfloat>(nFields * cubatureOffset * nEXT);
+  auto cubInterpT  = randomVector<dfloat>(Nq * cubNq);
+  auto Ud  = randomVector<dfloat>(nFields * fieldOffset);
+  occa::memory o_BdivW;
+
+  // elementList[e] = e
+  std::vector<dlong> elementList(Nelements);
+  std::iota(elementList.begin(), elementList.end(), 0);
+  auto o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList.data());
+
+  auto o_invLMM = platform->device.malloc(Nelements * Np * wordSize, invLMM.data());
+  auto o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD.data());
+  auto o_NU = platform->device.malloc(nFields * fieldOffset * wordSize, NU.data());
+  auto o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv.data());
+  auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
+  auto o_Ud = platform->device.malloc(nFields * fieldOffset * wordSize, Ud.data());
+
+  auto kernelRunner = [&](occa::kernel & subcyclingKernel){
+    const auto c0 = 0.1;
+    const auto c1 = 0.2;
+    const auto c2 = 0.3;
+    if(!dealias) {
+      subcyclingKernel(Nelements, o_elementList, o_cubD, fieldOffset,
+        0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
+    } else {
+      subcyclingKernel(Nelements, o_elementList, o_cubD, o_cubInterpT, fieldOffset,
+        cubatureOffset, 0, o_invLMM, o_BdivW, c0, c1, c2, o_conv, o_Ud, o_NU);
+    }
+  };
+
   auto subcyclingKernel = platform->device.buildKernel(fileName, props, true);
 
-  return occa::kernel();
+  auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
+    const dfloat GDOFPerSecond = nFields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
+
+    size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
+    bytesPerElem += Np; // inv mass matrix
+    bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
+
+    size_t otherBytes = cubNq * cubNq; // D
+    if(cubNq > Nq){
+      otherBytes += Nq * cubNq; // interpolator
+    }
+    otherBytes   *= wordSize;
+    bytesPerElem *= wordSize;
+    const double bw = ( (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
+
+    double flopCount = 0.0; // per elem basis
+    if(cubNq > Nq){
+      flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
+      flopCount += 18. * cubNp * cubNq; // apply Dcub
+      flopCount += 9. * Np; // compute NU
+      flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    } else {
+      flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
+    }
+    const double gflops = ( flopCount * Nelements / elapsed) / 1.e9;
+    const int Nthreads =  omp_get_max_threads();
+
+    if(platform->comm.mpiRank == 0 && !skipPrint){
+
+      if(verbosity > 0){
+        std::cout << "advsub:";
+      }
+
+      if(verbosity > 1){
+        std::cout << " MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
+      }
+      if(verbosity > 0){
+        std::cout << " N = " << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << Nelements
+                  << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
+                  << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
+      }
+    }
+  };
+
+  auto printCallBack = [&](int kernelVariant, double elapsed, int Ntests) {
+    printPerformanceInfo(kernelVariant, elapsed, Ntests, verbosity < 2);
+  };
+
+  auto kernelAndTime =
+      benchmarkKernel(advSubKernelBuilder, kernelRunner, printCallBack, kernelVariants, NtestsOrTargetTime);
+
+  free(o_elementList);
+  free(o_invLMM);
+  free(o_cubD);
+  free(o_NU);
+  free(o_conv);
+  free(o_cubInterpT);
+  free(o_Ud);
+
+  return kernelAndTime.first;
 }
 
 template
