@@ -85,11 +85,12 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
     return platform->device.buildKernel(fileName, newProps, true);
   }
 
-  auto advSubKernelBuilder = [&](int kernelVariant){
+  occa::kernel referenceKernel;
+  {
     auto newProps = props;
-    newProps["defines/p_knl"] = kernelVariant;
-    return platform->device.buildKernel(fileName, newProps, true);
-  };
+    newProps["defines/p_knl"] = kernelVariants.back();
+    referenceKernel = platform->device.buildKernel(fileName, newProps, true);
+  }
 
   const int wordSize = sizeof(dfloat);
 
@@ -130,7 +131,33 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
     }
   };
 
-  auto subcyclingKernel = platform->device.buildKernel(fileName, props, true);
+  auto advSubKernelBuilder = [&](int kernelVariant){
+    auto newProps = props;
+    newProps["defines/p_knl"] = kernelVariant;
+    auto kernel = platform->device.buildKernel(fileName, newProps, true);
+
+    // perform correctness check
+    std::vector<dfloat> referenceResults(3*fieldOffset);
+    std::vector<dfloat> results(3*fieldOffset);
+
+    kernelRunner(referenceKernel);
+    o_NU.copyTo(referenceResults.data(), referenceResults.size() * sizeof(dfloat));
+    
+    kernelRunner(kernel);
+    o_NU.copyTo(results.data(), results.size() * sizeof(dfloat));
+
+    double err = 0.0;
+    for(auto i = 0; i < results.size(); ++i){
+      err += std::max(err, std::abs(results[i] - referenceResults[i]));
+    }
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Error in kernel " << kernelVariant << " is " << err << " compared to reference implementation.\n";
+    }
+
+    return kernel;
+  };
+
 
   auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
     const dfloat GDOFPerSecond = nFields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
