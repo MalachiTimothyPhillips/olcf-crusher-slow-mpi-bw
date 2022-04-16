@@ -62,12 +62,13 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   // currently lacking a native implementation of the non-dealiased kernel
   if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
 
-  constexpr int Nkernels = 1;
-  std::vector<int> kernelVariants;
-  if(platform->serial){
-    kernelVariants.push_back(0);
-  } else {
-    kernelVariants.push_back(0);
+  std::vector<int> kernelVariants = {0};
+  if(!platform->serial && dealias){
+    // TODO: reduce number of kernel variants
+    constexpr int Nkernels = 19;
+    for(int i = 1; i < Nkernels; ++i){
+      kernelVariants.push_back(i);
+    }
   }
 
   if(kernelVariants.size() == 1 && !requiresBenchmark){
