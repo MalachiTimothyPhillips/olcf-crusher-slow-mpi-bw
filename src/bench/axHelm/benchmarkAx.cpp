@@ -119,7 +119,8 @@ occa::kernel benchmarkAx(int Nelements,
     occa::kernel referenceKernel;
     {
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariants.front();
+      if (!platform->serial)
+        newProps["defines/p_knl"] = kernelVariants.front();
 
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
@@ -139,7 +140,8 @@ occa::kernel benchmarkAx(int Nelements,
 
     auto axKernelBuilder = [&](int kernelVariant) {
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariant;
+      if (!platform->serial)
+        newProps["defines/p_knl"] = kernelVariant;
 
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
@@ -225,13 +227,15 @@ occa::kernel benchmarkAx(int Nelements,
 
     auto kernelAndTime =
         benchmarkKernel(axKernelBuilder, kernelRunner, printCallBack, kernelVariants, NtestsOrTargetTime);
-    int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
-    
-    // print only the fastest kernel
-    if(verbosity == 1){
-      printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
-    }
 
+    if (kernelAndTime.first.properties().has("defines/p_knl")) {
+      int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
+
+      // print only the fastest kernel
+      if (verbosity == 1) {
+        printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
+      }
+    }
 
     free(o_D);
     free(o_S);

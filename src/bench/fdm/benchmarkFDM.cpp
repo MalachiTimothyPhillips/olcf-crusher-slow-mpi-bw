@@ -90,7 +90,8 @@ occa::kernel benchmarkFDM(int Nelements,
     occa::kernel referenceKernel;
     {
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariants.front();
+      if (!platform->serial)
+        newProps["defines/p_knl"] = kernelVariants.front();
 
       const std::string kernelName = "fusedFDM";
       const std::string ext = platform->serial ? ".c" : ".okl";
@@ -117,7 +118,8 @@ occa::kernel benchmarkFDM(int Nelements,
 
     auto fdmKernelBuilder = [&](int kernelVariant) {
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariant;
+      if (!platform->serial)
+        newProps["defines/p_knl"] = kernelVariant;
 
       const std::string kernelName = "fusedFDM";
       const std::string ext = platform->serial ? ".c" : ".okl";
@@ -213,11 +215,13 @@ occa::kernel benchmarkFDM(int Nelements,
     auto kernelAndTime =
         benchmarkKernel(fdmKernelBuilder, kernelRunner, printCallBack, kernelVariants, NtestsOrTargetTime);
 
-    int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
-    
-    // print only the fastest kernel
-    if(verbosity == 1){
-      printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
+    if (kernelAndTime.first.properties().has("defines/p_knl")) {
+      int bestKernelVariant = static_cast<int>(kernelAndTime.first.properties()["defines/p_knl"]);
+
+      // print only the fastest kernel
+      if (verbosity == 1) {
+        printPerformanceInfo(bestKernelVariant, kernelAndTime.second, 0, false);
+      }
     }
 
     free(o_Sx);
