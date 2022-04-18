@@ -83,7 +83,7 @@ occa::kernel benchmarkAx(int Nelements,
     if(kernelVariants.size() == 1 && !requiresBenchmark){
 
       auto newProps = props;
-      if(kernelName == "ellipticPartialAxHex3D"){
+      if (kernelName == "ellipticPartialAxHex3D" && !platform->serial) {
         newProps["defines/p_knl"] = kernelVariants.back();
       }
 
@@ -160,7 +160,7 @@ occa::kernel benchmarkAx(int Nelements,
         err = std::max(err, std::abs(refResults[i] - results[i]));
       }
 
-      if (verbosity > 1) {
+      if (platform->comm.mpiRank == 0 && verbosity > 1) {
         std::cout << "Error in kernel compared to reference implementation " << kernelVariant << ": " << err
                   << std::endl;
       }
