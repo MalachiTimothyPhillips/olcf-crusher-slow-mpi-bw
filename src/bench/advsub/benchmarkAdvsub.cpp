@@ -9,6 +9,23 @@
 #include "omp.h"
 
 namespace{
+
+// for a given Nq, return the largest cubNq
+const std::map<int, int> maximumCubaturePoints = {
+  {2,3},
+  {3,5},
+  {4,6},
+  {5,8},
+  {6,9},
+  {7,11},
+  {8,12},
+  {9,14},
+  {10,15},
+  {11,17},
+  {12,18},
+  {13,20},
+  {14,21},
+};
 struct CallParameters{
   int Nfields;
   int Nelements;
@@ -42,6 +59,22 @@ template <typename T>
 occa::kernel
 benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int verbosity, T NtestsOrTargetTime, bool requiresBenchmark)
 {
+  if(Nq > 14){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Error: maximum Nq of 14 has been exceed with Nq=" << Nq << ".\n";
+    }
+    ABORT(1);
+  }
+
+  const auto largestCubNq = maximumCubaturePoints.at(Nq);
+  if(cubNq > largestCubNq){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Error: maximum cubNq for Nq = " << Nq << " is " << largestCubNq << ".\n";
+      std::cout << "cubNq as specified is " << cubNq << ".\n";
+    }
+    ABORT(1);
+  }
+
   static constexpr int NVFields = 3;
   const int N = Nq-1;
   const int cubN = cubNq - 1;
