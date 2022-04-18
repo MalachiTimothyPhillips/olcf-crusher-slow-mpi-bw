@@ -121,6 +121,8 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
 
       kernelVariants.push_back(i);
     }
+  } else if(!platform->serial && dealias && Nfields == 1){
+    kernelVariants.push_back(8);
   }
 
   if(kernelVariants.size() == 1 && !requiresBenchmark){
@@ -240,7 +242,7 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
         std::cout << " MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
       }
       if(verbosity > 0){
-        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << << " Nfields=" << Nfields << " Nelements=" << Nelements
+        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nfields=" << Nfields << " Nelements=" << Nelements
                   << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
                   << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
       }
