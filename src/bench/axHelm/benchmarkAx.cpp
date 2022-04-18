@@ -116,15 +116,16 @@ occa::kernel benchmarkAx(int Nelements,
 
     auto o_lambda = platform->device.malloc(2 * Np * Nelements * wordSize, lambda.data());
 
-    auto axKernelBuilder = [&](int kernelVariant) {
+    occa::kernel referenceKernel;
+    {
       auto newProps = props;
-      newProps["defines/p_knl"] = kernelVariant;
+      newProps["defines/p_knl"] = kernelVariants.front();
 
       const std::string ext = platform->serial ? ".c" : ".okl";
       const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
 
-      return platform->device.buildKernel(fileName, newProps, true);
-    };
+      referenceKernel = platform->device.buildKernel(fileName, newProps, true);
+    }
 
     auto kernelRunner = [&](occa::kernel &kernel) {
       const int loffset = 0;
@@ -134,6 +135,37 @@ occa::kernel benchmarkAx(int Nelements,
       } else {
         kernel(Nelements, offset, loffset, o_elementList, o_ggeo, o_D, o_S, o_lambda, o_q, o_Aq);
       }
+    };
+
+    auto axKernelBuilder = [&](int kernelVariant) {
+      auto newProps = props;
+      newProps["defines/p_knl"] = kernelVariant;
+
+      const std::string ext = platform->serial ? ".c" : ".okl";
+      const std::string fileName = installDir + "/okl/elliptic/" + kernelName + ext;
+
+      auto kernel = platform->device.buildKernel(fileName, newProps, true);
+
+      std::vector<FPType> refResults((Ndim * Np) * Nelements);
+      std::vector<FPType> results((Ndim * Np) * Nelements);
+
+      kernelRunner(referenceKernel);
+      o_Aq.copyTo(refResults.data(), refResults.size() * sizeof(FPType));
+
+      kernelRunner(kernel);
+      o_Aq.copyTo(results.data(), results.size() * sizeof(FPType));
+
+      FPType err = 0.0;
+      for (int i = 0; i < refResults.size(); ++i) {
+        err = std::max(err, std::abs(refResults[i] - results[i]));
+      }
+
+      if (verbosity > 1) {
+        std::cout << "Error in kernel compared to reference implementation " << kernelVariant << ": " << err
+                  << std::endl;
+      }
+
+      return kernel;
     };
 
     auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
