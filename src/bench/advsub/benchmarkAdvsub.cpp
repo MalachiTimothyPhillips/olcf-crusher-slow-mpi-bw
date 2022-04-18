@@ -242,9 +242,22 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
         std::cout << " MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
       }
       if(verbosity > 0){
-        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nfields=" << Nfields << " Nelements=" << Nelements
-                  << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
-                  << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
+        std::cout << " N=" << N;
+        if(dealias){
+          std::cout << " cubN=" << cubN;
+        }
+
+        if(verbosity > 1){
+          std::cout << " nEXT=" << nEXT;
+        }
+
+        std::cout << " Nfields=" << Nfields;
+        if(verbosity > 1){
+          std::cout << " Nelements=" << Nelements;
+          std::cout << " elapsed time=" << elapsed;
+        }
+        std::cout << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
+                  << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernelVer=" << kernelVariant << "\n";
       }
     }
   };
