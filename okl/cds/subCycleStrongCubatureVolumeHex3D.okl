@@ -24,7 +24,8 @@
 
  */
 
-@kernel void subCycleStrongCubatureVolumeHex3D(const dlong Nelements,
+#if p_knl==0
+@kernel void subCycleStrongCubatureVolumeHex3D_v0(const dlong Nelements,
                                                   @restrict const dlong*   elementList,
                                                   @restrict const dfloat*  cubD,
                                                   @restrict const dfloat*  cubInterpT,
@@ -251,3 +252,4 @@
     }
   }
 }
+#endif

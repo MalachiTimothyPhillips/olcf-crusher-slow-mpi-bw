@@ -8,11 +8,41 @@
 #include "kernelBenchmarker.hpp"
 #include "omp.h"
 
+namespace{
+struct CallParameters{
+  int Nfields;
+  int Nelements;
+  int Nq;
+  int cubNq;
+  int nEXT;
+  bool dealias;
+};
+}
+
+namespace std
+{
+  template<> struct less<CallParameters>
+  {
+    bool operator() (const CallParameters& lhs, const CallParameters& rhs) const
+    {
+      auto tier = [](const CallParameters& v)
+      {
+        return std::tie(v.Nfields, v.Nelements, v.Nq, v.cubNq, v.nEXT, v.dealias);
+      };
+      return tier(lhs) < tier(rhs);
+    }
+  };
+}
+
+namespace{
+std::map<CallParameters, occa::kernel> cachedResults;
+}
+
 template <typename T>
 occa::kernel
-benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int verbosity, T NtestsOrTargetTime, bool requiresBenchmark)
+benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int verbosity, T NtestsOrTargetTime, bool requiresBenchmark)
 {
-  static constexpr int nFields = 3;
+  static constexpr int NVFields = 3;
   const int N = Nq-1;
   const int cubN = cubNq - 1;
   const int Np = Nq * Nq * Nq;
@@ -34,7 +64,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   props["defines/p_cubNq"] = cubNq;
   props["defines/p_cubNp"] = cubNp;
   props["defines/p_nEXT"] = nEXT;
-  props["defines/p_NVfields"] = nFields;
+  props["defines/p_NVfields"] = NVFields;
   props["defines/p_MovingMesh"] = platform->options.compareArgs("MOVING MESH", "TRUE");
 
   std::string installDir;
@@ -67,11 +97,21 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
   fileName = 
     installDir + "/okl/nrs/" + kernelName + ext;
   
+  if(Nfields == 1){
+    fileName = 
+      installDir + "/okl/cds/" + kernelName + ext;
+  }
+  
   // currently lacking a native implementation of the non-dealiased kernel
-  if(!dealias) fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
+  if(!dealias) {
+    fileName = installDir + "/okl/nrs/subCycleHex3D.okl";
+    if(Nfields == 1){
+      fileName = installDir + "/okl/cds/subCycleHex3D.okl";
+    }
+  }
 
   std::vector<int> kernelVariants = {0};
-  if(!platform->serial && dealias){
+  if(!platform->serial && dealias && Nfields == 3){
     // TODO: reduce number of kernel variants
     constexpr int Nkernels = 14;
     for(int i = 1; i < Nkernels; ++i){
@@ -100,10 +140,10 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
 
   auto invLMM   = randomVector<dfloat>(Nelements * Np);
   auto cubD  = randomVector<dfloat>(cubNq * cubNq);
-  auto NU  = randomVector<dfloat>(nFields * fieldOffset);
-  auto conv  = randomVector<dfloat>(nFields * cubatureOffset * nEXT);
+  auto NU  = randomVector<dfloat>(NVFields * fieldOffset);
+  auto conv  = randomVector<dfloat>(NVFields * cubatureOffset * nEXT);
   auto cubInterpT  = randomVector<dfloat>(Nq * cubNq);
-  auto Ud  = randomVector<dfloat>(nFields * fieldOffset);
+  auto Ud  = randomVector<dfloat>(NVFields * fieldOffset);
   occa::memory o_BdivW;
 
   // elementList[e] = e
@@ -113,10 +153,10 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
 
   auto o_invLMM = platform->device.malloc(Nelements * Np * wordSize, invLMM.data());
   auto o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD.data());
-  auto o_NU = platform->device.malloc(nFields * fieldOffset * wordSize, NU.data());
-  auto o_conv = platform->device.malloc(nFields * cubatureOffset * nEXT * wordSize, conv.data());
+  auto o_NU = platform->device.malloc(NVFields * fieldOffset * wordSize, NU.data());
+  auto o_conv = platform->device.malloc(NVFields * cubatureOffset * nEXT * wordSize, conv.data());
   auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
-  auto o_Ud = platform->device.malloc(nFields * fieldOffset * wordSize, Ud.data());
+  auto o_Ud = platform->device.malloc(NVFields * fieldOffset * wordSize, Ud.data());
 
   // popular cubD, cubInterpT with correct data
   readCubDMatrixKernel(o_cubD);
@@ -164,11 +204,11 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
 
 
   auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
-    const dfloat GDOFPerSecond = nFields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
+    const dfloat GDOFPerSecond = NVFields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
 
-    size_t bytesPerElem = 2 * nFields * Np; // Ud, NU
+    size_t bytesPerElem = 2 * NVFields * Np; // Ud, NU
     bytesPerElem += Np; // inv mass matrix
-    bytesPerElem += nFields * cubNp * nEXT; // U(r,s,t)
+    bytesPerElem += NVFields * cubNp * nEXT; // U(r,s,t)
 
     size_t otherBytes = cubNq * cubNq; // D
     if(cubNq > Nq){
@@ -179,13 +219,13 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
     const double bw = ( (Nelements * bytesPerElem + otherBytes) / elapsed) / 1.e9;
 
     double flopCount = 0.0; // per elem basis
-    if(cubNq > Nq){
-      flopCount += 6. * cubNp * nEXT; // extrapolate U(r,s,t) to current time
-      flopCount += 18. * cubNp * cubNq; // apply Dcub
-      flopCount += 9. * Np; // compute NU
-      flopCount += 12. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    if(dealias){
+      flopCount += 6. * cubNp * nEXT;  // extrapolate U(r,s,t) to current time
+      flopCount += 6. * cubNp * cubNq * Nfields;                                       // apply Dcub
+      flopCount += 3. * Np * Nfields;                                                  // compute NU
+      flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq) * Nfields; // interpolation
     } else {
-      flopCount = Nq * Nq * Nq * (18. * Nq + 6. * nEXT + 24.);
+      flopCount = Nq * Nq * Nq * (6. * Nq + 6. * nEXT + 8.) * Nfields;
     }
     const double gflops = ( flopCount * Nelements / elapsed) / 1.e9;
     const int Nthreads =  omp_get_max_threads();
@@ -200,7 +240,7 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
         std::cout << " MPItasks=" << platform->comm.mpiCommSize << " OMPthreads=" << Nthreads << " NRepetitions=" << Ntests;
       }
       if(verbosity > 0){
-        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << " Nelements=" << Nelements
+        std::cout << " N=" << N << " cubN=" << cubN << " nEXT=" << nEXT << << " Nfields=" << Nfields << " Nelements=" << Nelements
                   << " elapsed time=" << elapsed << " wordSize=" << 8 * wordSize << " GDOF/s=" << GDOFPerSecond
                   << " GB/s=" << bw << " GFLOPS/s=" << gflops << " kernel=" << kernelVariant << "\n";
       }
@@ -232,7 +272,8 @@ benchmarkAdvsub(int Nelements, int Nq, int cubNq, int nEXT, bool dealias, int ve
 }
 
 template
-occa::kernel benchmarkAdvsub<int>(int Nelements,
+occa::kernel benchmarkAdvsub<int>(int Nfields,
+                             int Nelements,
                              int Nq,
                              int cubNq,
                              int nEXT,
@@ -242,7 +283,8 @@ occa::kernel benchmarkAdvsub<int>(int Nelements,
                              bool requiresBenchmark);
 
 template
-occa::kernel benchmarkAdvsub<double>(int Nelements,
+occa::kernel benchmarkAdvsub<double>(int Nfields,
+                             int Nelements,
                              int Nq,
                              int cubNq,
                              int nEXT,

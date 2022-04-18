@@ -239,7 +239,7 @@ void registerNrsKernels(occa::properties kernelInfoBC)
       bool verbose = platform->options.compareArgs("VERBOSE", "TRUE");
       const int verbosity = verbose ? 2 : 1;
 
-      auto subCycleKernel = benchmarkAdvsub(NelemBenchmark,
+      auto subCycleKernel = benchmarkAdvsub(3, NelemBenchmark,
         Nq,
         cubNq,
         nEXT,
