@@ -325,6 +325,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
 
     if (nrs->cht)
       nrs->meshV->computeInvLMM();
+
     for (int s = std::max(nrs->nEXT, mesh->nAB); s > 1; s--) {
       const dlong Nbyte = nrs->fieldOffset * nrs->NVfields * sizeof(dfloat);
       mesh->o_U.copyFrom(mesh->o_U, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
@@ -349,8 +350,18 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     const dfloat timeNew = time + nrs->dt[0];
 
     //////////////////////////////////////////////
-    applyDirichlet(nrs, timeNew);
-    
+    if (nrs->Nscalar) {
+      if(iter == 1) applyDirichletScalars(nrs, timeNew, cds->o_Se);
+      applyDirichletScalars(nrs, timeNew, cds->o_S);
+    } 
+    if (nrs->flow) {
+      if(iter == 1) applyDirichletVelocity(nrs, timeNew, nrs->o_Ue, nrs->o_P);
+      applyDirichletVelocity(nrs, timeNew, nrs->o_U, nrs->o_P);
+    }
+    if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY")) {
+      applyDirichletMeshVelocity(nrs, timeNew, mesh->o_U);
+    }
+ 
     if (nrs->Nscalar)
       scalarSolve(nrs, timeNew, cds->o_S, iter);
 

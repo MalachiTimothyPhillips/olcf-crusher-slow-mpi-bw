@@ -12,9 +12,12 @@ occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage)
     gsh = cds->gsh;
   }
 
-  occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
+  occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), 
+                                     cds->fieldOffset[is] * sizeof(dfloat));
 
-  platform->o_mempool.slice1.copyFrom(cds->o_BF, cds->fieldOffset[is] * sizeof(dfloat), 0,  cds->fieldOffsetScan[is] * sizeof(dfloat));
+  platform->o_mempool.slice1.copyFrom(cds->o_BF, cds->fieldOffset[is] * sizeof(dfloat), 0,  
+                                      cds->fieldOffsetScan[is] * sizeof(dfloat));
+
   cds->helmholtzRhsBCKernel(mesh->Nelements,
                             mesh->o_sgeo,
                             mesh->o_vmapM,
@@ -30,11 +33,13 @@ occa::memory cdsSolve(const int is, cds_t* cds, dfloat time, int stage)
                             *(cds->o_usrwrk),
                             platform->o_mempool.slice1);
 
-  platform->timer.toc("scalar rhs");  
-  platform->o_mempool.slice0.copyFrom(o_Si, mesh->Nlocal * sizeof(dfloat));
+  platform->timer.toc("scalar rhs");
+
+  const occa::memory& o_S0 = (cds->solver[is]->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+                             cds->o_Se.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat)) :
+                             cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
+  platform->o_mempool.slice0.copyFrom(o_S0, mesh->Nlocal * sizeof(dfloat));
   ellipticSolve(cds->solver[is], platform->o_mempool.slice1, platform->o_mempool.slice0);
 
   return platform->o_mempool.slice0;
 }
-
-

@@ -12,7 +12,7 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   mesh_t* mesh = nrs->meshV;
   
   nrs->curlKernel(mesh->Nelements,
-		  1,
+		          1,
                   mesh->o_vgeo,
                   mesh->o_D,
                   nrs->fieldOffset,
@@ -117,11 +117,10 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   flopCount += 25 * static_cast<double>(mesh->Nelements) * mesh->Nq * mesh->Nq;
 
   platform->timer.toc("pressure rhs");
+  platform->flopCounter->add("pressure RHS", flopCount);
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
   ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1);
-
-  platform->flopCounter->add("pressure RHS", flopCount);
 
   return platform->o_mempool.slice1;
 }
@@ -196,17 +195,34 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
   flopCount += 6 * mesh->Nlocal;
 
   platform->timer.toc("velocity rhs");
-  platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  platform->flopCounter->add("velocity RHS", flopCount);
 
   if(nrs->uvwSolver) {
+    const occa::memory& o_U0 = (nrs->uvwSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+                               nrs->o_Ue : nrs->o_U;
+    platform->o_mempool.slice0.copyFrom(o_U0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
     ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
   } else {
+    const size_t offsetBytes = nrs->fieldOffset * sizeof(dfloat);
+
+    const occa::memory& o_U0 = (nrs->uSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+                               nrs->o_Ue.slice(offsetBytes, 0*offsetBytes) :
+                               nrs->o_U.slice(offsetBytes, 0*offsetBytes);
+    platform->o_mempool.slice0.copyFrom(o_U0, offsetBytes);
     ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
+
+    const occa::memory& o_V0 = (nrs->vSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+                               nrs->o_Ue.slice(offsetBytes, 1*offsetBytes) :
+                               nrs->o_U.slice(offsetBytes, 1*offsetBytes);
+    platform->o_mempool.slice1.copyFrom(o_V0, offsetBytes);
     ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
+
+    const occa::memory& o_W0 = (nrs->wSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+                               nrs->o_Ue.slice(offsetBytes, 2*offsetBytes) :
+                               nrs->o_U.slice(offsetBytes, 2*offsetBytes);
+    platform->o_mempool.slice2.copyFrom(o_W0, offsetBytes);
     ellipticSolve(nrs->wSolver, platform->o_mempool.slice5, platform->o_mempool.slice2);
   }
-
-  platform->flopCounter->add("velocity RHS", flopCount);
 
   return platform->o_mempool.slice0;
 }

@@ -886,11 +886,7 @@ void parseInitialGuess(const int rank, setupAide &options,
     {"projectionaconj"},
     {"projection"},
     {"previous"},
-    // booleans
-    {"yes"},
-    {"true"},
-    {"no"},
-    {"false"},
+    {"extrapolate"},
     // settings
     {"nvector"},
     {"start"},
@@ -905,6 +901,8 @@ void parseInitialGuess(const int rank, setupAide &options,
       options.setArgs(parSectionName + "INITIAL GUESS", "PROJECTION-ACONJ");
     } else if (initialGuess.find("projection") != std::string::npos) {
       options.setArgs(parSectionName + "INITIAL GUESS", "PROJECTION");
+    } else if (initialGuess.find("extrapolate") != std::string::npos) {
+      options.setArgs(parSectionName + "INITIAL GUESS", "EXTRAPOLATE");
     } else if (initialGuess.find("previous") != std::string::npos) {
       options.setArgs(parSectionName + "INITIAL GUESS", "PREVIOUS");
       // removeArgs any default entries associated with projection initial guess
