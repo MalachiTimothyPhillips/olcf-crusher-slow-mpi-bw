@@ -198,26 +198,26 @@ occa::memory velocitySolve(nrs_t* nrs, dfloat time, int stage)
   platform->flopCounter->add("velocity RHS", flopCount);
 
   if(nrs->uvwSolver) {
-    const occa::memory& o_U0 = (nrs->uvwSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+    const occa::memory& o_U0 = (nrs->uvwSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATION")) ?
                                nrs->o_Ue : nrs->o_U;
     platform->o_mempool.slice0.copyFrom(o_U0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
     ellipticSolve(nrs->uvwSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
   } else {
     const size_t offsetBytes = nrs->fieldOffset * sizeof(dfloat);
 
-    const occa::memory& o_U0 = (nrs->uSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+    const occa::memory& o_U0 = (nrs->uSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATION")) ?
                                nrs->o_Ue.slice(offsetBytes, 0*offsetBytes) :
                                nrs->o_U.slice(offsetBytes, 0*offsetBytes);
     platform->o_mempool.slice0.copyFrom(o_U0, offsetBytes);
     ellipticSolve(nrs->uSolver, platform->o_mempool.slice3, platform->o_mempool.slice0);
 
-    const occa::memory& o_V0 = (nrs->vSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+    const occa::memory& o_V0 = (nrs->vSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATION")) ?
                                nrs->o_Ue.slice(offsetBytes, 1*offsetBytes) :
                                nrs->o_U.slice(offsetBytes, 1*offsetBytes);
     platform->o_mempool.slice1.copyFrom(o_V0, offsetBytes);
     ellipticSolve(nrs->vSolver, platform->o_mempool.slice4, platform->o_mempool.slice1);
 
-    const occa::memory& o_W0 = (nrs->wSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATE")) ?
+    const occa::memory& o_W0 = (nrs->wSolver->options.compareArgs("INITIAL GUESS", "EXTRAPOLATION")) ?
                                nrs->o_Ue.slice(offsetBytes, 2*offsetBytes) :
                                nrs->o_U.slice(offsetBytes, 2*offsetBytes);
     platform->o_mempool.slice2.copyFrom(o_W0, offsetBytes);

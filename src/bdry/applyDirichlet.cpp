@@ -69,9 +69,13 @@ void applyZeroNormalMask(nrs_t *nrs, occa::memory &o_EToB, occa::memory &o_mask,
                                  o_x);
 }
 
-void applyDirichletMeshVelocity(nrs_t *nrs, double time, occa::memory& o_U)
+void applyDirichletMeshVelocity(nrs_t *nrs, double time)
 {
   mesh_t *mesh = nrs->meshV;
+
+  occa::memory& o_U = nrs->o_U;
+  occa::memory& o_Ue = nrs->o_Ue;
+
   platform->linAlg->fill(nrs->NVfields * nrs->fieldOffset,
                          -1.0 * std::numeric_limits<dfloat>::max(),
                          platform->o_mempool.slice3);
@@ -109,18 +113,26 @@ void applyDirichletMeshVelocity(nrs_t *nrs, double time, occa::memory& o_U)
                         nrs->gsh);
   }
 
-  if (nrs->meshSolver->Nmasked)
+  if (nrs->meshSolver->Nmasked) {
     nrs->maskCopyKernel(nrs->meshSolver->Nmasked,
                         0 * nrs->fieldOffset,
                         nrs->meshSolver->o_maskIds,
                         platform->o_mempool.slice3,
                         o_U);
+    nrs->maskCopyKernel(nrs->meshSolver->Nmasked,
+                        0 * nrs->fieldOffset,
+                        nrs->meshSolver->o_maskIds,
+                        platform->o_mempool.slice3,
+                        o_Ue);
+  }
 
-  if (bcMap::unalignedBoundary(mesh->cht, "mesh"))
+  if (bcMap::unalignedBoundary(mesh->cht, "mesh")) {
     applyZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_zeroNormalMaskMeshVelocity, o_U);
+    applyZeroNormalMask(nrs, nrs->meshSolver->o_EToB, nrs->o_zeroNormalMaskMeshVelocity, o_Ue);
+  }
 }
 
-void applyDirichletScalars(nrs_t *nrs, double time, occa::memory& o_S)
+void applyDirichletScalars(nrs_t *nrs, double time)
 {
   cds_t *cds = nrs->cds;
   for (int is = 0; is < cds->NSfields; is++) {
@@ -130,6 +142,9 @@ void applyDirichletScalars(nrs_t *nrs, double time, occa::memory& o_S)
       mesh = cds->meshV;
       gsh = cds->gsh;
     }
+
+    occa::memory& o_S = cds->o_S;
+    occa::memory& o_Se = cds->o_Se;
 
     platform->linAlg->fill(cds->fieldOffset[is],
                            -1.0 * std::numeric_limits<dfloat>::max(),
@@ -156,21 +171,35 @@ void applyDirichletScalars(nrs_t *nrs, double time, occa::memory& o_S)
         oogs::startFinish(platform->o_mempool.slice2, 1, cds->fieldOffset[is], ogsDfloat, ogsMin, gsh);
     }
 
-    occa::memory o_Si =
+    if (cds->solver[is]->Nmasked) {
+      occa::memory o_Si =
         o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
-    if (cds->solver[is]->Nmasked)
       cds->maskCopyKernel(cds->solver[is]->Nmasked,
                           0,
                           cds->solver[is]->o_maskIds,
                           platform->o_mempool.slice2,
                           o_Si);
+
+      occa::memory o_Si_e =
+        o_Se.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
+
+      cds->maskCopyKernel(cds->solver[is]->Nmasked,
+                          0,
+                          cds->solver[is]->o_maskIds,
+                          platform->o_mempool.slice2,
+                          o_Si_e);
+    }
   }
 }
 
-void applyDirichletVelocity(nrs_t *nrs, double time, occa::memory& o_U, occa::memory& o_p)
+void applyDirichletVelocity(nrs_t *nrs, double time)
 {
   mesh_t *mesh = nrs->meshV;
+
+  occa::memory& o_p = nrs->o_P;
+  occa::memory& o_U = nrs->o_U;
+  occa::memory& o_Ue = nrs->o_Ue;
 
   platform->linAlg->fill((1 + nrs->NVfields) * nrs->fieldOffset,
                          -1.0 * std::numeric_limits<dfloat>::max(),
@@ -230,34 +259,59 @@ void applyDirichletVelocity(nrs_t *nrs, double time, occa::memory& o_U, occa::me
                         o_p);
 
   if (nrs->uvwSolver) {
-    if (nrs->uvwSolver->Nmasked)
+    if (nrs->uvwSolver->Nmasked) {
       nrs->maskCopyKernel(nrs->uvwSolver->Nmasked,
                           0 * nrs->fieldOffset,
                           nrs->uvwSolver->o_maskIds,
                           platform->o_mempool.slice7,
                           o_U);
+      nrs->maskCopyKernel(nrs->uvwSolver->Nmasked,
+                          0 * nrs->fieldOffset,
+                          nrs->uvwSolver->o_maskIds,
+                          platform->o_mempool.slice7,
+                          o_Ue);
+    }
     if (bcMap::unalignedBoundary(mesh->cht, "velocity")) {
       applyZeroNormalMask(nrs, nrs->uvwSolver->o_EToB, nrs->o_zeroNormalMaskVelocity, o_U);
+      applyZeroNormalMask(nrs, nrs->uvwSolver->o_EToB, nrs->o_zeroNormalMaskVelocity, o_Ue);
     }
   }
   else {
-    if (nrs->uSolver->Nmasked)
+    if (nrs->uSolver->Nmasked) {
       nrs->maskCopyKernel(nrs->uSolver->Nmasked,
                           0 * nrs->fieldOffset,
                           nrs->uSolver->o_maskIds,
                           platform->o_mempool.slice7,
                           o_U);
-    if (nrs->vSolver->Nmasked)
+      nrs->maskCopyKernel(nrs->uSolver->Nmasked,
+                          0 * nrs->fieldOffset,
+                          nrs->uSolver->o_maskIds,
+                          platform->o_mempool.slice7,
+                          o_Ue);
+    }
+    if (nrs->vSolver->Nmasked) {
       nrs->maskCopyKernel(nrs->vSolver->Nmasked,
                           1 * nrs->fieldOffset,
                           nrs->vSolver->o_maskIds,
                           platform->o_mempool.slice7,
                           o_U);
-    if (nrs->wSolver->Nmasked)
+      nrs->maskCopyKernel(nrs->vSolver->Nmasked,
+                          1 * nrs->fieldOffset,
+                          nrs->vSolver->o_maskIds,
+                          platform->o_mempool.slice7,
+                          o_Ue);
+    }
+    if (nrs->wSolver->Nmasked) {
       nrs->maskCopyKernel(nrs->wSolver->Nmasked,
                           2 * nrs->fieldOffset,
                           nrs->wSolver->o_maskIds,
                           platform->o_mempool.slice7,
                           o_U);
+      nrs->maskCopyKernel(nrs->wSolver->Nmasked,
+                          2 * nrs->fieldOffset,
+                          nrs->wSolver->o_maskIds,
+                          platform->o_mempool.slice7,
+                          o_Ue);
+    }
   }
 }

@@ -350,17 +350,12 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     const dfloat timeNew = time + nrs->dt[0];
 
     //////////////////////////////////////////////
-    if (nrs->Nscalar) {
-      if(iter == 1) applyDirichletScalars(nrs, timeNew, cds->o_Se);
-      applyDirichletScalars(nrs, timeNew, cds->o_S);
-    } 
-    if (nrs->flow) {
-      if(iter == 1) applyDirichletVelocity(nrs, timeNew, nrs->o_Ue, nrs->o_P);
-      applyDirichletVelocity(nrs, timeNew, nrs->o_U, nrs->o_P);
-    }
-    if(platform->options.compareArgs("MESH SOLVER", "ELASTICITY")) {
-      applyDirichletMeshVelocity(nrs, timeNew, mesh->o_U);
-    }
+    if (nrs->Nscalar)
+      applyDirichletScalars(nrs, timeNew);
+    if (nrs->flow)
+      applyDirichletVelocity(nrs, timeNew);
+    if (platform->options.compareArgs("MESH SOLVER", "ELASTICITY"))
+      applyDirichletMeshVelocity(nrs, timeNew);
  
     if (nrs->Nscalar)
       scalarSolve(nrs, timeNew, cds->o_S, iter);
