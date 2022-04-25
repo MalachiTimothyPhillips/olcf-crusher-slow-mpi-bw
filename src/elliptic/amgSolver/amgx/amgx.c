@@ -173,6 +173,10 @@ void AMGXfree()
   free(handle);
   handle = NULL;
 }
+int AMGXcompiled()
+{
+  return 1;
+}
 
 #else
 int AMGXsetup(const int nLocalRows, const int nnz,
@@ -196,5 +200,10 @@ int AMGXsolve(void *x, void *rhs)
 
 void AMGXfree()
 {
+}
+
+int AMGXcompiled()
+{
+  return 0;
 }
 #endif
