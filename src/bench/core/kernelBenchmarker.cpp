@@ -14,7 +14,6 @@ double run(int Nsamples, std::function<void(occa::kernel &)> kernelRunner, occa:
   }
 
   platform->device.finish();
-  MPI_Barrier(platform->comm.mpiComm);
   return (MPI_Wtime() - start) / Nsamples;
 }
 } // namespace
