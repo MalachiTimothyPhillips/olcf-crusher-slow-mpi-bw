@@ -417,6 +417,7 @@
             // interpolate in b
 #pragma unroll p_Nq
             for (int b = 0; b < p_Nq; ++b) {
+              const dfloat Ijb = s_cubInterp[j][b];
               Ud2 += Ijb * s_Ud1[es][b][i];
             }
             r_Ud[c] = Ud2;
