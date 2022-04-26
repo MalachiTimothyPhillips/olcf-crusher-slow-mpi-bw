@@ -27,7 +27,6 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
 {
   occa::kernel fastestKernel;
   double fastestTime = std::numeric_limits<double>::max();
-  const auto saveNtests = Ntests;
   for (auto &&kernelVariant : kernelVariants) {
 
     auto candidateKernel = kernelBuilder(kernelVariant);
@@ -36,7 +35,8 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
       // warmup
       double elapsed = run(10, kernelRunner, candidateKernel);
 
-      const double candidateKernelTiming = run(Ntests, kernelRunner, candidateKernel);
+      double candidateKernelTiming = run(Ntests, kernelRunner, candidateKernel);
+      MPI_Allreduce(MPI_IN_PLACE, &candidateKernelTiming, 1, MPI_DOUBLE, MPI_MAX, platform->comm.mpiComm);
 
       if (candidateKernelTiming < fastestTime) {
         fastestTime = candidateKernelTiming;
@@ -70,8 +70,11 @@ benchmarkKernel(std::function<occa::kernel(int kernelVariant)> kernelBuilder,
       double elapsed = run(10, kernelRunner, candidateKernel);
 
       // evaluation
-      const int Ntests = static_cast<int>(targetTime / elapsed);
-      const double candidateKernelTiming = run(Ntests, kernelRunner, candidateKernel);
+      int Ntests = static_cast<int>(targetTime / elapsed);
+      MPI_Allreduce(MPI_IN_PLACE, &Ntests, 1, MPI_INT, MPI_MAX, platform->comm.mpiComm);
+
+      double candidateKernelTiming = run(Ntests, kernelRunner, candidateKernel);
+      MPI_Allreduce(MPI_IN_PLACE, &candidateKernelTiming, 1, MPI_DOUBLE, MPI_MAX, platform->comm.mpiComm);
 
       if (candidateKernelTiming < fastestTime) {
         fastestTime = candidateKernelTiming;
