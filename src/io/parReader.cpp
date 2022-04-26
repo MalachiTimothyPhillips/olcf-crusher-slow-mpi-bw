@@ -570,7 +570,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
   }
   else if(p_coarseSolver.find("amgx") != std::string::npos){
 
-    if(!AMGXcompiled()){
+    if(!AMGXenabled()){
         append_error("AMGX was requested but is not compiled!\n");
     }
 
@@ -840,7 +840,7 @@ void parsePreconditioner(const int rank, setupAide &options,
     for (std::string s : list) {
       if (s.find("semfem") != std::string::npos) {
       } else if (s.find("amgx") != std::string::npos) {
-        if(!AMGXcompiled()){
+        if(!AMGXenabled()){
             append_error("AMGX was requested but is not compiled!\n");
         }
         options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
@@ -1893,7 +1893,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     }
 
     if (par->sections.count("amgx")) {
-      if(!AMGXcompiled()){
+      if(!AMGXenabled()){
           append_error("AMGX was requested but is not compiled!\n");
       }
       std::string configFile;

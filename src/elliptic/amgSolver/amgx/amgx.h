@@ -13,7 +13,7 @@ int AMGXsetup(const int nLocalRows, const int nnz,
               int useFP32, int MPIDIRECT, const char* cfgFile);
 int AMGXsolve(void *x, void *rhs);
 void AMGXfree();
-int AMGXcompiled();
+int AMGXenabled();
 
 #ifdef __cplusplus
 }

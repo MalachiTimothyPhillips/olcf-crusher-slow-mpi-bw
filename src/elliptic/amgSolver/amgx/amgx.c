@@ -173,7 +173,7 @@ void AMGXfree()
   free(handle);
   handle = NULL;
 }
-int AMGXcompiled()
+int AMGXenabled()
 {
   return 1;
 }
@@ -202,7 +202,7 @@ void AMGXfree()
 {
 }
 
-int AMGXcompiled()
+int AMGXenabled()
 {
   return 0;
 }
