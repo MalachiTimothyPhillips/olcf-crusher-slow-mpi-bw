@@ -93,6 +93,10 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   if (ciMode == 12) {
     options.setArgs("SCALAR00 SOLVER", "NONE");
   }
+  if (ciMode == 13) {
+    options.setArgs("SCALAR00 SOLVER", "NONE");
+    options.setArgs("VELOCITY SOLVER", "NONE");
+  }
 
   options.setArgs("TIME INTEGRATOR", "TOMBO3");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
@@ -257,7 +261,7 @@ void ciTestLinAlg(const int N)
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 {
   const int rank = platform->comm.mpiRank;
-  if(tstep == 1 && ciMode != 7){
+  if(tstep == 1 && ciMode != 7 && ciMode != 13){
     int NiterP = nrs->pSolver->Niter;
 
     // mode 11 uses Chebyshev+Jacobi smoothing
@@ -298,12 +302,16 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   int NiterU;
 
-  if(platform->options.compareArgs("VELOCITY BLOCK SOLVER", "TRUE"))
+  if(platform->options.compareArgs("VELOCITY BLOCK SOLVER", "TRUE")){
     NiterU = nrs->uvwSolver->Niter;
-  else
+  }
+  else if(nrs->uSolver){
     NiterU = nrs->uSolver->Niter;
+  } else {
+    NiterU = -1;
+  }
 
-  int NiterP = nrs->pSolver->Niter;
+  int NiterP = nrs->pSolver ? nrs->pSolver->Niter : -1;
 
   int NiterS01 = platform->options.compareArgs("SCALAR00 SOLVER", "NONE") ? -1 : nrs->cds->solver[0]->Niter;
   int NiterS02 = platform->options.compareArgs("SCALAR01 SOLVER", "NONE") ? -1 : nrs->cds->solver[1]->Niter;
@@ -411,6 +419,15 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              pIterErr = abs(NiterP - 4);
              vxErr = abs((err[0] - 2.78E-10)/err[0]);
              prErr = abs((err[1] - 6.98E-10)/err[1]);
+             s01IterErr = abs(NiterS01 + 1);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
+    case 13 : velIterErr = abs(NiterU +1);
+             s1Err = abs((err[2] - 2.506E-3)/err[2]);
+             s2Err = abs((err[3] - 1.52E-5)/err[3]);
+             pIterErr = abs(NiterP + 1);
+             vxErr = abs((err[0] - 2.5E-3)/err[0]);
+             prErr = abs((err[1] - 2.364E-2)/err[1]);
              s01IterErr = abs(NiterS01 + 1);
              s02IterErr = abs(NiterS02 - 10);
              break;
