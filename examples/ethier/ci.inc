@@ -90,6 +90,9 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("SUBCYCLING STEPS", std::string("1"));
     options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
   }
+  if (ciMode == 12) {
+    options.setArgs("SCALAR00 SOLVER", "NONE");
+  }
 
   options.setArgs("TIME INTEGRATOR", "TOMBO3");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
@@ -302,8 +305,8 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 
   int NiterP = nrs->pSolver->Niter;
 
-  int NiterS01 = nrs->cds->solver[0]->Niter;
-  int NiterS02 = nrs->cds->solver[1]->Niter;
+  int NiterS01 = platform->options.compareArgs("SCALAR00 SOLVER", "NONE") ? -1 : nrs->cds->solver[0]->Niter;
+  int NiterS02 = platform->options.compareArgs("SCALAR01 SOLVER", "NONE") ? -1 : nrs->cds->solver[1]->Niter;
   int s01IterErr, s02IterErr;
 
   switch (ciMode) {
@@ -400,6 +403,15 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              vxErr = abs((err[0] - 2.78E-10)/err[0]);
              prErr = abs((err[1] - 6.98E-10)/err[1]);
              s01IterErr = abs(NiterS01 - 10);
+             s02IterErr = abs(NiterS02 - 10);
+             break;
+    case 12 : velIterErr = abs(NiterU - 10);
+             s1Err = abs((err[2] - 2.506E-3)/err[2]);
+             s2Err = abs((err[3] - 1.34E-11)/err[3]);
+             pIterErr = abs(NiterP - 4);
+             vxErr = abs((err[0] - 2.78E-10)/err[0]);
+             prErr = abs((err[1] - 6.98E-10)/err[1]);
+             s01IterErr = abs(NiterS01 + 1);
              s02IterErr = abs(NiterS02 - 10);
              break;
      }
