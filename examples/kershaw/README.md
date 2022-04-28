@@ -103,21 +103,21 @@ FLOPS/s: 5.92321e+11
 BPS5
 ..................................................
 repetitions: 50
-solve time: min: 0.550918s  avg: 0.553299s  max: 0.576202s
-  preconditioner 0.44601s
-    smoother 0.333078s
-    coarse grid 0.0597616s
+solve time: min: 0.333465s  avg: 0.335863s  max: 0.357775s
+  preconditioner 0.274027s
+    smoother 0.189027s
+    coarse grid 0.0548005s
 iterations: 31
-throughput: 2.05512e+08 (DOF x iter)/s
-throughput: 6.62941e+06 DOF/s
-FLOPS/s: 4.64583e+11
+throughput: 3.39527e+08 (DOF x iter)/s
+throughput: 1.09525e+07 DOF/s
+FLOPS/s: 7.67539e+11
 
 BP5
-done (4.158e-06s)
+done (4.288e-06s)
 .........................
 repetitions: 25
-solve time: min: 1.35397s  avg: 1.35479s  max: 1.35617s
+solve time: min: 0.74642s  avg: 0.747495s  max: 0.74862s
 iterations: 1000
-throughput: 2.69744e+09 (DOF x iter)/s
-FLOPS/s: 5.11849e+11
+throughput: 4.89304e+09 (DOF x iter)/s
+FLOPS/s: 9.28472e+11
 ```
