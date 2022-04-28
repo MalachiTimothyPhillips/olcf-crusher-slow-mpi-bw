@@ -38,6 +38,30 @@ throughput: 4.07987e+09 (DOF x iter)/s
 FLOPS/s: 7.7417e+11
 ```
 
+### NVIDIA A100, 2 GPU
+```
+BPS5
+..................................................
+repetitions: 50
+solve time: min: 0.199604s  avg: 0.201367s  max: 0.261248s
+  preconditioner 0.161264s
+    smoother 0.112551s
+    coarse grid 0.0285382s
+iterations: 31
+throughput: 5.67224e+08 (DOF x iter)/s
+throughput: 1.82976e+07 DOF/s
+FLOPS/s: 1.28228e+12
+
+BP5
+done (1.538e-05s)
+.........................
+repetitions: 25
+solve time: min: 0.513648s  avg: 0.514179s  max: 0.516034s
+iterations: 1000
+throughput: 7.11045e+09 (DOF x iter)/s
+FLOPS/s: 1.34923e+12
+```
+
 ### AMD MI100
 ```
 BPS5
