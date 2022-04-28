@@ -73,3 +73,27 @@ solve time: 1.17002s
 throughput: 3.12153e+09 (DOF x iter)/s
 FLOPS/s: 5.92321e+11
 ```
+
+### AMD MI250X
+```
+BPS5
+..................................................
+repetitions: 50
+solve time: min: 0.550918s  avg: 0.553299s  max: 0.576202s
+  preconditioner 0.44601s
+    smoother 0.333078s
+    coarse grid 0.0597616s
+iterations: 31
+throughput: 2.05512e+08 (DOF x iter)/s
+throughput: 6.62941e+06 DOF/s
+FLOPS/s: 4.64583e+11
+
+BP5
+done (4.158e-06s)
+.........................
+repetitions: 25
+solve time: min: 1.35397s  avg: 1.35479s  max: 1.35617s
+iterations: 1000
+throughput: 2.69744e+09 (DOF x iter)/s
+FLOPS/s: 5.11849e+11
+```
