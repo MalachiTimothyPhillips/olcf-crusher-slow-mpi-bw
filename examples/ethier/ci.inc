@@ -433,6 +433,50 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
              break;
      }
 
+  // on ci modes 12, 13, confirm that the correct solvers are present
+  if(ciMode == 12){
+    bool correct = true;
+    correct &= (nrs->pSolver != nullptr);
+    correct &= (nrs->uSolver != nullptr || nrs->uvwSolver != nullptr);
+    correct &= (nrs->cds->solver[0] == nullptr);
+    correct &= (nrs->cds->solver[1] != nullptr);
+    if(!correct){
+      if(platform->comm.mpiRank == 0){
+        std::cout << "Unexpected solver configuration for CI mode 12" << std::endl;
+      }
+      FAIL;
+    }
+  }
+  if(ciMode == 13){
+    bool correct = true;
+    correct &= (nrs->pSolver == nullptr);
+    correct &= (nrs->uSolver == nullptr && nrs->uvwSolver == nullptr);
+    correct &= (nrs->cds->solver[0] == nullptr);
+    correct &= (nrs->cds->solver[1] != nullptr);
+    if(!correct){
+      if(platform->comm.mpiRank == 0){
+        std::cout << "Unexpected solver configuration for CI mode 13" << std::endl;
+      }
+      FAIL;
+    }
+
+    // mode 13 requires using ethierScalar.par as the input
+    std::string casename = platform->options.getArgs("CASENAME");
+    if(casename != "ethierScalar"){
+      if(platform->comm.mpiRank == 0){
+        std::cout << "Unexpected input file for CI mode 13" << std::endl;
+      }
+      FAIL;
+    }
+
+    if(nrs->flow){
+      if(platform->comm.mpiRank == 0){
+        std::cout << "nrs->flow = true for CI mode 13" << std::endl;
+      }
+      FAIL;
+    }
+  }
+
   if (ciMode == 4){
     dfloat memoryUsage = platform->device.occaDevice().memoryAllocated()/1e9;
     const dfloat expectedMemoryUsage = 0.0555274;

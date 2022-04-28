@@ -127,7 +127,7 @@ jobs:
 
     - name: 'ethier solve single scalar only'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/ethier
-      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi ethier 2 --cimode 13
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi ethierScalar 2 --cimode 13
 
   lowMach:
     needs: install
