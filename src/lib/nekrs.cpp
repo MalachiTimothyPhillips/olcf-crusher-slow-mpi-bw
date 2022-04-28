@@ -176,10 +176,12 @@ void setup(MPI_Comm commg_in, MPI_Comm comm_in,
 
   nrs = new nrs_t();
 
-  int result = 0;
-  MPI_Comm_compare(commg, comm, &result);
+  {
+    int result = 0;
+    MPI_Comm_compare(commg, comm, &result);
 
-  nrs->multiSession = (result == MPI_UNEQUAL);
+    nrs->multiSession = (result == MPI_UNEQUAL);
+  }
 
   nrsSetup(comm, options, nrs);
 
