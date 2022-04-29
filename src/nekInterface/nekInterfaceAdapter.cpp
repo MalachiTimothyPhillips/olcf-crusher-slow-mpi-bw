@@ -380,7 +380,7 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
   int lx1m = (options.compareArgs("MOVING MESH", "TRUE")) ? lx1 : 1;
   lx1m = (options.compareArgs("STRESSFORMULATION", "TRUE")) ? lx1 : lx1m;
 
-  constexpr int nMaxObj = 100;
+  constexpr int nMaxObj = 20;
 
   int count = 0;
   while(fgets(line, BUFSIZ, fp) != NULL) {
