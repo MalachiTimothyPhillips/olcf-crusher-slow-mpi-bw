@@ -14,10 +14,10 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for(int k = 0; k < p_Nq; ++k){
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner){
           if(i < p_Nq && j < p_Nq) {
@@ -29,7 +29,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int j = 0; j < p_Nq_e; ++j; @inner){
@@ -42,7 +42,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for(int k = 0; k < p_Nq_e; ++k; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
@@ -54,7 +54,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int j = 0; j < p_Nq_e; ++j; @inner){
       for(int i = 0; i < p_Nq_e; ++i; @inner){
         if(i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -65,9 +65,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for(int k = 0; k < p_Nq_e; ++k){
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq_e; ++j; @inner){
         for(int i = 0; i < p_Nq_e; ++i; @inner) {
           const dlong elem_offset = p_Nq_e * p_Nq_e * p_Nq_e * elem;

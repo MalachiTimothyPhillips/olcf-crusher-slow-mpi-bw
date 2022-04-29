@@ -114,7 +114,7 @@ dfloat dot(const dfloat a0, const dfloat a1, const dfloat a2, const dfloat b0, c
 
         }
       }
-      @barrier("global");
+      @barrier;
     }
   }
 

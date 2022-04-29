@@ -26,7 +26,7 @@
     @exclusive dlong element;
 
     for (int k = 0; k < p_Nq_e; ++k) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
 #if p_overlap
@@ -40,7 +40,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; ++k; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         if (k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -51,7 +51,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; ++k; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {
         if (k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
@@ -62,7 +62,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int j = 0; j < p_Nq_e; ++j; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {
         if (i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -73,7 +73,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int i = 0; i < p_Nq_e; i++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         const int ij = j + i * p_Nq_e;
@@ -85,7 +85,7 @@
         S_z_eT[j][i] = S_z_e[i][j];
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -98,7 +98,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -111,9 +111,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           const int v = i + j * p_Nq_e + k * p_Nq_e * p_Nq_e;
@@ -125,7 +125,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -138,7 +138,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
 #pragma unroll
@@ -151,9 +151,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; k++) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
           pfloat value = 0.0;
@@ -171,7 +171,7 @@
       }
     }
 #if (!p_restrict)
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; ++k; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         if (k >= 1 && k < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -182,7 +182,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; ++k; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {
         if (k >= 1 && k < p_Nq_e - 1 && i >= 1 && i < p_Nq_e - 1) {
@@ -193,7 +193,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int j = 0; j < p_Nq_e; ++j; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {
         if (i >= 1 && i < p_Nq_e - 1 && j >= 1 && j < p_Nq_e - 1) {
@@ -204,9 +204,9 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq_e; ++k) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
           const dlong elem_offset = element * p_Nq_e * p_Nq_e * p_Nq_e;
@@ -217,9 +217,9 @@
     }
 
 #else /* if (!p_restrict) */
-    @barrier("local");
+    @barrier;
     for (int k = 0; k < p_Nq; ++k) {
-      @barrier("local");
+      @barrier;
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
           if (i < p_Nq && j < p_Nq) {
@@ -287,7 +287,7 @@
     @shared pfloat work2[p_Nblk][p_Nq_e][p_Nq_e][p_Nq_e];
     @exclusive dlong element;
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -321,7 +321,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -340,7 +340,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -362,7 +362,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -385,7 +385,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -412,7 +412,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -435,7 +435,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -458,7 +458,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -496,7 +496,7 @@
       }
     }
     
-    @barrier("local");
+    @barrier;
 
 #if (!p_restrict)
     // merged these three loops into one (however, the premise is shaky at best)
@@ -519,7 +519,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -599,7 +599,7 @@
     @shared pfloat work2[p_Nq_e][p_Nq_e][p_Nq_e][p_Nblk];
     @exclusive dlong element;
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -630,7 +630,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
         for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -649,7 +649,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -671,7 +671,7 @@
         }
       }
     }
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -696,7 +696,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -727,7 +727,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -751,7 +751,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -775,7 +775,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
         for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -816,7 +816,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
 #if (!p_restrict)
     // merged these three loops into one (however, the premise is shaky at best)
@@ -839,7 +839,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
@@ -949,7 +949,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
@@ -969,7 +969,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -999,7 +999,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -1030,7 +1030,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -1067,7 +1067,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -1098,7 +1098,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int k = 0; k < p_Nq_e; k++; @inner) {
@@ -1128,7 +1128,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -1177,7 +1177,7 @@
     }
 
 #if (!p_restrict)
-    @barrier("local");
+    @barrier;
 
     for (int es = 0; es < p_Nblk; ++es; @inner)
       for (int j = 0; j < p_Nq_e; ++j; @inner) {
@@ -1250,7 +1250,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int j = 0; j < p_Nq_e; ++j; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {
@@ -1268,7 +1268,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -1296,7 +1296,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -1325,7 +1325,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -1360,7 +1360,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int j = 0; j < p_Nq_e; j++; @inner) {
@@ -1389,7 +1389,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int k = 0; k < p_Nq_e; k++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -1417,7 +1417,7 @@
       }
     }
 
-    @barrier("local");
+    @barrier;
 
     for (int j = 0; j < p_Nq_e; j++; @inner) {
       for (int i = 0; i < p_Nq_e; i++; @inner) {
@@ -1464,7 +1464,7 @@
     }
 
 #if (!p_restrict)
-    @barrier("local");
+    @barrier;
 
     for (int j = 0; j < p_Nq_e; ++j; @inner) {
       for (int i = 0; i < p_Nq_e; ++i; @inner) {

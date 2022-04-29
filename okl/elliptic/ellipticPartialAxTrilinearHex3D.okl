@@ -55,11 +55,11 @@
         }
       }
 
-    @barrier("local");
+    @barrier;
 
     #pragma unroll p_Nq
     for(int k = 0; k < p_Nq; k++) {
-      @barrier("local");
+      @barrier;
       for(int j = 0; j < p_Nq; ++j; @inner(1)) {
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
           const dfloat rn = s_gllwz[0][i];
@@ -146,7 +146,7 @@
         }
       }
 
-      @barrier("local");
+      @barrier;
 
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
@@ -159,7 +159,7 @@
             r_qt += s_D[k][m] * r_q[m];
         }
 
-      @barrier("local");
+      @barrier;
 
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
@@ -179,7 +179,7 @@
           r_Auk = r_GwJ * lambda[1*loffset] * r_q[k];
         }
 
-      @barrier("local");
+      @barrier;
 
       for(int j = 0; j < p_Nq; ++j; @inner(1))
         for(int i = 0; i < p_Nq; ++i; @inner(0)) {
@@ -193,7 +193,7 @@
           r_Aq[k] += r_Auk;
         }
     }
-    @barrier("local");
+    @barrier;
 
     for(int j = 0; j < p_Nq; ++j; @inner(1))
       for(int i = 0; i < p_Nq; ++i; @inner(0)) {

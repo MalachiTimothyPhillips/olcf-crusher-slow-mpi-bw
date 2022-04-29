@@ -62,7 +62,7 @@
           }
         }
       }
-      @barrier("global");
+      @barrier;
     }
 
     for(int f = 0; f < p_Nfaces; f++) {
@@ -107,7 +107,7 @@
           UH[idM + 2 * offset] = bc.w;
         }
       }
-      @barrier("global");
+      @barrier;
     }
 
     for(int f = 0; f < p_Nfaces; f++) {
@@ -125,7 +125,7 @@
           }
         }
       }
-      @barrier("global");
+      @barrier;
     }
   }
 }
