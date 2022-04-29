@@ -81,7 +81,7 @@ void multigridLevel::kcycleOp1(dfloat *alpha1, dfloat *rho1,
   const dfloat a = -(*alpha1)/(*rho1);
 
   // rhs = rhs - (alpha1/rho1)*vk
-  *norm_rhstilde = sqrt(vectorAddInnerProd(Nrows, a, vk, 1.0, rhs, o_weight, weighted,comm));
+  *norm_rhstilde = sqrt(vectorAddInnerProd(Nrows, a, o_vk, 1.0, o_rhs, o_weight, weighted,comm));
 }
 
 void multigridLevel::kcycleOp2(const dfloat alpha1, const dfloat rho1) {
