@@ -1,8 +1,22 @@
 #!/bin/bash
 set -e -a
+EXTERNAL_OCCA=ON
+EXTERNAL_BLASLAPACK=ON
+
+NEKRS_GPU_MPI=0
+OCCA_CXX=icpx
+OCCA_CXXFLAGS="-O3"
+OCCA_DPCPP_COMPILER_FLAGS="-O3 -ffp-contract=fast -fdebug-info-for-profiling -gline-tables-only"
+
+# BUILD_TYPE=Release
+NEKRS_INSTALL_DIR=`pwd`/install
+
+ONEAPI_ROOT=${CMPROOT}/linux
+PREFIX_PATHS="${ONEAPI_ROOT};${ONEAPI_ROOT}/include/sycl;${ONEAPI_ROOT}/compiler;${OCCA_DIR}"
 
 : ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
 
+: ${BUILD_TYPE:="RelWithDebInfo"}
 : ${NEKRS_CC:="mpicc"}
 : ${NEKRS_CXX:="mpic++"}
 : ${NEKRS_FC:="mpif77"}
@@ -10,11 +24,14 @@ set -e -a
 
 : ${NEKRS_GPU_MPI:=1}
 
+: ${EXTERNAL_BLASLAPACK:="OFF"}
+: ${EXTERNAL_OCCA:="OFF"}
 : ${OCCA_CXX:="g++"}
 : ${OCCA_CXXFLAGS:="-O3 -g -march=native -mtune=native"}
 : ${OCCA_CUDA_COMPILER_FLAGS:="-O3 --fmad=true -lineinfo"}
 : ${OCCA_HIP_COMPILER_FLAGS:="-O3 -g -ffp-contract=fast"}
 : ${OCCA_OPENCL_COMPILER_FLAGS:="-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros"}
+: ${OCCA_DPCPP_COMPILER_FLAGS:="-O3 -ffp-contract=fast"}
 
 : ${OCCA_ENABLE_CUDA:=1}
 : ${OCCA_ENABLE_HIP:=1}
@@ -41,7 +58,8 @@ export CUDAHOSTCXX=${NEKRS_CXX}
 cmake -Wno-dev \
       -Wfatal-errors \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-      -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+      -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+      -DCMAKE_PREFIX_PATH="${PREFIX_PATHS}" \
       -DCMAKE_Fortran_COMPILER="${NEKRS_FC}" \
       -DCMAKE_C_COMPILER="${NEKRS_CC}" \
       -DCMAKE_CXX_COMPILER="${NEKRS_CXX}" \
@@ -49,14 +67,18 @@ cmake -Wno-dev \
       -DCMAKE_C_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
       -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
       -DCMAKE_INSTALL_PREFIX="${NEKRS_INSTALL_DIR}" \
+      -DEXTERNAL_BLASLAPACK="${EXTERNAL_BLASLAPACK}" \
+      -DEXTERNAL_OCCA="${EXTERNAL_OCCA}" \
       -DOCCA_CXX="${OCCA_CXX}" \
       -DOCCA_CXXFLAGS="${OCCA_CXXFLAGS}" \
       -DOCCA_CUDA_COMPILER_FLAGS="${OCCA_CUDA_COMPILER_FLAGS}" \
       -DOCCA_HIP_COMPILER_FLAGS="${OCCA_HIP_COMPILER_FLAGS}" \
       -DOCCA_OPENCL_COMPILER_FLAGS="${OCCA_OPENCL_COMPILER_FLAGS}" \
+      -DOCCA_DPCPP_COMPILER_FLAGS="${OCCA_DPCPP_COMPILER_FLAGS}" \
       -DENABLE_CUDA="${OCCA_ENABLE_CUDA}" \
       -DENABLE_HIP="${OCCA_ENABLE_HIP}" \
       -DENABLE_OPENCL="${OCCA_ENABLE_OPENCL}" \
+      -DENABLE_DPCPP="${OCCA_ENABLE_DPCPP}" \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
       -DHYPRE_BIGINT=1 \
       -DENABLE_AMGX="${AMGX_ENABLED}" \
