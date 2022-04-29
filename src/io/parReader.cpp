@@ -1349,6 +1349,7 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       {"cuda"},
       {"hip"},
       {"opencl"},
+      {"dpcpp"},
       {"openmp"},
     };
     const std::vector<std::string> validArchitectures = {

@@ -234,6 +234,10 @@ device_t::device_t(setupAide& options, comm_t& comm)
     int plat = 0;
     options.getArgs("PLATFORM NUMBER", plat);
     sprintf(deviceConfig, "{mode: 'OpenCL', device_id: %d, platform_id: %d}", device_id, plat);
+  }else if(strcasecmp(requestedOccaMode.c_str(), "DPCPP") == 0) {
+    int plat = 0;
+    options.getArgs("PLATFORM NUMBER", plat);
+    sprintf(deviceConfig, "{mode: 'dpcpp', device_id: %d, platform_id: %d}", device_id, plat);
   }else if(strcasecmp(requestedOccaMode.c_str(), "OPENMP") == 0) {
     if(worldRank == 0) printf("OpenMP backend currently not supported!\n");
     ABORT(EXIT_FAILURE);
