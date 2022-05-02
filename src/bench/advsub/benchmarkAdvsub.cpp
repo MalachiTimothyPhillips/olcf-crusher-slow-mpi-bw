@@ -165,11 +165,13 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   std::vector<int> kernelVariants = {0};
   if(!platform->serial && dealias && !isScalar){
     // TODO: reduce number of kernel variants
-    constexpr int Nkernels = 14;
+    // v16, v17, and v18 are wrong
+    constexpr int Nkernels = 16;
     for(int i = 1; i < Nkernels; ++i){
 
-      // v12 requires cubNq <=13
-      if(i == 11 && cubNq > 13) continue;
+      // v13 requires cubNq <=13
+      if (i == 12 && cubNq > 13)
+        continue;
 
       kernelVariants.push_back(i);
     }
