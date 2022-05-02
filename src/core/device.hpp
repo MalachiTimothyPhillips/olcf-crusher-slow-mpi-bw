@@ -24,6 +24,7 @@ class device_t {
     occa::device& occaDevice() { return _device; }
     void finish() { _device.finish(); }
 
+    // MPI safe
     occa::kernel buildKernel(const std::string &fullPath,
                              const occa::properties &props,
                              const std::string& suffix,
@@ -36,6 +37,15 @@ class device_t {
     occa::kernel buildKernel(const std::string &fileName,
                              const std::string &kernelName,
                              const occa::properties &props) const;
+
+    occa::kernel buildKernelFromStringMPI(const std::string &kernelSource,
+                                          const std::string &kernelName,
+                                          const occa::properties &props,
+                                          int rankCompile = 0) const;
+    occa::kernel buildKernelMPI(const std::string &kernelFile,
+                                const std::string &kernelName,
+                                const occa::properties &props,
+                                int rankCompile = 0) const;
 
     bool deviceAtomic;
 
