@@ -7,6 +7,7 @@ namespace tombo
 {
 occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 {
+  const int verbose = platform->options.compareArgs("VERBOSE", "TRUE");
   platform->timer.tic("pressure rhs", 1);
   double flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
@@ -18,6 +19,17 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
                   nrs->fieldOffset,
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice0,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("curl norm: %.15e\n", debugNorm);
+  }
+
   flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
@@ -30,6 +42,18 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->meshV->o_invLMM,
     platform->o_mempool.slice0
   );
+
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice0,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("invLMM curl norm: %.15e\n", debugNorm);
+  }
+
   flopCount += mesh->Nlocal;
 
   nrs->curlKernel(
@@ -40,6 +64,17 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->fieldOffset,
     platform->o_mempool.slice0,
     platform->o_mempool.slice3);
+
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice3,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("second curl norm: %.15e\n", debugNorm);
+  }
   flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
   nrs->gradientVolumeKernel(
@@ -49,6 +84,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->fieldOffset,
     nrs->o_div,
     platform->o_mempool.slice0);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice0,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("grad curl norm: %.15e\n", debugNorm);
+  }
   flopCount += static_cast<double>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   if (platform->options.compareArgs("STRESSFORMULATION", "TRUE")) {
@@ -74,6 +119,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice3,
     platform->o_mempool.slice0,
     platform->o_mempool.slice6);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice6,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("pressure rhs (3 comp) norm: %.15e\n", debugNorm);
+  }
   flopCount += 12 * static_cast<double>(mesh->Nlocal);
 
   oogs::startFinish(platform->o_mempool.slice6, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
@@ -86,6 +141,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->meshV->o_invLMM,
     platform->o_mempool.slice6
   );
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice6,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("inv LMM pressure rhs (3 comp) norm: %.15e\n", debugNorm);
+  }
 
   nrs->wDivergenceVolumeKernel(
     mesh->Nelements,
@@ -94,6 +159,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->fieldOffset,
     platform->o_mempool.slice6,
     platform->o_mempool.slice3);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        1,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice3,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("wdiv norm: %.15e\n", debugNorm);
+  }
   flopCount += static_cast<double>(mesh->Nelements) * (6 * mesh->Np * mesh->Nq + 18 * mesh->Np);
 
   nrs->pressureAddQtlKernel(
@@ -102,6 +177,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     nrs->g0 * nrs->idt,
     nrs->o_div,
     platform->o_mempool.slice3);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        1,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice3,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("add qtl norm: %.15e\n", debugNorm);
+  }
   flopCount += 3 * mesh->Nlocal;
 
   nrs->divergenceSurfaceKernel(
@@ -114,6 +199,16 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
     platform->o_mempool.slice6,
     nrs->o_U,
     platform->o_mempool.slice3);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        1,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice3,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("div surf norm: %.15e\n", debugNorm);
+  }
   flopCount += 25 * static_cast<double>(mesh->Nelements) * mesh->Nq * mesh->Nq;
 
   platform->timer.toc("pressure rhs");
