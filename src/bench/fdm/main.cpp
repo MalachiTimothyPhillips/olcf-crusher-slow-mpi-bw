@@ -99,6 +99,7 @@ int main(int argc, char** argv)
   const int Nq = N + 1;
   const int Np = Nq * Nq * Nq;
 
+  options.setArgs("BUILD ONLY","FALSE");
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD);
 
   const int verbosity = 2;

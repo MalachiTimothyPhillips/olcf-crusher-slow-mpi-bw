@@ -147,6 +147,7 @@ int main(int argc, char** argv)
   if (cubatureOffset % pageW)
     cubatureOffset = (cubatureOffset / pageW + 1) * pageW;
 
+  options.setArgs("BUILD ONLY","FALSE");
   platform = platform_t::getInstance(options, MPI_COMM_WORLD, MPI_COMM_WORLD); 
   const int Nthreads =  omp_get_max_threads();
 
