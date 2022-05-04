@@ -13,6 +13,8 @@
 
 #include "cdsSetup.cpp"
 
+#include "randomVector.hpp"
+
 std::vector<int> determineMGLevels(std::string section)
 {
   const std::string optionsPrefix = [section]() {
@@ -374,9 +376,57 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->o_coeffBDF = platform->device.malloc(nrs->nBDF * sizeof(dfloat), nrs->coeffBDF);
   nrs->o_coeffSubEXT = platform->device.malloc(nrs->nEXT * sizeof(dfloat), nrs->coeffEXT);
 
-  // meshParallelGatherScatterSetup(mesh, mesh->Nlocal, mesh->globalIds, platform->comm.mpiComm, OOGS_AUTO,
-  // 0);
   nrs->gsh = oogs::setup(mesh->ogs, nrs->NVfields, nrs->fieldOffset, ogsDfloat, NULL, OOGS_AUTO);
+
+  // oogs correctness check against ogs
+  auto oogsParityCheck = [&](int Nfields)
+  {
+    auto data = randomVector<dfloat>(Nfields * nrs->fieldOffset);
+    auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
+    auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
+
+    for(int fld = 0; fld < Nfields; ++fld){
+      o_refResult.copyFrom(data.data() + fld * nrs->fieldOffset, mesh->Nlocal * sizeof(dfloat));
+      o_result.copyFrom(data.data() + fld * nrs->fieldOffset, mesh->Nlocal * sizeof(dfloat));
+    }
+
+    ogsGatherScatterMany(o_refResult, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, mesh->ogs);
+    oogs::startFinish(o_result, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
+    // diff
+    platform->linAlg->axpbyMany(
+      mesh->Nlocal,
+      Nfields,
+      nrs->fieldOffset,
+      1.0,
+      o_result,
+      -1.0,
+      o_refResult
+    );
+    const dfloat error = 
+      platform->linAlg->weightedNorm2Many(
+        mesh->Nlocal,
+        Nfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        o_refResult,
+        platform->comm.mpiComm
+      );
+    
+    const dfloat tol = 1e-12;
+    if(error > tol){
+      if(platform->comm.mpiRank == 0){
+        printf("Error (%g) in oogs is too large!\n", error);
+      }
+      ABORT(EXIT_FAILURE);
+    }
+
+    o_refResult.free();
+    o_result.free();
+  };
+
+  oogsParityCheck(1);
+  oogsParityCheck(3);
 
   nrs->EToB = (int *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
