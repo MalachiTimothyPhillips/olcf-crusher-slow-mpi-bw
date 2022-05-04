@@ -414,10 +414,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       LInfError = std::max(LInfError, fldError);
     }
     
-    const dfloat tol = 10. * std::numeric_limits<dfloat>::epsilon();
+    const dfloat tol = 1e3 * std::numeric_limits<dfloat>::epsilon();
     if(LInfError > tol){
       if(platform->comm.mpiRank == 0){
-        printf("LInfError (%g) in oogs is too large!\n", LInfError);
+        printf("Nfields (%d), LInfError (%g) in oogs is too large!\n", Nfields, LInfError);
       }
       ABORT(EXIT_FAILURE);
     }
