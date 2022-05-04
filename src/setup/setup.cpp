@@ -403,20 +403,21 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       -1.0,
       o_refResult
     );
-    const dfloat error = 
-      platform->linAlg->weightedNorm2Many(
+    dfloat LInfError = 0.0;
+    for(int fld = 0; fld < Nfields; ++fld){
+      auto o_slice = o_refResult + fld * nrs->fieldOffset * sizeof(dfloat);
+      const auto fldError = platform->linAlg->max(
         mesh->Nlocal,
-        Nfields,
-        nrs->fieldOffset,
-        mesh->ogs->o_invDegree,
         o_refResult,
         platform->comm.mpiComm
       );
+      LInfError = std::max(LInfError, fldError);
+    }
     
-    const dfloat tol = 1e-12;
-    if(error > tol){
+    const dfloat tol = 10. * std::numeric_limits<dfloat>::epsilon();
+    if(LInfError > tol){
       if(platform->comm.mpiRank == 0){
-        printf("Error (%g) in oogs is too large!\n", error);
+        printf("LInfError (%g) in oogs is too large!\n", LInfError);
       }
       ABORT(EXIT_FAILURE);
     }
