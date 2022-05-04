@@ -393,6 +393,11 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
     oogs_modeExchange_list.push_back(OOGS_EX_NBC);
   }
 
+  // force gs mode for debugging purposes...
+  if(gsMode == OOGS_AUTO){
+    gsMode = OOGS_DEVICEMPI;
+  }
+
   if(gsMode == OOGS_AUTO) {
     if(gs->rank == 0) printf("timing gs modes: ");
     const int Ntests = 10;
