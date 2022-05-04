@@ -3,7 +3,6 @@ set -e -a
 EXTERNAL_OCCA=ON
 EXTERNAL_BLASLAPACK=ON
 
-NEKRS_GPU_MPI=0
 OCCA_CXX=icpx
 OCCA_CXXFLAGS="-O3"
 OCCA_DPCPP_COMPILER_FLAGS="-O3 -ffp-contract=fast -fdebug-info-for-profiling -gline-tables-only"
