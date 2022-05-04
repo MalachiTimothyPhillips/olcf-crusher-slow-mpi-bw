@@ -426,7 +426,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   };
 
   oogsParityCheck(1);
-  oogsParityCheck(3);
+  oogsParityCheck(nrs->NVfields);
 
   nrs->EToB = (int *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
