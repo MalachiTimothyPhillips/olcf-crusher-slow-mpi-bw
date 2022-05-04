@@ -7,6 +7,10 @@
 #include "ogsKernels.hpp"
 #include "ogsInterface.h"
 
+#include <vector>
+
+#define DEBUG_ISSUE
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -714,6 +718,36 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total*Nbytes*k, 0, "async: true");
 
+#ifdef DEBUG_ISSUE
+    auto computeNormBuffer = [gs](occa::memory& o_buffer, dlong totalBytes, dlong wordSize)
+    {
+      auto doWork = [&](auto fpWord){
+        using FPType = decltype(fpWord);
+
+        std::vector<FPType> buffer(totalBytes / sizeof(FPType));
+        o_buffer.copyTo(buffer.data(), totalBytes);
+
+        double norm2 = 0.0;
+        for(int i = 0; i < buffer.size(); ++i){
+          const auto v = buffer[i];
+          norm2 += v * v;
+        }
+        MPI_Allreduce(MPI_IN_PLACE, &norm2, 1, MPI_DOUBLE, MPI_SUM, gs->comm);
+        return sqrt(norm2);
+      };
+
+      if(wordSize == sizeof(float)){
+        float f;
+        return doWork(f);
+      } else {
+        double f;
+        return doWork(f);
+      }
+    };
+
+    const auto sendBufNorm = computeNormBuffer(gs->o_bufSend, pwd->comm[send].total*Nbytes*k, Nbytes);
+#endif
+
     ogsHostTic(gs->comm, 1);
     if(gs->modeExchange == OOGS_EX_NBC)
       neighborAllToAll(Nbytes*k, gs);
@@ -723,6 +757,14 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
 
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufRecv.copyFrom(gs->bufRecv,pwd->comm[recv].total*Nbytes*k, 0, "async: true");
+
+#ifdef DEBUG_ISSUE
+    const auto recvBufNorm = computeNormBuffer(gs->o_bufRecv, pwd->comm[recv].total*Nbytes*k, Nbytes);
+
+    if(gs->rank == 0){
+      printf("sendBufNorm = %g, recvBufNorm = %g\n", sendBufNorm, recvBufNorm);
+    }
+#endif
 
     unpackBuf(gs, ogs->NhaloGather, k, stride, gs->o_gatherOffsets, gs->o_gatherIds,
               ogs->o_haloGatherOffsets, ogs->o_haloGatherIds, _type, op, gs->o_bufRecv, o_v);
