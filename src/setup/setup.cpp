@@ -12,6 +12,7 @@
 #include "avm.hpp"
 
 #include "cdsSetup.cpp"
+#include "randomVector.hpp"
 
 std::vector<int> determineMGLevels(std::string section)
 {
@@ -379,16 +380,9 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   // oogs correctness check against ogs
   auto oogsParityCheck = [&](int Nfields)
   {
-    auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
-    auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
-
-    for(int fld = 0; fld < Nfields; ++fld){
-      o_refResult.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), fld * nrs->fieldOffset * sizeof(dfloat), 0);
-      o_result.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), fld * nrs->fieldOffset * sizeof(dfloat), 0);
-    }
-
-    platform->linAlg->scaleMany(mesh->Nlocal, Nfields, nrs->fieldOffset, 1. + platform->comm.mpiRank, o_result);
-    platform->linAlg->scaleMany(mesh->Nlocal, Nfields, nrs->fieldOffset, 1. + platform->comm.mpiRank, o_refResult);
+    auto data = randomVector<dfloat>(Nfields * nrs->fieldOffset);
+    auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
+    auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
 
     ogsGatherScatterMany(o_refResult, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, mesh->ogs);
     oogs::startFinish(o_result, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
