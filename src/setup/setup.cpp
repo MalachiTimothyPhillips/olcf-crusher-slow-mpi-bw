@@ -426,7 +426,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if(platform->comm.mpiRank == 0){
         printf("Nfields (%d), LInfError (%g) in oogs is too large!\n", Nfields, LInfError);
       }
-      ABORT(EXIT_FAILURE);
+      //ABORT(EXIT_FAILURE);
     }
 
     o_refResult.free();
