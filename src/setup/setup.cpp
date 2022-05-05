@@ -406,10 +406,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     dfloat LInfError = 0.0;
     for(int fld = 0; fld < Nfields; ++fld){
       auto o_slice = o_refResult + fld * nrs->fieldOffset * sizeof(dfloat);
-      platform->linAlg->abs(mesh->Nlocal, o_refResult);
+      platform->linAlg->abs(mesh->Nlocal, o_slice);
       const auto fldError = platform->linAlg->max(
         mesh->Nlocal,
-        o_refResult,
+        o_slice,
         platform->comm.mpiComm
       );
       LInfError = std::max(LInfError, fldError);
