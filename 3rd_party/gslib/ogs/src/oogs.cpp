@@ -395,7 +395,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
 
   // force gs mode for debugging purposes...
   if(gsMode == OOGS_AUTO){
-    gsMode = OOGS_DEVICEMPI;
+    gsMode = OOGS_HOSTMPI;
   }
 
   if(gsMode == OOGS_AUTO) {
