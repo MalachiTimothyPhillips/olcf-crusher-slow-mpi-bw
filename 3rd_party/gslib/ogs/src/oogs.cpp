@@ -759,6 +759,8 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
       gs->o_bufRecv.copyFrom(gs->bufRecv,pwd->comm[recv].total*Nbytes*k, 0, "async: true");
 
 #ifdef DEBUG_ISSUE
+    // wait for o_bufRecv to be ready
+    ogs->device.finish();
     const auto recvBufNorm = computeNormBuffer(gs->o_bufRecv, pwd->comm[recv].total*Nbytes*k, Nbytes);
 
     if(gs->rank == 0){
