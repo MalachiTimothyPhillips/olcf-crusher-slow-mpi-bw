@@ -406,12 +406,19 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     dfloat LInfError = 0.0;
     for(int fld = 0; fld < Nfields; ++fld){
       auto o_slice = o_refResult + fld * nrs->fieldOffset * sizeof(dfloat);
+      platform->linAlg->abs(mesh->Nlocal, o_refResult);
       const auto fldError = platform->linAlg->max(
         mesh->Nlocal,
         o_refResult,
         platform->comm.mpiComm
       );
       LInfError = std::max(LInfError, fldError);
+    }
+
+    if(platform->options.compareArgs("VERBOSE", "TRUE")){
+      if(platform->comm.mpiRank == 0){
+        printf("Nfields (%d), LInfError (%g)\n", Nfields, LInfError);
+      }
     }
     
     const dfloat tol = 1e3 * std::numeric_limits<dfloat>::epsilon();
