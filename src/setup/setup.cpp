@@ -13,8 +13,6 @@
 
 #include "cdsSetup.cpp"
 
-#include "randomVector.hpp"
-
 std::vector<int> determineMGLevels(std::string section)
 {
   const std::string optionsPrefix = [section]() {
