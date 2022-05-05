@@ -382,13 +382,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   auto oogsParityCheck = [&](int Nfields)
   {
     auto data = randomVector<dfloat>(Nfields * nrs->fieldOffset);
-    auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
-    auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
-
-    for(int fld = 0; fld < Nfields; ++fld){
-      o_refResult.copyFrom(data.data() + fld * nrs->fieldOffset, mesh->Nlocal * sizeof(dfloat));
-      o_result.copyFrom(data.data() + fld * nrs->fieldOffset, mesh->Nlocal * sizeof(dfloat));
-    }
+    auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
+    auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
 
     ogsGatherScatterMany(o_refResult, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, mesh->ogs);
     oogs::startFinish(o_result, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
