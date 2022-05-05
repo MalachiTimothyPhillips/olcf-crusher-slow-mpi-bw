@@ -383,8 +383,8 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
 
     for(int fld = 0; fld < Nfields; ++fld){
-      o_refResult.copyFrom(mesh->o_LMM, fld * nrs->fieldOffset * sizeof(dfloat), mesh->Nlocal * sizeof(dfloat));
-      o_result.copyFrom(mesh->o_LMM, fld * nrs->fieldOffset * sizeof(dfloat), mesh->Nlocal * sizeof(dfloat));
+      o_refResult.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), fld * nrs->fieldOffset * sizeof(dfloat), 0);
+      o_result.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat), fld * nrs->fieldOffset * sizeof(dfloat), 0);
     }
 
     platform->linAlg->scaleMany(mesh->Nlocal, Nfields, nrs->fieldOffset, 1. + platform->comm.mpiRank, o_result);
