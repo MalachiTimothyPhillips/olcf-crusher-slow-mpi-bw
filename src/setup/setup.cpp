@@ -385,6 +385,14 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
     auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
 
+    for(int fld = 0; fld < Nfields; ++fld){
+      o_refResult.copyFrom(mesh->o_LMM, fld * nrs->fieldOffset * sizeof(dfloat), mesh->Nlocal * sizeof(dfloat));
+      o_result.copyFrom(mesh->o_LMM, fld * nrs->fieldOffset * sizeof(dfloat), mesh->Nlocal * sizeof(dfloat));
+    }
+
+    platform->linAlg->scaleMany(mesh->Nlocal, Nfields, nrs->fieldOffset, 1. + platform->comm.mpiRank, o_result);
+    platform->linAlg->scaleMany(mesh->Nlocal, Nfields, nrs->fieldOffset, 1. + platform->comm.mpiRank, o_refResult);
+
     ogsGatherScatterMany(o_refResult, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, mesh->ogs);
     oogs::startFinish(o_result, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
 
