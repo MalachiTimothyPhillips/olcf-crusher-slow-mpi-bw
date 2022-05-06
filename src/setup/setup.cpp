@@ -412,6 +412,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       if(platform->comm.mpiRank == 0){
         printf("Nfields (%d), LInfError (%g)\n", Nfields, LInfError);
       }
+      fflush(stdout);
     }
     
     const dfloat tol = 1e3 * std::numeric_limits<dfloat>::epsilon();
