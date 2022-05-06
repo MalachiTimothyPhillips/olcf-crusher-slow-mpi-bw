@@ -821,3 +821,138 @@ void oogs::destroy(oogs_t *gs)
 
   free(gs);
 }
+
+// to reproduce error...
+void oogs::runTest(occa::memory &o_v,
+                   const int k,
+                   const dlong stride,
+                   const char *_type,
+                   const char *op,
+                   oogs_t *gs)
+{
+  oogs::start(o_v, k, stride, _type, op, gs);
+
+  size_t Nbytes;
+  ogs_t *ogs = gs->ogs;
+  const char *type = (!strcmp(_type, "floatCommHalf")) ? "float" : _type;
+  if (!strcmp(_type, "floatCommHalf"))
+    Nbytes = sizeof(float) / 2;
+  else if (!strcmp(_type, "float"))
+    Nbytes = sizeof(float);
+  else if (!strcmp(_type, "double"))
+    Nbytes = sizeof(double);
+
+  if (!strcmp(_type, "floatCommHalf") && ogs->device.mode() == "Serial") {
+    if (gs->rank == 0)
+      std::cout << "ERROR: Current backend does not support floatCommHalf!\n";
+    exit(-1);
+  }
+
+  if (gs->mode == OOGS_DEFAULT) {
+    if (k > 1)
+      ogsGatherScatterManyFinish(o_v, k, stride, type, op, ogs);
+    else
+      ogsGatherScatterFinish(o_v, type, op, ogs);
+
+    return;
+  }
+
+  if (ogs->NlocalGather)
+    occaGatherScatterLocal(ogs->NlocalGather,
+                           ogs->NrowBlocks,
+                           ogs->o_blockRowStarts,
+                           ogs->o_localGatherOffsets,
+                           ogs->o_localGatherIds,
+                           k,
+                           stride,
+                           type,
+                           op,
+                           o_v);
+
+  constexpr int nTrials = 100;
+
+  for (int trial = 0; trial < nTrials; trial++) {
+    if (gs->rank == 0) {
+      printf("Running trial %d...\n", trial);
+    }
+
+    if (ogs->NhaloGather && gs->mode != OOGS_LOCAL) {
+      if (!OGS_OVERLAP)
+        ogs->device.finish();
+      ogs->device.setStream(ogs::dataStream);
+
+      struct gs_data *hgs = (gs_data *)ogs->haloGshSym;
+      const void *execdata = hgs->r.data;
+      const struct pw_data *pwd = (pw_data *)execdata;
+
+      if (gs->mode == OOGS_HOSTMPI)
+        gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total * Nbytes * k, 0, "async: true");
+
+#ifdef DEBUG_ISSUE
+      auto computeNormBuffer = [gs](occa::memory &o_buffer, dlong totalBytes, dlong wordSize) {
+        auto doWork = [&](auto fpWord) {
+          using FPType = decltype(fpWord);
+
+          std::vector<FPType> buffer(totalBytes / sizeof(FPType));
+          o_buffer.copyTo(buffer.data(), totalBytes);
+
+          double norm2 = 0.0;
+          for (int i = 0; i < buffer.size(); ++i) {
+            const auto v = buffer[i];
+            norm2 += v * v;
+          }
+          MPI_Allreduce(MPI_IN_PLACE, &norm2, 1, MPI_DOUBLE, MPI_SUM, gs->comm);
+          return sqrt(norm2);
+        };
+
+        if (wordSize == sizeof(float)) {
+          float f;
+          return doWork(f);
+        }
+        else {
+          double f;
+          return doWork(f);
+        }
+      };
+
+      const auto sendBufNorm = computeNormBuffer(gs->o_bufSend, pwd->comm[send].total * Nbytes * k, Nbytes);
+#endif
+
+      ogsHostTic(gs->comm, 1);
+      if (gs->modeExchange == OOGS_EX_NBC)
+        neighborAllToAll(Nbytes * k, gs);
+      else
+        pairwiseExchange(Nbytes * k, gs);
+      ogsHostToc();
+
+      if (gs->mode == OOGS_HOSTMPI)
+        gs->o_bufRecv.copyFrom(gs->bufRecv, pwd->comm[recv].total * Nbytes * k, 0, "async: true");
+
+#ifdef DEBUG_ISSUE
+      // wait for o_bufRecv to be ready
+      ogs->device.finish();
+      const auto recvBufNorm = computeNormBuffer(gs->o_bufRecv, pwd->comm[recv].total * Nbytes * k, Nbytes);
+
+      if (gs->rank == 0) {
+        printf("sendBufNorm = %g, recvBufNorm = %g\n", sendBufNorm, recvBufNorm);
+      }
+#endif
+
+      unpackBuf(gs,
+                ogs->NhaloGather,
+                k,
+                stride,
+                gs->o_gatherOffsets,
+                gs->o_gatherIds,
+                ogs->o_haloGatherOffsets,
+                ogs->o_haloGatherIds,
+                _type,
+                op,
+                gs->o_bufRecv,
+                o_v);
+
+      ogs->device.finish();
+      ogs->device.setStream(ogs::defaultStream);
+    }
+  }
+}
