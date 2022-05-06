@@ -12,17 +12,13 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   double flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
 
-#if 0
   nrs->curlKernel(mesh->Nelements,
-		  1,
+                  1,
                   mesh->o_vgeo,
                   mesh->o_D,
                   nrs->fieldOffset,
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
-#else
-  platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-#endif
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
         nrs->NVfields,
