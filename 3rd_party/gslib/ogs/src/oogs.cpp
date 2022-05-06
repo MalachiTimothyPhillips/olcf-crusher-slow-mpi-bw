@@ -311,17 +311,8 @@ void reallocBuffers(int unit_size, oogs_t *gs)
     if(gs->o_bufSend.size()) gs->o_bufSend.free();
     if(gs->h_buffSend.size()) gs->h_buffSend.free();
     gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
-
-    int allRanks;
-    MPI_Comm_Size(gs->comm, &allRanks);
-
-
-    for(int rank = 0; rank < allRanks; ++rank){
-      if(rank == gs->rank){
-        printf("On rank %d, realloced gs->o_bufSend to be %d bytes (prev size %d bytes), gs->o_bufSend.size() = %d!\n", gs->rank, pwd->comm[send].total * unit_size, prevSize, gs->o_bufSend.size());
-      }
-      fflush(stdout);
-      MPI_Barrier(gs->comm);
+    if (gs->rank == 0) {
+      printf("Realloced gs->o_bufSend to be %d bytes (prev size %d bytes)!\n", pwd->comm[send].total * unit_size, prevSize);
     }
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
@@ -329,15 +320,8 @@ void reallocBuffers(int unit_size, oogs_t *gs)
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
-    int allRanks;
-    MPI_Comm_Size(gs->comm, &allRanks);
-
-    for(int rank = 0; rank < allRanks; ++rank){
-      if(rank == gs->rank){
-        printf("On rank %d, realloced gs->o_bufRecv to be %d bytes (prev size %d bytes), gs->o_bufRecv.size() = %d!\n", gs->rank, pwd->comm[send].total * unit_size, prevSize, gs->o_bufRecv.size());
-      }
-      fflush(stdout);
-      MPI_Barrier(gs->comm);
+    if (gs->rank == 0) {
+      printf("Realloced gs->o_bufRecv to be %d bytes (prev size %d bytes)!\n", pwd->comm[recv].total * unit_size, prevSize);
     }
   }
 }
