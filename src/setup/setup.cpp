@@ -377,6 +377,16 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   nrs->gsh = oogs::setup(mesh->ogs, nrs->NVfields, nrs->fieldOffset, ogsDfloat, NULL, OOGS_AUTO);
 
+  if(platform->comm.mpiRank == 0){
+    printf("Calling oogs::startFinish prior to parity check.\n");
+  }
+
+  oogs::startFinish(platform->o_mempool.slice0, 1 + nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
+  if(platform->comm.mpiRank == 0){
+    printf("Done calling oogs::startFinish prior to parity check.\n");
+  }
+
   // oogs correctness check against ogs
   auto oogsParityCheck = [&](int Nfields) {
     auto data = randomVector<dfloat>(Nfields * nrs->fieldOffset);

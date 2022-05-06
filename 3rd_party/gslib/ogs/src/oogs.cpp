@@ -326,7 +326,6 @@ void reallocBuffers(int unit_size, oogs_t *gs)
       printf("Reallocing gs->o_bufRecv to be %d bytes (prev size %d bytes)!\n", pwd->comm[recv].total * unit_size, prevSize);
     }
     fflush(stdout);
-    const auto prevSize = gs->o_bufRecv.size();
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
