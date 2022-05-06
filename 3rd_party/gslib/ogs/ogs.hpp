@@ -284,14 +284,12 @@ namespace oogs{
 void start(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
 void finish(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
 void startFinish(void *v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
-void startFinish(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
-void runTest(occa::memory &o_v, const int k, const int stride, const char *type, const char *op, oogs_t *h);
-void startFinishPrint(occa::memory &o_v,
-                      const int k,
-                      const int stride,
-                      const char *type,
-                      const char *op,
-                      oogs_t *h);
+void startFinish(occa::memory &o_v,
+                 const int k,
+                 const int stride,
+                 const char *type,
+                 const char *op,
+                 oogs_t *h);
 
 void compile(const occa::device& device, std::string mode, MPI_Comm comm, bool verbose = false);
 oogs_t *setup(ogs_t *ogs, int nVec, int stride, const char *type, std::function<void()> callback, oogs_mode gsMode);

@@ -378,7 +378,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   nrs->gsh = oogs::setup(mesh->ogs, nrs->NVfields, nrs->fieldOffset, ogsDfloat, NULL, OOGS_AUTO);
 
   // oogs correctness check against ogs
-  auto oogsParityCheck = [&](int Nfields, bool doTest) {
+  auto oogsParityCheck = [&](int Nfields) {
     auto data = randomVector<dfloat>(Nfields * nrs->fieldOffset);
     auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
     auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
@@ -422,16 +422,12 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
       //ABORT(EXIT_FAILURE);
     }
 
-    if (doTest) {
-      oogs::runTest(o_result, Nfields, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-    }
-
     o_refResult.free();
     o_result.free();
   };
 
-  oogsParityCheck(1, false);
-  oogsParityCheck(nrs->NVfields, true);
+  oogsParityCheck(1);
+  oogsParityCheck(nrs->NVfields);
 
   nrs->EToB = (int *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
