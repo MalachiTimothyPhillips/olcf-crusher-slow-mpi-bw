@@ -308,21 +308,32 @@ void reallocBuffers(int unit_size, oogs_t *gs)
 
   if (gs->o_bufSend.size() < pwd->comm[send].total*unit_size) {
     const auto prevSize = gs->o_bufSend.size();
+    if (gs->rank == 0) {
+      printf("Reallocing gs->o_bufSend to be %d bytes (prev size %d bytes)!\n", pwd->comm[send].total * unit_size, prevSize);
+    }
+    fflush(stdout);
     if(gs->o_bufSend.size()) gs->o_bufSend.free();
     if(gs->h_buffSend.size()) gs->h_buffSend.free();
     gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
     if (gs->rank == 0) {
-      printf("Realloced gs->o_bufSend to be %d bytes (prev size %d bytes)!\n", pwd->comm[send].total * unit_size, prevSize);
+      printf("Done with realloc.\n");
     }
+    fflush(stdout);
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
+    const auto prevSize = gs->o_bufSend.size();
+    if (gs->rank == 0) {
+      printf("Reallocing gs->o_bufRecv to be %d bytes (prev size %d bytes)!\n", pwd->comm[recv].total * unit_size, prevSize);
+    }
+    fflush(stdout);
     const auto prevSize = gs->o_bufRecv.size();
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
     if (gs->rank == 0) {
-      printf("Realloced gs->o_bufRecv to be %d bytes (prev size %d bytes)!\n", pwd->comm[recv].total * unit_size, prevSize);
+      printf("Done with realloc.\n");
     }
+    fflush(stdout);
   }
 }
 

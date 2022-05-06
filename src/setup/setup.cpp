@@ -383,8 +383,25 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     auto o_refResult = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
     auto o_result = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat), data.data());
 
+
+    if(platform->comm.mpiRank == 0){
+      printf("Done allocating buffers for parity check.\n");
+    }
+    fflush(stdout);
+
     ogsGatherScatterMany(o_refResult, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, mesh->ogs);
+
+    if(platform->comm.mpiRank == 0){
+      printf("Calling oogs::startFinish.\n");
+    }
+    fflush(stdout);
+
     oogs::startFinish(o_result, Nfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
+    if(platform->comm.mpiRank == 0){
+      printf("Done with oogs::startFinish.\n");
+    }
+    fflush(stdout);
 
     // diff
     platform->linAlg->axpbyMany(
