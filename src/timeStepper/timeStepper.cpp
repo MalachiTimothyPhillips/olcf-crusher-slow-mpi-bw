@@ -258,7 +258,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
   }
 #endif
 
-#if 0
+#if 1
 
   const bool relative = movingMesh && nrs->Nsubsteps;
   occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
@@ -291,6 +291,9 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
   }
   platform->flopCounter->add("Urst", flopCount);
 
+#endif
+
+#if 0
   if (nrs->Nscalar) {
     platform->timer.tic("makeq", 1);
     platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
