@@ -136,6 +136,8 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
   const struct comm *comm = &hgs->comm;
 
   if(!gs->earlyPrepostRecv) {
+    auto bufferSize = gs->o_bufRecv.size();
+    long long sum_buf_size = 0;
     unsigned char *buf = (unsigned char*)gs->o_bufRecv.ptr();
     if(gs->mode != OOGS_DEVICEMPI) buf = (unsigned char *)gs->bufRecv;
 
@@ -146,6 +148,15 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
       const int len = *(size++) * unit_size;
       MPI_Irecv((void*)buf,len,MPI_UNSIGNED_CHAR,*p,*p,comm->c,req++);
       buf += len;
+      sum_buf_size += len;
+    }
+
+    int err = (sum_buf_size > bufferSize);
+    MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_MAX, gs->comm);
+    if(err){
+      if(gs->rank == 0){
+        printf("Error! sum_buf_size (fo receiver) is too large!\n");
+      }
     }
   }
 
@@ -156,6 +167,9 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
       buf = (unsigned char*)gs->bufSend;
     }
 
+    auto bufferSize = gs->o_bufSend.size();
+    long long sum_buf_size = 0;
+
     comm_req *req = &pwd->req[pwd->comm[recv].n];
     const struct pw_comm_data *c = &pwd->comm[send];
     const uint *p, *pe, *size=c->size;
@@ -163,6 +177,15 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
       const int len = *(size++) * unit_size;
       MPI_Isend((void*)buf,len,MPI_UNSIGNED_CHAR,*p,comm->id,comm->c,req++);
       buf += len;
+      sum_buf_size += len;
+    }
+
+    int err = (sum_buf_size > bufferSize);
+    MPI_Allreduce(MPI_IN_PLACE, &err, 1, MPI_INT, MPI_MAX, gs->comm);
+    if(err){
+      if(gs->rank == 0){
+        printf("Error! sum_buf_size (for sender) is too large!\n");
+      }
     }
     MPI_Waitall(pwd->comm[send].n + pwd->comm[recv].n, pwd->req, MPI_STATUSES_IGNORE);
   }
