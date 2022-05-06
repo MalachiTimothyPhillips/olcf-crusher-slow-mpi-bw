@@ -455,6 +455,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   };
 
   oogsParityCheck(1);
+  oogsParityCheck(nrs->NVfields);
   oogsParityCheck(nrs->NVfields + 1); // force re-alloc
   oogsParityCheck(nrs->NVfields);
   oogsParityCheck(1);
