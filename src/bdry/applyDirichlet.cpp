@@ -157,7 +157,7 @@ void applyDirichlet(nrs_t *nrs, double time)
                                      nrs->o_usrwrk,
                                      nrs->o_U,
                                      platform->o_mempool.slice7);
-
+#if 0
       if (sweep == 0)
         oogs::startFinish(platform->o_mempool.slice6,
                           1 + nrs->NVfields,
@@ -172,6 +172,7 @@ void applyDirichlet(nrs_t *nrs, double time)
                           ogsDfloat,
                           ogsMin,
                           nrs->gsh);
+#endif
     }
 
     if (nrs->pSolver->Nmasked)
