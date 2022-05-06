@@ -321,7 +321,7 @@ void reallocBuffers(int unit_size, oogs_t *gs)
     fflush(stdout);
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
-    const auto prevSize = gs->o_bufSend.size();
+    const auto prevSize = gs->o_bufRecv.size();
     if (gs->rank == 0) {
       printf("Reallocing gs->o_bufRecv to be %d bytes (prev size %d bytes)!\n", pwd->comm[recv].total * unit_size, prevSize);
     }
@@ -387,7 +387,8 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
   oogs_modeExchange_list.push_back(OOGS_EX_PW);
 
   if(ogs->NhaloGather > 0) {
-    gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
+    //gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
+    gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*4*sizeof(double), NULL, gs->o_bufSend, gs->h_buffSend);
     int *scatterOffsets = (int*) calloc(ogs->NhaloGather+1,sizeof(int));
     int *scatterIds = (int*) calloc(pwd->comm[send].total,sizeof(int));
     convertPwMap(pwd->map[send], scatterOffsets, scatterIds);
@@ -396,7 +397,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
     free(scatterOffsets);
     free(scatterIds);
  
-    gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
+    gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*4*sizeof(double), NULL, gs->o_bufRecv, gs->h_buffRecv);
     int* gatherOffsets  = (int*) calloc(ogs->NhaloGather+1,sizeof(int));
     int *gatherIds  = (int*) calloc(pwd->comm[recv].total,sizeof(int));
     convertPwMap(pwd->map[recv], gatherOffsets, gatherIds);
