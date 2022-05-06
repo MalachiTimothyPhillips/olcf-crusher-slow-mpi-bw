@@ -11,7 +11,8 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
   platform->timer.tic("pressure rhs", 1);
   double flopCount = 0.0;
   mesh_t* mesh = nrs->meshV;
-  
+
+#if 0
   nrs->curlKernel(mesh->Nelements,
 		  1,
                   mesh->o_vgeo,
@@ -19,6 +20,9 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
                   nrs->fieldOffset,
                   nrs->o_Ue,
                   platform->o_mempool.slice0);
+#else
+  platform->o_mempool.slice0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+#endif
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
         nrs->NVfields,
@@ -32,9 +36,15 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 
   flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
-  platform->o_mempool.slice3.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  oogs::runTest(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+  platform->o_mempool.slice3.copyFrom(platform->o_mempool.slice0,
+                                      nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
+  ogsGatherScatterMany(platform->o_mempool.slice3,
+                       nrs->NVfields,
+                       nrs->fieldOffset,
+                       ogsDfloat,
+                       ogsAdd,
+                       mesh->ogs);
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
@@ -44,8 +54,9 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
         platform->o_mempool.slice3,
         platform->comm.mpiComm);
     if (platform->comm.mpiRank == 0)
-      printf("gs curl norm, run test: %.15e\n", debugNorm);
+      printf("ogs curl norm: %.15e\n", debugNorm);
   }
+
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
         nrs->NVfields,

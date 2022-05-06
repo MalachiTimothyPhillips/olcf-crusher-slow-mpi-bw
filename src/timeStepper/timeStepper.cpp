@@ -213,6 +213,7 @@ void extrapolate(nrs_t *nrs)
 void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
 {
   const double tStart = MPI_Wtime();
+#if 0
   mesh_t *mesh = nrs->meshV;
   cds_t *cds = nrs->cds;
 
@@ -339,6 +340,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
   MPI_Barrier(platform->comm.mpiComm);
   const double tPreStep = MPI_Wtime() - tStart;
   tSolve += tPreStep;
+#endif
 
   const int isOutputStep = nrs->isOutputStep;
   nrs->timeStepConverged = false;
@@ -352,6 +354,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     iter++;
     const dfloat timeNew = time + nrs->dt[0];
 
+#if 0
     //////////////////////////////////////////////
     applyDirichlet(nrs, timeNew);
     
@@ -365,6 +368,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
       linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
       udf.div(nrs, timeNew, nrs->o_div);
     }
+#endif
 
     if (nrs->flow)
       fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, iter, tstep);
