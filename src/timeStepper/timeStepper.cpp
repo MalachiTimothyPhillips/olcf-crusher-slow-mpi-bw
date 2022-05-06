@@ -360,7 +360,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     iter++;
     const dfloat timeNew = time + nrs->dt[0];
 
-#if 0
+#if 1
     //////////////////////////////////////////////
     applyDirichlet(nrs, timeNew);
 #endif
