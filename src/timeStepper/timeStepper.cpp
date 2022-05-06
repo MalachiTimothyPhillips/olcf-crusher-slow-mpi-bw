@@ -213,7 +213,7 @@ void extrapolate(nrs_t *nrs)
 void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
 {
   const double tStart = MPI_Wtime();
-#if 0
+#if 1
   mesh_t *mesh = nrs->meshV;
   cds_t *cds = nrs->cds;
 
@@ -256,6 +256,9 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
       platform->flopCounter->add("divergenceVolumeKernel", flops);
     }
   }
+#endif
+
+#if 0
 
   const bool relative = movingMesh && nrs->Nsubsteps;
   occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
