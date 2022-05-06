@@ -32,7 +32,20 @@ occa::memory pressureSolve(nrs_t* nrs, dfloat time, int stage)
 
   flopCount += static_cast<double>(mesh->Nelements) * (18 * mesh->Np * mesh->Nq + 36 * mesh->Np);
 
+  platform->o_mempool.slice3.copyFrom(platform->o_mempool.slice0, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  oogs::runTest(platform->o_mempool.slice3, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+  if (verbose) {
+    const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
+        nrs->NVfields,
+        nrs->fieldOffset,
+        mesh->ogs->o_invDegree,
+        platform->o_mempool.slice3,
+        platform->comm.mpiComm);
+    if (platform->comm.mpiRank == 0)
+      printf("gs curl norm, run test: %.15e\n", debugNorm);
+  }
   if (verbose) {
     const dfloat debugNorm = platform->linAlg->weightedNorm2Many(mesh->Nlocal,
         nrs->NVfields,
