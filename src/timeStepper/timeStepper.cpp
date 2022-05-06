@@ -363,7 +363,8 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
 #if 0
     //////////////////////////////////////////////
     applyDirichlet(nrs, timeNew);
-    
+#endif
+
     if (nrs->Nscalar)
       scalarSolve(nrs, timeNew, cds->o_S, iter);
 
@@ -374,7 +375,6 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
       linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
       udf.div(nrs, timeNew, nrs->o_div);
     }
-#endif
 
     if (nrs->flow)
       fluidSolve(nrs, timeNew, nrs->o_P, nrs->o_U, iter, tstep);
