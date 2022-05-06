@@ -158,34 +158,20 @@ void applyDirichlet(nrs_t *nrs, double time)
                                      nrs->o_U,
                                      platform->o_mempool.slice7);
 
-      if (sweep == 0){
+      if (sweep == 0)
         oogs::startFinish(platform->o_mempool.slice6,
-                          1,
+                          1 + nrs->NVfields,
                           nrs->fieldOffset,
                           ogsDfloat,
                           ogsMax,
                           nrs->gsh);
-        oogs::startFinish(platform->o_mempool.slice7,
-                          nrs->NVfields,
-                          nrs->fieldOffset,
-                          ogsDfloat,
-                          ogsMax,
-                          nrs->gsh);
-      }
-      if (sweep == 1){
+      if (sweep == 1)
         oogs::startFinish(platform->o_mempool.slice6,
-                          1,
+                          1 + nrs->NVfields,
                           nrs->fieldOffset,
                           ogsDfloat,
                           ogsMin,
                           nrs->gsh);
-        oogs::startFinish(platform->o_mempool.slice7,
-                          nrs->NVfields,
-                          nrs->fieldOffset,
-                          ogsDfloat,
-                          ogsMin,
-                          nrs->gsh);
-      }
     }
 
     if (nrs->pSolver->Nmasked)
