@@ -109,6 +109,10 @@ echo "export NEKRS_GPU_MPI=1 " >>$SFILE
 echo "export NVME_HOME=$NVME_HOME" >>$SFILE
 echo "export ROMIO_HINTS=$ROMIO_HINTS" >>$SFILE
 
+echo "# Workaround for https://github.com/Nek5000/Nek5000/issues/759" >> $SFILE
+echo "export FI_OFI_RXM_RX_SIZE=32768" >> $SFILE
+
+
 echo "# actual run" >>$SFILE
 echo "date" >>$SFILE
 echo "srun -n $ntasks $bin --backend $backend --device-id 0 --setup $case" >>$SFILE
