@@ -437,7 +437,9 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
         o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
     }
 
-    if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
+    if(userCoarseGridSolver){
+      userCoarseGridSolver(xLocal, rhsLocal);
+    } else if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
       BoomerAMGSolve(); 
     } else if (options.compareArgs("AMG SOLVER", "AMGX")){
       occa::memory o_b = gatherLevel ? o_Gx : o_rhs;

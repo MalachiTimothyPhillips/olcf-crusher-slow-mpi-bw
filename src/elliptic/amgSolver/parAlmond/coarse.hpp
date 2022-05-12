@@ -61,6 +61,7 @@ public:
   setupAide options;
   bool useSEMFEM = false;
   std::function<void(occa::memory,occa::memory)> semfemSolver = nullptr;
+  std::function<void(dfloat* xLocal, dfloat *rhsLocal)> userCoarseGridSolver = nullptr;
 
   coarseSolver(setupAide options, MPI_Comm comm);
   ~coarseSolver();

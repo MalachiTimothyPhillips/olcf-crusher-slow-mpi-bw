@@ -41,7 +41,10 @@ void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memor
   const dlong Nlocal = mesh->Np * mesh->Nelements;
 
   platform->timer.tic(elliptic->name + " preconditioner", 1);
-  if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
+
+  if(elliptic->userPreconditioner){
+    elliptic->userPreconditioner(o_r, o_z);
+  }else if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
     const dfloat one = 1.0;
     elliptic->axmyzManyPfloatKernel(
       Nlocal,

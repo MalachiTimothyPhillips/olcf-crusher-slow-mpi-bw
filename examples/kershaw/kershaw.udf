@@ -2,6 +2,8 @@
 #include <numeric>
 #include "udf.hpp"
 
+#include <cstring>
+
 /* UDF Functions */                                                      
 static dfloat P_EPS;
 
@@ -60,6 +62,39 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       Nrep = 50;
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-8));
       nrs->pSolver->options.setArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE");
+
+#if 0
+      // user defined preconditioner
+      auto * pSolver = nrs->pSolver;
+      auto eye = [pSolver, platform](occa::memory & o_r, occa::memory & o_z)
+      {
+        if(platform->comm.mpiRank == 0){
+          std::cout << "User defined preconditioner!\n";
+        }
+
+        o_z.copyFrom(o_r, pSolver->Ntotal*pSolver->Nfields*sizeof(dfloat));
+      };
+
+      pSolver->userPreconditioner = eye;
+#endif
+
+#if 1
+      // user defined coarse grid solver
+      auto * coarseLevel = nrs->pSolver->precon->parAlmond->coarseLevel;
+
+      // perform x_C = A_c^{-1} r_C
+      // (although here, for demonstration, A_c^{-1} = I)
+      auto noopCoarseSolver = [coarseLevel, platform](dfloat * xLocal, dfloat * rhsLocal)
+      {
+        if(platform->comm.mpiRank == 0){
+          std::cout << "User defined coarse grid solver!\n";
+        }
+
+        std::memcpy(xLocal, rhsLocal, coarseLevel->N*sizeof(dfloat));
+      };
+
+      coarseLevel->userCoarseGridSolver = noopCoarseSolver;
+#endif
     }
 
     platform->timer.reset("pressureSolve");

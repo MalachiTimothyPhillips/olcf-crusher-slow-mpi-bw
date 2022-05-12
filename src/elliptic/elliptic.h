@@ -179,6 +179,8 @@ struct elliptic_t
   GmresData *gmresData;
 
   std::function<void(dlong Nelements, occa::memory &o_elementList, occa::memory &o_x)> applyZeroNormalMask;
+
+  std::function<void(occa::memory &o_r, occa::memory &o_z)> userPreconditioner;
 };
 
 #include "ellipticMultiGrid.h"
