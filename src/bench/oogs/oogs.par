@@ -1,0 +1,15 @@
+[GENERAL] 
+#verbose = true
+polynomialOrder = 7
+dealiasing = false
+timeStepper = tombo1
+stopAt = numSteps
+numSteps = 0
+
+[PRESSURE]
+residualTol = 1e-8
+
+[VELOCITY] # dummy
+preconditioner = none
+density = 1.0
+viscosity = 1.0

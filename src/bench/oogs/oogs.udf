@@ -1,0 +1,38 @@
+#include <math.h>
+#include <numeric>
+#include "udf.hpp"
+
+/* UDF Functions */                                                      
+static dfloat P_EPS;
+
+void UDF_LoadKernels(occa::properties& kernelInfo)
+{
+}
+
+void UDF_Setup0(MPI_Comm comm, setupAide &options)
+{
+}
+
+void UDF_Setup(nrs_t *nrs)
+{
+}
+
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+  auto noopCallBack = [](){};
+
+  auto mesh = nrs->meshV;
+  auto gs = oogs::setup(mesh->ogs, 1, nrs->fieldOffset, ogsDfloat, noopCallBack, OOGS_DEVICEMPI);
+
+  auto gatherScatterConstantField = [&](int Nfields){
+    auto o_field = platform->device.malloc(Nfields * nrs->fieldOffset * sizeof(dfloat));
+    platform->linAlg->fill(Nfields * nrs->fieldOffset, 1.0, o_field);
+
+    oogs::startFinish(o_field, Nfields, nrs->fieldOffset, ogsDfloat, ogsAdd, gs);
+
+    o_field.free();
+  };
+
+  gatherScatterConstantField(1);
+  gatherScatterConstantField(2); // causes re-alloc, this will fail
+}
