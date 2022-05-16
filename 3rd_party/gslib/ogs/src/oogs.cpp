@@ -272,7 +272,7 @@ void oogs::compile(const occa::device& device, std::string mode, MPI_Comm comm, 
   compiled++;
 }
 
-void reallocBuffers(int unit_size, oogs_t *gs)
+void reallocBuffers(int unit_size, oogs_t *gs, bool verbose)
 {
   ogs_t *ogs = gs->ogs;
   struct gs_data *hgs = (gs_data*) ogs->haloGshSym;
@@ -280,14 +280,31 @@ void reallocBuffers(int unit_size, oogs_t *gs)
   const struct pw_data *pwd = (pw_data*) execdata;
 
   if (gs->o_bufSend.size() < pwd->comm[send].total*unit_size) {
+    const auto prevSize = gs->o_bufSend.size();
     if(gs->o_bufSend.size()) gs->o_bufSend.free();
     if(gs->h_buffSend.size()) gs->h_buffSend.free();
     gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
+
+    if(verbose){
+      if(gs->rank == 0){
+        printf("Re-allocated send buffer, previous size = %d, current size = %d bytes!\n", prevSize, gs->o_bufSend.size());
+      }
+      fflush(stdout);
+      MPI_Barrier(gs->comm);
+    }
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
+    const auto prevSize = gs->o_bufRecv.size();
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
+    if(verbose){
+      if(gs->rank == 0){
+        printf("Re-allocated recv buffer, previous size = %d, current size = %d bytes!\n", prevSize, gs->o_bufRecv.size());
+      }
+      fflush(stdout);
+      MPI_Barrier(gs->comm);
+    }
   }
 }
 
@@ -301,7 +318,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
   struct gs_data *hgs = (gs_data*) ogs->haloGshSym;
   const void* execdata = hgs->r.data;
   const struct pw_data *pwd = (pw_data*) execdata;
-  const unsigned unit_size = std::max(nVec, 6)*sizeof(double); // just need to be big enough to run callcack
+  const unsigned unit_size = nVec*sizeof(double); // just need to be big enough to run callcack
 
   gs->comm = hgs->comm.c;
 
@@ -388,6 +405,8 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
     }
     oogs_modeExchange_list.push_back(OOGS_EX_NBC);
   }
+
+  gsMode = OOGS_DEVICEMPI;
 
   if(gsMode == OOGS_AUTO) {
     if(gs->rank == 0) printf("timing gs modes: ");
@@ -490,7 +509,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
       Nbytes = sizeof(long long int);
 
     const size_t unit_size = nVec*Nbytes;
-    reallocBuffers(unit_size, gs);
+    reallocBuffers(unit_size, gs, false);
 
     device.finish();
     for(int test=0;test<Ntests;++test) {
@@ -614,7 +633,7 @@ static void unpackBuf(oogs_t *gs,
   }
 }
 
-void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs)
+void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs, bool verbose)
 {
   size_t Nbytes;
   ogs_t *ogs = gs->ogs;
@@ -646,7 +665,7 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
   }
 
   if (ogs->NhaloGather && gs->mode != OOGS_LOCAL) {
-    reallocBuffers(Nbytes*k, gs);
+    reallocBuffers(Nbytes*k, gs, verbose);
 
     packBuf(gs, ogs->NhaloGather, k, stride, ogs->o_haloGatherOffsets, ogs->o_haloGatherIds,
             gs->o_scatterOffsets, gs->o_scatterIds, _type, op, o_v, gs->o_bufSend);
@@ -674,7 +693,7 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
   }
 }
 
-void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs)
+void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs, bool verbose)
 {
   size_t Nbytes;
   ogs_t *ogs = gs->ogs;
@@ -714,6 +733,37 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
     const void* execdata = hgs->r.data;
     const struct pw_data *pwd = (pw_data*) execdata;
 
+    auto computeNormBuffer = [gs](occa::memory& o_buffer, dlong totalBytes, dlong wordSize)
+    {
+      auto doWork = [&](auto fpWord){
+        using FPType = decltype(fpWord);
+
+        std::vector<FPType> buffer(totalBytes / sizeof(FPType));
+        o_buffer.copyTo(buffer.data(), totalBytes);
+
+        double norm2 = 0.0;
+        for(int i = 0; i < buffer.size(); ++i){
+          const auto v = buffer[i];
+          norm2 += v * v;
+        }
+        MPI_Allreduce(MPI_IN_PLACE, &norm2, 1, MPI_DOUBLE, MPI_SUM, gs->comm);
+        return sqrt(norm2);
+      };
+
+      if(wordSize == sizeof(float)){
+        float f;
+        return doWork(f);
+      } else {
+        double f;
+        return doWork(f);
+      }
+    };
+
+    double sendBufNorm = 0.0;
+    if(verbose){
+      sendBufNorm = computeNormBuffer(gs->o_bufSend, pwd->comm[send].total*Nbytes*k, Nbytes);
+    }
+
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total*Nbytes*k, 0, "async: true");
 
@@ -727,6 +777,15 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufRecv.copyFrom(gs->bufRecv,pwd->comm[recv].total*Nbytes*k, 0, "async: true");
 
+    double recvBufNorm = 0.0;
+    if(verbose){
+      recvBufNorm = computeNormBuffer(gs->o_bufRecv, pwd->comm[recv].total*Nbytes*k, Nbytes);
+    }
+
+    if(gs->rank == 0 && verbose){
+      printf("sendBufNorm = %g, recvBufNorm = %g\n", sendBufNorm, recvBufNorm);
+    }
+
     unpackBuf(gs, ogs->NhaloGather, k, stride, gs->o_gatherOffsets, gs->o_gatherIds,
               ogs->o_haloGatherOffsets, ogs->o_haloGatherIds, _type, op, gs->o_bufRecv, o_v);
 
@@ -739,10 +798,10 @@ void oogs::startFinish(void *v, const int k, const dlong stride, const char *typ
 {
   ogsGatherScatterMany(v, k, stride, type, op, h->ogs);
 }
-void oogs::startFinish(occa::memory &o_v, const int k, const dlong stride, const char *type, const char *op, oogs_t *h)
+void oogs::startFinish(occa::memory &o_v, const int k, const dlong stride, const char *type, const char *op, oogs_t *h, bool verbose)
 {
-   start(o_v, k, stride, type, op, h);
-   finish(o_v, k, stride, type, op, h);
+   start(o_v, k, stride, type, op, h, verbose);
+   finish(o_v, k, stride, type, op, h, verbose);
 }
 
 void oogs::destroy(oogs_t *gs)
