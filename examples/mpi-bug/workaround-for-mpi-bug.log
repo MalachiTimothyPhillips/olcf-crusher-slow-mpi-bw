@@ -1,0 +1,507 @@
+
+The following have been reloaded with a version change:
+  1) rocm/4.5.2 => rocm/4.5.0
+
+
+Currently Loaded Modules:
+  1) craype-x86-trento                     10) gcc/11.2.0
+  2) libfabric/1.15.0.0                    11) craype/2.7.13
+  3) craype-network-ofi                    12) cray-dsmml/0.2.2
+  4) perftools-base/21.12.0                13) PrgEnv-gnu/8.2.0
+  5) xpmem/2.3.2-2.2_7.5__g93dd7ee.shasta  14) xalt/1.3.0
+  6) cray-pmi/6.0.16                       15) DefApps/default
+  7) cray-pmi-lib/6.0.16                   16) craype-accel-amd-gfx90a
+  8) openblas/0.3.17                       17) cray-mpich/8.1.12
+  9) tmux/3.2a                             18) rocm/4.5.0
+
+ 
+
+WARNING:  		 One or more commands failed
+
+
+======================= ROCm System Management Interface =======================
+================================= Concise Info =================================
+GPU  Temp   AvgPwr  SCLK    MCLK     Fan  Perf  PwrCap  VRAM%  GPU%  
+0    31.0c  91.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+1    37.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+2    29.0c  85.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+3    28.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+4    26.0c  91.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+5    32.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+6    28.0c  88.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+7    29.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+================================================================================
+============================= End of ROCm SMI Log ==============================
+
+
+======================= ROCm System Management Interface =======================
+================================ KFD Processes =================================
+No KFD PIDs currently running
+================================================================================
+============================= End of ROCm SMI Log ==============================
+Mon 16 May 2022 06:02:56 PM EDT
+                 __    ____  _____
+   ____   ___   / /__ / __ \/ ___/
+  / __ \ / _ \ / //_// /_/ /\__ \ 
+ / / / //  __// ,<  / _, _/___/ / 
+/_/ /_/ \___//_/|_|/_/ |_|/____/  v22.0.0 (5dc1b43b)
+
+COPYRIGHT (c) 2019-2022 UCHICAGO ARGONNE, LLC
+
+MPI tasks: 64
+
+reading par file ...
+
+using NEKRS_HOME: /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug
+using NEKRS_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache
+using OCCA_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/occa/
+
+Initializing device 
+active occa mode: HIP
+
+building udf ... 
+Scanning dependencies of target UDF
+[100%] Built target UDF
+cd /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/udf && make  (retVal: 0)
+done (4.49364s)
+using new SIZE
+building nekInterface for lx1=9, lelt=13341 and lelg=853632 ...
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/drive1.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/drive1.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/drive2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/drive2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/plan5.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/plan5.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/plan4.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/plan4.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/bdry.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/bdry.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/coef.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/coef.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/conduct.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/conduct.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/connect1.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/connect1.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/connect2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/connect2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/dssum.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/dssum.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/eigsolv.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/eigsolv.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/gauss.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/gauss.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/genxyz.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/genxyz.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier1.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier1.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/makeq.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/makeq.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier0.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier0.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier3.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier3.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier4.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier4.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/prepost.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/prepost.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/speclib.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/speclib.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/map2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/map2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/mvmesh.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/mvmesh.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/ic.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/ic.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/gfldr.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/gfldr.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/ssolv.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/ssolv.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/planx.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/planx.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O3 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/math.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/math.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/mxm_wrapper.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/mxm_wrapper.o 
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/hmholtz.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/hmholtz.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/subs1.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/subs1.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/subs2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/subs2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/gmres.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/gmres.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/hsmg.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/hsmg.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/convect.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/convect.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O0 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/convect2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/convect2.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/induct.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/induct.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/perturb.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/perturb.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier5.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier5.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier6.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier6.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier7.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier7.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/navier8.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/navier8.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/fast3d.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/fast3d.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/fasts.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/fasts.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/calcz.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/calcz.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/byte.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/byte.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/chelpers.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/chelpers.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/byte_mpi.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/byte_mpi.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/postpro.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/postpro.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/interp.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/interp.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/cvode_driver.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/cvode_driver.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/multimesh.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/multimesh.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/vprops.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/vprops.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/makeq_aux.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/makeq_aux.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/papi.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/papi.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c   -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/3rd_party/nek_in_situ.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/nek_in_situ.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/reader_rea.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/reader_rea.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/reader_par.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/reader_par.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/reader_re2.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/reader_re2.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/3rd_party/finiparser.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/finiparser.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/3rd_party/iniparser.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/iniparser.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/3rd_party/dictionary.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/dictionary.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/hpf.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/hpf.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/fcrs.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/fcrs.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/crs_xxt.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_amg.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/crs_amg.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental/fem_amg_preco.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/fem_amg_preco.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include  /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental/crs_hypre.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/crs_hypre.o
+/opt/cray/pe/craype/2.7.13/bin/cc -c  -O2 -fopenmp  -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium -mlarge-data-threshold=0 -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/parRSB/include /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/partitioner.c -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/partitioner.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/dprocmap.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/dprocmap.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O3 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/mxm_std.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/mxm_std.o
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/comm_mpi.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/comm_mpi.o
+/opt/cray/pe/craype/2.7.13/bin/ftn  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj  -c /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/mpi-bug.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/mpi-bug.o
+In file included from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/gslib.h:19,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:8:
+In function 'comm_wait',
+    inlined from 'sum' at /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:584:13:
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:253:3: warning: 'MPI_Waitall' accessing 20 bytes in a region of size 0 [-Wstringop-overflow=]
+  253 |   MPI_Waitall(n,req,MPI_STATUSES_IGNORE);
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h: In function 'sum':
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:253:3: note: referencing argument 3 of type 'MPI_Status *'
+In file included from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:67,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/gslib.h:19,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:8:
+/opt/cray/pe/mpich/8.1.12/ofi/gnu/9.1/include/mpi.h:966:5: note: in a call to function 'MPI_Waitall'
+  966 | int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]) MPICH_API_PUBLIC;
+      |     ^~~~~~~~~~~
+In file included from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/gslib.h:19,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:8:
+In function 'comm_wait',
+    inlined from 'apply_QQt' at /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:546:13:
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:253:3: warning: 'MPI_Waitall' accessing 20 bytes in a region of size 0 [-Wstringop-overflow=]
+  253 |   MPI_Waitall(n,req,MPI_STATUSES_IGNORE);
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h: In function 'apply_QQt':
+/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:253:3: note: referencing argument 3 of type 'MPI_Status *'
+In file included from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/comm.h:67,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/include/gslib.h:19,
+                 from /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/crs_xxt.c:8:
+/opt/cray/pe/mpich/8.1.12/ofi/gnu/9.1/include/mpi.h:966:5: note: in a call to function 'MPI_Waitall'
+  966 | int MPI_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]) MPICH_API_PUBLIC;
+      |     ^~~~~~~~~~~
+done
+/opt/cray/pe/craype/2.7.13/bin/ftn -c  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj /gpfs/alpine/csc262/scratch/malachi/installs/nekrs-crusher-debug/nekInterface/nekInterface.f -o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/nekInterface.o 
+/opt/cray/pe/craype/2.7.13/bin/ftn  -O2 -cpp -fdefault-real-8 -fdefault-double-8 -w -std=legacy   -g -march=native -mtune=native -ftree-vectorize -fPIC -mcmodel=medium  -mlarge-data-threshold=0 -fcray-pointer -DPARRSB -DDPROCMAP -DMPI -DUNDERSCORE -DGLOBAL_LONG_LONG -DTIMER -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core -I./ -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug -I/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/core/experimental -I/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -shared -o libmpi-bug.so /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/mpi-bug.o /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj/nekInterface.o -Wl,-Bsymbolic -Wl,-Bsymbolic-functions -Wl,--allow-multiple-definition -Wl,-rpath,. -L/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000/obj -lnek5000 -ldl -Wl,-rpath,/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/parRSB/lib -L/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/parRSB/lib -lparRSB -Wl,-rpath,/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/blasLapack -L/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/blasLapack -lblasLapack -Wl,-rpath,/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/lib -L/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/3rd_party/gslib/lib -lgs
+
+cd /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 && cp -f /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000/makefile.template makefile  && make -j8 S=/gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nek5000 OPT_INCDIR="./ /gpfs/alpine/csc262/scratch/malachi/mpi-bug" CASENAME=mpi-bug CASEDIR=/gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/nek5000 -f /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug/nekInterface/Makefile lib usr libnekInterface 
+done (11.9659s)
+loading nek ... 
+done
+loading kernels (this may take awhile) ...
+loading udf kernels ... done (0.00625908s)
+Error in kernel 0 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=10 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00994347 wordSize=64 GDOF/s=2.06036 GB/s=196.218 GFLOPS/s=1424.94 kernelVer=0
+Error in kernel 1 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00569062 wordSize=64 GDOF/s=3.60017 GB/s=342.86 GFLOPS/s=2489.86 kernelVer=1
+Error in kernel 2 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00511172 wordSize=64 GDOF/s=4.00788 GB/s=381.688 GFLOPS/s=2771.83 kernelVer=2
+Error in kernel 3 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00476842 wordSize=64 GDOF/s=4.29643 GB/s=409.168 GFLOPS/s=2971.39 kernelVer=3
+Error in kernel 4 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=20 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00490199 wordSize=64 GDOF/s=4.17936 GB/s=398.019 GFLOPS/s=2890.42 kernelVer=4
+Error in kernel 5 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00461876 wordSize=64 GDOF/s=4.43564 GB/s=422.426 GFLOPS/s=3067.67 kernelVer=5
+Error in kernel 6 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00459169 wordSize=64 GDOF/s=4.4618 GB/s=424.917 GFLOPS/s=3085.76 kernelVer=6
+Error in kernel 7 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00509518 wordSize=64 GDOF/s=4.02089 GB/s=382.927 GFLOPS/s=2780.83 kernelVer=7
+Error in kernel 8 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.0052274 wordSize=64 GDOF/s=3.91919 GB/s=373.242 GFLOPS/s=2710.49 kernelVer=8
+Error in kernel 9 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00522337 wordSize=64 GDOF/s=3.92221 GB/s=373.53 GFLOPS/s=2712.58 kernelVer=9
+Error in kernel 10 is 1.61537e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00560256 wordSize=64 GDOF/s=3.65675 GB/s=348.249 GFLOPS/s=2528.99 kernelVer=10
+Error in kernel 11 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=11 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00908392 wordSize=64 GDOF/s=2.25532 GB/s=214.784 GFLOPS/s=1559.77 kernelVer=11
+Error in kernel 12 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00562635 wordSize=64 GDOF/s=3.64129 GB/s=346.776 GFLOPS/s=2518.3 kernelVer=12
+Error in kernel 13 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=17 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00661377 wordSize=64 GDOF/s=3.09765 GB/s=295.003 GFLOPS/s=2142.32 kernelVer=13
+Error in kernel compared to reference implementation 0: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=140 N=8 Nelements=13338 elapsed time=0.000718238 wordSize=64 GDOF/s=9.50806 GB/s=866.422 GFLOPS/s=1665.16 bkMode=1 kernelVer=0
+Error in kernel compared to reference implementation 1: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=140 N=8 Nelements=13338 elapsed time=0.000714752 wordSize=64 GDOF/s=9.55444 GB/s=870.648 GFLOPS/s=1673.28 bkMode=1 kernelVer=1
+Error in kernel compared to reference implementation 2: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=138 N=8 Nelements=13338 elapsed time=0.000728998 wordSize=64 GDOF/s=9.36773 GB/s=853.634 GFLOPS/s=1640.58 bkMode=1 kernelVer=2
+Error in kernel compared to reference implementation 4: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=145 N=8 Nelements=13338 elapsed time=0.000693346 wordSize=64 GDOF/s=9.84943 GB/s=897.529 GFLOPS/s=1724.94 bkMode=1 kernelVer=4
+Error in kernel compared to reference implementation 5: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=145 N=8 Nelements=13338 elapsed time=0.000694367 wordSize=64 GDOF/s=9.83494 GB/s=896.209 GFLOPS/s=1722.4 bkMode=1 kernelVer=5
+Error in kernel compared to reference implementation 6: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=141 N=8 Nelements=13338 elapsed time=0.0007146 wordSize=64 GDOF/s=9.55648 GB/s=870.834 GFLOPS/s=1673.63 bkMode=1 kernelVer=6
+done (119.167s)
+
+ Reading /gpfs/alpine/csc262/scratch/malachi/mpi-bug/mpi-bug.re2                                                                             
+ reading mesh 
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file    0.79     sec
+
+Running parCon ... (tol=0.2)
+Running parRSB ...
+parRSB finished in 1.4185 s
+
+ reading mesh 
+ reading curved sides      5296896
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file     1.5     sec
+
+ setup mesh topology
+   Right-handed check complete for      853632 elements. OK.
+gs_setup: 5843584 unique labels shared
+   pairwise times (avg, min, max): 0.000207205 0.000192084 0.000224132
+   crystal router                : 0.00171152 0.00170119 0.00172522
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 6.17077e+07 61675820 61739380
+   buffer bytes (avg, min, max): 2.97503e+06 2949552 3000272
+   setupds time 1.7552E+00 seconds   0  9   145666944      853632
+ 
+ nElements   max/min/bal: 13338 13338 1.00
+ nMessages   max/min/avg: 11 8 9.50
+ msgSize     max/min/avg: 47817 17 20046.00
+ msgSizeSum  max/min/avg: 187517 184347 185939.50
+ 
+ max multiplicity            8
+ done :: setup mesh topology
+  
+ call usrdat
+ done :: usrdat
+
+ generate geometry data
+ done :: generate geometry data
+  
+ call usrdat2
+ done :: usrdat2
+
+  5.0664E-07  5.0664E-07  1.8503E-15  5.0664E-07  5.0664E-07  6.6382E-16 xyz repair 1
+  4.8125E-07  4.8125E-07  1.8503E-15  4.8125E-07  4.8125E-07  3.3528E-15 xyz repair 2
+  3.1247E-08  3.1247E-08  1.8433E-15  3.1247E-08  3.1247E-08  2.7558E-15 xyz repair 3
+  5.5511E-17  5.5511E-17  6.6498E-16  5.5511E-17  5.5511E-17  6.6498E-16 xyz repair 4
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ verify mesh topology
+ -0.50000000000001021       0.50000000000000999       Xrange
+ -0.50000000000000000       0.50000000000001832       Yrange
+   0.0000000000000000        12.000000000000000       Zrange
+ done :: verify mesh topology
+  
+ mesh metrics:
+ GLL grid spacing min/max    : 2.86E-04 7.57E-03
+ scaled Jacobian  min/max/avg: 7.44E-01 9.99E-01 9.57E-01
+ aspect ratio     min/max/avg: 2.08E+00 7.30E+00 3.22E+00
+
+ call usrdat3
+ done :: usrdat3
+
+gridpoints unique/tot:     438462720    622297728
+dofs vel/pr:               435661056    438462720
+ nek setup done in    1.5017E+01 s
+
+ set initial conditions
+ nekuic (1) for ifld            1
+ call nekuic for vel  
+ xyz min   -0.50000     -0.50000       0.0000    
+ uvwpt min  0.45434E-10 -0.99997E-01 -0.20998       0.0000       0.0000    
+ PS min      0.0000       0.0000       0.0000      0.99000E+22
+ xyz max    0.50000      0.50000       12.000    
+ uvwpt max  0.49999E-01  0.99997E-01   1.2100       0.0000       0.0000    
+ PS max      0.0000       0.0000       0.0000     -0.99000E+22
+ done :: set initial conditions
+  
+calling nek_userchk ...
+
+generating t-mesh ...
+loading mesh from nek ... NboundaryIDs: 1, NboundaryFaces: 5121792 done (0.00118748s)
+N: 8, Nq: 9, cubNq: 13
+computing geometric factors ... J [5.33842e-07,2.08687e-06] done (3.33167s)
+meshParallelGatherScatterSetup N=8
+
+used config: pw+device (MPI: 2.14e-04s / bi-bw: 83.3GB/s/rank)
+sendBufNorm = 1.09059e-05, recvBufNorm = 1.09059e-05
+min 80% of the local elements are internal
+
+used config: pw+device (MPI: 5.50e-04s / bi-bw: 32.5GB/s/rank)
+copying solution from nek
+calling udf_setup ... done
+copying solution to nek
+================ ELLIPTIC SETUP VELOCITY ================
+bID 1 -> bcType zeroValue
+
+used config: pw+device (MPI: 5.85e-04s / bi-bw: 30.5GB/s/rank)
+
+used config: pw+device (MPI: 5.33e-04s / bi-bw: 33.5GB/s/rank)
+building Jacobi preconditioner ... sendBufNorm = 91.3188, recvBufNorm = 91.3188
+done (0.0417761s)
+done (0.295043s)
+================ ELLIPTIC SETUP PRESSURE ================
+allNeumann = 1 
+
+used config: pw+device (MPI: 1.76e-04s / bi-bw: 101.6GB/s/rank)
+
+used config: pw+device (MPI: 1.77e-04s / bi-bw: 101.1GB/s/rank)
+done (2.2632e-05s)
+done (4.91406s)
+
+settings:
+
+key: ADVECTION,                                               value: TRUE
+key: ADVECTION TYPE,                                          value: CUBATURE+CONVECTIVE
+key: AMG SOLVER,                                              value: BOOMERAMG
+key: AMG SOLVER LOCATION,                                     value: CPU
+key: AMG SOLVER PRECISION,                                    value: FP64
+key: BUILD ONLY,                                              value: FALSE
+key: CASENAME,                                                value: mpi-bug
+key: CHECKPOINT OUTPUT MESH,                                  value: FALSE
+key: CI-MODE,                                                 value: 0
+key: CONSTANT FLOW DIRECTION,                                 value: Z
+key: CONSTANT FLOW RATE,                                      value: TRUE
+key: CONSTANT FLOW RATE TYPE,                                 value: BULK
+key: CUBATURE POLYNOMIAL DEGREE,                              value: 12
+key: DATA FILE,                                               value: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/udf/udf.okl
+key: DENSITY,                                                 value: 1.000000e+00
+key: DEVICE NUMBER,                                           value: 0
+key: DT,                                                      value: 1.750000e-04
+key: ELEMENT MAP,                                             value: ISOPARAMETRIC
+key: ELEMENT TYPE,                                            value: 12
+key: ELLIPTIC INTEGRATION,                                    value: NODAL
+key: ENABLE FLOATCOMMHALF GS SUPPORT,                         value: FALSE
+key: FLOW RATE,                                               value: 1.000000e+00
+key: FORMAT,                                                  value: 1.0
+key: GS OVERLAP,                                              value: TRUE
+key: HPFRT MODES,                                             value: 1.000000e+00
+key: HPFRT STRENGTH,                                          value: 1.000000e+01
+key: MESH DIMENSION,                                          value: 3
+key: MESH FILE,                                               value: mpi-bug.re2
+key: MESH INTEGRATION ORDER,                                  value: 3
+key: MOVING MESH,                                             value: FALSE
+key: NEK USR FILE,                                            value: mpi-bug.usr
+key: NUMBER OF SCALARS,                                       value: 0
+key: NUMBER TIMESTEPS,                                        value: 1
+key: PARALMOND SMOOTH COARSEST,                               value: FALSE
+key: PLATFORM NUMBER,                                         value: 0
+key: POLYNOMIAL DEGREE,                                       value: 8
+key: PRESSURE BASIS,                                          value: NODAL
+key: PRESSURE DISCRETIZATION,                                 value: CONTINUOUS
+key: PRESSURE INITIAL GUESS,                                  value: PREVIOUS
+key: PRESSURE KRYLOV SOLVER,                                  value: PGMRES+FLEXIBLE
+key: PRESSURE MAXIMUM ITERATIONS,                             value: 1
+key: PRESSURE MULTIGRID CHEBYSHEV DEGREE,                     value: 2
+key: PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR,value: 1.1
+key: PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR,value: 0.1
+key: PRESSURE MULTIGRID COARSE SEMFEM,                        value: FALSE
+key: PRESSURE MULTIGRID COARSE SOLVE,                         value: TRUE
+key: PRESSURE MULTIGRID DOWNWARD SMOOTHER,                    value: ASM
+key: PRESSURE MULTIGRID SMOOTHER,                             value: CHEBYSHEV+ASM
+key: PRESSURE MULTIGRID UPWARD SMOOTHER,                      value: ASM
+key: PRESSURE PARALMOND CYCLE,                                value: VCYCLE
+key: PRESSURE PGMRES RESTART,                                 value: 10
+key: PRESSURE PRECONDITIONER,                                 value: NONE
+key: PRESSURE SOLVER TOLERANCE,                               value: 1.000000e-04
+key: REGULARIZATION METHOD,                                   value: RELAXATION
+key: RESTART FROM FILE,                                       value: 0
+key: SCALAR MAXIMUM ITERATIONS,                               value: 200
+key: SOLUTION OUTPUT CONTROL,                                 value: STEPS
+key: SOLUTION OUTPUT INTERVAL,                                value: 1000.000000
+key: START TIME,                                              value: 0.000000e+00
+key: STRESSFORMULATION,                                       value: FALSE
+key: SUBCYCLING STEPS,                                        value: 2
+key: SUBCYCLING TIME ORDER,                                   value: 4
+key: SUBCYCLING TIME STAGE NUMBER,                            value: 4
+key: THREAD MODEL,                                            value: HIP
+key: TIME INTEGRATOR,                                         value: TOMBO2
+key: UDF FILE,                                                value: mpi-bug.udf
+key: UDF OKL FILE,                                            value: mpi-bug.oudf
+key: VARIABLE DT,                                             value: FALSE
+key: VELOCITY BASIS,                                          value: NODAL
+key: VELOCITY BLOCK SOLVER,                                   value: TRUE
+key: VELOCITY COEFF FIELD,                                    value: TRUE
+key: VELOCITY DISCRETIZATION,                                 value: CONTINUOUS
+key: VELOCITY HPFRT MODES,                                    value: 1.000000e+00
+key: VELOCITY HPFRT STRENGTH,                                 value: 1.000000e+01
+key: VELOCITY KRYLOV SOLVER,                                  value: PCG
+key: VELOCITY MAXIMUM ITERATIONS,                             value: 1
+key: VELOCITY PRECONDITIONER,                                 value: JACOBI
+key: VELOCITY REGULARIZATION METHOD,                          value: RELAXATION
+key: VELOCITY SOLVER TOLERANCE,                               value: 1.000000e-06
+key: VERBOSE,                                                 value: TRUE
+key: VISCOSITY,                                               value: 5.263158e-05
+
+occa memory usage: 13.8815 GB
+initialization took 171.703 s
+
+timestepping for 1 steps ...
+sendBufNorm = 67187.7, recvBufNorm = 67187.7
+sendBufNorm = 67166.6, recvBufNorm = 67166.6
+sendBufNorm = 67174.7, recvBufNorm = 67174.7
+sendBufNorm = 67174.3, recvBufNorm = 67174.3
+sendBufNorm = 67174.3, recvBufNorm = 67174.3
+sendBufNorm = 67194.6, recvBufNorm = 67194.6
+sendBufNorm = 67202.7, recvBufNorm = 67202.7
+sendBufNorm = 67243.7, recvBufNorm = 67243.7
+BF norm: 3.484854204899573e+00
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = 0.00112021, recvBufNorm = 0.00112021
+sendBufNorm = 0.0672893, recvBufNorm = 0.0672893
+pressure RHS norm: 8.610357133048080e+01
+pressure x0 norm: 0.000000000000000e+00
+sendBufNorm = 73.6098, recvBufNorm = 73.6098
+PFGMRES pressure: initial res norm 4.966985361728566e+01 WE NEED TO GET TO 1.000000e-04 
+sendBufNorm = 0.00378063, recvBufNorm = 0.00378063
+it 1 r norm 2.389468119485042e+01
+sendBufNorm = 0.112226, recvBufNorm = 0.112226
+velocity RHS norm: 1.134563644110331e+00
+velocity x0 norm: 6.067508927193646e+03
+sendBufNorm = 0.0030248, recvBufNorm = 0.0030248
+PCG velocity: initial res norm 2.436184891833412e-02 WE NEED TO GET TO 1.000000e-06 
+sendBufNorm = 0.00217524, recvBufNorm = 0.00217524
+it 1 r norm 4.773710873476524e-04
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+pressure RHS norm: 5.024947959587343e-18
+pressure x0 norm: 0.000000000000000e+00
+sendBufNorm = 2.39157e-18, recvBufNorm = 2.39157e-18
+PFGMRES pressure: initial res norm 4.781335582403291e-18 WE NEED TO GET TO 1.000000e-04 
+sendBufNorm = 0.00158684, recvBufNorm = 0.00158684
+it 1 r norm 3.801059610109326e-18
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = 0.112226, recvBufNorm = 0.112226
+velocity RHS norm: 1.935611755057412e-04
+velocity x0 norm: 0.000000000000000e+00
+sendBufNorm = 1.09058e-05, recvBufNorm = 1.09058e-05
+PCG velocity: initial res norm 1.947090305370742e-04 WE NEED TO GET TO 1.000000e-06 
+sendBufNorm = 1.04885e-05, recvBufNorm = 1.04885e-05
+it 1 r norm 2.385061905482310e-06
+
+        0  1.7500E-04 Write checkpoint
+       FILE:/gpfs/alpine/csc262/scratch/malachi/mpi-bug/mpi-bug0.f00001                                                                         
+ min/max: -0.50000      0.50000     -0.50000      0.50000       0.0000       12.000    
+ min/max: -0.11644      0.13888     -0.13706      0.18929     -0.10618       1.3209    
+ min/max: -0.33419      0.32993    
+
+        0  1.7500E-04 done :: Write checkpoint
+                              file size =      18.    GB
+                              avg data-throughput =     3.2GB/s
+                              io-nodes =    64
+
+sendBufNorm = 0.000897163, recvBufNorm = 0.000897163
+  P        : iter 002  resNorm0 4.97e+01  resNorm 2.39e+01
+  UVW      : iter 002  resNorm0 2.44e-02  resNorm 4.77e-04  divErrNorms 1.94e-12 2.76e+01
+  flowRate : uBulk0 9.00e-01  uBulk 1.00e+00  err 1.11e-15  scale 5.72e+02
+step= 1  t= 1.75000000e-04  dt=1.7e-04  C= 0.12  UVW: 2  P: 2  elapsedStep= 5.94e+00s  elapsedStepSum= 5.94207e+00s
+
+>>> runtime statistics (step= 1  elapsed= 177.645s):
+name                    time             %  calls
+  setup                 1.71703e+02s  0.97  1
+    loadKernels         1.19167e+02s  0.69  1
+  checkpointing         5.47390e+00s  0.03  1
+  udfExecuteStep        1.29580e-05s  0.00  2
+  elapsedStepSum        5.94207e+00s  0.03
+  solve                 2.61009e-01s  0.00
+    min                 -1.00000e+00s
+    max                 -1.00000e+00s
+    flop/s              3.98391e+13
+
+    makef               9.35269e-02s  0.36  1
+    udfProperties       1.92800e-04s  0.00  2
+    velocitySolve       8.72082e-02s  0.33  2
+      rhs               2.30644e-02s  0.26  2
+    pressureSolve       5.41970e-02s  0.21  2
+      rhs               2.82424e-02s  0.52  2
+      preconditioner    5.41279e-04s  0.01  2
+
+End

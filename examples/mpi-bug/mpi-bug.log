@@ -1,0 +1,644 @@
+
+The following have been reloaded with a version change:
+  1) rocm/4.5.2 => rocm/4.5.0
+
+
+Currently Loaded Modules:
+  1) craype-x86-trento                     10) gcc/11.2.0
+  2) libfabric/1.15.0.0                    11) craype/2.7.13
+  3) craype-network-ofi                    12) cray-dsmml/0.2.2
+  4) perftools-base/21.12.0                13) PrgEnv-gnu/8.2.0
+  5) xpmem/2.3.2-2.2_7.5__g93dd7ee.shasta  14) xalt/1.3.0
+  6) cray-pmi/6.0.16                       15) DefApps/default
+  7) cray-pmi-lib/6.0.16                   16) craype-accel-amd-gfx90a
+  8) openblas/0.3.17                       17) cray-mpich/8.1.12
+  9) tmux/3.2a                             18) rocm/4.5.0
+
+ 
+
+WARNING:  		 One or more commands failed
+
+
+======================= ROCm System Management Interface =======================
+================================= Concise Info =================================
+GPU  Temp   AvgPwr  SCLK    MCLK     Fan  Perf  PwrCap  VRAM%  GPU%  
+0    26.0c  95.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+1    29.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+2    21.0c  85.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+3    37.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+4    25.0c  80.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+5    27.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+6    18.0c  84.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+7    25.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+================================================================================
+============================= End of ROCm SMI Log ==============================
+
+
+======================= ROCm System Management Interface =======================
+================================ KFD Processes =================================
+No KFD PIDs currently running
+================================================================================
+============================= End of ROCm SMI Log ==============================
+Mon 16 May 2022 06:12:37 PM EDT
+                 __    ____  _____
+   ____   ___   / /__ / __ \/ ___/
+  / __ \ / _ \ / //_// /_/ /\__ \ 
+ / / / //  __// ,<  / _, _/___/ / 
+/_/ /_/ \___//_/|_|/_/ |_|/____/  v22.0.0 (ca0b97b9)
+
+COPYRIGHT (c) 2019-2022 UCHICAGO ARGONNE, LLC
+
+MPI tasks: 64
+
+reading par file ...
+
+using NEKRS_HOME: /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-debug
+using NEKRS_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache
+using OCCA_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/occa/
+
+Initializing device 
+active occa mode: HIP
+
+building udf ... 
+[100%] Built target UDF
+cd /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/udf && make  (retVal: 0)
+done (4.49243s)
+using existing SIZE file /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/SIZE
+skip building nekInterface (SIZE requires no update)
+loading nek ... 
+done
+loading kernels (this may take awhile) ...
+loading udf kernels ... done (0.00616213s)
+Error in kernel 0 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=11 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.0101104 wordSize=64 GDOF/s=2.02635 GB/s=192.978 GFLOPS/s=1401.42 kernelVer=0
+Error in kernel 1 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00511392 wordSize=64 GDOF/s=4.00616 GB/s=381.524 GFLOPS/s=2770.64 kernelVer=1
+Error in kernel 2 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00511133 wordSize=64 GDOF/s=4.00819 GB/s=381.718 GFLOPS/s=2772.05 kernelVer=2
+Error in kernel 3 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00538312 wordSize=64 GDOF/s=3.80582 GB/s=362.445 GFLOPS/s=2632.09 kernelVer=3
+Error in kernel 4 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=20 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.0049053 wordSize=64 GDOF/s=4.17653 GB/s=397.75 GFLOPS/s=2888.47 kernelVer=4
+Error in kernel 5 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00462031 wordSize=64 GDOF/s=4.43415 GB/s=422.284 GFLOPS/s=3066.64 kernelVer=5
+Error in kernel 6 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00459407 wordSize=64 GDOF/s=4.45948 GB/s=424.696 GFLOPS/s=3084.16 kernelVer=6
+Error in kernel 7 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00489987 wordSize=64 GDOF/s=4.18117 GB/s=398.191 GFLOPS/s=2891.68 kernelVer=7
+Error in kernel 8 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00522858 wordSize=64 GDOF/s=3.9183 GB/s=373.158 GFLOPS/s=2709.88 kernelVer=8
+Error in kernel 9 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=19 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00522287 wordSize=64 GDOF/s=3.92259 GB/s=373.565 GFLOPS/s=2712.84 kernelVer=9
+Error in kernel 10 is 1.61537e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00568692 wordSize=64 GDOF/s=3.60251 GB/s=343.083 GFLOPS/s=2491.48 kernelVer=10
+Error in kernel 11 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=11 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00908315 wordSize=64 GDOF/s=2.25551 GB/s=214.803 GFLOPS/s=1559.9 kernelVer=11
+Error in kernel 12 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00572954 wordSize=64 GDOF/s=3.57571 GB/s=340.531 GFLOPS/s=2472.94 kernelVer=12
+Error in kernel 13 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=17 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00569805 wordSize=64 GDOF/s=3.59547 GB/s=342.413 GFLOPS/s=2486.61 kernelVer=13
+Error in kernel compared to reference implementation 0: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=140 N=8 Nelements=13338 elapsed time=0.000718349 wordSize=64 GDOF/s=9.5066 GB/s=866.289 GFLOPS/s=1664.9 bkMode=1 kernelVer=0
+Error in kernel compared to reference implementation 1: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=141 N=8 Nelements=13338 elapsed time=0.000714861 wordSize=64 GDOF/s=9.55299 GB/s=870.516 GFLOPS/s=1673.02 bkMode=1 kernelVer=1
+Error in kernel compared to reference implementation 2: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=138 N=8 Nelements=13338 elapsed time=0.000728733 wordSize=64 GDOF/s=9.37114 GB/s=853.945 GFLOPS/s=1641.18 bkMode=1 kernelVer=2
+Error in kernel compared to reference implementation 4: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=144 N=8 Nelements=13338 elapsed time=0.00069357 wordSize=64 GDOF/s=9.84625 GB/s=897.239 GFLOPS/s=1724.38 bkMode=1 kernelVer=4
+Error in kernel compared to reference implementation 5: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=145 N=8 Nelements=13338 elapsed time=0.00069303 wordSize=64 GDOF/s=9.85391 GB/s=897.938 GFLOPS/s=1725.72 bkMode=1 kernelVer=5
+Error in kernel compared to reference implementation 6: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=140 N=8 Nelements=13338 elapsed time=0.000714872 wordSize=64 GDOF/s=9.55283 GB/s=870.502 GFLOPS/s=1673 bkMode=1 kernelVer=6
+done (23.2795s)
+
+ Reading /gpfs/alpine/csc262/scratch/malachi/mpi-bug/mpi-bug.re2                                                                             
+ reading mesh 
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file    0.55     sec
+
+Running parCon ... (tol=0.2)
+Running parRSB ...
+parRSB finished in 1.41194 s
+
+ reading mesh 
+ reading curved sides      5296896
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file     1.6     sec
+
+ setup mesh topology
+   Right-handed check complete for      853632 elements. OK.
+gs_setup: 5843584 unique labels shared
+   pairwise times (avg, min, max): 0.000200359 0.000188022 0.000213082
+   crystal router                : 0.00166711 0.0016569 0.00167925
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 6.17077e+07 61675820 61739380
+   buffer bytes (avg, min, max): 2.97503e+06 2949552 3000272
+   setupds time 1.7262E+00 seconds   0  9   145666944      853632
+ 
+ nElements   max/min/bal: 13338 13338 1.00
+ nMessages   max/min/avg: 11 8 9.50
+ msgSize     max/min/avg: 47817 17 20046.00
+ msgSizeSum  max/min/avg: 187517 184347 185939.50
+ 
+ max multiplicity            8
+ done :: setup mesh topology
+  
+ call usrdat
+ done :: usrdat
+
+ generate geometry data
+ done :: generate geometry data
+  
+ call usrdat2
+ done :: usrdat2
+
+  5.0664E-07  5.0664E-07  1.8503E-15  5.0664E-07  5.0664E-07  6.6382E-16 xyz repair 1
+  4.8125E-07  4.8125E-07  1.8503E-15  4.8125E-07  4.8125E-07  3.3528E-15 xyz repair 2
+  3.1247E-08  3.1247E-08  1.8433E-15  3.1247E-08  3.1247E-08  2.7558E-15 xyz repair 3
+  5.5511E-17  5.5511E-17  6.6498E-16  5.5511E-17  5.5511E-17  6.6498E-16 xyz repair 4
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ verify mesh topology
+ -0.50000000000001021       0.50000000000000999       Xrange
+ -0.50000000000000000       0.50000000000001832       Yrange
+   0.0000000000000000        12.000000000000000       Zrange
+ done :: verify mesh topology
+  
+ mesh metrics:
+ GLL grid spacing min/max    : 2.86E-04 7.57E-03
+ scaled Jacobian  min/max/avg: 7.44E-01 9.99E-01 9.57E-01
+ aspect ratio     min/max/avg: 2.08E+00 7.30E+00 3.22E+00
+
+ call usrdat3
+ done :: usrdat3
+
+gridpoints unique/tot:     438462720    622297728
+dofs vel/pr:               435661056    438462720
+ nek setup done in    1.4726E+01 s
+
+ set initial conditions
+ nekuic (1) for ifld            1
+ call nekuic for vel  
+ xyz min   -0.50000     -0.50000       0.0000    
+ uvwpt min  0.45434E-10 -0.99997E-01 -0.20998       0.0000       0.0000    
+ PS min      0.0000       0.0000       0.0000      0.99000E+22
+ xyz max    0.50000      0.50000       12.000    
+ uvwpt max  0.49999E-01  0.99997E-01   1.2100       0.0000       0.0000    
+ PS max      0.0000       0.0000       0.0000     -0.99000E+22
+ done :: set initial conditions
+  
+calling nek_userchk ...
+
+generating t-mesh ...
+loading mesh from nek ... NboundaryIDs: 1, NboundaryFaces: 5121792 done (0.00121958s)
+N: 8, Nq: 9, cubNq: 13
+computing geometric factors ... J [5.33842e-07,2.08687e-06] done (3.31066s)
+meshParallelGatherScatterSetup N=8
+
+used config: pw+device (MPI: 2.11e-04s / bi-bw: 14.1GB/s/rank)
+sendBufNorm = 1.09059e-05, recvBufNorm = 1.09059e-05
+min 80% of the local elements are internal
+
+used config: pw+device (MPI: 5.07e-04s / bi-bw: 17.6GB/s/rank)
+copying solution from nek
+calling udf_setup ... done
+copying solution to nek
+================ ELLIPTIC SETUP VELOCITY ================
+bID 1 -> bcType zeroValue
+
+used config: pw+device (MPI: 4.94e-04s / bi-bw: 18.1GB/s/rank)
+
+used config: pw+device (MPI: 5.07e-04s / bi-bw: 17.6GB/s/rank)
+building Jacobi preconditioner ... sendBufNorm = 91.3188, recvBufNorm = 91.3188
+done (0.0416884s)
+done (0.296833s)
+================ ELLIPTIC SETUP PRESSURE ================
+allNeumann = 1 
+
+used config: pw+device (MPI: 1.76e-04s / bi-bw: 16.9GB/s/rank)
+
+used config: pw+device (MPI: 1.53e-04s / bi-bw: 19.5GB/s/rank)
+done (2.2032e-05s)
+done (4.91033s)
+
+settings:
+
+key: ADVECTION,                                               value: TRUE
+key: ADVECTION TYPE,                                          value: CUBATURE+CONVECTIVE
+key: AMG SOLVER,                                              value: BOOMERAMG
+key: AMG SOLVER LOCATION,                                     value: CPU
+key: AMG SOLVER PRECISION,                                    value: FP64
+key: BUILD ONLY,                                              value: FALSE
+key: CASENAME,                                                value: mpi-bug
+key: CHECKPOINT OUTPUT MESH,                                  value: FALSE
+key: CI-MODE,                                                 value: 0
+key: CONSTANT FLOW DIRECTION,                                 value: Z
+key: CONSTANT FLOW RATE,                                      value: TRUE
+key: CONSTANT FLOW RATE TYPE,                                 value: BULK
+key: CUBATURE POLYNOMIAL DEGREE,                              value: 12
+key: DATA FILE,                                               value: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/udf/udf.okl
+key: DENSITY,                                                 value: 1.000000e+00
+key: DEVICE NUMBER,                                           value: 0
+key: DT,                                                      value: 1.750000e-04
+key: ELEMENT MAP,                                             value: ISOPARAMETRIC
+key: ELEMENT TYPE,                                            value: 12
+key: ELLIPTIC INTEGRATION,                                    value: NODAL
+key: ENABLE FLOATCOMMHALF GS SUPPORT,                         value: FALSE
+key: FLOW RATE,                                               value: 1.000000e+00
+key: FORMAT,                                                  value: 1.0
+key: GS OVERLAP,                                              value: TRUE
+key: HPFRT MODES,                                             value: 1.000000e+00
+key: HPFRT STRENGTH,                                          value: 1.000000e+01
+key: MESH DIMENSION,                                          value: 3
+key: MESH FILE,                                               value: mpi-bug.re2
+key: MESH INTEGRATION ORDER,                                  value: 3
+key: MOVING MESH,                                             value: FALSE
+key: NEK USR FILE,                                            value: mpi-bug.usr
+key: NUMBER OF SCALARS,                                       value: 0
+key: NUMBER TIMESTEPS,                                        value: 1
+key: PARALMOND SMOOTH COARSEST,                               value: FALSE
+key: PLATFORM NUMBER,                                         value: 0
+key: POLYNOMIAL DEGREE,                                       value: 8
+key: PRESSURE BASIS,                                          value: NODAL
+key: PRESSURE DISCRETIZATION,                                 value: CONTINUOUS
+key: PRESSURE INITIAL GUESS,                                  value: PREVIOUS
+key: PRESSURE KRYLOV SOLVER,                                  value: PGMRES+FLEXIBLE
+key: PRESSURE MAXIMUM ITERATIONS,                             value: 1
+key: PRESSURE MULTIGRID CHEBYSHEV DEGREE,                     value: 2
+key: PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR,value: 1.1
+key: PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR,value: 0.1
+key: PRESSURE MULTIGRID COARSE SEMFEM,                        value: FALSE
+key: PRESSURE MULTIGRID COARSE SOLVE,                         value: TRUE
+key: PRESSURE MULTIGRID DOWNWARD SMOOTHER,                    value: ASM
+key: PRESSURE MULTIGRID SMOOTHER,                             value: CHEBYSHEV+ASM
+key: PRESSURE MULTIGRID UPWARD SMOOTHER,                      value: ASM
+key: PRESSURE PARALMOND CYCLE,                                value: VCYCLE
+key: PRESSURE PGMRES RESTART,                                 value: 10
+key: PRESSURE PRECONDITIONER,                                 value: NONE
+key: PRESSURE SOLVER TOLERANCE,                               value: 1.000000e-04
+key: REGULARIZATION METHOD,                                   value: RELAXATION
+key: RESTART FROM FILE,                                       value: 0
+key: SCALAR MAXIMUM ITERATIONS,                               value: 200
+key: SOLUTION OUTPUT CONTROL,                                 value: STEPS
+key: SOLUTION OUTPUT INTERVAL,                                value: 1000.000000
+key: START TIME,                                              value: 0.000000e+00
+key: STRESSFORMULATION,                                       value: FALSE
+key: SUBCYCLING STEPS,                                        value: 2
+key: SUBCYCLING TIME ORDER,                                   value: 4
+key: SUBCYCLING TIME STAGE NUMBER,                            value: 4
+key: THREAD MODEL,                                            value: HIP
+key: TIME INTEGRATOR,                                         value: TOMBO2
+key: UDF FILE,                                                value: mpi-bug.udf
+key: UDF OKL FILE,                                            value: mpi-bug.oudf
+key: VARIABLE DT,                                             value: FALSE
+key: VELOCITY BASIS,                                          value: NODAL
+key: VELOCITY BLOCK SOLVER,                                   value: TRUE
+key: VELOCITY COEFF FIELD,                                    value: TRUE
+key: VELOCITY DISCRETIZATION,                                 value: CONTINUOUS
+key: VELOCITY HPFRT MODES,                                    value: 1.000000e+00
+key: VELOCITY HPFRT STRENGTH,                                 value: 1.000000e+01
+key: VELOCITY KRYLOV SOLVER,                                  value: PCG
+key: VELOCITY MAXIMUM ITERATIONS,                             value: 1
+key: VELOCITY PRECONDITIONER,                                 value: JACOBI
+key: VELOCITY REGULARIZATION METHOD,                          value: RELAXATION
+key: VELOCITY SOLVER TOLERANCE,                               value: 1.000000e-06
+key: VERBOSE,                                                 value: TRUE
+key: VISCOSITY,                                               value: 5.263158e-05
+
+occa memory usage: 13.7399 GB
+initialization took 64.956 s
+
+timestepping for 1 steps ...
+sendBufNorm = 67187.7, recvBufNorm = 67187.7
+sendBufNorm = 67166.6, recvBufNorm = 67166.6
+sendBufNorm = 67174.7, recvBufNorm = 67174.7
+sendBufNorm = 67174.3, recvBufNorm = 67174.3
+sendBufNorm = 67174.3, recvBufNorm = 67174.3
+sendBufNorm = 67194.6, recvBufNorm = 67194.6
+sendBufNorm = 67202.7, recvBufNorm = 67202.7
+sendBufNorm = 67243.7, recvBufNorm = 67243.7
+BF norm: 3.484854204899573e+00
+Re-allocated send buffer, previous size = 4425240, current size = 5900320 bytes!
+Re-allocated recv buffer, previous size = 4425240, current size = 5900320 bytes!
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = 0.00112021, recvBufNorm = 11904.6
+sendBufNorm = 464.229, recvBufNorm = 11913.7
+pressure RHS norm: 1.896113243356620e+06
+pressure x0 norm: 0.000000000000000e+00
+sendBufNorm = 7.11561e+06, recvBufNorm = 7.11561e+06
+PFGMRES pressure: initial res norm 2.549160936521344e+06 WE NEED TO GET TO 1.000000e-04 
+sendBufNorm = 0.020647, recvBufNorm = 0.020647
+it 1 r norm 1.848847316451516e+06
+sendBufNorm = 0.112226, recvBufNorm = 0.112226
+velocity RHS norm: 4.848394810045205e+02
+velocity x0 norm: 6.069246280981019e+03
+sendBufNorm = 726.364, recvBufNorm = 726.364
+PCG velocity: initial res norm 5.463170258639244e+02 WE NEED TO GET TO 1.000000e-06 
+sendBufNorm = 643.077, recvBufNorm = 643.077
+it 1 r norm 1.170456413931060e+01
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+pressure RHS norm: 5.024947959587343e-18
+pressure x0 norm: 0.000000000000000e+00
+sendBufNorm = 2.39157e-18, recvBufNorm = 2.39157e-18
+PFGMRES pressure: initial res norm 4.781335582403291e-18 WE NEED TO GET TO 1.000000e-04 
+sendBufNorm = 0.00158684, recvBufNorm = 0.00158684
+it 1 r norm 3.801059610109326e-18
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = inf, recvBufNorm = inf
+sendBufNorm = 0.112226, recvBufNorm = 0.112226
+velocity RHS norm: 1.935611755057412e-04
+velocity x0 norm: 5.123412113031119e+01
+sendBufNorm = 7.90317e-05, recvBufNorm = 7.90317e-05
+PCG velocity: initial res norm 1.963718923022999e-04 WE NEED TO GET TO 1.000000e-06 
+sendBufNorm = 5.67222e-05, recvBufNorm = 5.67222e-05
+it 1 r norm 2.331873646613165e-06
+
+        0  1.7500E-04 Write checkpoint
+       FILE:/gpfs/alpine/csc262/scratch/malachi/mpi-bug/mpi-bug0.f00001                                                                         
+ min/max: -0.50000      0.50000     -0.50000      0.50000       0.0000       12.000    
+ min/max: -0.10482E+07  0.11809E+07 -0.10894E+07  0.12796E+07  -74076.       71537.    
+ min/max: -0.16616E+07  0.15977E+07
+
+        0  1.7500E-04 done :: Write checkpoint
+                              file size =      18.    GB
+                              avg data-throughput =     3.2GB/s
+                              io-nodes =    64
+
+sendBufNorm = 237.564, recvBufNorm = 9647.03
+  P        : iter 002  resNorm0 2.55e+06  resNorm 1.85e+06
+  UVW      : iter 002  resNorm0 5.46e+02  resNorm 1.17e+01  divErrNorms 5.78e+03 4.55e+07
+  flowRate : uBulk0 9.00e-01  uBulk 1.00e+00  err 0.00e+00  scale 5.75e+02
+step= 1  t= 1.75000000e-04  dt=1.7e-04  C= 1141168.54  UVW: 2  P: 2  elapsedStep= 6.00e+00s  elapsedStepSum= 6.00386e+00s
+Unreasonable CFL! Dying ...
+
+MPICH Notice [Rank 2] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+
+MPICH Notice [Rank 16] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 16 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 16
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 16
+MPICH Notice [Rank 56] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 56 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 56
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 56
+MPICH Notice [Rank 40] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 40 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 40
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 40
+MPICH Notice [Rank 24] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 24 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 24
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 24
+MPICH Notice [Rank 32] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 32 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 32
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 32
+MPICH Notice [Rank 48] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 48 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 48
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 48
+MPICH Notice [Rank 8] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 8 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+MPICH Notice [Rank 3] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+MPICH Notice [Rank 17] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 17 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 17
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 17
+MPICH Notice [Rank 57] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 57 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 57
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 57
+MPICH Notice [Rank 41] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 41 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 41
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 41
+MPICH Notice [Rank 25] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 25 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 25
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 25
+MPICH Notice [Rank 34] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 34 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 34
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 34
+MPICH Notice [Rank 49] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 49 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 49
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 49
+MPICH Notice [Rank 9] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 9 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
+MPICH Notice [Rank 4] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 4 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 4
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 4
+MPICH Notice [Rank 18] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 18 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 18
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 18
+MPICH Notice [Rank 58] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 58 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 58
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 58
+MPICH Notice [Rank 42] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 42 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 42
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 42
+MPICH Notice [Rank 26] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 26 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 26
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 26
+MPICH Notice [Rank 35] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 35 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 35
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 35
+MPICH Notice [Rank 50] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 50 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 50
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 50
+MPICH Notice [Rank 10] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 10 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+MPICH Notice [Rank 5] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 5 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 5
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 5
+MPICH Notice [Rank 19] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 19 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 19
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 19
+MPICH Notice [Rank 59] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 59 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 59
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 59
+MPICH Notice [Rank 43] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 43 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+MPICH Notice [Rank 27] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 27 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 27
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 27
+MPICH Notice [Rank 36] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 36 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 36
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 36
+MPICH Notice [Rank 52] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 52 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 52
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 52
+MPICH Notice [Rank 11] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 11 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 11
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 11
+MPICH Notice [Rank 6] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 6 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 6
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 6
+MPICH Notice [Rank 20] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 20 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 20
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 20
+MPICH Notice [Rank 60] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 60 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 60
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 60
+MPICH Notice [Rank 44] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 44 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 44
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 44
+MPICH Notice [Rank 28] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 28 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 28
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 28
+MPICH Notice [Rank 37] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 37 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 37
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 37
+MPICH Notice [Rank 53] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 53 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 53
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 53
+MPICH Notice [Rank 12] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 12 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 12
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 12
+MPICH Notice [Rank 7] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 7 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 7
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 7
+MPICH Notice [Rank 21] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 21 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 21
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 21
+MPICH Notice [Rank 61] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 61 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 61
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 61
+MPICH Notice [Rank 45] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 45 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 45
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 45
+MPICH Notice [Rank 29] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 29 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+MPICH Notice [Rank 38] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 38 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 38
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 38
+MPICH Notice [Rank 54] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 54 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 54
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 54
+MPICH Notice [Rank 13] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 13 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 13
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 13
+MPICH Notice [Rank 0] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+MPICH Notice [Rank 22] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 22 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 22
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 22
+MPICH Notice [Rank 62] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 62 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 62
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 62
+MPICH Notice [Rank 46] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 46 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 46
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 46
+MPICH Notice [Rank 30] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 30 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 30
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 30
+MPICH Notice [Rank 39] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 39 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 39
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 39
+MPICH Notice [Rank 55] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 55 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 55
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 55
+MPICH Notice [Rank 14] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 14 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 14
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 14
+MPICH Notice [Rank 1] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher029] - Abort(1) (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+MPICH Notice [Rank 23] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher044] - Abort(1) (rank 23 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 23
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 23
+MPICH Notice [Rank 63] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher049] - Abort(1) (rank 63 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 63
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 63
+MPICH Notice [Rank 47] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher047] - Abort(1) (rank 47 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 47
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 47
+MPICH Notice [Rank 31] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher045] - Abort(1) (rank 31 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31
+MPICH Notice [Rank 33] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher046] - Abort(1) (rank 33 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 33
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 33
+MPICH Notice [Rank 51] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher048] - Abort(1) (rank 51 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 51
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 51
+MPICH Notice [Rank 15] [job id 113634.0] [Mon May 16 18:13:52 2022] [crusher043] - Abort(1) (rank 15 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 15
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 15
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+srun: error: crusher049: tasks 56-63: Exited with exit code 255
+srun: launch/slurm: _step_signal: Terminating StepId=113634.0
+srun: error: crusher046: tasks 32-39: Exited with exit code 255
+srun: error: crusher044: tasks 16-23: Exited with exit code 255
+srun: error: crusher045: tasks 24-31: Exited with exit code 255
+srun: error: crusher043: tasks 8-15: Exited with exit code 255
+srun: error: crusher047: tasks 40-47: Exited with exit code 255
+srun: error: crusher029: tasks 0-7: Exited with exit code 255
+srun: error: crusher048: tasks 48-55: Exited with exit code 255
