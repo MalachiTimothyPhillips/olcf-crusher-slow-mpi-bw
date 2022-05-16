@@ -13,3 +13,6 @@ residualTol = 1e-8
 preconditioner = none
 density = 1.0
 viscosity = 1.0
+
+[CASEDATA]
+P_EPS = 1.0
