@@ -16,7 +16,7 @@ void UDF_LoadKernels(occa::properties& kernelInfo);
 void UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep);
 }
 
-using udfsetup0 = void (*)(int, setupAide &);
+using udfsetup0 = void (*)(MPI_Comm, setupAide &);
 using udfsetup = void (*)(nrs_t *);
 using udfloadKernels = void (*)(occa::properties &);
 using udfexecuteStep = void (*)(nrs_t *, double, int);
