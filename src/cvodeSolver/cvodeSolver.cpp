@@ -5,6 +5,9 @@
 #include "Urst.hpp"
 #include <limits>
 
+// ensure that this file exists
+#include <cvode/cvode.h>
+
 namespace cvode {
 namespace {
 dfloat tprev = std::numeric_limits<dfloat>::max();
