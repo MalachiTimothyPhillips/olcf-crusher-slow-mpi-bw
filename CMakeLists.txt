@@ -195,6 +195,7 @@ set(SRC
     src/core/registerNrsKernels.cpp
     src/bdry/createEToBV.cpp
     src/bdry/applyDirichlet.cpp
+    src/timeStepper/Urst.cpp
     src/timeStepper/timeStepper.cpp
     src/timeStepper/subCycling.cpp
     src/navierStokes/tombo.cpp
@@ -209,6 +210,7 @@ set(SRC
     src/core/flopCounter.cpp
     src/core/kernelRequestManager.cpp
     src/core/device.cpp
+    src/cvodeSolver/cvodeSolver.cpp
     src/linAlg/linAlg.cpp
     src/linAlg/matrixConditionNumber.cpp
     src/linAlg/matrixInverse.cpp

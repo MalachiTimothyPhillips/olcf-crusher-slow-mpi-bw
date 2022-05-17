@@ -126,6 +126,7 @@ struct nrs_t {
   occa::kernel subCycleRKKernel;
   occa::kernel subCycleInitU0Kernel;
   occa::kernel nStagesSum3Kernel;
+  occa::kernel integrateABKernel;
   occa::kernel wgradientVolumeKernel;
 
   occa::kernel subCycleVolumeKernel, subCycleCubatureVolumeKernel;

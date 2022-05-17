@@ -52,11 +52,15 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     nEXT = nBDF;
 
   {
-    kernelName = "nStagesSum3";
+    kernelName = "integrateAB";
     fileName = oklpath + "core/" + kernelName + ".okl";
     const std::string section = "nrs-";
     platform->kernels.add(
         section + kernelName, fileName, platform->kernelInfo);
+
+    kernelName = "nStagesSum3";
+    fileName = oklpath + "core/" + kernelName + ".okl";
+    platform->kernels.add(section + kernelName, fileName, platform->kernelInfo);
 
     kernelName = "computeFieldDotNormal";
     fileName = oklpath + "nrs/" + kernelName + ".okl";

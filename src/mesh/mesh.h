@@ -51,6 +51,7 @@ struct mesh_t
   void move();
   void update();
   void computeInvLMM();
+  void coeffs(dfloat dt[3], int tstep);
 
   int nAB;
   dfloat* coeffAB; // coefficients for AB integration

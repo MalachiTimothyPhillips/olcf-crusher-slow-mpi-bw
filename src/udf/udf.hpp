@@ -16,18 +16,17 @@ void UDF_LoadKernels(occa::properties& kernelInfo);
 void UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep);
 }
 
-typedef void (* udfsetup0)(MPI_Comm comm, setupAide &options);
-typedef void (* udfsetup)(nrs_t* nrs);
-typedef void (* udfloadKernels)(occa::properties& kernelInfo);
-typedef void (* udfexecuteStep)(nrs_t* nrs, dfloat time, int tstep);
+using udfsetup0 = void (*)(int, setupAide &);
+using udfsetup = void (*)(nrs_t *);
+using udfloadKernels = void (*)(occa::properties &);
+using udfexecuteStep = void (*)(nrs_t *, double, int);
 
-typedef void (* udfuEqnSource)(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_FU);
-typedef void (* udfsEqnSource)(nrs_t* nrs, dfloat time, occa::memory o_S, occa::memory o_SU);
-typedef void (* udfproperties)(nrs_t* nrs, dfloat time, occa::memory o_U,
-                               occa::memory o_S, occa::memory o_UProp,
-                               occa::memory o_SProp);
-typedef void (* udfdiv)(nrs_t* nrs, dfloat time, occa::memory o_div);
-typedef int (* udfconv)(nrs_t* nrs, int stage);
+using udfuEqnSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
+using udfsEqnSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
+using udfPointSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
+using udfproperties = void (*)(nrs_t *, double, occa::memory, occa::memory, occa::memory, occa::memory);
+using udfdiv = void (*)(nrs_t *, double, occa::memory);
+using udfconv = int (*)(nrs_t *, int);
 
 struct UDF
 {
@@ -37,6 +36,7 @@ struct UDF
   udfexecuteStep executeStep;
   udfuEqnSource uEqnSource;
   udfsEqnSource sEqnSource;
+  udfPointSource pointSource;
   udfproperties properties;
   udfdiv div;
   udfconv timeStepConverged;

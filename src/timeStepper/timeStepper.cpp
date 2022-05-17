@@ -13,6 +13,7 @@
 #include "udf.hpp"
 #include "bcMap.hpp"
 #include "bdry.hpp"
+#include "Urst.hpp"
 
 namespace {
 
@@ -256,36 +257,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     }
   }
 
-  const bool relative = movingMesh && nrs->Nsubsteps;
-  occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
-  mesh = nrs->meshV;
-  double flopCount = 0.0;
-
-  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
-    nrs->UrstCubatureKernel(mesh->Nelements,
-                            mesh->o_cubvgeo,
-                            mesh->o_cubInterpT,
-                            nrs->fieldOffset,
-                            nrs->cubatureOffset,
-                            nrs->o_U,
-                            mesh->o_U,
-                            o_Urst);
-    flopCount += 6 * mesh->Np * mesh->cubNq;
-    flopCount += 6 * mesh->Nq * mesh->Nq * mesh->cubNq * mesh->cubNq;
-    flopCount += 6 * mesh->Nq * mesh->cubNp;
-    flopCount += 24 * mesh->cubNp;
-    flopCount *= mesh->Nelements;
-  }
-  else {
-    nrs->UrstKernel(mesh->Nelements,
-        mesh->o_vgeo,
-        nrs->fieldOffset,
-        nrs->o_U,
-        mesh->o_U,
-        o_Urst);
-    flopCount += 24 * static_cast<double>(mesh->Nlocal);
-  }
-  platform->flopCounter->add("Urst", flopCount);
+  computeUrst(nrs);
 
   if (nrs->Nscalar) {
     platform->timer.tic("makeq", 1);
@@ -429,18 +401,10 @@ void coeffs(nrs_t *nrs, double dt, int tstep) {
   for (int i = nrs->nBDF; i > bdfOrder; i--)
     nrs->coeffBDF[i - 1] = 0.0;
 
-  if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
-    mesh_t *mesh = nrs->meshV;
-    if (nrs->cht)
-      mesh = nrs->cds->mesh[0];
-    const int meshOrder = mymin(tstep, mesh->nAB);
-    nek::coeffAB(mesh->coeffAB, nrs->dt, meshOrder);
-    for (int i = 0; i < meshOrder; ++i)
-      mesh->coeffAB[i] *= nrs->dt[0];
-    for (int i = mesh->nAB; i > meshOrder; i--)
-      mesh->coeffAB[i - 1] = 0.0;
-    mesh->o_coeffAB.copyFrom(mesh->coeffAB, mesh->nAB * sizeof(dfloat));
-  }
+  mesh_t *mesh = nrs->meshV;
+  if (nrs->cht)
+    mesh = nrs->cds->mesh[0];
+  mesh->coeffs(nrs->dt, tstep);
 
   nrs->ig0 = 1.0 / nrs->g0;
   nrs->o_coeffBDF.copyFrom(nrs->coeffBDF);
