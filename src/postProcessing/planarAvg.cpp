@@ -69,7 +69,21 @@ oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string d
          for(int j = 0; j < mesh->Nq; j++) {
            for(int i = 0; i < mesh->Nq; i++) {
              const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
-             ids[id] = (i+1) + nx1*j + nx1*ny1*(ex_g-1) + 1;
+             //ids[id] = (i+1) + nx1*j + nx1*ny1*(ex_g-1) + 1;
+             ids[id] = (i+1) + nx1*j + nx1*ny1*(ex_g-1);
+           }
+         }
+       } 
+    }
+    if(dir == "xz") {
+       get_exyz(ex,ey,ez,eg,nelgxy,1);
+       const auto ex_g = ex;
+       for(int k = 0; k < mesh->Nq; k++) {
+         for(int j = 0; j < mesh->Nq; j++) {
+           for(int i = 0; i < mesh->Nq; i++) {
+             const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
+             //ids[id] = (i+1) + nx1*j + nx1*ny1*(ex_g-1) + 1;
+             ids[id] = (k+1) + nx1*(ez-1);
            }
          }
        } 
@@ -100,9 +114,10 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
   static oogs_t *oogs_x;
   static oogs_t *oogs_y;
   static oogs_t *oogs_z;
+  static oogs_t *oogs_xz;
 
   if(firstTime) {
-    o_avgWeights = platform->device.malloc(3*fieldOffsetByte);
+    o_avgWeights = platform->device.malloc(4*fieldOffsetByte);
 
     oogs_x = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "x"); 
     auto o_avgWeights_x = o_avgWeights.slice(0*fieldOffsetByte, fieldOffsetByte);
@@ -125,6 +140,14 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_z);
     platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_z);
 
+    //oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz"); 
+    oogs_xz = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "xz");
+    auto o_avgWeights_xz = o_avgWeights.slice(3*fieldOffsetByte, fieldOffsetByte);
+    o_avgWeights_xz.copyFrom(mesh->o_LMM, mesh->Nlocal*sizeof(dfloat));
+    oogs::startFinish(o_avgWeights_xz, 1, mesh->Nlocal, ogsDfloat, ogsAdd, oogs_xz);
+    platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_xz);
+    platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_xz);
+
     firstTime = 0;
   }
 
@@ -139,6 +162,9 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
   } else if(dir == "z") {
     o_wghts = o_avgWeights.slice(2*fieldOffsetByte, fieldOffsetByte);
     gsh = oogs_z;
+  } else if(dir == "xz") {
+    o_wghts = o_avgWeights.slice(3*fieldOffsetByte, fieldOffsetByte);
+    gsh = oogs_xz;
   } else {
     if (platform->comm.mpiRank == 0) printf("ERROR in planarAvg: Unknown direction!");
     ABORT(EXIT_FAILURE);
@@ -147,5 +173,10 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     auto o_wrk = o_avg.slice(ifld*fieldOffsetByte, fieldOffsetByte);
     platform->linAlg->axmy(mesh->Nlocal, 1, o_wghts, o_wrk);
   } 
-  oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+
+  platform->timer.tic("planarAvg oogs call " + dir, 1);
+  {
+    oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+  }
+  platform->timer.toc("planarAvg oogs call " + dir);
 } 

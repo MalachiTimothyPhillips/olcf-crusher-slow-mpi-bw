@@ -1,5 +1,28 @@
 #include <math.h>
 #include "udf.hpp"
+#include <iomanip>
+
+static dfloat tPackBufX = 0.0;
+static dfloat tUpackBufX = 0.0;
+static dfloat tPwExX = 0.0;
+static dfloat tGsLocalX = 0.0;
+static dfloat tHDRecvBufX = 0.0;
+static dfloat tDHSendBufX = 0.0;
+static dfloat tDefaultOgsStartX = 0.0;
+static dfloat tDefaultOgsFinishX = 0.0;
+static dfloat tPlanarAvgOogsX = 0.0;
+static dfloat tPlanarAvgX = 0.0;
+
+static dfloat tPackBufZ = 0.0;
+static dfloat tUpackBufZ = 0.0;
+static dfloat tPwExZ = 0.0;
+static dfloat tGsLocalZ = 0.0;
+static dfloat tHDRecvBufZ = 0.0;
+static dfloat tDHSendBufZ = 0.0;
+static dfloat tDefaultOgsStartZ = 0.0;
+static dfloat tDefaultOgsFinishZ = 0.0;
+static dfloat tPlanarAvgOogsZ = 0.0;
+static dfloat tPlanarAvgZ = 0.0;
 
 occa::kernel coriolisKernel;
 occa::kernel gradYKernel; 
@@ -159,9 +182,94 @@ void average(nrs_t *nrs, occa::memory o_avg)
     o_avg,
     o_ddyAvg);
   oogs::startFinish(o_ddyAvg, 3, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+
+  auto resetTimers = [&](){
+    platform->timer.reset("planarAvg x");
+    platform->timer.reset("planarAvg z");
+    platform->timer.reset("planarAvg oogs call x");
+    platform->timer.reset("planarAvg oogs call z");
+    platform->timer.reset("packBuf");
+    platform->timer.reset("unpackBuf");
+    platform->timer.reset("pairwiseExchange");
+    platform->timer.reset("occaGatherScatterLocal");
+    platform->timer.reset("H->D recv buf");
+    platform->timer.reset("D->H send buf");
+    platform->timer.reset("default ogs start");
+    platform->timer.reset("default ogs finish");
+  };
+
+  resetTimers();
+  auto o_backup = platform->device.malloc(6 * nrs->fieldOffset * sizeof(dfloat));
+  o_backup.copyFrom(o_avg, 6 * nrs->fieldOffset * sizeof(dfloat));
   
-  postProcessing::planarAvg(nrs, "x", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
-  postProcessing::planarAvg(nrs, "z", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
+  platform->timer.tic("planarAvg x", 1);
+  {
+    postProcessing::planarAvg(nrs, "x", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
+  }
+  platform->timer.toc("planarAvg x");
+
+  
+  tPackBufX = platform->timer.query("packBuf", "DEVICE:MAX");
+  tUpackBufX = platform->timer.query("unpackBuf", "DEVICE:MAX");
+  tPwExX = platform->timer.query("pairwiseExchange", "DEVICE:MAX");
+  tGsLocalX = platform->timer.query("occaGatherScatterLocal", "DEVICE:MAX");
+  tHDRecvBufX = platform->timer.query("H->D recv buf", "DEVICE:MAX");
+  tDHSendBufX = platform->timer.query("D->H send buf", "DEVICE:MAX");
+  tDefaultOgsStartX = platform->timer.query("default ogs start", "DEVICE:MAX");
+  tDefaultOgsFinishX = platform->timer.query("default ogs finish", "DEVICE:MAX");
+  tPlanarAvgOogsX = platform->timer.query("planarAvg oogs call x", "DEVICE:MAX");
+  tPlanarAvgX = platform->timer.query("planarAvg x", "DEVICE:MAX");
+
+  resetTimers();
+
+  platform->timer.tic("planarAvg z", 1);
+  {
+    postProcessing::planarAvg(nrs, "z", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
+  }
+  platform->timer.toc("planarAvg z");
+
+  tPackBufZ = platform->timer.query("packBuf", "DEVICE:MAX");
+  tUpackBufZ = platform->timer.query("unpackBuf", "DEVICE:MAX");
+  tPwExZ = platform->timer.query("pairwiseExchange", "DEVICE:MAX");
+  tGsLocalZ = platform->timer.query("occaGatherScatterLocal", "DEVICE:MAX");
+  tHDRecvBufZ = platform->timer.query("H->D recv buf", "DEVICE:MAX");
+  tDHSendBufZ = platform->timer.query("D->H send buf", "DEVICE:MAX");
+  tDefaultOgsStartZ = platform->timer.query("default ogs start", "DEVICE:MAX");
+  tDefaultOgsFinishZ = platform->timer.query("default ogs finish", "DEVICE:MAX");
+  tPlanarAvgOogsZ = platform->timer.query("planarAvg oogs call z", "DEVICE:MAX");
+  tPlanarAvgZ = platform->timer.query("planarAvg z", "DEVICE:MAX");
+
+  postProcessing::planarAvg(nrs, "xz", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_backup);
+  if(0)
+  {
+    postProcessing::planarAvg(nrs, "x", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_backup);
+    postProcessing::planarAvg(nrs, "z", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_backup);
+  }
+
+  platform->linAlg->axpbyMany(
+    mesh->Nlocal,
+    6,
+    nrs->fieldOffset,
+    1.0,
+    o_avg,
+    -1.0,
+    o_backup
+  );
+
+  // compute error
+  const dfloat error = 
+    platform->linAlg->weightedNorm2Many(
+      mesh->Nlocal,
+      6,
+      nrs->fieldOffset,
+      mesh->ogs->o_invDegree,
+      o_backup,
+      platform->comm.mpiComm
+    );
+  
+  if(platform->comm.mpiRank == 0){
+    std::cout << "error = " << error << "\n";
+  }
 }
 
 
@@ -352,4 +460,29 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     nek::userchk();
     nek::ocopyFromNek(time);
   }
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "PlanarAvg x\t" << tPlanarAvgX << std::endl;
+    std::cout << "\tPlanarAvg oogs x\t" << tPlanarAvgOogsX << std::endl;
+    if(tPackBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttPackBufX\t" << tPackBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tUpackBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttUpackBufX\t" << tUpackBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tPwExX > 0.0)std::cout << std::setprecision(3) << "\t\ttPwExX\t" << tPwExX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tGsLocalX > 0.0)std::cout << std::setprecision(3) << "\t\ttGsLocalX\t" << tGsLocalX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tHDRecvBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttHDRecvBufX\t" << tHDRecvBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDHSendBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttDHSendBufX\t" << tDHSendBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDefaultOgsStartX > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsStartX\t" << tDefaultOgsStartX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDefaultOgsFinishX > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsFinishX\t" << tDefaultOgsFinishX/tPlanarAvgOogsX * 100. << std::endl;
+
+    std::cout << "PlanarAvg z\t" << tPlanarAvgZ << std::endl;
+    std::cout << "\tPlanarAvg oogs z\t" << tPlanarAvgOogsZ << std::endl;
+    if(tPackBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttPackBufZ\t" << tPackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tUpackBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttUpackBufZ\t" << tUpackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tPwExZ > 0.0)std::cout << std::setprecision(3) << "\t\ttPwExZ\t" << tPwExZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tGsLocalZ > 0.0)std::cout << std::setprecision(3) << "\t\ttGsLocalZ\t" << tGsLocalZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tHDRecvBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttHDRecvBufZ\t" << tHDRecvBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDHSendBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDHSendBufZ\t" << tDHSendBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDefaultOgsStartZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsStartZ\t" << tDefaultOgsStartZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDefaultOgsFinishZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsFinishZ\t" << tDefaultOgsFinishZ/tPlanarAvgOogsZ * 100. << std::endl;
+  }
+
 }

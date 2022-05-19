@@ -7,6 +7,11 @@
 #include "ogsKernels.hpp"
 #include "ogsInterface.h"
 
+#include "nrssys.hpp"
+#include "platform.hpp"
+
+#define ENABLE_TIMERS
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -125,6 +130,9 @@ static void neighborAllToAll(int unit_size, oogs_t *gs)
 
 static void pairwiseExchange(int unit_size, oogs_t *gs)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("pairwiseExchange", 1);
+#endif
   ogs_t *ogs = gs->ogs;
   struct gs_data *hgs = (gs_data*) ogs->haloGshSym;
   const void* execdata = hgs->r.data;
@@ -162,6 +170,9 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     }
     MPI_Waitall(pwd->comm[send].n + pwd->comm[recv].n, pwd->req, MPI_STATUSES_IGNORE);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("pairwiseExchange");
+#endif
 }
 void occaGatherScatterLocal(const dlong NlocalGather,
                             const dlong NrowBlocks,
@@ -174,6 +185,9 @@ void occaGatherScatterLocal(const dlong NlocalGather,
                             const char* op,
                             occa::memory& o_v)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("occaGatherScatterLocal", 1);
+#endif
 #if 1
     occaGatherScatterMany(NlocalGather, Nvectors, stride, o_gstart,
                           o_gids, type, op, o_v);
@@ -219,6 +233,9 @@ void occaGatherScatterLocal(const dlong NlocalGather,
     printf("occaGatherScatterNewKernel: unsupported operation or datatype!\n");
     exit(1);
  }
+#endif
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("occaGatherScatterLocal");
 #endif
 }
 
@@ -280,14 +297,26 @@ void reallocBuffers(int unit_size, oogs_t *gs)
   const struct pw_data *pwd = (pw_data*) execdata;
 
   if (gs->o_bufSend.size() < pwd->comm[send].total*unit_size) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("reallocing send buffer", 1);
+#endif
     if(gs->o_bufSend.size()) gs->o_bufSend.free();
     if(gs->h_buffSend.size()) gs->h_buffSend.free();
     gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("reallocing send buffer");
+#endif
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("reallocing recv buffer", 1);
+#endif
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("reallocing recv buffer");
+#endif
   }
 }
 
@@ -557,6 +586,9 @@ static void packBuf(oogs_t *gs,
                     occa::memory  &o_v,
                     occa::memory  &o_gv)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("packBuf", 1);
+#endif
   if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
     occa::dim outer, inner;
     outer.dims = 1;
@@ -577,6 +609,9 @@ static void packBuf(oogs_t *gs,
     printf("oogs: unsupported operation or datatype!\n");
     exit(1);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("packBuf");
+#endif
 }
 
 static void unpackBuf(oogs_t *gs,
@@ -592,6 +627,9 @@ static void unpackBuf(oogs_t *gs,
                       occa::memory  &o_v,
                       occa::memory  &o_gv)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("unpackBuf", 1);
+#endif
   if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
     occa::dim outer, inner;
     outer.dims = 1;
@@ -612,6 +650,9 @@ static void unpackBuf(oogs_t *gs,
     printf("oogs: unsupported operation or datatype!\n");
     exit(1);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("unpackBuf");
+#endif
 }
 
 void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs)
@@ -637,11 +678,17 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
   }
 
   if(gs->mode == OOGS_DEFAULT) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("default ogs start", 1);
+#endif
     if(k>1)
       ogsGatherScatterManyStart(o_v, k, stride, type, op, ogs);
     else
       ogsGatherScatterStart(o_v, type, op, ogs);
 
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("default ogs start");
+#endif
     return;
   }
 
@@ -693,10 +740,16 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
   }
 
   if(gs->mode == OOGS_DEFAULT) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("default ogs finish", 1);
+#endif
     if(k>1)
       ogsGatherScatterManyFinish(o_v, k, stride, type, op, ogs);
     else
       ogsGatherScatterFinish(o_v, type, op, ogs);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("default ogs finish");
+#endif
 
     return;
   }
@@ -714,8 +767,15 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
     const void* execdata = hgs->r.data;
     const struct pw_data *pwd = (pw_data*) execdata;
 
-    if(gs->mode == OOGS_HOSTMPI)
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("D->H send buf", 1);
+#endif
+    if(gs->mode == OOGS_HOSTMPI){
       gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total*Nbytes*k, 0, "async: true");
+    }
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("D->H send buf");
+#endif
 
     ogsHostTic(gs->comm, 1);
     if(gs->modeExchange == OOGS_EX_NBC)
@@ -724,8 +784,14 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
       pairwiseExchange(Nbytes*k, gs);
     ogsHostToc();
 
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("H->D recv buf", 1);
+#endif
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufRecv.copyFrom(gs->bufRecv,pwd->comm[recv].total*Nbytes*k, 0, "async: true");
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("H->D recv buf");
+#endif
 
     unpackBuf(gs, ogs->NhaloGather, k, stride, gs->o_gatherOffsets, gs->o_gatherIds,
               ogs->o_haloGatherOffsets, ogs->o_haloGatherIds, _type, op, gs->o_bufRecv, o_v);
@@ -741,8 +807,12 @@ void oogs::startFinish(void *v, const int k, const dlong stride, const char *typ
 }
 void oogs::startFinish(occa::memory &o_v, const int k, const dlong stride, const char *type, const char *op, oogs_t *h)
 {
-   start(o_v, k, stride, type, op, h);
-   finish(o_v, k, stride, type, op, h);
+  platform->timer.tic("oogs startFinish", 1);
+  {
+    start(o_v, k, stride, type, op, h);
+    finish(o_v, k, stride, type, op, h);
+  }
+  platform->timer.toc("oogs startFinish");
 }
 
 void oogs::destroy(oogs_t *gs)
