@@ -7,6 +7,9 @@
 #include "ogsKernels.hpp"
 #include "ogsInterface.h"
 
+#include "nrssys.hpp"
+#include "platform.hpp"
+
 #define ENABLE_TIMERS
 
 #ifdef __cplusplus
