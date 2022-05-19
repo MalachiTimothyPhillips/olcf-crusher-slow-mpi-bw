@@ -7,6 +7,8 @@
 #include "ogsKernels.hpp"
 #include "ogsInterface.h"
 
+#define ENABLE_TIMERS
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -280,14 +282,26 @@ void reallocBuffers(int unit_size, oogs_t *gs)
   const struct pw_data *pwd = (pw_data*) execdata;
 
   if (gs->o_bufSend.size() < pwd->comm[send].total*unit_size) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("reallocing send buffer", 1);
+#endif
     if(gs->o_bufSend.size()) gs->o_bufSend.free();
     if(gs->h_buffSend.size()) gs->h_buffSend.free();
     gs->bufSend = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[send].total*unit_size, NULL, gs->o_bufSend, gs->h_buffSend);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("reallocing send buffer");
+#endif
   }
   if (gs->o_bufRecv.size() < pwd->comm[recv].total*unit_size) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("reallocing recv buffer", 1);
+#endif
     if(gs->o_bufRecv.size()) gs->o_bufRecv.free();
     if(gs->h_buffRecv.size()) gs->h_buffRecv.free();
     gs->bufRecv = (unsigned char*) ogsHostMallocPinned(ogs->device, pwd->comm[recv].total*unit_size, NULL, gs->o_bufRecv, gs->h_buffRecv);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("reallocing recv buffer");
+#endif
   }
 }
 
@@ -557,6 +571,9 @@ static void packBuf(oogs_t *gs,
                     occa::memory  &o_v,
                     occa::memory  &o_gv)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("packBuf", 1);
+#endif
   if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
     occa::dim outer, inner;
     outer.dims = 1;
@@ -577,6 +594,9 @@ static void packBuf(oogs_t *gs,
     printf("oogs: unsupported operation or datatype!\n");
     exit(1);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("packBuf");
+#endif
 }
 
 static void unpackBuf(oogs_t *gs,
@@ -592,6 +612,9 @@ static void unpackBuf(oogs_t *gs,
                       occa::memory  &o_v,
                       occa::memory  &o_gv)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("unpackBuf", 1);
+#endif
   if ((!strcmp(type, "floatCommHalf"))&&(!strcmp(op, ogsAdd))) {
     occa::dim outer, inner;
     outer.dims = 1;
@@ -612,6 +635,9 @@ static void unpackBuf(oogs_t *gs,
     printf("oogs: unsupported operation or datatype!\n");
     exit(1);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("unpackBuf");
+#endif
 }
 
 void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char *_type, const char *op, oogs_t *gs)
