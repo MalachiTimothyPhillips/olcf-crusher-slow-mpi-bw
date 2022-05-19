@@ -147,5 +147,10 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     auto o_wrk = o_avg.slice(ifld*fieldOffsetByte, fieldOffsetByte);
     platform->linAlg->axmy(mesh->Nlocal, 1, o_wghts, o_wrk);
   } 
-  oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+
+  platform->timer.tic("planarAvg oogs call", 1);
+  {
+    oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+  }
+  platform->timer.toc("planarAvg oogs call");
 } 
