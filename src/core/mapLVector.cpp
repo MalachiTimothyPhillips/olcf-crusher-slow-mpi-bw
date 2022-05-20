@@ -9,6 +9,7 @@
 
 void setupEToLMapping(nrs_t *nrs)
 {
+  static_assert(sizeof(dlong) == sizeof(int), "dlong and int must be the same size");
   auto *mesh = nrs->meshV;
   if (mesh->cht)
     mesh = nrs->cds->mesh[0];
@@ -20,7 +21,7 @@ void setupEToLMapping(nrs_t *nrs)
   std::iota(Eids.begin(), Eids.end(), 0);
   o_Lids.copyFrom(Eids.data(), mesh->Nlocal * sizeof(dlong));
 
-  oogs::startFinish(o_Lids, 1, nrs->fieldOffset, ogsDlong, "ogsMin", handle);
+  oogs::startFinish(o_Lids, 1, nrs->fieldOffset, "int", "ogsMin", handle);
 
   std::vector<dlong> Lids(mesh->Nlocal);
   o_Lids.copyTo(Lids.data(), mesh->Nlocal * sizeof(dlong));
