@@ -132,13 +132,14 @@ void surfaceArea(nrs_t* nrs, int BID, dfloat& SA)
 
 void ciTestEToLMapping(nrs_t * nrs)
 {
+  const int rank = platform->comm.mpiRank;
   const auto * mesh = nrs->meshV;
 
   // sanity check 1:
   // map a random (C0) field from E -> L -> E
   // values must remain the same
 
-  auto field = randomVector(mesh->Nlocal);
+  auto field = randomVector<dfloat>(mesh->Nlocal);
   auto o_field = platform->device.malloc(mesh->Nlocal * sizeof(dfloat), field.data());
   oogs::startFinish(o_field, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
 
