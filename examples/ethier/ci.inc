@@ -149,7 +149,7 @@ void ciTestEToLMapping(nrs_t * nrs)
 
   auto o_Lfield = platform->device.malloc(nrs->LFieldOffset * sizeof(dfloat));
 
-  nrs->mapEToLKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_EToL, o_field, o_Lfield);
+  nrs->mapEToLKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_EToL, nrs->o_Lmask, o_field, o_Lfield);
   nrs->mapLToEKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_LToEStarts, nrs->o_LToE, o_Lfield, o_field);
 
   platform->linAlg->axpby(mesh->Nlocal, 1.0, o_ref, -1.0, o_field);

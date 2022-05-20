@@ -30,14 +30,16 @@ SOFTWARE.
                   const dlong EFieldOffset,
                   const dlong LFieldOffset,
                   @restrict const dlong * EToL,
+                  @restrict const dfloat * mask,
                   @restrict const dfloat* EField,
                   @restrict dfloat      * LField){
   for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
-    const dlong lid = EToL[n];
-    for(dlong fld=0;fld<Nfields;++fld){
-      // TODO: race condition, but same value
-      // does this still need to be atomic?
-      LField[lid + LFieldOffset * fld] = EField[n + EFieldOffset * fld];
+    const dfloat m = mask[n];
+    if(m > 0.0){
+      const dlong lid = EToL[n];
+      for(dlong fld=0;fld<Nfields;++fld){
+        LField[lid + LFieldOffset * fld] = EField[n + EFieldOffset * fld];
+      }
     }
   }
 }
