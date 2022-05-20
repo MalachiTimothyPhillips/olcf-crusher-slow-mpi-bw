@@ -1,5 +1,6 @@
 #include <math.h>
 #include <limits>
+#include <type_traits>
 #include <vector>
 #include <numeric>
 #include <array>
@@ -153,12 +154,33 @@ void ciTestEToLMapping(nrs_t * nrs)
 
   platform->linAlg->axpby(mesh->Nlocal, 1.0, o_ref, -1.0, o_field);
   platform->linAlg->abs(mesh->Nlocal, o_field);
-  const auto LInfError = platform->linAlg->max(mesh->Nlocal, o_field, platform->comm.mpiComm);
+  auto LInfError = platform->linAlg->max(mesh->Nlocal, o_field, platform->comm.mpiComm);
 
   const auto tol = 10. * std::numeric_limits<dfloat>::epsilon();
   if(LInfError > tol){
     if(platform->comm.mpiRank == 0){
       printf("Error is too great in EToL sanity check 1: %e\n", LInfError);
+    }
+    FAIL;
+  }
+
+  // sanity check 2:
+  // setting unity on an L field and mapping L -> E should
+  // in that constant being everywhere
+
+  platform->linAlg->fill(mesh->Nlocal, 0.0, o_field);
+  platform->linAlg->fill(mesh->Nlocal, 1.0, o_ref);
+  platform->linAlg->fill(nrs->LFieldOffset, 1.0, o_Lfield);
+
+  nrs->mapLToEKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_LToEStarts, nrs->o_LToE, o_Lfield, o_field);
+
+  platform->linAlg->axpby(mesh->Nlocal, 1.0, o_ref, -1.0, o_field);
+  platform->linAlg->abs(mesh->Nlocal, o_field);
+  LInfError = platform->linAlg->max(mesh->Nlocal, o_field, platform->comm.mpiComm);
+
+  if(LInfError > tol){
+    if(platform->comm.mpiRank == 0){
+      printf("Error is too great in EToL sanity check 2: %e\n", LInfError);
     }
     FAIL;
   }
