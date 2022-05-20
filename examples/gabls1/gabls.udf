@@ -234,7 +234,7 @@ void average(nrs_t *nrs, occa::memory o_avg)
   tDHSendBufZ = platform->timer.query("D->H send buf", "DEVICE:MAX");
   tDefaultOgsStartZ = platform->timer.query("default ogs start", "DEVICE:MAX");
   tDefaultOgsFinishZ = platform->timer.query("default ogs finish", "DEVICE:MAX");
-  tPlanarAvgOogsZ = platform->timer.query("planarAvg oogs call x", "DEVICE:MAX");
+  tPlanarAvgOogsZ = platform->timer.query("planarAvg oogs call z", "DEVICE:MAX");
   tPlanarAvgZ = platform->timer.query("planarAvg z", "DEVICE:MAX");
 }
 
@@ -430,25 +430,25 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   if(platform->comm.mpiRank == 0){
     std::cout << "PlanarAvg x\t" << tPlanarAvgX << std::endl;
     std::cout << "\tPlanarAvg oogs x\t" << tPlanarAvgOogsX << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttPackBufX\t" << tPackBufX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttUpackBufX\t" << tUpackBufX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttPwExX\t" << tPwExX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttGsLocalX\t" << tGsLocalX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttHDRecvBufX\t" << tHDRecvBufX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDHSendBufX\t" << tDHSendBufX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDefaultOgsStartX\t" << tDefaultOgsStartX/tPlanarAvgOogsX * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDefaultOgsFinishX\t" << tDefaultOgsFinishX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tPackBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttPackBufX\t" << tPackBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tUpackBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttUpackBufX\t" << tUpackBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tPwExX > 0.0)std::cout << std::setprecision(3) << "\t\ttPwExX\t" << tPwExX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tGsLocalX > 0.0)std::cout << std::setprecision(3) << "\t\ttGsLocalX\t" << tGsLocalX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tHDRecvBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttHDRecvBufX\t" << tHDRecvBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDHSendBufX > 0.0)std::cout << std::setprecision(3) << "\t\ttDHSendBufX\t" << tDHSendBufX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDefaultOgsStartX > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsStartX\t" << tDefaultOgsStartX/tPlanarAvgOogsX * 100. << std::endl;
+    if(tDefaultOgsFinishX > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsFinishX\t" << tDefaultOgsFinishX/tPlanarAvgOogsX * 100. << std::endl;
 
     std::cout << "PlanarAvg z\t" << tPlanarAvgZ << std::endl;
     std::cout << "\tPlanarAvg oogs z\t" << tPlanarAvgOogsZ << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttPackBufZ\t" << tPackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttUpackBufZ\t" << tUpackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttPwExZ\t" << tPwExZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttGsLocalZ\t" << tGsLocalZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttHDRecvBufZ\t" << tHDRecvBufZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDHSendBufZ\t" << tDHSendBufZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDefaultOgsStartZ\t" << tDefaultOgsStartZ/tPlanarAvgOogsZ * 100. << std::endl;
-    std::cout << std::setprecision(2) << "\t\ttDefaultOgsFinishZ\t" << tDefaultOgsFinishZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tPackBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttPackBufZ\t" << tPackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tUpackBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttUpackBufZ\t" << tUpackBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tPwExZ > 0.0)std::cout << std::setprecision(3) << "\t\ttPwExZ\t" << tPwExZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tGsLocalZ > 0.0)std::cout << std::setprecision(3) << "\t\ttGsLocalZ\t" << tGsLocalZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tHDRecvBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttHDRecvBufZ\t" << tHDRecvBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDHSendBufZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDHSendBufZ\t" << tDHSendBufZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDefaultOgsStartZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsStartZ\t" << tDefaultOgsStartZ/tPlanarAvgOogsZ * 100. << std::endl;
+    if(tDefaultOgsFinishZ > 0.0)std::cout << std::setprecision(3) << "\t\ttDefaultOgsFinishZ\t" << tDefaultOgsFinishZ/tPlanarAvgOogsZ * 100. << std::endl;
   }
 
 }
