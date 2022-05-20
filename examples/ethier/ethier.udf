@@ -126,4 +126,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     nek::userchk();
   }
   if (ciMode) ciTestErrors(nrs, time, tstep);
+
+  ciTestEToLMapping(nrs);
 }
