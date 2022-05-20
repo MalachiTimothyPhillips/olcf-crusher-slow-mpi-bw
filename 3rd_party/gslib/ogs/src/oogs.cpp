@@ -755,8 +755,14 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
     const void* execdata = hgs->r.data;
     const struct pw_data *pwd = (pw_data*) execdata;
 
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("D->H send buf", 1);
+#endif
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total*Nbytes*k, 0, "async: true");
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("D->H send buf");
+#endif
 
     ogsHostTic(gs->comm, 1);
     if(gs->modeExchange == OOGS_EX_NBC)
@@ -765,8 +771,14 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
       pairwiseExchange(Nbytes*k, gs);
     ogsHostToc();
 
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("H->D recv buf", 1);
+#endif
     if(gs->mode == OOGS_HOSTMPI)
       gs->o_bufRecv.copyFrom(gs->bufRecv,pwd->comm[recv].total*Nbytes*k, 0, "async: true");
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("H->D recv buf");
+#endif
 
     unpackBuf(gs, ogs->NhaloGather, k, stride, gs->o_gatherOffsets, gs->o_gatherIds,
               ogs->o_haloGatherOffsets, ogs->o_haloGatherIds, _type, op, gs->o_bufRecv, o_v);
