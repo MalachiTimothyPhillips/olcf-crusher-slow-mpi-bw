@@ -203,6 +203,7 @@ set(SRC
     src/cds/registerCdsKernels.cpp
     src/io/parReader.cpp
     src/io/re2Reader.cpp
+    src/core/mapLVector.cpp
     src/core/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
