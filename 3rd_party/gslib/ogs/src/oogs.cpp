@@ -794,8 +794,12 @@ void oogs::startFinish(void *v, const int k, const dlong stride, const char *typ
 }
 void oogs::startFinish(occa::memory &o_v, const int k, const dlong stride, const char *type, const char *op, oogs_t *h)
 {
-   start(o_v, k, stride, type, op, h);
-   finish(o_v, k, stride, type, op, h);
+  platform->timer.tic("oogs startFinish", 1);
+  {
+    start(o_v, k, stride, type, op, h);
+    finish(o_v, k, stride, type, op, h);
+  }
+  platform->timer.toc("oogs startFinish");
 }
 
 void oogs::destroy(oogs_t *gs)
