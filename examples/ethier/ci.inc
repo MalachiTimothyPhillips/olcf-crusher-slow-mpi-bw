@@ -3,6 +3,7 @@
 #include <vector>
 #include <numeric>
 #include <array>
+#include "randomVector.hpp"
 
 static int ciMode = 0;
 
@@ -127,6 +128,43 @@ void surfaceArea(nrs_t* nrs, int BID, dfloat& SA)
   }
 
   MPI_Allreduce(MPI_IN_PLACE, &SA, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+}
+
+void ciTestEToLMapping(nrs_t * nrs)
+{
+  const auto * mesh = nrs->meshV;
+
+  // sanity check 1:
+  // map a random (C0) field from E -> L -> E
+  // values must remain the same
+
+  auto field = randomVector(mesh->Nlocal);
+  auto o_field = platform->device.malloc(mesh->Nlocal * sizeof(dfloat), field.data());
+  oogs::startFinish(o_field, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+
+  auto o_ref = platform->device.malloc(mesh->Nlocal * sizeof(dfloat));
+  o_ref.copyFrom(o_field, mesh->Nlocal * sizeof(dfloat));
+
+  auto o_Lfield = platform->device.malloc(nrs->LFieldOffset * sizeof(dfloat));
+
+  nrs->mapEToLKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_EToL, o_field, o_Lfield);
+  nrs->mapLToEKernel(mesh->Nlocal, 1, nrs->fieldOffset, nrs->LFieldOffset, nrs->o_LToEStarts, nrs->o_LToE, o_Lfield, o_field);
+
+  platform->linAlg->axpby(mesh->Nlocal, 1.0, o_ref, -1.0, o_field);
+  platform->linAlg->abs(mesh->Nlocal, o_field);
+  const auto LInfError = platform->linAlg->max(mesh->Nlocal, o_field, platform->comm.mpiComm);
+
+  const auto tol = 10. * std::numeric_limits<dfloat>::epsilon();
+  if(LInfError > tol){
+    if(platform->comm.mpiRank == 0){
+      printf("Error is too great in EToL sanity check 1: %e\n", LInfError);
+    }
+    FAIL;
+  }
+
+  o_field.free();
+  o_Lfield.free();
+  o_ref.free();
 }
 
 void ciTestAvgBoundary(nrs_t* nrs)
