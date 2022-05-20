@@ -91,9 +91,9 @@ void setupEToLMapping(nrs_t *nrs)
   nrs->o_LToEStarts = platform->device.malloc(starts.size() * sizeof(dlong), starts.data());
   nrs->o_LToE = platform->device.malloc(scatterIds.size() * sizeof(dlong), scatterIds.data());
 
-  nrs->mapEToLKernel = platform->kernels.get("mapEToLKernel");
-  nrs->mapLToEKernel = platform->kernels.get("mapLToEKernel");
+  nrs->mapEToLKernel = platform->kernels.get("mapEToL");
+  nrs->mapLToEKernel = platform->kernels.get("mapLToE");
 
-  oogs::destroy(handle);
+  // oogs::destroy(handle);
   o_Lids.free();
 }

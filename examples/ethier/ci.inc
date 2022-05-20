@@ -166,6 +166,8 @@ void ciTestEToLMapping(nrs_t * nrs)
   o_field.free();
   o_Lfield.free();
   o_ref.free();
+
+  PASS;
 }
 
 void ciTestAvgBoundary(nrs_t* nrs)
