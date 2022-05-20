@@ -130,6 +130,9 @@ static void neighborAllToAll(int unit_size, oogs_t *gs)
 
 static void pairwiseExchange(int unit_size, oogs_t *gs)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("pairwiseExchange", 1);
+#endif
   ogs_t *ogs = gs->ogs;
   struct gs_data *hgs = (gs_data*) ogs->haloGshSym;
   const void* execdata = hgs->r.data;
@@ -167,6 +170,9 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     }
     MPI_Waitall(pwd->comm[send].n + pwd->comm[recv].n, pwd->req, MPI_STATUSES_IGNORE);
   }
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("pairwiseExchange");
+#endif
 }
 void occaGatherScatterLocal(const dlong NlocalGather,
                             const dlong NrowBlocks,
@@ -179,6 +185,9 @@ void occaGatherScatterLocal(const dlong NlocalGather,
                             const char* op,
                             occa::memory& o_v)
 {
+#ifdef ENABLE_TIMERS
+  platform->timer.tic("occaGatherScatterLocal", 1);
+#endif
 #if 1
     occaGatherScatterMany(NlocalGather, Nvectors, stride, o_gstart,
                           o_gids, type, op, o_v);
@@ -224,6 +233,9 @@ void occaGatherScatterLocal(const dlong NlocalGather,
     printf("occaGatherScatterNewKernel: unsupported operation or datatype!\n");
     exit(1);
  }
+#endif
+#ifdef ENABLE_TIMERS
+  platform->timer.toc("occaGatherScatterLocal");
 #endif
 }
 
