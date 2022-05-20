@@ -52,11 +52,11 @@ void registerNrsKernels(occa::properties kernelInfoBC)
     nEXT = nBDF;
 
   {
-    kernelName = "LToE";
+    kernelName = "mapLToE";
     fileName = oklpath + "core/" + kernelName + ".okl";
     platform->kernels.add(kernelName, fileName, platform->kernelInfo);
 
-    kernelName = "EToL";
+    kernelName = "mapEToL";
     fileName = oklpath + "core/" + kernelName + ".okl";
     platform->kernels.add(kernelName, fileName, platform->kernelInfo);
 
