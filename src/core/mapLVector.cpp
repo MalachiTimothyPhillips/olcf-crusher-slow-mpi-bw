@@ -48,18 +48,18 @@ void setupEToLMapping(nrs_t *nrs)
   }
 
   // use the first Eid value for the mask (arbitrary)
-  std::vector<dlong> mask(mesh->Nlocal);
+  std::vector<dfloat> mask(mesh->Nlocal);
   for (int eid = 0; eid < mesh->Nlocal; ++eid) {
     const auto lid = EToL[eid];
     if (*LToE[lid].begin() == eid) {
-      mask[eid] = 1;
+      mask[eid] = 1.0;
     }
     else {
-      mask[eid] = 0;
+      mask[eid] = 0.0;
     }
   }
 
-  nrs->o_Lmask = platform->device.malloc(mesh->Nlocal * sizeof(dlong), mask.data());
+  nrs->o_Lmask = platform->device.malloc(mesh->Nlocal * sizeof(dfloat), mask.data());
 
   nrs->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
 
