@@ -83,7 +83,7 @@ oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string d
            for(int i = 0; i < mesh->Nq; i++) {
              const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
              //ids[id] = (i+1) + nx1*j + nx1*ny1*(ex_g-1) + 1;
-             ids[id] = (k+1) + nx1*(ez-1);
+             ids[id] = (j+1) + nx1*(ey-1);
            }
          }
        } 
@@ -140,8 +140,8 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_z);
     platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_z);
 
-    //oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz"); 
-    oogs_xz = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "xz");
+    oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz"); 
+    //oogs_xz = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "xz");
     auto o_avgWeights_xz = o_avgWeights.slice(3*fieldOffsetByte, fieldOffsetByte);
     o_avgWeights_xz.copyFrom(mesh->o_LMM, mesh->Nlocal*sizeof(dfloat));
     oogs::startFinish(o_avgWeights_xz, 1, mesh->Nlocal, ogsDfloat, ogsAdd, oogs_xz);
