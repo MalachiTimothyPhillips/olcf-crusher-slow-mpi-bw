@@ -148,9 +148,9 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     platform->linAlg->axmy(mesh->Nlocal, 1, o_wghts, o_wrk);
   } 
 
-  platform->timer.tic("planarAvg oogs call", 1);
+  platform->timer.tic("planarAvg oogs call " + dir, 1);
   {
     oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
   }
-  platform->timer.toc("planarAvg oogs call");
+  platform->timer.toc("planarAvg oogs call " + dir);
 } 
