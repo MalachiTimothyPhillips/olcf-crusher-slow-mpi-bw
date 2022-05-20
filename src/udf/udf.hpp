@@ -23,7 +23,6 @@ using udfexecuteStep = void (*)(nrs_t *, double, int);
 
 using udfuEqnSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
 using udfsEqnSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
-using udfPointSource = void (*)(nrs_t *, double, occa::memory, occa::memory);
 using udfproperties = void (*)(nrs_t *, double, occa::memory, occa::memory, occa::memory, occa::memory);
 using udfdiv = void (*)(nrs_t *, double, occa::memory);
 using udfconv = int (*)(nrs_t *, int);
@@ -36,7 +35,6 @@ struct UDF
   udfexecuteStep executeStep;
   udfuEqnSource uEqnSource;
   udfsEqnSource sEqnSource;
-  udfPointSource pointSource;
   udfproperties properties;
   udfdiv div;
   udfconv timeStepConverged;

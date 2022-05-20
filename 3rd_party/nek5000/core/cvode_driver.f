@@ -507,6 +507,33 @@ c
          endif
       enddo
 
+      ! Note, may want to apply this trick elsewhere
+      ! multiply by inv LMM * LMM != 1 (includes multiplicity, avg vol)
+      ! dssum
+
+      ! overlap
+      ! oogs::start(...)
+
+      ! TODO: add ability to quickly map from E -> L -> (compute ydot on L) -> L -> E
+      ! E -> L mask (1 if part of L vector, else 0)
+      ! E -> E
+      ! if(userPointSource) userLocalPointSource(nrs, ...)
+
+      ! oogs::finish(...)
+
+      ! Do not store ydot, y as E-vector
+      ! ydot, y "local" (includes duplicates across ranks) L vectors
+      ! entering RHS: unpack (scatter) and pack (gather)
+
+      ! unpack: CVODE (L vector) -> NEK
+      ! pack: NEK -> CVODE
+
+      ! in solver, take nek solution and pack
+      ! get cvode answer, unpack
+
+      ! Same with solve, e.g.
+
+      ! begin delete
       if (ifgsh_fld_same) then ! all fields are on the v-mesh
          istride = lx1*ly1*lz1*lelt
          call nvec_dssum(ydott,istride,nfield-1,gsh_fld(1))
@@ -518,6 +545,8 @@ c
             endif
          enddo
       endif
+      ! end delete
+
 
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
@@ -527,6 +556,7 @@ c
            endif
          endif
       enddo
+
 
       call cvpack(ydot,ydott,.true.)
 

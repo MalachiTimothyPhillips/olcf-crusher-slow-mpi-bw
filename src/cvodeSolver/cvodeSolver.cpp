@@ -37,9 +37,8 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
   mesh_t *mesh = nrs->meshV;
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];
-  dfloat tol = 1e-14;
 
-  if (std::abs(time - tprev) > tol) {
+  if (time != tprev) {
     tprev = time;
     std::array<dfloat, 3> dtCvode = {0, 0, 0};
     std::array<dfloat, 3> coeffAB = {0, 0, 0};
@@ -57,6 +56,8 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
 
     o_coeffAB.copyFrom(coeffAB.data(), maxABOrder * sizeof(dfloat));
 
+    // TODO: change name
+    // extrapolateInPlaceKernel
     nrs->integrateABKernel(mesh->Nlocal, nrs->NVfields, ABOrder, nrs->fieldOffset, o_coeffAB, nrs->o_U);
 
     if (movingMesh) {
@@ -69,7 +70,18 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
     computeUrst(nrs);
   }
 
+  // TODO: what does the user want to integrate?
+  // constraint equations may not be nrs->fieldOffset length, e.g.
+  //
+
   // unpack
+
+  // From makeq, need everything sans subcycling, sumMakef, shuffling of S
+  // needs separate implementation
+
+  // terms to include: user source, advection, filtering, add "weak" laplacian
+
+  // make distinct from sEqnSource
 
   // makeq
 
