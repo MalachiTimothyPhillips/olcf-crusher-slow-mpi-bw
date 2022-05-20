@@ -678,11 +678,17 @@ void oogs::start(occa::memory &o_v, const int k, const dlong stride, const char 
   }
 
   if(gs->mode == OOGS_DEFAULT) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("default ogs start", 1);
+#endif
     if(k>1)
       ogsGatherScatterManyStart(o_v, k, stride, type, op, ogs);
     else
       ogsGatherScatterStart(o_v, type, op, ogs);
 
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("default ogs start");
+#endif
     return;
   }
 
@@ -734,10 +740,16 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
   }
 
   if(gs->mode == OOGS_DEFAULT) {
+#ifdef ENABLE_TIMERS
+    platform->timer.tic("default ogs finish", 1);
+#endif
     if(k>1)
       ogsGatherScatterManyFinish(o_v, k, stride, type, op, ogs);
     else
       ogsGatherScatterFinish(o_v, type, op, ogs);
+#ifdef ENABLE_TIMERS
+    platform->timer.toc("default ogs finish");
+#endif
 
     return;
   }
@@ -758,8 +770,9 @@ void oogs::finish(occa::memory &o_v, const int k, const dlong stride, const char
 #ifdef ENABLE_TIMERS
     platform->timer.tic("D->H send buf", 1);
 #endif
-    if(gs->mode == OOGS_HOSTMPI)
+    if(gs->mode == OOGS_HOSTMPI){
       gs->o_bufSend.copyTo(gs->bufSend, pwd->comm[send].total*Nbytes*k, 0, "async: true");
+    }
 #ifdef ENABLE_TIMERS
     platform->timer.toc("D->H send buf");
 #endif
