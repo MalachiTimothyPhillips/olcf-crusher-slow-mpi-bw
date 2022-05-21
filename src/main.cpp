@@ -439,7 +439,7 @@ int main(int argc, char** argv)
   }
 
   nekrs::udfExecuteStep(time, tStep, /* outputStep */ 0);
-  nekrs::resetTimer("udfExecuteStep");
+  //nekrs::resetTimer("udfExecuteStep");
 
   int lastStep = nekrs::lastStep(time, tStep, elapsedTime);
   double elapsedStepSum = 0;
