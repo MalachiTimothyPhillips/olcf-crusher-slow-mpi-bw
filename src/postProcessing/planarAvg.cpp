@@ -74,6 +74,41 @@ oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string d
          }
        } 
     }
+
+    if(dir == "xz") {
+       get_exyz(ex,ey,ez,eg,nelgx,nelgyz);
+       for(int k = 0; k < mesh->Nq; k++) {
+         for(int j = 0; j < mesh->Nq; j++) {
+           for(int i = 0; i < mesh->Nq; i++) {
+             const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
+             ids[id] = (j+1) + nx1*(ey-1);
+           }
+         }
+       } 
+    }
+
+    if(dir == "yz") {
+       get_exyz(ex,ey,ez,eg,nelgx,nelgyz);
+       for(int k = 0; k < mesh->Nq; k++) {
+         for(int j = 0; j < mesh->Nq; j++) {
+           for(int i = 0; i < mesh->Nq; i++) {
+             const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
+             ids[id] = (i+1) + nx1*(ex-1);
+           }
+         }
+       } 
+    }
+    if(dir == "xy") {
+       get_exyz(ex,ey,ez,eg,nelgx,nelgyz);
+       for(int k = 0; k < mesh->Nq; k++) {
+         for(int j = 0; j < mesh->Nq; j++) {
+           for(int i = 0; i < mesh->Nq; i++) {
+             const auto id = iel*mesh->Np + k*mesh->Nq*mesh->Nq + j*mesh->Nq + i; 
+             ids[id] = (k+1) + nx1*(ez-1);
+           }
+         }
+       } 
+    }
   }
 
 #if 0
@@ -101,8 +136,12 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
   static oogs_t *oogs_y;
   static oogs_t *oogs_z;
 
+  static oogs_t *oogs_xy;
+  static oogs_t *oogs_xz;
+  static oogs_t *oogs_yz;
+
   if(firstTime) {
-    o_avgWeights = platform->device.malloc(3*fieldOffsetByte);
+    o_avgWeights = platform->device.malloc(6*fieldOffsetByte);
 
     oogs_x = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "x"); 
     auto o_avgWeights_x = o_avgWeights.slice(0*fieldOffsetByte, fieldOffsetByte);
@@ -125,6 +164,27 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_z);
     platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_z);
 
+    oogs_xy = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xy"); 
+    auto o_avgWeights_xy = o_avgWeights.slice(3*fieldOffsetByte, fieldOffsetByte);
+    o_avgWeights_xy.copyFrom(mesh->o_LMM, mesh->Nlocal*sizeof(dfloat));
+    oogs::startFinish(o_avgWeights_xy, 1, mesh->Nlocal, ogsDfloat, ogsAdd, oogs_xy);
+    platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_xy);
+    platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_xy);
+
+    oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz"); 
+    auto o_avgWeights_xz = o_avgWeights.slice(4*fieldOffsetByte, fieldOffsetByte);
+    o_avgWeights_xz.copyFrom(mesh->o_LMM, mesh->Nlocal*sizeof(dfloat));
+    oogs::startFinish(o_avgWeights_xz, 1, mesh->Nlocal, ogsDfloat, ogsAdd, oogs_xz);
+    platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_xz);
+    platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_xz);
+
+    oogs_yz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "yz"); 
+    auto o_avgWeights_yz = o_avgWeights.slice(5*fieldOffsetByte, fieldOffsetByte);
+    o_avgWeights_yz.copyFrom(mesh->o_LMM, mesh->Nlocal*sizeof(dfloat));
+    oogs::startFinish(o_avgWeights_yz, 1, mesh->Nlocal, ogsDfloat, ogsAdd, oogs_yz);
+    platform->linAlg->ady(mesh->Nlocal, 1, o_avgWeights_yz);
+    platform->linAlg->axmy(mesh->Nlocal, 1, mesh->o_LMM, o_avgWeights_yz);
+
     firstTime = 0;
   }
 
@@ -139,6 +199,15 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
   } else if(dir == "z") {
     o_wghts = o_avgWeights.slice(2*fieldOffsetByte, fieldOffsetByte);
     gsh = oogs_z;
+  } else if(dir == "xy") {
+    o_wghts = o_avgWeights.slice(3*fieldOffsetByte, fieldOffsetByte);
+    gsh = oogs_xy;
+  } else if(dir == "xz") {
+    o_wghts = o_avgWeights.slice(4*fieldOffsetByte, fieldOffsetByte);
+    gsh = oogs_xz;
+  } else if(dir == "yz") {
+    o_wghts = o_avgWeights.slice(5*fieldOffsetByte, fieldOffsetByte);
+    gsh = oogs_yz;
   } else {
     if (platform->comm.mpiRank == 0) printf("ERROR in planarAvg: Unknown direction!");
     ABORT(EXIT_FAILURE);
