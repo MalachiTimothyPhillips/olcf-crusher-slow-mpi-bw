@@ -26,32 +26,52 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("SCALAR01 SOLVER TOLERANCE", std::string("1e-12"));
 }
 
-dfloat computeLInfError(nrs_t * nrs, occa::memory o_a, occa::memory o_b)
+dfloat computeLInfError(nrs_t * nrs, occa::memory o_a, occa::memory o_b, int wordSize)
 {
   auto * mesh = nrs->meshV;
   auto o_tmp = platform->device.malloc(o_a.size());
-  platform->linAlg->axpbyzMany(mesh->Nlocal,
-    nrs->NVfields,
-    nrs->fieldOffset,
-    1.0,
-    o_a,
-    -1.0,
-    o_b,
-    o_tmp);
+  if(wordSize != sizeof(dfloat)){
+    platform->linAlg->faxpbyzMany(mesh->Nlocal,
+      nrs->NVfields,
+      nrs->fieldOffset,
+      1.0,
+      o_a,
+      -1.0,
+      o_b,
+      o_tmp);
+  } else {
+    platform->linAlg->axpbyzMany(mesh->Nlocal,
+      nrs->NVfields,
+      nrs->fieldOffset,
+      1.0,
+      o_a,
+      -1.0,
+      o_b,
+      o_tmp);
+  }
 
   dfloat LInfError = 0.0;
   
   for(int fld = 0; fld < nrs->NVfields; ++fld){
-    auto o_fld_slice = o_tmp + fld * nrs->fieldOffset * sizeof(dfloat);
-    platform->linAlg->abs(mesh->Nlocal, o_fld_slice);
-    LInfError = std::max(LInfError, platform->linAlg->max(mesh->Nlocal, o_fld_slice, platform->comm.mpiComm));
+    auto o_fld_slice = o_tmp + fld * nrs->fieldOffset * wordSize;
+
+    dfloat term = 0.0;
+    if(wordSize != sizeof(dfloat)){
+      platform->linAlg->fabs(mesh->Nlocal, o_fld_slice);
+      term = platform->linAlg->fmax(mesh->Nlocal, o_fld_slice, platform->comm.mpiComm);
+    } else {
+      platform->linAlg->abs(mesh->Nlocal, o_fld_slice);
+      term = platform->linAlg->max(mesh->Nlocal, o_fld_slice, platform->comm.mpiComm);
+    }
+
+    LInfError = std::max(LInfError, term);
   }
   o_tmp.free();
 
   return LInfError;
 }
 
-void setField(nrs_t * nrs, occa::memory& o_fld, int field)
+void setField(nrs_t * nrs, occa::memory& o_fld, int field, int wordSize)
 {
   auto * mesh = nrs->meshV;
   occa::memory o_dir;
@@ -59,41 +79,80 @@ void setField(nrs_t * nrs, occa::memory& o_fld, int field)
   if(field == 1) o_dir = mesh->o_y;
   if(field == 2) o_dir = mesh->o_z;
 
-  auto o_fld_slice = o_fld + field * nrs->fieldOffset * sizeof(dfloat);
+  auto o_fld_slice = o_fld + field * nrs->fieldOffset * wordSize;
 
-  o_fld_slice.copyFrom(o_dir, mesh->Nlocal * sizeof(dfloat));
+  if(wordSize != sizeof(dfloat)){
+    platform->copyDfloatToPfloatKernel(mesh->Nlocal, o_dir, o_fld_slice);
+  } else {
+    o_fld_slice.copyFrom(o_dir, mesh->Nlocal * sizeof(dfloat));
+  }
 }
 
-void testDirection(nrs_t* nrs, std::string dir)
+void testDirection(nrs_t* nrs, std::string dir, int wordSize)
 {
   auto * mesh = nrs->meshV;
-  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
-  postProcessing::planarAvg(nrs, dir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
+  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * wordSize);
+  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * wordSize);
+  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld, wordSize);
+
+  auto planarAvg = wordSize != sizeof(dfloat) ? postProcessing::fplanarAvg : postProcessing::planarAvg;
+  planarAvg(nrs, dir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
 
   if(dir == "x"){
-    platform->linAlg->fill(mesh->Nlocal, 0.0, o_refFields);
-    o_refFields.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), nrs->fieldOffset * sizeof(dfloat), 0);
-    o_refFields.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat), 2 * nrs->fieldOffset * sizeof(dfloat), 0);
+    if(wordSize != sizeof(dfloat)){
+      platform->linAlg->ffill(mesh->Nlocal, 0.0, o_refFields);
+      auto o_slice1 = o_refFields + nrs->fieldOffset * sizeof(pfloat);
+      auto o_slice2 = o_refFields + 2 * nrs->fieldOffset * sizeof(pfloat);
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_y, o_slice1);
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_z, o_slice2);
+    } else {
+      platform->linAlg->fill(mesh->Nlocal, 0.0, o_refFields);
+      o_refFields.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), nrs->fieldOffset * sizeof(dfloat), 0);
+      o_refFields.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat), 2 * nrs->fieldOffset * sizeof(dfloat), 0);
+    }
   }
   if(dir == "y"){
-    o_refFields.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat),  0 * nrs->fieldOffset * sizeof(dfloat), 0);
-    auto o_slice = o_refFields + 1 * nrs->fieldOffset * sizeof(dfloat);
-    platform->linAlg->fill(mesh->Nlocal, 0.5, o_slice);
-    o_refFields.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat),  2 * nrs->fieldOffset * sizeof(dfloat), 0);
+    if(wordSize != sizeof(dfloat)){
+      auto o_slice0 = o_refFields + 0 * nrs->fieldOffset * sizeof(pfloat);
+      auto o_slice1 = o_refFields + 1 * nrs->fieldOffset * sizeof(pfloat);
+      auto o_slice2 = o_refFields + 2 * nrs->fieldOffset * sizeof(pfloat);
+      
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_x, o_slice0);
+      platform->linAlg->ffill(mesh->Nlocal, 0.5, o_slice1);
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_z, o_slice2);
+
+    } else {
+      o_refFields.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat),  0 * nrs->fieldOffset * sizeof(dfloat), 0);
+      auto o_slice = o_refFields + 1 * nrs->fieldOffset * sizeof(dfloat);
+      platform->linAlg->fill(mesh->Nlocal, 0.5, o_slice);
+      o_refFields.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat),  2 * nrs->fieldOffset * sizeof(dfloat), 0);
+    }
   }
   if(dir == "z"){
-    o_refFields.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat), 0 * nrs->fieldOffset * sizeof(dfloat), 0);
-    o_refFields.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), 1 * nrs->fieldOffset * sizeof(dfloat), 0);
-    auto o_slice = o_refFields + 2 * nrs->fieldOffset * sizeof(dfloat);
-    platform->linAlg->fill(mesh->Nlocal, 0.5, o_slice);
+    if(wordSize != sizeof(dfloat)){
+      auto o_slice0 = o_refFields + 0 * nrs->fieldOffset * sizeof(pfloat);
+      auto o_slice1 = o_refFields + 1 * nrs->fieldOffset * sizeof(pfloat);
+      auto o_slice2 = o_refFields + 2 * nrs->fieldOffset * sizeof(pfloat);
+      
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_x, o_slice0);
+      platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_y, o_slice1);
+      platform->linAlg->ffill(mesh->Nlocal, 0.5, o_slice2);
+    } else {
+      o_refFields.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat), 0 * nrs->fieldOffset * sizeof(dfloat), 0);
+      o_refFields.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), 1 * nrs->fieldOffset * sizeof(dfloat), 0);
+      auto o_slice = o_refFields + 2 * nrs->fieldOffset * sizeof(dfloat);
+      platform->linAlg->fill(mesh->Nlocal, 0.5, o_slice);
+    }
   }
 
-  const auto tol = 50. * std::numeric_limits<dfloat>::epsilon();
+  const auto feps = std::numeric_limits<pfloat>::epsilon();
+  const auto eps = std::numeric_limits<dfloat>::epsilon();
 
-  auto LInfError = computeLInfError(nrs, o_fields, o_refFields);
+  const auto tol = 50. * (wordSize != sizeof(dfloat) ? feps : eps);
+
+  auto LInfError = computeLInfError(nrs, o_fields, o_refFields, wordSize);
   if(LInfError > tol){
+    std::cout << "testDirection, dir = " << dir << ", error = " << LInfError << "\n";
     FAIL;
   }
 
@@ -101,63 +160,71 @@ void testDirection(nrs_t* nrs, std::string dir)
   o_refFields.free();
 };
 
-void testFusedPlanarAvg(nrs_t * nrs, std::string dir)
+void testFusedPlanarAvg(nrs_t * nrs, std::string dir, int wordSize)
 {
   if(dir.size() != 2){
+    std::cout << "dir.size() != 2\n";
     FAIL;
   }
 
-  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
+  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * wordSize);
+  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * wordSize);
+  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld, wordSize);
 
-  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * wordSize);
 
   const auto firstDir = dir.substr(0, 1);
   const auto secondDir = dir.substr(1);
 
+  auto planarAvg = wordSize != sizeof(dfloat) ? postProcessing::fplanarAvg : postProcessing::planarAvg;
+
   // (1) x, z == z, x, e.g.
-  postProcessing::planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
-  postProcessing::planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
+  planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
+  planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
 
-  postProcessing::planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
-  postProcessing::planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
 
+  const auto feps = std::numeric_limits<pfloat>::epsilon();
+  const auto eps = std::numeric_limits<dfloat>::epsilon();
 
-  const auto tol = 50. * std::numeric_limits<dfloat>::epsilon();
+  const auto tol = 50. * (wordSize != sizeof(dfloat) ? feps : eps);
 
-  auto LInfError = computeLInfError(nrs, o_fields, o_refFields);
+  auto LInfError = computeLInfError(nrs, o_fields, o_refFields, wordSize);
   if(LInfError > tol){
+    std::cout << "check 1, dir = " << dir << ", error = " << LInfError << "\n";
     FAIL;
   }
 
   // (2) xz == x, z, e.g.
 
-  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
-  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld, wordSize);
+  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * wordSize);
 
-  postProcessing::planarAvg(nrs, dir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
+  planarAvg(nrs, dir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
 
-  postProcessing::planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
-  postProcessing::planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
 
-  LInfError = computeLInfError(nrs, o_fields, o_refFields);
+  LInfError = computeLInfError(nrs, o_fields, o_refFields, wordSize);
   if(LInfError > tol){
+    std::cout << "check 2, dir = " << dir << ", error = " << LInfError << "\n";
     FAIL;
   }
 
   // (3) xz, zx both work
 
-  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
-  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld, wordSize);
+  o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * wordSize);
 
-  postProcessing::planarAvg(nrs, secondDir + firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
+  planarAvg(nrs, secondDir + firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
 
-  postProcessing::planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
-  postProcessing::planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
+  planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nrs->NVfields, o_refFields);
 
-  LInfError = computeLInfError(nrs, o_fields, o_refFields);
+  LInfError = computeLInfError(nrs, o_fields, o_refFields, wordSize);
   if(LInfError > tol){
+    std::cout << "check 3, dir = " << dir << ", error = " << LInfError << "\n";
     FAIL;
   }
 
@@ -174,18 +241,22 @@ void ciTestPlanarAvg(nrs_t* nrs)
   platform->par->extract("casedata", "number_elements_y", NELGY);
   platform->par->extract("casedata", "number_elements_z", NELGZ);
 
-  testDirection(nrs, "x");
-  testDirection(nrs, "y");
-  testDirection(nrs, "z");
+  for (const auto wordSize : {sizeof(dfloat), sizeof(pfloat)}){
+    testDirection(nrs, "x", wordSize);
+    testDirection(nrs, "y", wordSize);
+    testDirection(nrs, "z", wordSize);
 
-  testFusedPlanarAvg(nrs, "xy");
-  testFusedPlanarAvg(nrs, "xz");
-  testFusedPlanarAvg(nrs, "yz");
+    testFusedPlanarAvg(nrs, "xy", wordSize);
+    testFusedPlanarAvg(nrs, "xz", wordSize);
+    testFusedPlanarAvg(nrs, "yz", wordSize);
+  }
+
+  PASS;
 }
 
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
 {
-  if (!nrs->lastStep) return;
+  //if (!nrs->lastStep) return;
 
   ciTestPlanarAvg(nrs);
  

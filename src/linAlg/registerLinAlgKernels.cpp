@@ -12,7 +12,6 @@ void registerLinAlgKernels()
   std::string fileName;
   const bool serial = platform->serial;
 
-  const std::string extension = serial ? ".c" : ".okl";
   const std::vector<std::pair<std::string, bool>> allKernels{
       {"fill", false},
       {"vabs", false},
@@ -61,6 +60,16 @@ void registerLinAlgKernels()
     const std::string extension = (serial && nativeSerialImplementation) ? ".c" : ".okl";
     platform->kernels.add(
         kernelName, oklDir + kernelName + extension,  kernelInfo);
+  }
+
+  // FP32 kernels
+  auto pfloatKernelInfo = kernelInfo;
+  pfloatKernelInfo["defines/dfloat"] = pfloatString;
+
+  const std::string extension = ".okl";
+  for(const auto fp32KernelName : {"vabs", "fill", "max", "axmyzMany", "ady", "axmy", "axpbyzMany"}){
+    platform->kernels.add(
+        std::string("f") + fp32KernelName, oklDir + fp32KernelName + extension,  pfloatKernelInfo);
   }
 
 }

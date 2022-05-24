@@ -75,7 +75,9 @@ void linAlg_t::setup()
   double tStartLoadKernel = MPI_Wtime();
   {
     fillKernel = kernels.get("fill");
+    ffillKernel = kernels.get("ffill");
     absKernel = kernels.get("vabs");
+    fabsKernel = kernels.get("fvabs");
     addKernel = kernels.get("add");
     scaleKernel = kernels.get("scale");
     scaleManyKernel = kernels.get("scaleMany");
@@ -83,12 +85,15 @@ void linAlg_t::setup()
     axpbyManyKernel = kernels.get("axpbyMany");
     axpbyzKernel = kernels.get("axpbyz");
     axpbyzManyKernel = kernels.get("axpbyzMany");
+    faxpbyzManyKernel = kernels.get("faxpbyzMany");
     axmyKernel = kernels.get("axmy");
+    faxmyKernel = kernels.get("faxmy");
     axmyManyKernel = kernels.get("axmyMany");
     axmyVectorKernel = kernels.get("axmyVector");
     axmyzKernel = kernels.get("axmyz");
     axmyzManyKernel = kernels.get("axmyzMany");
     adyKernel = kernels.get("ady");
+    fadyKernel = kernels.get("fady");
     adyManyKernel = kernels.get("adyMany");
     axdyKernel = kernels.get("axdy");
     aydxKernel = kernels.get("aydx");
@@ -98,6 +103,7 @@ void linAlg_t::setup()
     sumManyKernel = kernels.get("sumMany");
     minKernel = kernels.get("min");
     maxKernel = kernels.get("max");
+    fmaxKernel = kernels.get("fmax");
     norm2Kernel = kernels.get("norm2");
     norm2ManyKernel = kernels.get("norm2Many");
     norm1Kernel = kernels.get("norm1");
@@ -118,14 +124,18 @@ void linAlg_t::setup()
 linAlg_t::~linAlg_t()
 {
   fillKernel.free();
+  ffillKernel.free();
   absKernel.free();
+  fabsKernel.free();
   addKernel.free();
   scaleKernel.free();
   scaleManyKernel.free();
   axpbyKernel.free();
   axpbyManyKernel.free();
   axpbyzKernel.free();
+  faxpbyzManyKernel.free();
   axpbyzManyKernel.free();
+  faxmyKernel.free();
   axmyKernel.free();
   axmyManyKernel.free();
   axmyVectorKernel.free();
@@ -135,6 +145,7 @@ linAlg_t::~linAlg_t()
   aydxKernel.free();
   aydxManyKernel.free();
   adyKernel.free();
+  fadyKernel.free();
   adyManyKernel.free();
   axdyzKernel.free();
   sumKernel.free();
@@ -160,9 +171,11 @@ linAlg_t::~linAlg_t()
 
 // o_a[n] = alpha
 void linAlg_t::fill(const dlong N, const dfloat alpha, occa::memory &o_a) { fillKernel(N, alpha, o_a); }
+void linAlg_t::ffill(const dlong N, const pfloat alpha, occa::memory &o_a) { ffillKernel(N, alpha, o_a); }
 
 // o_a[n] = abs(o_a[n])
 void linAlg_t::abs(const dlong N, occa::memory &o_a) { absKernel(N, o_a); }
+void linAlg_t::fabs(const dlong N, occa::memory &o_a) { fabsKernel(N, o_a); }
 
 // o_a[n] += alpha
 void linAlg_t::add(const dlong N, const dfloat alpha, occa::memory &o_a, const dlong offset)
@@ -229,8 +242,23 @@ void linAlg_t::axpbyzMany(const dlong N,
   axpbyzManyKernel(N, Nfields, fieldOffset, alpha, o_x, beta, o_y, o_z);
   platform->flopCounter->add("axpbyzMany", 3 * static_cast<double>(N) * Nfields);
 }
+void linAlg_t::faxpbyzMany(const dlong N,
+                          const dlong Nfields,
+                          const dlong fieldOffset,
+                          const pfloat alpha,
+                          occa::memory &o_x,
+                          const pfloat beta,
+                          occa::memory &o_y,
+                          occa::memory &o_z)
+{
+  faxpbyzManyKernel(N, Nfields, fieldOffset, alpha, o_x, beta, o_y, o_z);
+}
 
 // o_y[n] = alpha*o_x[n]*o_y[n]
+void linAlg_t::faxmy(const dlong N, const pfloat alpha, occa::memory &o_x, occa::memory &o_y)
+{
+  faxmyKernel(N, alpha, o_x, o_y);
+}
 void linAlg_t::axmy(const dlong N, const dfloat alpha, occa::memory &o_x, occa::memory &o_y)
 {
   axmyKernel(N, alpha, o_x, o_y);
@@ -296,6 +324,7 @@ void linAlg_t::aydxMany(const dlong N,
 }
 // o_y[n] = alpha/o_y[n]
 void linAlg_t::ady(const dlong N, const dfloat alpha, occa::memory &o_y) { adyKernel(N, alpha, o_y); }
+void linAlg_t::fady(const dlong N, const pfloat alpha, occa::memory &o_y) { fadyKernel(N, alpha, o_y); }
 void linAlg_t::adyMany(const dlong N,
                        const dlong Nfields,
                        const dlong offset,
@@ -423,6 +452,32 @@ dfloat linAlg_t::max(const dlong N, occa::memory &o_a, MPI_Comm _comm)
 
   if (_comm != MPI_COMM_NULL)
     MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_DFLOAT, MPI_MAX, _comm);
+
+  return max;
+}
+pfloat linAlg_t::fmax(const dlong N, occa::memory &o_a, MPI_Comm _comm)
+{
+  int Nblock = (N + blocksize - 1) / blocksize;
+  const size_t Nbytes = Nblock * sizeof(pfloat);
+  if (o_scratch.size() < Nbytes)
+    reallocScratch(Nbytes);
+
+  if (N > 1) {
+    maxKernel(Nblock, N, o_a, o_scratch);
+
+    o_scratch.copyTo(scratch, Nbytes);
+  }
+  else {
+    o_a.copyTo(scratch, Nbytes);
+  }
+
+  pfloat max = scratch[0];
+  for (dlong n = 1; n < Nblock; ++n) {
+    max = (scratch[n] > max) ? scratch[n] : max;
+  }
+
+  if (_comm != MPI_COMM_NULL)
+    MPI_Allreduce(MPI_IN_PLACE, &max, 1, MPI_PFLOAT, MPI_MAX, _comm);
 
   return max;
 }
