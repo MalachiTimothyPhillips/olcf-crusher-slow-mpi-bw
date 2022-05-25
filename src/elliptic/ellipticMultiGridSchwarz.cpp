@@ -791,8 +791,13 @@ void MGLevel::generate_weights()
 
   oogs::startFinish(wts, 1, 0, ogsPfloat, ogsAdd, (oogs_t*) ogs);
 
+#if 0
   for(dlong i = 0; i < weightSize; ++i)
     wts[i] = 1.0 / wts[i];
+#else
+  for(dlong i = 0; i < weightSize; ++i)
+    wts[i] = 1.0;
+#endif
   o_wts = platform->device.malloc(weightSize * sizeof(pfloat), wts);
   free(work1);
   free(work2);
