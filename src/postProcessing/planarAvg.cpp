@@ -17,7 +17,7 @@ void get_exyz(int& ex, int& ey, int& ez,int eg, int nelx, int nely)
   ez = 1 + (eg-1)/(nelx*nely);
 }
 
-oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string dir, const char * ogsType)
+oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string dir)
 {
   mesh_t* mesh = nrs->meshV;
   const auto nelgxy = nelgx*nelgy;
@@ -120,7 +120,7 @@ oogs_t *gtpp_gs_setup(nrs_t *nrs, int nelgx, int nelgy, int nelgz, std::string d
 
   auto ogsh = ogsSetup(mesh->Nlocal, ids, platform->comm.mpiComm, 1, platform->device.occaDevice());
   free(ids);
-  auto oogsh = oogs::setup(ogsh, 6, nrs->fieldOffset, ogsType, NULL, OOGS_AUTO);
+  auto oogsh = oogs::setup(ogsh, 6, nrs->fieldOffset, ogsDfloat, NULL, OOGS_AUTO);
   return oogsh;
 }
 
@@ -176,37 +176,37 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
   if(!gsh) {
 
     if(dir == "x"){
-      oogs_x = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "x", ogsDfloat); 
+      oogs_x = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "x"); 
       gsh = oogs_x;
       o_avgWeight_x = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_x;
     }
     else if(dir == "y"){
-      oogs_y = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "y", ogsDfloat);
+      oogs_y = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "y");
       gsh = oogs_y;
       o_avgWeight_y = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_y;
     }
     else if(dir == "z"){
-      oogs_z = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "z", ogsDfloat);
+      oogs_z = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "z");
       gsh = oogs_z;
       o_avgWeight_z = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_z;
     }
     else if(dir == "xy" || dir == "yx"){
-      oogs_xy = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xy", ogsDfloat); 
+      oogs_xy = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xy"); 
       gsh = oogs_xy;
       o_avgWeight_xy = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_xy;
     }
     else if(dir == "xz" || dir == "zx"){
-      oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz", ogsDfloat); 
+      oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz"); 
       gsh = oogs_xz;
       o_avgWeight_xz = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_xz;
     }
     else if(dir == "yz" || dir == "zy"){
-      oogs_yz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "yz", ogsDfloat); 
+      oogs_yz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "yz"); 
       gsh = oogs_yz;
       o_avgWeight_yz = platform->device.malloc(fieldOffsetByte);
       o_wghts = o_avgWeight_yz;
@@ -228,113 +228,4 @@ void postProcessing::planarAvg(nrs_t *nrs, const std::string& dir, int NELGX, in
     platform->linAlg->axmy(mesh->Nlocal, 1, o_wghts, o_wrk);
   } 
   oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
-} 
-
-void postProcessing::fplanarAvg(nrs_t *nrs, const std::string& dir, int NELGX, int NELGY, int NELGZ, int nflds, occa::memory o_avg)
-{
-  mesh_t* mesh = nrs->meshV;
-  const auto fieldOffsetByte = nrs->fieldOffset * sizeof(pfloat);
-
-  static occa::memory o_avgWeight_x;
-  static occa::memory o_avgWeight_y;
-  static occa::memory o_avgWeight_z;
-
-  static occa::memory o_avgWeight_xy;
-  static occa::memory o_avgWeight_xz;
-  static occa::memory o_avgWeight_yz;
-
-  static oogs_t *oogs_x = nullptr;
-  static oogs_t *oogs_y = nullptr;
-  static oogs_t *oogs_z = nullptr;
-
-  static oogs_t *oogs_xy = nullptr;
-  static oogs_t *oogs_xz = nullptr;
-  static oogs_t *oogs_yz = nullptr;
-
-  occa::memory o_wghts;
-  oogs_t *gsh;
-
-  if(dir == "x") {
-    o_wghts = o_avgWeight_x;
-    gsh = oogs_x;
-  } else if(dir == "y") {
-    o_wghts = o_avgWeight_y;
-    gsh = oogs_y;
-  } else if(dir == "z") {
-    o_wghts = o_avgWeight_z;
-    gsh = oogs_z;
-  } else if(dir == "xy" || dir == "yx") {
-    o_wghts = o_avgWeight_xy;
-    gsh = oogs_xy;
-  } else if(dir == "xz" || dir == "zx") {
-    o_wghts = o_avgWeight_xz;
-    gsh = oogs_xz;
-  } else if(dir == "yz" || dir == "zy") {
-    o_wghts = o_avgWeight_yz;
-    gsh = oogs_yz;
-  } else {
-    if (platform->comm.mpiRank == 0) printf("ERROR in planarAvg: Unknown direction!");
-    ABORT(EXIT_FAILURE);
-  }
-
-  if(!gsh) {
-
-    if(dir == "x"){
-      oogs_x = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "x", ogsPfloat); 
-      gsh = oogs_x;
-      o_avgWeight_x = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_x;
-    }
-    else if(dir == "y"){
-      oogs_y = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "y", ogsPfloat);
-      gsh = oogs_y;
-      o_avgWeight_y = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_y;
-    }
-    else if(dir == "z"){
-      oogs_z = gtpp_gs_setup(nrs, NELGX*NELGY, 1, NELGZ, "z", ogsPfloat);
-      gsh = oogs_z;
-      o_avgWeight_z = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_z;
-    }
-    else if(dir == "xy" || dir == "yx"){
-      oogs_xy = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xy", ogsPfloat); 
-      gsh = oogs_xy;
-      o_avgWeight_xy = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_xy;
-    }
-    else if(dir == "xz" || dir == "zx"){
-      oogs_xz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "xz", ogsPfloat); 
-      gsh = oogs_xz;
-      o_avgWeight_xz = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_xz;
-    }
-    else if(dir == "yz" || dir == "zy"){
-      oogs_yz = gtpp_gs_setup(nrs, NELGX, NELGY, NELGZ, "yz", ogsPfloat); 
-      gsh = oogs_yz;
-      o_avgWeight_yz = platform->device.malloc(fieldOffsetByte);
-      o_wghts = o_avgWeight_yz;
-    }
-    else{
-      if (platform->comm.mpiRank == 0) printf("ERROR in planarAvg: Unknown direction!");
-      ABORT(EXIT_FAILURE);
-    }
-
-    auto o_tmp = platform->device.malloc(fieldOffsetByte);
-
-    platform->copyDfloatToPfloatKernel(mesh->Nlocal, mesh->o_LMM, o_tmp);
-    o_wghts.copyFrom(o_tmp, mesh->Nlocal * sizeof(pfloat));
-    oogs::startFinish(o_wghts, 1, mesh->Nlocal, ogsPfloat, ogsAdd, gsh);
-    platform->linAlg->fady(mesh->Nlocal, 1, o_wghts);
-    platform->linAlg->faxmy(mesh->Nlocal, 1, o_tmp, o_wghts);
-
-    o_tmp.free();
-
-  }
-
-  for(int ifld = 0; ifld < nflds; ifld++) {
-    auto o_wrk = o_avg.slice(ifld*fieldOffsetByte, fieldOffsetByte);
-    platform->linAlg->faxmy(mesh->Nlocal, 1, o_wghts, o_wrk);
-  } 
-  oogs::startFinish(o_avg, nflds, nrs->fieldOffset, ogsPfloat, ogsAdd, gsh);
 } 

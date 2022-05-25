@@ -58,10 +58,8 @@ public:
 
   // o_a[n] = alpha
   void fill(const dlong N, const dfloat alpha, occa::memory& o_a);
-  void ffill(const dlong N, const pfloat alpha, occa::memory& o_a);
 
   // o_a[n] = abs(o_a[n])
-  void fabs(const dlong N, occa::memory& o_a);
   void abs(const dlong N, occa::memory& o_a);
 
   // o_a[n] *= alpha
@@ -82,16 +80,11 @@ public:
   void axpbyz(const dlong N, const dfloat alpha, occa::memory& o_x,
                              const dfloat beta,  occa::memory& o_y,
                              occa::memory& o_z);
-  void faxpbyzMany(const dlong N, const dlong Nfields, const dlong offset, const pfloat alpha, occa::memory& o_x,
-                             const pfloat beta,  occa::memory& o_y,
-                             occa::memory& o_z);
   void axpbyzMany(const dlong N, const dlong Nfields, const dlong offset, const dfloat alpha, occa::memory& o_x,
                              const dfloat beta,  occa::memory& o_y,
                              occa::memory& o_z);
 
   // o_y[n] = alpha*o_x[n]*o_y[n]
-  void faxmy(const dlong N, const pfloat alpha,
-            occa::memory& o_x, occa::memory& o_y);
   void axmy(const dlong N, const dfloat alpha,
             occa::memory& o_x, occa::memory& o_y);
   // mode 1:
@@ -117,8 +110,6 @@ public:
              occa::memory& o_z);
 
   // o_y[n] = alpha/o_y[n]
-  void fady(const dlong N, const pfloat alpha,
-            occa::memory& o_y);
   void ady(const dlong N, const dfloat alpha,
             occa::memory& o_y);
   void adyMany(const dlong N, const dlong Nfields, const dlong offset, const dfloat alpha,
@@ -146,7 +137,6 @@ public:
   dfloat min(const dlong N, occa::memory& o_a, MPI_Comm _comm);
 
   // \max o_a
-  pfloat fmax(const dlong N, occa::memory& o_a, MPI_Comm _comm);
   dfloat max(const dlong N, occa::memory& o_a, MPI_Comm _comm);
 
   // ||o_a||_2
@@ -197,9 +187,7 @@ public:
 
   void unitVector(const dlong N, const dlong fieldOffset, occa::memory &o_v);
 
-  occa::kernel ffillKernel;
   occa::kernel fillKernel;
-  occa::kernel fabsKernel;
   occa::kernel absKernel;
   occa::kernel addKernel;
   occa::kernel scaleKernel;
@@ -207,10 +195,8 @@ public:
   occa::kernel axpbyKernel;
   occa::kernel axpbyManyKernel;
   occa::kernel axpbyzKernel;
-  occa::kernel faxpbyzManyKernel;
   occa::kernel axpbyzManyKernel;
   occa::kernel axmyKernel;
-  occa::kernel faxmyKernel;
   occa::kernel axmyManyKernel;
   occa::kernel axmyVectorKernel;
   occa::kernel axmyzKernel;
@@ -219,14 +205,12 @@ public:
   occa::kernel aydxKernel;
   occa::kernel aydxManyKernel;
   occa::kernel adyKernel;
-  occa::kernel fadyKernel;
   occa::kernel adyManyKernel;
   occa::kernel axdyzKernel;
   occa::kernel sumKernel;
   occa::kernel sumManyKernel;
   occa::kernel sumFieldKernel;
   occa::kernel minKernel;
-  occa::kernel fmaxKernel;
   occa::kernel maxKernel;
   occa::kernel norm2Kernel;
   occa::kernel norm2ManyKernel;
