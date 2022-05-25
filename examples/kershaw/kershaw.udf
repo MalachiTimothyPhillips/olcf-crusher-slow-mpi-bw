@@ -2,6 +2,12 @@
 #include <numeric>
 #include "udf.hpp"
 
+#include <functional>
+#include <cmath>
+#include <utility>
+#include <iostream>
+
+
 /* UDF Functions */                                                      
 static dfloat P_EPS;
 
@@ -26,7 +32,7 @@ void UDF_Setup(nrs_t *nrs)
 {
 }
 
-void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+dfloat run_evaluation(nrs_t *nrs, dfloat time, int tstep)
 {
   mesh_t* mesh = nrs->meshV;
 
@@ -41,7 +47,8 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   if(platform->comm.mpiRank == 0) 
     std::cout << "\nrunning benchmarks\n"; 
 
-  for(std::string benchmark : {"BPS5", "BP5"}){
+  //for(std::string benchmark : {"BPS5", "BP5"}){
+  for(std::string benchmark : {"BPS5"}){
 
     MPI_Barrier(platform->comm.mpiComm);
     if(platform->comm.mpiRank == 0) 
@@ -57,7 +64,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
     }
     if(benchmark == "BPS5"){
-      Nrep = 50;
+      Nrep = 1;
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-8));
       nrs->pSolver->options.setArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE");
     }
@@ -128,5 +135,101 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       }
     }
   }
+
+  // compute convergence rate
+  const auto Niter = nrs->pSolver->Niter;
+  const auto rN = nrs->pSolver->resNorm;
+  const auto r0 = nrs->pSolver->res00Norm;
+  const auto rho = std::pow(rN / r0, 1.0 / Niter);
+  const auto tau = -1.0 * std::log(rho);
+  return tau;
+}
+
+namespace{
+template<typename T>
+struct bound_t{
+  T lower;
+  T upper;
+};
+
+template<typename Callable, typename T>
+auto goldenSectionSearch(Callable objective, T a, T b, T tol)
+{
+
+  const auto invphi = (std::sqrt(5.0) - 1.0) / 2.0;
+  const auto invphi2 = (3.0 - std::sqrt(5.0)) / 2.0;
+  const auto tmpA = a;
+  const auto tmpB = b;
+
+  a = std::min(tmpA, tmpB);
+  b = std::max(tmpA, tmpB);
+  auto h = b - a;
+  if (h <= tol){
+    return bound_t<T>{a,b};
+  }
+
+  const auto n = static_cast<int>(ceil(std::log(tol / h) / std::log(invphi)));
+
+  auto c = a + invphi2 * h;
+  auto d = a + invphi * h;
+  auto yc = objective(c);
+  auto yd = objective(d);
+
+  for(int iter = 0; iter < n-1; ++iter){
+    if (yc < yd){
+      b = d;
+      d = c;
+      yd = yc;
+      h = invphi * h;
+      c = a + invphi2 * h;
+      yc = objective(c);
+    } else {
+      a = c;
+      c = d;
+      yc = yd;
+      h = invphi * h;
+      d = a + invphi * h;
+      yd = objective(d);
+    }
+  }
+
+  if (yc < yd){
+    return bound_t<T>{a, d};
+  }
+  else {
+    return bound_t<T>{c, b};
+  }
   
+}
+}
+
+
+// Kludge: assumes two-level scheme
+void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
+{
+  auto objective = [&](double omega){
+
+    // update lambda values appropriately
+    auto fineLevel = dynamic_cast<MGLevel*>(nrs->pSolver->precon->parAlmond->levels[0]);
+    fineLevel->lambda0 = 0.0;
+    fineLevel->lambda1 = 2.0 / omega;
+
+    // run solver
+    return -1.0 * run_evaluation(nrs, time, tstep);
+  };
+
+  auto bounds = goldenSectionSearch(objective, 0.0, 1.0, 1e-3);
+
+  // use midpoint of bounds for final convergence rates
+  auto omega_star = 0.5 * (bounds.lower + bounds.upper);
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "omega_star = " << omega_star << "\n";
+  }
+
+  // force verbosity for last evaluation and allow more iterations
+  nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "1000");
+  platform->options.setArgs("VERBOSE", "TRUE");
+  objective(omega_star);
+
 }
