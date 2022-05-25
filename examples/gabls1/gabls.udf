@@ -7,8 +7,6 @@ occa::kernel divStressKernel;
 occa::kernel visMFKernel;
 occa::kernel avgBIDValueKernel;
 
-occa::memory o_tmp;
-
 /* latitude north */
 static dfloat NLAT;
 /* geostrophic wind speed [m/s] */
@@ -161,22 +159,13 @@ void average(nrs_t *nrs, occa::memory o_avg)
     o_avg,
     o_ddyAvg);
   oogs::startFinish(o_ddyAvg, 3, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-
-  // cast into FP32 fields
-  if(!o_tmp.size()){
-    o_tmp = platform->device.malloc(6 * nrs->fieldOffset * sizeof(pfloat));
-  }
-
-  platform->copyDfloatToPfloatKernel(6 * nrs->fieldOffset, o_avg, o_tmp);
   
 #if 0
-  postProcessing::fplanarAvg(nrs, "x", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_tmp);
-  postProcessing::fplanarAvg(nrs, "z", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_tmp);
+  postProcessing::planarAvg(nrs, "x", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
+  postProcessing::planarAvg(nrs, "z", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
 #else
-  postProcessing::fplanarAvg(nrs, "xz", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_tmp);
+  postProcessing::planarAvg(nrs, "xz", NUMBER_ELEMENTS_X, NUMBER_ELEMENTS_Y, NUMBER_ELEMENTS_Z, 6, o_avg);
 #endif
-
-  platform->copyPfloatToDfloatKernel(6 * nrs->fieldOffset, o_tmp, o_avg);
 }
 
 
