@@ -1,6 +1,7 @@
 #include <math.h>
 #include <numeric>
 #include "udf.hpp"
+#include <fstream>
 
 #include <functional>
 #include <cmath>
@@ -204,6 +205,8 @@ auto goldenSectionSearch(Callable objective, T a, T b, T tol)
 }
 
 
+//#define OPTIMIZE
+
 // Kludge: assumes two-level scheme
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
@@ -218,7 +221,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     return -1.0 * run_evaluation(nrs, time, tstep);
   };
 
-  auto bounds = goldenSectionSearch(objective, 0.0, 1.0, 1e-3);
+#ifdef OPTIMIZE
+
+  auto bounds = goldenSectionSearch(objective, 0.01, 1.0, 1e-3);
 
   // use midpoint of bounds for final convergence rates
   auto omega_star = 0.5 * (bounds.lower + bounds.upper);
@@ -231,5 +236,25 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   nrs->pSolver->options.setArgs("MAXIMUM ITERATIONS", "1000");
   platform->options.setArgs("VERBOSE", "TRUE");
   objective(omega_star);
+#else
+
+  std::ofstream convergenceFile;
+
+  if(platform->comm.mpiRank == 0){
+    convergenceFile.open("convergence-results.csv");
+    convergenceFile << "omega, tau\n";
+  }
+
+  for(const auto omega : {0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0}){
+    auto convergenceRate = -1.0 * objective(omega);
+    if(platform->comm.mpiRank == 0){
+      convergenceFile << omega << ", " << convergenceRate << "\n";
+    }
+  }
+
+  if(platform->comm.mpiRank == 0){
+    convergenceFile.close();
+  }
+#endif
 
 }
