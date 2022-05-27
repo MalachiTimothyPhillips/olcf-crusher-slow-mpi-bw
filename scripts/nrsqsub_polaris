@@ -1,0 +1,112 @@
+#!/bin/bash
+
+: ${PROJ_ID:=""}
+: ${QUEUE:=""}
+: ${NEKRS_HOME:="$HOME/.local/nekrs"}
+
+if [ $# -ne 3 ]; then
+  echo "usage: [PROJ_ID] [QUEUE] $0 <casename> <number of compute nodes> <hh:mm:ss>"
+  exit 0
+fi
+
+if [ -z "$PROJ_ID" ]; then
+  echo "ERROR: PROJ_ID is empty"
+  exit 1
+fi
+
+if [ -z "$QUEUE" ]; then
+  echo "ERROR: QUEUE is empty"
+  exit 1
+fi
+
+bin=${NEKRS_HOME}/bin/nekrs
+case=$1
+nodes=$2
+gpu_per_node=4
+cores_per_socket=32
+let nn=$nodes*$gpu_per_node
+let ntasks=nn
+time=$3
+backend=CUDA
+
+if [ ! -f $bin ]; then
+  echo "Cannot find" $bin
+  exit 1
+fi
+
+if [ ! -f $case.par ]; then
+  echo "Cannot find" $case.par
+  exit 1
+fi
+
+if [ ! -f $case.udf ]; then
+  echo "Cannot find" $case.udf
+  exit 1
+fi
+
+if [ ! -f $case.oudf ]; then
+  echo "Cannot find" $case.oudf
+  exit 1
+fi
+
+if [ ! -f $case.re2 ]; then
+  echo "Cannot find" $case.re2
+  exit 1
+fi
+
+
+# romio setup
+export ROMIO_HINTS="$(pwd)/.romio_hint"
+if [ ! -f "$ROMIO_HINTS" ]; then
+  echo "romio_no_indep_rw true"   >$ROMIO_HINTS
+  echo "romio_cb_write enable"   >>$ROMIO_HINTS
+  echo "romio_ds_write enable"   >>$ROMIO_HINTS
+  echo "romio_cb_read enable"    >>$ROMIO_HINTS
+  echo "romio_ds_read enable"    >>$ROMIO_HINTS
+  echo "cb_buffer_size 16777216" >>$ROMIO_HINTS
+  echo "cb_config_list *:1"      >>$ROMIO_HINTS
+fi
+
+
+# PBS
+SFILE=s.bin
+echo "#!/bin/bash" > $SFILE
+echo "#PBS -A $PROJ_ID" >>$SFILE
+echo "#PBS -N nekRS_$case" >>$SFILE
+echo "#PBS -q $QUEUE" >>$SFILE
+echo "#PBS -l walltime=$time" >>$SFILE
+# TODO: confirm binding
+echo "#PBS -l select=$nodes:ncpus=$cores_per_socket:ngpus=$gpu_per_node -l place=scatter" >>$SFILE
+echo "#PBS -k doe" >>$SFILE
+echo "#PBS -j oe" >>$SFILE
+echo "" >> $SFILE
+echo "cd \$PBS_O_WORKDIR" >>$SFILE
+echo "" >>$SFILE
+echo "module swap PrgEnv-nvidia PrgEnv-gnu" >>$SFILE
+echo "module load cudatoolkit" >>$SFILE
+# TODO: is there any way to node use such a hacky cmake module?
+echo "module load cmake-3.21.4-cce-12.0.3-qebdkgi" >>$SFILE
+echo "module unload cray-libsci" >>$SFILE
+echo "module list" >>$SFILE
+echo "nvidia-smi" >>$SFILE
+echo "export CRAY_ACCEL_TARGET=nvidia80" >>$SFILE
+echo "export MPICH_GPU_SUPPORT_ENABLED=1" >>$SFILE
+echo "" >>$SFILE
+echo "export NEKRS_HOME=$NEKRS_HOME" >>$SFILE
+echo "export NEKRS_GPU_MPI=1 " >>$SFILE
+
+echo "export ROMIO_HINTS=$ROMIO_HINTS" >>$SFILE
+
+echo "date" >>$SFILE
+echo "" >>$SFILE
+
+echo "echo \"Running nekRS in precompilation mode...\"" >>$SFILE
+echo "mpiexec -np 1 $bin --backend CUDA --setup ${case} --build-only $nn" >>$SFILE
+echo "echo \""\"  >>$SFILE
+echo "echo \"Done. Running simulation...\"" >>$SFILE
+echo "mpiexec -np $nn -ppn $gpu_per_node -d 8 --cpu-bind depth $bin --backend CUDA --setup ${case}" >>$SFILE
+
+qsub $SFILE
+
+# clean-up
+rm -rf $SFILE $ROMIO_HINTS
