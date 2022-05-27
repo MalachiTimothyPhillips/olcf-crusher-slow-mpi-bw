@@ -86,7 +86,6 @@ echo "module swap PrgEnv-nvidia PrgEnv-gnu" >>$SFILE
 echo "module load cudatoolkit" >>$SFILE
 # TODO: is there any way to node use such a hacky cmake module?
 echo "module load cmake-3.21.4-cce-12.0.3-qebdkgi" >>$SFILE
-echo "module unload cray-libsci" >>$SFILE
 echo "module list" >>$SFILE
 echo "nvidia-smi" >>$SFILE
 echo "export CRAY_ACCEL_TARGET=nvidia80" >>$SFILE

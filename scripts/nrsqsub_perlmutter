@@ -89,7 +89,6 @@ echo "module load PrgEnv-gnu" >>$SFILE
 echo "module load cudatoolkit" >>$SFILE
 echo "module load cpe-cuda" >>$SFILE
 echo "module load cmake" >>$SFILE
-echo "module unload cray-libsci" >>$SFILE
 echo "module list" >>$SFILE
 echo "nvidia-smi" >>$SFILE
 
