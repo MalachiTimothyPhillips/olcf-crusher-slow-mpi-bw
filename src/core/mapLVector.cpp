@@ -14,14 +14,17 @@ void setupEToLMapping(nrs_t *nrs)
   if (mesh->cht)
     mesh = nrs->cds->mesh[0];
 
-  auto *handle = oogs::setup(mesh->ogs, 1, nrs->fieldOffset, ogsDfloat, NULL, OOGS_LOCAL);
-
   auto o_Lids = platform->device.malloc(mesh->Nlocal * sizeof(dlong));
   std::vector<dlong> Eids(mesh->Nlocal);
   std::iota(Eids.begin(), Eids.end(), 0);
   o_Lids.copyFrom(Eids.data(), mesh->Nlocal * sizeof(dlong));
 
-  oogs::startFinish(o_Lids, 1, nrs->fieldOffset, "int", "ogsMin", handle);
+  {
+    const auto saveNhaloGather = mesh->ogs->NhaloGather;
+    mesh->ogs->NhaloGather = 0;
+    ogsGatherScatter(o_Lids, "int", "ogsMin", mesh->ogs);
+    mesh->ogs->NhaloGather = saveNhaloGather;
+  }
 
   std::vector<dlong> Lids(mesh->Nlocal);
   o_Lids.copyTo(Lids.data(), mesh->Nlocal * sizeof(dlong));
