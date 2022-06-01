@@ -51,10 +51,8 @@ struct nrs_t {
 
   dlong LFieldOffset;
 
-  occa::memory o_Lmask;
+  occa::memory o_EToLUnique;
   occa::memory o_EToL;
-  occa::memory o_LToEStarts;
-  occa::memory o_LToE;
   occa::kernel mapEToLKernel;
   occa::kernel mapLToEKernel;
 

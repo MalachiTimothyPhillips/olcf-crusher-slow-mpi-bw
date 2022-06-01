@@ -33,11 +33,7 @@ void setupEToLMapping(nrs_t *nrs)
 
   const auto NL = uniqueIds.size();
 
-  // compute page-aligned NL
   nrs->LFieldOffset = NL;
-  const int pageW = ALIGN_SIZE / sizeof(dfloat);
-  if (nrs->LFieldOffset % pageW)
-    nrs->LFieldOffset = (nrs->LFieldOffset / pageW + 1) * pageW;
 
   std::vector<dlong> EToL(mesh->Nlocal);
   std::map<dlong, std::set<dlong>> LToE;
@@ -47,49 +43,19 @@ void setupEToLMapping(nrs_t *nrs)
     LToE[Lid].insert(Eid);
   }
 
-  // use the first Eid value for the mask (arbitrary)
-  std::vector<dfloat> mask(mesh->Nlocal);
+  std::vector<dlong> EToLUnique(mesh->Nlocal);
+  std::copy(EToL.begin(), EToL.end(), EToLUnique.begin());
+
+  // use the first Eid value for the deciding unique Lid value
   for (int eid = 0; eid < mesh->Nlocal; ++eid) {
     const auto lid = EToL[eid];
-    if (*LToE[lid].begin() == eid) {
-      mask[eid] = 1.0;
-    }
-    else {
-      mask[eid] = 0.0;
+    if (*LToE[lid].begin() != eid) {
+      EToLUnique[eid] = -1;
     }
   }
-
-  nrs->o_Lmask = platform->device.malloc(mesh->Nlocal * sizeof(dfloat), mask.data());
 
   nrs->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
-
-  std::vector<dlong> starts(NL + 1);
-#if 0
-  std::iota(starts.begin(), starts.end(), 0);
-  std::partial_sum(LToE.begin(), LToE.end(), starts.begin()+1);
-#endif
-  starts[0] = 0;
-  for (int lid = 0; lid < NL; ++lid) {
-    starts[lid + 1] = starts[lid] + LToE[lid].size();
-  }
-
-  unsigned ctr = 0;
-  std::vector<dlong> scatterIds(mesh->Nlocal);
-  for (int lid = 0; lid < NL; ++lid) {
-    for (auto &&eid : LToE[lid]) {
-      scatterIds[ctr++] = eid;
-    }
-  }
-
-  if (starts[NL] != mesh->Nlocal) {
-    if (platform->comm.mpiRank == 0) {
-      std::cout << "Error!\n";
-    }
-    ABORT(1);
-  }
-
-  nrs->o_LToEStarts = platform->device.malloc(starts.size() * sizeof(dlong), starts.data());
-  nrs->o_LToE = platform->device.malloc(scatterIds.size() * sizeof(dlong), scatterIds.data());
+  nrs->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
 
   nrs->mapEToLKernel = platform->kernels.get("mapEToL");
   nrs->mapLToEKernel = platform->kernels.get("mapLToE");

@@ -29,14 +29,12 @@ SOFTWARE.
                   const dlong Nfields,
                   const dlong EFieldOffset,
                   const dlong LFieldOffset,
-                  @restrict const dlong * EToL,
-                  @restrict const dfloat * mask,
+                  @restrict const dlong * EToLUnique,
                   @restrict const dfloat* EField,
                   @restrict dfloat      * LField){
   for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
-    const dfloat m = mask[n];
-    if(m > 0.0){
-      const dlong lid = EToL[n];
+    const dlong lid = EToLUnique[n];
+    if(lid > - 1){
       for(dlong fld=0;fld<Nfields;++fld){
         LField[lid + LFieldOffset * fld] = EField[n + EFieldOffset * fld];
       }

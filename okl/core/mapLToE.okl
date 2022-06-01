@@ -25,22 +25,17 @@ SOFTWARE.
 */
 
 
-@kernel void mapLToE(const dlong NL,
+@kernel void mapLToE(const dlong N,
                   const dlong Nfields,
                   const dlong EFieldOffset,
                   const dlong LFieldOffset,
-                  @restrict const dlong * LToEStarts,
-                  @restrict const dlong * LToE,
+                  @restrict const dlong * EToL,
                   @restrict const dfloat* LField,
                   @restrict dfloat      * EField){
-  for(dlong lid=0;lid<NL;++lid;@tile(p_blockSize,@outer,@inner)){
-    const dlong start = LToEStarts[lid];
-    const dlong end = LToEStarts[lid+1];
-    for(dlong n=start;n<end;++n){
-      const dlong eid = LToE[n];
-      for(dlong fld=0;fld<Nfields;++fld){
-        EField[eid + EFieldOffset*fld] = LField[lid + LFieldOffset*fld];
-      }
+  for(dlong n=0;n<N;++n;@tile(p_blockSize,@outer,@inner)){
+    const dlong lid = EToL[n];
+    for(dlong fld=0;fld<Nfields;++fld){
+      EField[n + EFieldOffset * fld] = LField[lid + LFieldOffset * fld];
     }
   }
 }
