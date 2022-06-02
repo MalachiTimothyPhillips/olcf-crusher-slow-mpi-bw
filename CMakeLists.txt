@@ -186,6 +186,7 @@ set(SRC
     src/setup/setup.cpp
     src/core/alignment.cpp
     src/core/registerNrsKernels.cpp
+    src/core/registerPostProcessingKernels.cpp
     src/bdry/createEToBV.cpp
     src/bdry/applyDirichlet.cpp
     src/timeStepper/timeStepper.cpp
