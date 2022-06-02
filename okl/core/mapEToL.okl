@@ -24,7 +24,7 @@ SOFTWARE.
 
 */
 
-
+// pre: EField is C0 continuous
 @kernel void mapEToL(const dlong N,
                   const dlong Nfields,
                   const dlong EFieldOffset,
