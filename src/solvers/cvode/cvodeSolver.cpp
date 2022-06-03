@@ -1,22 +1,11 @@
 #include "cvodeSolver.hpp"
 #include "nrs.hpp"
-#include <array>
 #include "nekInterfaceAdapter.hpp"
 #include "Urst.hpp"
 #include <limits>
+#include <array>
 
-// ensure that this file exists
 #include <cvode/cvode.h>
-
-// others...
-#include "nrssys.hpp"
-#include "nrs.hpp"
-#include "mapLVector.hpp"
-#include "ogs.hpp"
-#include <numeric>
-#include <vector>
-#include <set>
-#include <map>
 
 namespace cvode {
 
@@ -28,8 +17,8 @@ void cvodeSolver_t::reallocBuffer(dlong Nbytes)
     o_wrk = platform->device.malloc(Nbytes);
   }
 
-  if (o_coeffAB.size() == 0) {
-    o_coeffAB = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
+  if (o_coeffExt.size() == 0) {
+    o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
   }
 }
 
@@ -51,42 +40,33 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::mem
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
-    const int ABOrder = std::min(tstep, maxExtrapolationOrder);
-    nek::coeffAB(coeffAB.data(), dtCvode.data(), ABOrder);
-    for (int i = maxExtrapolationOrder; i > ABOrder; i--)
+    const int extOrder = std::min(tstep, maxExtrapolationOrder);
+    nek::coeffAB(coeffAB.data(), dtCvode.data(), extOrder);
+    for (int i = maxExtrapolationOrder; i > extOrder; i--)
       coeffAB[i - 1] = 0.0;
 
-    o_coeffAB.copyFrom(coeffAB.data(), maxExtrapolationOrder * sizeof(dfloat));
+    o_coeffExt.copyFrom(coeffAB.data(), maxExtrapolationOrder * sizeof(dfloat));
 
-    // TODO: change name
-    // extrapolateInPlaceKernel
-    nrs->integrateABKernel(mesh->Nlocal, nrs->NVfields, ABOrder, nrs->fieldOffset, o_coeffAB, nrs->o_U);
+    extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, nrs->o_U);
 
     if (movingMesh) {
       mesh->coeffs(dtCvode.data(), tstep);
       mesh->move();
 
-      nrs->integrateABKernel(mesh->Nlocal, nrs->NVfields, ABOrder, nrs->fieldOffset, o_coeffAB, mesh->o_U);
+      extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, mesh->o_U);
     }
 
     computeUrst(nrs);
   }
 
-  // TODO: what does the user want to integrate?
-  // constraint equations may not be nrs->fieldOffset length, e.g.
-  //
-
-  // unpack
+  unpack();
 
   // terms to include: user source, advection, filtering, add "weak" laplacian
-
-  // make distinct from sEqnSource
-
-  // makeq
+  makeqImpl();
 
   // dssum
 
-  // pack
+  pack();
 }
 
 void cvodeSolver_t::setup(nrs_t *nrs, Parameters_t params)
@@ -99,14 +79,11 @@ void cvodeSolver_t::setup(nrs_t *nrs, Parameters_t params)
   }
 
   reallocBuffer(Nwords * sizeof(dfloat));
+
+  setupEToLMapping(nrs);
 }
 void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
-  if (!initialized) {
-    // Bail? Initialize with some reasonable parameters?
-    setup(nrs, {});
-  }
-
   mesh_t *mesh = nrs->meshV;
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];
@@ -136,11 +113,11 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
     o_meshU.copyFrom(mesh->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
   }
 
-  // pack
+  pack();
 
-  // call cvode
+  // call cvode solver
 
-  // unpack
+  unpack();
 
   // restore previous state
   nrs->o_U.copyFrom(o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
