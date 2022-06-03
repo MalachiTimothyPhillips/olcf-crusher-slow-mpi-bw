@@ -7,7 +7,7 @@
 #include <set>
 #include <map>
 
-void setupEToLMapping(nrs_t *nrs)
+void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver)
 {
   static_assert(sizeof(dlong) == sizeof(int), "dlong and int must be the same size");
   auto *mesh = nrs->meshV;

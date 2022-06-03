@@ -23,7 +23,7 @@
    SOFTWARE.
 
  */
-@kernel void integrateAB(const dlong N,
+@kernel void extrapolateInPlace(const dlong N,
                                  const int Nfields,
                                  const int Nstages,
                                  const dlong fieldOffset,

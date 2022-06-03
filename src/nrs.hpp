@@ -49,13 +49,6 @@ struct nrs_t {
   int NVfields, NTfields;
   dlong fieldOffset;
 
-  dlong LFieldOffset;
-
-  occa::memory o_EToLUnique;
-  occa::memory o_EToL;
-  occa::kernel mapEToLKernel;
-  occa::kernel mapLToEKernel;
-
   dlong cubatureOffset;
   setupAide vOptions, pOptions, mOptions;
 
@@ -134,7 +127,6 @@ struct nrs_t {
   occa::kernel subCycleRKKernel;
   occa::kernel subCycleInitU0Kernel;
   occa::kernel nStagesSum3Kernel;
-  occa::kernel integrateABKernel;
   occa::kernel wgradientVolumeKernel;
 
   occa::kernel subCycleVolumeKernel, subCycleCubatureVolumeKernel;

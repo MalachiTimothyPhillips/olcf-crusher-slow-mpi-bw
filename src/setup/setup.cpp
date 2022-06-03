@@ -428,10 +428,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   std::string kernelName;
   const std::string suffix = "Hex3D";
   {
-    const std::string section = "nrs-";
-    kernelName = "integrateAB";
-    nrs->integrateABKernel = platform->kernels.get(section + kernelName);
-
     kernelName = "nStagesSum3";
     nrs->nStagesSum3Kernel = platform->kernels.get(section + kernelName);
 

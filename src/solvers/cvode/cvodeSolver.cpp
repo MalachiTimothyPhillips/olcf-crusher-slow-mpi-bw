@@ -16,6 +16,13 @@ occa::memory o_wrk;
 occa::memory o_coeffAB;
 constexpr int maxABOrder = 3;
 
+occa::kernel extrapolateInPlaceKernel;
+occa::memory o_EToLUnique;
+occa::memory o_EToL;
+occa::kernel mapEToLKernel;
+occa::kernel mapLToEKernel;
+dlong LFieldOffset;
+
 void reallocBuffer(int Nbytes)
 {
   if (o_wrk.size() < Nbytes) {
@@ -30,7 +37,6 @@ void reallocBuffer(int Nbytes)
 }
 } // namespace
 
-// TODO: where is this even called???
 void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
 {
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
@@ -75,9 +81,6 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
   //
 
   // unpack
-
-  // From makeq, need everything sans subcycling, sumMakef, shuffling of S
-  // needs separate implementation
 
   // terms to include: user source, advection, filtering, add "weak" laplacian
 

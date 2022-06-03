@@ -210,7 +210,6 @@ set(SRC
     src/cds/registerCdsKernels.cpp
     src/io/parReader.cpp
     src/io/re2Reader.cpp
-    src/core/mapLVector.cpp
     src/core/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
@@ -218,6 +217,8 @@ set(SRC
     src/core/kernelRequestManager.cpp
     src/core/device.cpp
     src/solvers/cvode/cvodeSolver.cpp
+    src/solvers/cvode/registerCvodeKernels.cpp
+    src/solvers/cvode/mapLVector.cpp
     src/linAlg/linAlg.cpp
     src/linAlg/matrixConditionNumber.cpp
     src/linAlg/matrixInverse.cpp
