@@ -8,22 +8,19 @@
 // ensure that this file exists
 #include <cvode/cvode.h>
 
+// others...
+#include "nrssys.hpp"
+#include "nrs.hpp"
+#include "mapLVector.hpp"
+#include "ogs.hpp"
+#include <numeric>
+#include <vector>
+#include <set>
+#include <map>
+
 namespace cvode {
-namespace {
-dfloat tprev = std::numeric_limits<dfloat>::max();
-bool initialized = false;
-occa::memory o_wrk;
-occa::memory o_coeffAB;
-constexpr int maxABOrder = 3;
 
-occa::kernel extrapolateInPlaceKernel;
-occa::memory o_EToLUnique;
-occa::memory o_EToL;
-occa::kernel mapEToLKernel;
-occa::kernel mapLToEKernel;
-dlong LFieldOffset;
-
-void reallocBuffer(int Nbytes)
+void cvodeSolver_t::reallocBuffer(dlong Nbytes)
 {
   if (o_wrk.size() < Nbytes) {
     if (o_wrk.size() > 0)
@@ -32,12 +29,11 @@ void reallocBuffer(int Nbytes)
   }
 
   if (o_coeffAB.size() == 0) {
-    o_coeffAB = platform->device.malloc(maxABOrder * sizeof(dfloat));
+    o_coeffAB = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
   }
 }
-} // namespace
 
-void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
+void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
 {
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
   mesh_t *mesh = nrs->meshV;
@@ -55,12 +51,12 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
-    const int ABOrder = std::min(tstep, maxABOrder);
+    const int ABOrder = std::min(tstep, maxExtrapolationOrder);
     nek::coeffAB(coeffAB.data(), dtCvode.data(), ABOrder);
-    for (int i = maxABOrder; i > ABOrder; i--)
+    for (int i = maxExtrapolationOrder; i > ABOrder; i--)
       coeffAB[i - 1] = 0.0;
 
-    o_coeffAB.copyFrom(coeffAB.data(), maxABOrder * sizeof(dfloat));
+    o_coeffAB.copyFrom(coeffAB.data(), maxExtrapolationOrder * sizeof(dfloat));
 
     // TODO: change name
     // extrapolateInPlaceKernel
@@ -93,9 +89,9 @@ void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::
   // pack
 }
 
-void setup(nrs_t *nrs, Parameters_t params)
+void cvodeSolver_t::setup(nrs_t *nrs, Parameters_t params)
 {
-  initialized = true;
+  this->initialized = true;
 
   dlong Nwords = nrs->NVfields * nrs->fieldOffset; // velocities
   if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
@@ -104,7 +100,7 @@ void setup(nrs_t *nrs, Parameters_t params)
 
   reallocBuffer(Nwords * sizeof(dfloat));
 }
-void solve(nrs_t *nrs, double t0, double t1, int tstep)
+void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
   if (!initialized) {
     // Bail? Initialize with some reasonable parameters?

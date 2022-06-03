@@ -1,11 +1,8 @@
-#include "nrssys.hpp"
-#include "nrs.hpp"
 #include "mapLVector.hpp"
-#include "ogs.hpp"
-#include <numeric>
-#include <vector>
-#include <set>
-#include <map>
+#include "nrs.hpp"
+#include "cvodeSolver.hpp"
+
+namespace cvode{
 
 void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver)
 {
@@ -36,7 +33,7 @@ void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver)
 
   const auto NL = uniqueIds.size();
 
-  nrs->LFieldOffset = NL;
+  cvodeSolver->LFieldOffset = NL;
 
   std::vector<dlong> EToL(mesh->Nlocal);
   std::map<dlong, std::set<dlong>> LToE;
@@ -57,12 +54,14 @@ void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver)
     }
   }
 
-  nrs->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
-  nrs->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
+  cvodeSolver->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
+  cvodeSolver->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
 
-  nrs->mapEToLKernel = platform->kernels.get("mapEToL");
-  nrs->mapLToEKernel = platform->kernels.get("mapLToE");
+  cvodeSolver->mapEToLKernel = platform->kernels.get("mapEToL");
+  cvodeSolver->mapLToEKernel = platform->kernels.get("mapLToE");
 
   // oogs::destroy(handle);
   o_Lids.free();
+}
+
 }
