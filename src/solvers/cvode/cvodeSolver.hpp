@@ -5,6 +5,8 @@
 #include "nrssys.hpp"
 #include "occa.hpp"
 #include <functional>
+#include <map>
+#include <vector>
 
 class nrs_t;
 namespace cvode {
@@ -14,9 +16,9 @@ class cvodeSolver_t{
 public:
 
   using userRHS_t = std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)>;
-  using userPack_t = std::function<void(occa::memory o_YE, occa::memory o_YL)>;
-  using userUnpack_t = std::function<void(occa::memory o_YE, occa::memory o_YL)>;
-  using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_Y, occa::memory o_Ydot)>;
+  using userPack_t = std::function<void(occa::memory o_field, occa::memory o_y)>;
+  using userUnpack_t = std::function<void(occa::memory o_y, occa::memory o_field)>;
+  using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
 
   cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
 
@@ -29,26 +31,36 @@ public:
 
 private:
 
+  std::map<int, int> cvodeScalarToScalarIndex;
+  std::map<int, int> scalarToCvodeScalarIndex;
+
   void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver);
 
-  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
+  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
   userRHS_t userRHS;
 
   userLocalPointSource_t userLocalPointSource;
   userPack_t userPack;
   userUnpack_t userUnpack;
 
-  void pack(occa::memory o_YE, occa::memory o_YL);
-  void unpack(occa::memory o_YE, occa::memory o_YL);
+  void pack(occa::memory o_field, occa::memory o_y);
+  void unpack(occa::memory o_y, occa::memory o_field);
   void makeqImpl(nrs_t* nrs);
 
   void setup(nrs_t* nrs, const Parameters_t & params);
   void reallocBuffer(dlong Nbytes);
 
-  mutable dfloat tprev = std::numeric_limits<dfloat>::max();
+  dfloat tprev = std::numeric_limits<dfloat>::max();
   static constexpr int maxExtrapolationOrder = 3;
 
-  occa::memory o_wrk;
+  dlong Nscalar;
+  dlong fieldOffsetSum;
+
+  std::vector<dlong> fieldOffset;
+  std::vector<dlong> fieldOffsetScan;
+
+  occa::memory o_oldState;
+  occa::memory o_S;
   occa::memory o_coeffExt;
   occa::memory o_EToLUnique;
   occa::memory o_EToL;

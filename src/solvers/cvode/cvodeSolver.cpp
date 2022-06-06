@@ -10,17 +10,102 @@
 
 namespace cvode {
 
-void cvodeSolver_t::reallocBuffer(dlong Nbytes)
+cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 {
-  if (o_wrk.size() < Nbytes) {
-    if (o_wrk.size() > 0)
-      o_wrk.free();
-    o_wrk = platform->device.malloc(Nbytes);
+  auto cds = nrs->cds;
+
+  o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
+
+  dlong Nwords = nrs->NVfields * nrs->fieldOffset; // velocities
+  if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
+    Nwords += 2 * nrs->NVfields * nrs->fieldOffset; // coordinates, mesh velocities
   }
 
-  if (o_coeffExt.size() == 0) {
-    o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
+  o_oldState = platform->device.malloc(Nwords * sizeof(dfloat));
+
+  setupEToLMapping(nrs);
+
+  Nscalar = 0;
+  fieldOffsetScan = {0};
+  fieldOffsetSum = 0;
+
+  for (int is = 0; is < cds->NSfields; is++) {
+    if (!cds->compute[is])
+      continue;
+    if (!cds->cvodeSolve[is])
+      continue;
+
+    cvodeScalarToScalarIndex[Nscalar] = is;
+    scalarToCvodeScalarIndex[is] = Nscalar;
+
+    fieldOffset.push_back(cds->fieldOffset[is]);
+    fieldOffsetScan.push_back(fieldOffsetScan.back() + fieldOffset.back());
+    fieldOffsetSum += fieldOffset.back();
+
+    Nscalar++;
   }
+
+  o_S = platform->device.malloc(fieldOffsetSum * sizeof(dfloat));
+
+}
+
+void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
+{
+  static_assert(sizeof(dlong) == sizeof(int), "dlong and int must be the same size");
+  auto *mesh = nrs->meshV;
+  if (mesh->cht)
+    mesh = nrs->cds->mesh[0];
+
+  auto o_Lids = platform->device.malloc(mesh->Nlocal * sizeof(dlong));
+  std::vector<dlong> Eids(mesh->Nlocal);
+  std::iota(Eids.begin(), Eids.end(), 0);
+  o_Lids.copyFrom(Eids.data(), mesh->Nlocal * sizeof(dlong));
+
+  {
+    const auto saveNhaloGather = mesh->ogs->NhaloGather;
+    mesh->ogs->NhaloGather = 0;
+    ogsGatherScatter(o_Lids, "int", "ogsMin", mesh->ogs);
+    mesh->ogs->NhaloGather = saveNhaloGather;
+  }
+
+  std::vector<dlong> Lids(mesh->Nlocal);
+  o_Lids.copyTo(Lids.data(), mesh->Nlocal * sizeof(dlong));
+
+  std::set<dlong> uniqueIds;
+  for (auto &&id : Lids) {
+    uniqueIds.insert(id);
+  }
+
+  const auto NL = uniqueIds.size();
+
+  this->LFieldOffset = NL;
+
+  std::vector<dlong> EToL(mesh->Nlocal);
+  std::map<dlong, std::set<dlong>> LToE;
+  for (auto &&Eid : Eids) {
+    const auto Lid = std::distance(uniqueIds.begin(), uniqueIds.find(Eid));
+    EToL[Eid] = Lid;
+    LToE[Lid].insert(Eid);
+  }
+
+  std::vector<dlong> EToLUnique(mesh->Nlocal);
+  std::copy(EToL.begin(), EToL.end(), EToLUnique.begin());
+
+  // use the first Eid value for the deciding unique Lid value
+  for (int eid = 0; eid < mesh->Nlocal; ++eid) {
+    const auto lid = EToL[eid];
+    if (*LToE[lid].begin() != eid) {
+      EToLUnique[eid] = -1;
+    }
+  }
+
+  this->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
+  this->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
+
+  this->mapEToLKernel = platform->kernels.get("mapEToL");
+  this->mapLToEKernel = platform->kernels.get("mapLToE");
+
+  o_Lids.free();
 }
 
 void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
@@ -59,7 +144,16 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     computeUrst(nrs);
   }
 
-  unpack();
+  unpack(o_y, o_S);
+
+  // map cvode scalars to all scalars
+  for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
+    const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
+    cds->o_S.copyFrom(o_S,
+      fieldOffset[cvodeScalarId] * sizeof(dfloat), 
+      cds->fieldOffsetScan[scalarId] * sizeof(dfloat),
+      fieldOffsetScan[cvodeScalarId] * sizeof(dfloat));
+  }
 
   evaluateProperties(nrs, time);
 
@@ -67,42 +161,58 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
   makeqImpl(nrs);
 
-  // TODO: will need to consolidate all cvode scalar fields into one large vector
-
-  // dssum
-  for (int is = 0; is < cds->NSfields; is++) {
-    if (!cds->compute[is])
-      continue;
-    if (!cds->cvodeSolve[is])
-      continue;
-    
-    auto gsh = (is == 0) ? cds->gshT : cds->gsh;
-    
-    const dlong isOffset = cds->fieldOffsetScan[is];
-    auto o_FS_i = cds->o_FS + isOffset * sizeof(dfloat);
-    
-    oogs::start(o_FS_i, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, gsh);
+  auto o_FS = o_S;
+  // map all scalars to cvode scalars
+  for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
+    const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
+    o_FS.copyFrom(nrs->o_FS,
+      fieldOffset[cvodeScalarId] * sizeof(dfloat), 
+      fieldOffsetScan[cvodeScalarId] * sizeof(dfloat),
+      cds->fieldOffsetScan[scalarId] * sizeof(dfloat));
   }
 
+  // TODO: overlap...
   if(userLocalPointSource){
-    userLocalPointSource();
+    userLocalPointSource(nrs, o_S, o_FS);
   }
 
-  for (int is = 0; is < cds->NSfields; is++) {
-    if (!cds->compute[is])
-      continue;
-    if (!cds->cvodeSolve[is])
-      continue;
-    
-    auto gsh = (is == 0) ? cds->gshT : cds->gsh;
-    
-    const dlong isOffset = cds->fieldOffsetScan[is];
-    auto o_FS_i = cds->o_FS + isOffset * sizeof(dfloat);
-    
-    oogs::finish(o_FS_i, 1, cds->fieldOffset[is], ogsDfloat, ogsAdd, gsh);
+  if(nrs->cht){
+    auto * gsh = cds->gsh;
+    auto * gshT = cds->gshT;
+    oogs::start(o_FS, 1, fieldOffset[0], ogsDfloat, ogsAdd, gshT);
+
+    if(Nscalar > 1){
+      auto o_FS_sans_T = o_FS + fieldOffset[0] * sizeof(dfloat);
+
+      // TODO: will not work in the variable scalar field offset case
+      oogs::start(o_FS_sans_T, Nscalar-1, fieldOffset[1], ogsDfloat, ogsAdd, gsh);
+      
+    }
+
+  } else {
+    auto * gsh = cds->gsh;
+    oogs::start(o_FS, Nscalar, fieldOffset[0], ogsDfloat, ogsAdd, gsh);
   }
 
-  pack();
+  if(nrs->cht){
+    auto * gsh = cds->gsh;
+    auto * gshT = cds->gshT;
+    oogs::finish(o_FS, 1, fieldOffset[0], ogsDfloat, ogsAdd, gshT);
+
+    if(Nscalar > 1){
+      auto o_FS_minus_T = o_FS + fieldOffset[0] * sizeof(dfloat);
+
+      // TODO: will not work in the variable scalar field offset case
+      oogs::finish(o_FS_minus_T, Nscalar-1, fieldOffset[1], ogsDfloat, ogsAdd, gsh);
+      
+    }
+
+  } else {
+    auto * gsh = cds->gsh;
+    oogs::finish(o_FS, Nscalar, fieldOffset[0], ogsDfloat, ogsAdd, gsh);
+  }
+
+  pack(o_FS, o_ydot);
 }
 
 void cvodeSolver_t::makeqImpl(nrs_t* nrs)
@@ -264,7 +374,6 @@ void cvodeSolver_t::setup(nrs_t *nrs, Parameters_t params)
 
   reallocBuffer(Nwords * sizeof(dfloat));
 
-  setupEToLMapping(nrs);
 }
 void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
@@ -275,7 +384,7 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 
   // copy current state into buffer
-  auto o_U = o_wrk + 0 * nrs->fieldOffset * sizeof(dfloat);
+  auto o_U = o_oldState + 0 * nrs->fieldOffset * sizeof(dfloat);
 
   o_U.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
@@ -285,10 +394,10 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   occa::memory o_meshU;
 
   if (movingMesh) {
-    o_x = o_wrk + (nrs->NVfields + 0) * nrs->fieldOffset * sizeof(dfloat);
-    o_y = o_wrk + (nrs->NVfields + 1) * nrs->fieldOffset * sizeof(dfloat);
-    o_z = o_wrk + (nrs->NVfields + 2) * nrs->fieldOffset * sizeof(dfloat);
-    o_meshU = o_wrk + (nrs->NVfields + 3) * nrs->fieldOffset * sizeof(dfloat);
+    o_x = o_oldState + (nrs->NVfields + 0) * nrs->fieldOffset * sizeof(dfloat);
+    o_y = o_oldState + (nrs->NVfields + 1) * nrs->fieldOffset * sizeof(dfloat);
+    o_z = o_oldState + (nrs->NVfields + 2) * nrs->fieldOffset * sizeof(dfloat);
+    o_meshU = o_oldState + (nrs->NVfields + 3) * nrs->fieldOffset * sizeof(dfloat);
 
     o_x.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat));
     o_y.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat));
