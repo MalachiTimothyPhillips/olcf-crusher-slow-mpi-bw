@@ -13,32 +13,33 @@ struct Parameters_t {};
 class cvodeSolver_t{
 public:
 
+  using userRHS_t = std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)>;
+  using userPack_t = std::function<void(occa::memory o_YE, occa::memory o_YL)>;
+  using userUnpack_t = std::function<void(occa::memory o_YE, occa::memory o_YL)>;
+  using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_Y, occa::memory o_Ydot)>;
+
   cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
 
   void solve(nrs_t *nrs, dfloat t0, dfloat t1, int tstep);
 
-  // TODO: this should be fine, right?
-  // (attempt to sheild the user from needing to mess with N_Vector, e.g.)
-  void setRHS(std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)> _userRHS);
-
-  void setPack(std::function<void()>);
-  void setUnpack(std::function<void()>);
-  void setLocalPointSource(std::function<void()>);
+  void setRHS(userRHS_t _userRHS) { userRHS = _userRHS; }
+  void setPack(userPack_t _userPack) { userPack = _userPack; }
+  void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
+  void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
 
 private:
 
   void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver);
 
-  // default RHS implementation
   void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
-  std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)> userRHS;
+  userRHS_t userRHS;
 
-  std::function<void()> userLocalPointSource;
-  std::function<void()> userPackFunction;
-  std::function<void()> userUnpackFunction;
+  userLocalPointSource_t userLocalPointSource;
+  userPack_t userPack;
+  userUnpack_t userUnpack;
 
-  void pack();
-  void unpack();
+  void pack(occa::memory o_YE, occa::memory o_YL);
+  void unpack(occa::memory o_YE, occa::memory o_YL);
   void makeqImpl(nrs_t* nrs);
 
   void setup(nrs_t* nrs, const Parameters_t & params);

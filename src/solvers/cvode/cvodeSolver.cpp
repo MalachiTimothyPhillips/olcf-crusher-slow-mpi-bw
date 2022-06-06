@@ -23,7 +23,7 @@ void cvodeSolver_t::reallocBuffer(dlong Nbytes)
   }
 }
 
-void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
+void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
 {
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
   mesh_t *mesh = nrs->meshV;
@@ -35,8 +35,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::mem
     std::array<dfloat, 3> dtCvode = {0, 0, 0};
     std::array<dfloat, 3> coeffAB = {0, 0, 0};
 
-    // TODO: need to check this???
-    const auto cvodeDt = time - tf;
+    const auto cvodeDt = time - t0;
     dtCvode[0] = cvodeDt;
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
