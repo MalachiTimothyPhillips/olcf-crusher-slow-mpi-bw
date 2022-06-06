@@ -43,6 +43,7 @@ struct cds_t
   int dtAdaptStep;
 
   int compute[NSCALAR_MAX];
+  int cvodeSolve[NSCALAR_MAX];
 
   dfloat *U, *S;
 

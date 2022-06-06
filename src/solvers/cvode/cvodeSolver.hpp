@@ -21,9 +21,9 @@ public:
   // (attempt to sheild the user from needing to mess with N_Vector, e.g.)
   void setRHS(std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)> _userRHS);
 
-  void setPack();
-  void setUnpack();
-  void setLocalPointSource();
+  void setPack(std::function<void()>);
+  void setUnpack(std::function<void()>);
+  void setLocalPointSource(std::function<void()>);
 
 private:
 
@@ -33,9 +33,13 @@ private:
   void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)
   std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat tf, occa::memory o_y, occa::memory o_ydot)> userRHS;
 
+  std::function<void()> userLocalPointSource;
+  std::function<void()> userPackFunction;
+  std::function<void()> userUnpackFunction;
+
   void pack();
   void unpack();
-  void makeqImpl();
+  void makeqImpl(nrs_t* nrs);
 
   void setup(nrs_t* nrs, const Parameters_t & params);
   void reallocBuffer(dlong Nbytes);

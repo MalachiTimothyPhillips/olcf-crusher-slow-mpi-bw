@@ -15,33 +15,6 @@
 #include "bdry.hpp"
 #include "Urst.hpp"
 
-namespace {
-
-void advectionFlops(mesh_t *mesh, int Nfields)
-{
-  const auto cubNq = mesh->cubNq;
-  const auto cubNp = mesh->cubNp;
-  const auto Nq = mesh->Nq;
-  const auto Np = mesh->Np;
-  const auto Nelements = mesh->Nelements;
-  double flopCount = 0.0; // per elem basis
-  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
-    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
-    flopCount += 6. * cubNp * cubNq;                                       // apply Dcub
-    flopCount += 5 * cubNp; // compute advection term on cubature mesh
-    flopCount += mesh->Np;  // weight by inv. mass matrix
-  }
-  else {
-    flopCount += 8 * (Np * Nq + Np);
-  }
-
-  flopCount *= Nelements;
-  flopCount *= Nfields;
-
-  platform->flopCounter->add("advection", flopCount);
-}
-} // namespace
-
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);
   cds_t *cds = nrs->cds;
@@ -75,6 +48,31 @@ namespace timeStepper {
 double tSolve = 0;
 double tSolveStepMin = std::numeric_limits<double>::max();
 double tSolveStepMax = std::numeric_limits<double>::min();
+
+void advectionFlops(mesh_t *mesh, int Nfields)
+{
+  const auto cubNq = mesh->cubNq;
+  const auto cubNp = mesh->cubNp;
+  const auto Nq = mesh->Nq;
+  const auto Np = mesh->Np;
+  const auto Nelements = mesh->Nelements;
+  double flopCount = 0.0; // per elem basis
+  if (platform->options.compareArgs("ADVECTION TYPE", "CUBATURE")) {
+    flopCount += 4. * Nq * (cubNp + cubNq * cubNq * Nq + cubNq * Nq * Nq); // interpolation
+    flopCount += 6. * cubNp * cubNq;                                       // apply Dcub
+    flopCount += 5 * cubNp; // compute advection term on cubature mesh
+    flopCount += mesh->Np;  // weight by inv. mass matrix
+  }
+  else {
+    flopCount += 8 * (Np * Nq + Np);
+  }
+
+  flopCount *= Nelements;
+  flopCount *= Nfields;
+
+  platform->flopCounter->add("advection", flopCount);
+}
+
 
 void adjustDt(nrs_t* nrs, int tstep)
 {
