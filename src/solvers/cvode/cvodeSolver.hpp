@@ -8,6 +8,12 @@
 #include <map>
 #include <vector>
 
+// Steps
+// 1. validate rhs implementation in unit test
+//     - include source term, w/ moving mesh, ...
+// 2. add in cvode interface/calls
+
+
 class nrs_t;
 namespace cvode {
 
@@ -19,6 +25,8 @@ public:
   using userPack_t = std::function<void(occa::memory o_field, occa::memory o_y)>;
   using userUnpack_t = std::function<void(occa::memory o_y, occa::memory o_field)>;
   using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
+
+  // add user local source term -- makeq style
 
   cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
 
@@ -45,7 +53,7 @@ private:
 
   void pack(occa::memory o_field, occa::memory o_y);
   void unpack(occa::memory o_y, occa::memory o_field);
-  void makeqImpl(nrs_t* nrs);
+  void makeq(nrs_t* nrs, );
 
   void setup(nrs_t* nrs, const Parameters_t & params);
   void reallocBuffer(dlong Nbytes);
@@ -59,11 +67,21 @@ private:
   std::vector<dlong> fieldOffset;
   std::vector<dlong> fieldOffsetScan;
 
-  occa::memory o_oldState;
+  // o_U, mesh->o_U, mesh->o_x, 
+  // TODO:
+  occa::memory o_U0;
+  occa::memory o_meshU0;
+  occa::memory o_xyz0;
+
+  // TODO: remove
   occa::memory o_S;
+
   occa::memory o_coeffExt;
   occa::memory o_EToLUnique;
   occa::memory o_EToL;
+
+  // combined invLMM * LMM
+  occa::memory o_invLMMLMM;
   dlong LFieldOffset;
 
   occa::kernel extrapolateInPlaceKernel;
