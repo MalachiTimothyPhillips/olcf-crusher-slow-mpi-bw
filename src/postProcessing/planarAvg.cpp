@@ -154,24 +154,8 @@ void fusedPlanarAvg(nrs_t *nrs, const std::string & direction, int NELGX, int NE
     o_locToGlobE,
     o_avg,
     o_scratch);
-  
-  bool useGPUAware = true;
-  const char * gpuMPIEnv = getenv("NEKRS_GPU_MPI");
-  if(gpuMPIEnv){
-    if(std::stoi(gpuMPIEnv)){
-      useGPUAware = true;
-    } else {
-      useGPUAware = false;
-    }
-  }
 
-  if(useGPUAware){
-    MPI_Allreduce(MPI_IN_PLACE, (dfloat*)o_scratch.ptr(), Nwords, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-  } else {
-    o_scratch.copyTo(scratch, Nbytes);
-    MPI_Allreduce(MPI_IN_PLACE, scratch, Nwords, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-    o_scratch.copyFrom(scratch, Nbytes);
-  }
+  platform->comm.allreduce(o_scratch, Nwords, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
 
   scatterPlanarValuesKernel(mesh->Nelements,
     nflds,
