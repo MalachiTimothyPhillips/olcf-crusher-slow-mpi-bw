@@ -27,9 +27,15 @@
 #ifndef ELLIPTIC_MGLEVEL_HPP
 #define ELLIPTIC_MGLEVEL_HPP
 
+#include "elliptic.h"
+#include "amgSolver/parAlmond/level.hpp"
+#include <vector>
+
 enum class SmootherType
 {
   CHEBYSHEV,
+  FOURTH_CHEBYSHEV,
+  OPT_FOURTH_CHEBYSHEV,
   SCHWARZ,
   JACOBI,
 };
@@ -39,9 +45,13 @@ enum class SecondarySmootherType
   SCHWARZ,
 };
 
+std::vector<pfloat>
+optimalCoeffs(int ChebyshevIterations);
+
 class MGLevel : public parAlmond::multigridLevel
 {
 public:
+  static constexpr int Narnoldi {10};
 
   elliptic_t* elliptic;
   mesh_t* mesh;
@@ -60,6 +70,7 @@ public:
   SecondarySmootherType smtypeDown;
 
   dfloat lambda1, lambda0;
+  dfloat maxEig;
   int ChebyshevIterations;
 
   static size_t smootherResidualBytes;
@@ -99,6 +110,8 @@ public:
 
   bool isCoarse;
 
+  std::vector<pfloat> betas;
+
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,
           setupAide options_, MPI_Comm comm_,
@@ -134,6 +147,7 @@ public:
   void smoother(occa::memory o_x, occa::memory o_Sx, bool xIsZero);
 
   void smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
+  void smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothSchwarz (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
 

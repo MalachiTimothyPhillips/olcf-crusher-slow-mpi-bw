@@ -641,8 +641,12 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     {"cheby"},
     {"jac"},
     {"degree"},
+    {"optimal"},
+    {"fourthkind"},
     {"mineigenvalueboundfactor"},
     {"maxeigenvalueboundfactor"},
+    {"numpresmoothing"},
+    {"numpostsmoothing"},
   };
 
   {
@@ -670,6 +674,26 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
           const int value = std::stoi(params[1]);
           options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE",
                           std::to_string(value));
+        } else if (s.find("numpresmoothing") != std::string::npos) {
+          std::vector<std::string> params = serializeString(s, '=');
+          if (params.size() != 2) {
+            std::ostringstream error;
+            error << "Error: could not parse numpresmoothing " << s<< "!\n";
+            append_error(error.str());
+          }
+          const int value = std::stoi(params[1]);
+          options.setArgs(parSection + " MULTIGRID NUMBER PRE SMOOTHINGS",
+                          to_string_f(value));
+        } else if (s.find("numpostsmoothing") != std::string::npos) {
+          std::vector<std::string> params = serializeString(s, '=');
+          if (params.size() != 2) {
+            std::ostringstream error;
+            error << "Error: could not parse numpostsmoothing " << s<< "!\n";
+            append_error(error.str());
+          }
+          const int value = std::stoi(params[1]);
+          options.setArgs(parSection + " MULTIGRID NUMBER POST SMOOTHINGS",
+                          to_string_f(value));
         } else if (s.find("mineigenvalueboundfactor") != std::string::npos) {
           std::vector<std::string> params = serializeString(s, '=');
           if (params.size() != 2) {
@@ -738,6 +762,16 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
           }
         }
       }
+
+      if(p_smoother.find("optimal") != std::string::npos){
+          options.setArgs(parSection + " MULTIGRID SMOOTHER",
+                          "OPTIMAL+" + options.getArgs(parSection + " MULTIGRID SMOOTHER"));
+      }
+      if(p_smoother.find("fourthkind") != std::string::npos){
+          options.setArgs(parSection + " MULTIGRID SMOOTHER",
+                          "FOURTHKIND+" + options.getArgs(parSection + " MULTIGRID SMOOTHER"));
+      }
+
       if(!surrogateSmootherSet){
         append_error("Inner Chebyshev smoother not set");
       }
@@ -1224,6 +1258,8 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "2");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", "0.1");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", "1.1");
+  options.setArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS", "1");
+  options.setArgs("PRESSURE MULTIGRID NUMBER POST SMOOTHINGS", "1");
 
   options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");

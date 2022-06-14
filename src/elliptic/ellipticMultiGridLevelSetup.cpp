@@ -118,6 +118,7 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       dfloat rho = this->maxEigSmoothAx();
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;
+      this->maxEig = rho;
     }
     if(options.compareArgs("MULTIGRID DOWNWARD SMOOTHER","JACOBI") ||
        options.compareArgs("MULTIGRID UPWARD SMOOTHER","JACOBI")) {
@@ -147,7 +148,19 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;
+      this->maxEig = rho;
     }
+  }
+
+  if(options.compareArgs("MULTIGRID SMOOTHER", "OPTIMAL")){
+    betas = optimalCoeffs(ChebyshevIterations);
+    stype = SmootherType::OPT_FOURTH_CHEBYSHEV;
+  }
+  if(options.compareArgs("MULTIGRID SMOOTHER", "FOURTHKIND")){
+    // nominally, same as above, but beta_i = 1 for all i
+    betas = optimalCoeffs(ChebyshevIterations);
+    std::fill(betas.begin(), betas.end(), 1.0);
+    stype = SmootherType::FOURTH_CHEBYSHEV;
   }
 }
 
@@ -266,14 +279,7 @@ dfloat MGLevel::maxEigSmoothAx()
   MPI_Allreduce(&Nlocal, &Ntotal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
 
   occa::memory o_invDegree = platform->device.malloc(Nlocal*sizeof(dfloat), elliptic->ogs->invDegree);
-
-  int k;
-  if(Ntotal > 10) 
-    k = 10;
-  else
-    k = (int) Ntotal;
-
-  // do an arnoldi
+  int k = std::min(MGLevel::Narnoldi, Ntotal);
 
   // allocate memory for Hessenberg matrix
   double* H = (double*) calloc(k * k,sizeof(double));

@@ -85,6 +85,8 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
   if (stype == SmootherType::CHEBYSHEV)
     this->smoothChebyshev(o_rhs, o_x, x_is_zero);
+  if (stype == SmootherType::CHEBYSHEV)
+    this->smoothFourthKindChebyshev(o_rhs, o_x, x_is_zero);
   else if (stype == SmootherType::SCHWARZ)
     this->smoothSchwarz(o_rhs, o_x, x_is_zero);
   else if (stype == SmootherType::JACOBI)
@@ -318,6 +320,77 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   ellipticApplyMask(elliptic, o_x, pfloatString);
   const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
   platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
+}
+
+void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
+{
+  pfloat one = 1., mone = -1., zero = 0.0;
+
+  occa::memory o_res = o_smootherResidual;
+  occa::memory o_Az  = o_smootherResidual2;
+  occa::memory o_z   = o_smootherUpdate;
+
+  const auto rho = this->lambda1;
+
+  double flopCount = 0.0;
+
+  if(xIsZero) { //skip the Ax if x is zero
+    //res = Sr
+    elliptic->scaledAddPfloatKernel(Nrows, one, o_b, zero, o_res);
+    this->smoother(o_res, o_Az, xIsZero);
+
+    // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} Sr
+    const pfloat coeff = 4.0 / 3.0 / rho;
+    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
+    flopCount += Nrows;
+  } else {
+    //res = S(r-Ax)
+    this->Ax(o_x,o_res);
+    elliptic->scaledAddPfloatKernel(Nrows, one, o_b, mone, o_res);
+    this->smoother(o_res, o_Az, xIsZero);
+    flopCount += 2 * Nrows;
+
+    // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} S(r-Ax)
+    const pfloat coeff = 4.0 / 3.0 / rho;
+    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
+    flopCount += Nrows;
+  }
+
+  for (int k = 0; k < ChebyshevIterations; k++) {
+    //x_k+1 = x_k + \beta_k d_k
+    if (xIsZero && (k == 0)) {
+      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, zero, o_x);
+    }
+    else {
+      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, one, o_x);
+      flopCount += 2 * Nrows;
+    }
+
+    // r_k+1 = r_k - A z_k+1
+    this->Ax(o_z,o_Az);
+    elliptic->scaledAddPfloatKernel(Nrows, mone, o_Az, one, o_res);
+
+    // z_k+1 = \dfrac{(2i-3)}{(2i+1)} z_k + \dfrac{(8i-4)}{(2i+1)} \dfrac{1}{\rho(SA)} S r_k
+    this->smoother(o_res, o_Az, xIsZero); // o_Ad is Sr
+
+
+    // + 2 offset is due to two issues:
+    // + 1 is from https://arxiv.org/pdf/2202.08830.pdf being written in 1-based indexing
+    // + 1 is from pre-computing z_1 _outside_ of the loop
+    const int id = k + 2;
+
+    const pfloat zScale = (2.0 * id - 3.0) / (2.0 * id + 1.0);
+    const pfloat rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / rho;
+    elliptic->scaledAddPfloatKernel(Nrows, rScale, o_Az, zScale, o_z);
+    flopCount += 3 * Nrows;
+  }
+
+  //x_k+1 = x_k + \beta_k d_k
+  elliptic->scaledAddPfloatKernel(Nrows, this->betas.back(), o_z, one, o_x);
+  flopCount += 2 * Nrows;
+  ellipticApplyMask(elliptic, o_x, pfloatString);
+  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
+  platform->flopCounter->add("MGLevel::smoothOptChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
 }
 
 void MGLevel::smootherJacobi(occa::memory &o_r, occa::memory &o_Sr)

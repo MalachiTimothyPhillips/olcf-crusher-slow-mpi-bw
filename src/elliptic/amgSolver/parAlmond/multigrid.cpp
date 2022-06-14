@@ -55,7 +55,11 @@ void solver_t::device_vcycle(int k){
   occa::memory o_xC   = levelC->o_x;
 
   //apply smoother to x and then compute res = rhs-Ax
-  level->smooth(o_rhs, o_x, true);
+  int nPreSmoothing = 1;
+  options.getArgs("MULTIGRID NUMBER PRE SMOOTHINGS", nPreSmoothing);
+  for(int pass = 0; pass < nPreSmoothing; ++pass){
+    level->smooth(o_rhs, o_x, true);
+  }
   level->residual(o_rhs, o_x, o_res);
 
   // rhsC = P^T res
@@ -66,7 +70,11 @@ void solver_t::device_vcycle(int k){
   // x = x + P xC
   levelC->prolongate(o_xC, o_x);
 
-  level->smooth(o_rhs, o_x, false);
+  int nPostSmoothing = 1;
+  options.getArgs("MULTIGRID NUMBER POST SMOOTHINGS", nPostSmoothing);
+  for(int pass = 0; pass < nPostSmoothing; ++pass){
+    level->smooth(o_rhs, o_x, false);
+  }
 }
 
 namespace {
