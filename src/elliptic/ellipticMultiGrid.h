@@ -39,6 +39,9 @@ enum class SecondarySmootherType
   SCHWARZ,
 };
 
+std::vector<dfloat>
+optimalCoeffs(int ChebyshevIterations);
+
 class MGLevel : public parAlmond::multigridLevel
 {
 public:
