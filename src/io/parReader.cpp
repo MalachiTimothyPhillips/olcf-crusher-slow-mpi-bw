@@ -1265,7 +1265,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE PARALMOND CYCLE", "VCYCLE");
   options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
   options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "FALSE");
-  options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
+  options.setArgs("PRESSURE MULTIGRID SMOOTHER", "OPTIMAL+CHEBYSHEV+ASM");
   options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "2");

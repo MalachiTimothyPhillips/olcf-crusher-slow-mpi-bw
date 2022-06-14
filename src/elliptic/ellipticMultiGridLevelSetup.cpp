@@ -135,6 +135,7 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       dfloat rho = this->maxEigSmoothAx();
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;
+      this->maxEig = rho;
     }
     if(options.compareArgs("MULTIGRID DOWNWARD SMOOTHER","JACOBI") ||
        options.compareArgs("MULTIGRID UPWARD SMOOTHER","JACOBI")) {
@@ -164,7 +165,13 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 
       lambda1 = maxMultiplier * rho;
       lambda0 = minMultiplier * rho;
+      this->maxEig = rho;
     }
+  }
+
+  if(options.compareArgs("MULTIGRID SMOOTHER", "OPTIMAL")){
+    betas = optimalCoeffs(ChebyshevIterations);
+    stype = SmootherType::OPT_CHEBYSHEV;
   }
 }
 

@@ -85,6 +85,8 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
     elliptic->fusedCopyDfloatToPfloatKernel(Nrows, o_x, o_rhs, o_xPfloat, o_rhsPfloat);
     if (stype == SmootherType::CHEBYSHEV)
       this->smoothChebyshev(o_rhsPfloat, o_xPfloat, x_is_zero);
+    else if (stype == SmootherType::OPT_CHEBYSHEV)
+      this->smoothOptChebyshev(o_rhsPfloat, o_xPfloat, x_is_zero);
     else if (stype == SmootherType::SCHWARZ)
       this->smoothSchwarz(o_rhsPfloat, o_xPfloat, x_is_zero);
     else if (stype == SmootherType::JACOBI)
@@ -94,6 +96,8 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
   } else {
     if (stype == SmootherType::CHEBYSHEV)
       this->smoothChebyshev(o_rhs, o_x, x_is_zero);
+    else if (stype == SmootherType::OPT_CHEBYSHEV)
+      this->smoothOptChebyshev(o_rhs, o_x, x_is_zero);
     else if (stype == SmootherType::SCHWARZ)
       this->smoothSchwarz(o_rhs, o_x, x_is_zero);
     else if (stype == SmootherType::JACOBI)
@@ -254,6 +258,82 @@ void MGLevel::smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x,
 }
 
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
+{
+  if(ChebyshevIterations == 1) {
+    smoothChebyshevOneIteration(o_r,o_x,xIsZero);
+    return;
+  } else if (ChebyshevIterations == 2) {
+    smoothChebyshevTwoIteration(o_r,o_x,xIsZero);
+    return;
+  }
+  const pfloat theta = 0.5 * (lambda1 + lambda0);
+  const pfloat delta = 0.5 * (lambda1 - lambda0);
+  const pfloat invTheta = 1.0 / theta;
+  const pfloat sigma = theta / delta;
+  pfloat rho_n = 1. / sigma;
+  pfloat rho_np1;
+
+  pfloat one = 1., mone = -1., zero = 0.0;
+
+  occa::memory o_res = o_smootherResidual;
+  occa::memory o_Ad  = o_smootherResidual2;
+  occa::memory o_d   = o_smootherUpdate;
+
+  double flopCount = 0.0;
+
+  if(xIsZero) { //skip the Ax if x is zero
+    //res = Sr
+    this->smoother(o_r, o_res, xIsZero);
+
+    //d = invTheta*res
+    elliptic->scaledAddPfloatKernel(Nrows, invTheta, o_res, zero, o_d);
+    flopCount += Nrows;
+  } else {
+    //res = S(r-Ax)
+    this->Ax(o_x,o_res);
+    elliptic->scaledAddPfloatKernel(Nrows, one, o_r, mone, o_res);
+    this->smoother(o_res, o_res, xIsZero);
+    flopCount += 2 * Nrows;
+
+    //d = invTheta*res
+    elliptic->scaledAddPfloatKernel(Nrows, invTheta, o_res, zero, o_d);
+    flopCount += Nrows;
+  }
+
+  for (int k = 0; k < ChebyshevIterations; k++) {
+    //x_k+1 = x_k + d_k
+    if (xIsZero && (k == 0)) {
+      elliptic->scaledAddPfloatKernel(Nrows, one, o_d, zero, o_x);
+    }
+    else {
+      elliptic->scaledAddPfloatKernel(Nrows, one, o_d, one, o_x);
+      flopCount += 1 * Nrows;
+    }
+
+    //r_k+1 = r_k - SAd_k
+    this->Ax(o_d,o_Ad);
+    this->smoother(o_Ad, o_Ad, xIsZero);
+    elliptic->scaledAddPfloatKernel(Nrows, mone, o_Ad, one, o_res);
+    flopCount += Nrows;
+
+    rho_np1 = 1.0 / (2. * sigma - rho_n);
+    pfloat rhoDivDelta = 2.0 * rho_np1 / delta;
+
+    //d_k+1 = rho_k+1*rho_k*d_k  + 2*rho_k+1*r_k+1/delta
+    elliptic->scaledAddPfloatKernel(Nrows, rhoDivDelta, o_res, rho_np1 * rho_n, o_d);
+    flopCount += 4 * Nrows;
+
+    rho_n = rho_np1;
+  }
+  //x_k+1 = x_k + d_k
+  elliptic->scaledAddPfloatKernel(Nrows, one, o_d, one, o_x);
+  flopCount += Nrows;
+  ellipticApplyMask(elliptic, o_x, pfloatString);
+  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
+  platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
+}
+
+void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
   if(ChebyshevIterations == 1) {
     smoothChebyshevOneIteration(o_r,o_x,xIsZero);
