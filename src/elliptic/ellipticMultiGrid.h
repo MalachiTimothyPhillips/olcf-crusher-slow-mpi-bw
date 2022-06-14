@@ -27,6 +27,10 @@
 #ifndef ELLIPTIC_MGLEVEL_HPP
 #define ELLIPTIC_MGLEVEL_HPP
 
+#include "elliptic.h"
+#include "amgSolver/parAlmond/level.hpp"
+#include <vector>
+
 enum class SmootherType
 {
   CHEBYSHEV,

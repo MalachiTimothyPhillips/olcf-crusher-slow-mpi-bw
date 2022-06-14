@@ -379,7 +379,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIs
     elliptic->scaledAddPfloatKernel(Nrows, mone, o_Az, one, o_res);
 
     // z_k+1 = \dfrac{(2i-3)}{(2i+1)} z_k + \dfrac{(8i-4)}{(2i+1)} \dfrac{1}{\rho(SA)} S r_k
-    this->smoother(o_res, o_Ad, xIsZero); // o_Ad is Sr
+    this->smoother(o_res, o_Az, xIsZero); // o_Ad is Sr
 
 
     // + 2 offset is due to two issues:
@@ -389,12 +389,12 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIs
 
     const pfloat zScale = (2.0 * id - 3.0) / (2.0 * id + 1.0);
     const pfloat rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / this->maxEig;
-    elliptic->scaledAddPfloatKernel(Nrows, rScale, o_Ad, zScale, o_z);
+    elliptic->scaledAddPfloatKernel(Nrows, rScale, o_Az, zScale, o_z);
     flopCount += 3 * Nrows;
   }
 
   //x_k+1 = x_k + \beta_k d_k
-  elliptic->scaledAddPfloatKernel(Nrows, this->betas.back(), o_d, one, o_x);
+  elliptic->scaledAddPfloatKernel(Nrows, this->betas.back(), o_z, one, o_x);
   flopCount += 2 * Nrows;
   ellipticApplyMask(elliptic, o_x, pfloatString);
   const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;

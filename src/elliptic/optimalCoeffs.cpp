@@ -1,4 +1,4 @@
-#include <ellipticMultiGrid.h>
+#include "ellipticMultiGrid.h"
 
 // optimal values taken from script in https://arxiv.org/pdf/2202.08830.pdf
 std::vector<dfloat> optimalCoeffs(int ChebyshevIterations)
