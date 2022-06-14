@@ -44,7 +44,7 @@ enum class SecondarySmootherType
   SCHWARZ,
 };
 
-std::vector<dfloat>
+std::vector<pfloat>
 optimalCoeffs(int ChebyshevIterations);
 
 class MGLevel : public parAlmond::multigridLevel
@@ -111,7 +111,7 @@ public:
 
   bool isCoarse;
 
-  std::vector<dfloat> betas;
+  std::vector<pfloat> betas;
 
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,
