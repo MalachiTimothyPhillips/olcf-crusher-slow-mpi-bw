@@ -1,6 +1,9 @@
 #include <ellipticMultiGrid.h>
+
+// optimal values taken from script in https://arxiv.org/pdf/2202.08830.pdf
 std::vector<dfloat> optimalCoeffs(int ChebyshevIterations)
 {
+  constexpr int maxChebyIterations = 15;
   if (ChebyshevIterations == 0)
     return {
         1.12500000000000,
@@ -200,4 +203,9 @@ std::vector<dfloat> optimalCoeffs(int ChebyshevIterations)
         1.41421360695576,
         1.51427891730346,
     };
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "Error: maximum chebyshev iterations (" << maxChebyIterations << ") exceeded with requested iterations (" << ChebyshevIterations << ")\n";
+  }
+  ABORT(1);
 }

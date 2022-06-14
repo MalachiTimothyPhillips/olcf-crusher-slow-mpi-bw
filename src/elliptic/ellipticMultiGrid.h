@@ -105,6 +105,8 @@ public:
 
   bool isCoarse;
 
+  std::vector<dfloat> betas;
+
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,
           setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_,
