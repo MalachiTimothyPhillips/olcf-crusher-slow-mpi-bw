@@ -98,7 +98,6 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
     cubNq = Nq;
   }
 
-  static constexpr int NVFields = 3;
   const int N = Nq-1;
   const int cubN = cubNq - 1;
   const int Np = Nq * Nq * Nq;
@@ -117,10 +116,12 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   props["flags"].asObject();
   props["include_paths"].asArray();
 
+  constexpr int NVfields {3};
+
   props["defines/p_cubNq"] = cubNq;
   props["defines/p_cubNp"] = cubNp;
   props["defines/p_nEXT"] = nEXT;
-  props["defines/p_NVfields"] = NVFields;
+  props["defines/p_NVfields"] = NVfields;
   props["defines/p_MovingMesh"] = platform->options.compareArgs("MOVING MESH", "TRUE");
 
   std::string installDir;
@@ -198,10 +199,10 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
 
   auto invLMM   = randomVector<dfloat>(fieldOffset * nEXT);
   auto cubD  = randomVector<dfloat>(cubNq * cubNq);
-  auto NU  = randomVector<dfloat>(NVFields * fieldOffset);
-  auto conv  = randomVector<dfloat>(NVFields * cubatureOffset * nEXT);
+  auto NU  = randomVector<dfloat>(Nfields * fieldOffset);
+  auto conv  = randomVector<dfloat>(NVfields * cubatureOffset * nEXT);
   auto cubInterpT  = randomVector<dfloat>(Nq * cubNq);
-  auto Ud  = randomVector<dfloat>(NVFields * fieldOffset);
+  auto Ud  = randomVector<dfloat>(Nfields * fieldOffset);
   auto BdivW  = randomVector<dfloat>(fieldOffset * nEXT);
 
   // elementList[e] = e
@@ -211,10 +212,10 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
 
   auto o_invLMM = platform->device.malloc(nEXT * fieldOffset * wordSize, invLMM.data());
   auto o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD.data());
-  auto o_NU = platform->device.malloc(NVFields * fieldOffset * wordSize, NU.data());
-  auto o_conv = platform->device.malloc(NVFields * cubatureOffset * nEXT * wordSize, conv.data());
+  auto o_NU = platform->device.malloc(Nfields * fieldOffset * wordSize, NU.data());
+  auto o_conv = platform->device.malloc(NVfields * cubatureOffset * nEXT * wordSize, conv.data());
   auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
-  auto o_Ud = platform->device.malloc(NVFields * fieldOffset * wordSize, Ud.data());
+  auto o_Ud = platform->device.malloc(Nfields * fieldOffset * wordSize, Ud.data());
   auto o_BdivW = platform->device.malloc(nEXT * fieldOffset * wordSize, BdivW.data());
 
   // popular cubD, cubInterpT with correct data
@@ -241,8 +242,8 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
     if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return kernel;
 
     // perform correctness check
-    std::vector<dfloat> referenceResults(3*fieldOffset);
-    std::vector<dfloat> results(3*fieldOffset);
+    std::vector<dfloat> referenceResults(Nfields*fieldOffset);
+    std::vector<dfloat> results(Nfields*fieldOffset);
 
     kernelRunner(referenceKernel);
     o_NU.copyTo(referenceResults.data(), referenceResults.size() * sizeof(dfloat));
@@ -264,11 +265,11 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
 
 
   auto printPerformanceInfo = [&](int kernelVariant, double elapsed, int Ntests, bool skipPrint) {
-    const dfloat GDOFPerSecond = NVFields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
+    const dfloat GDOFPerSecond = Nfields * ( Nelements * (N * N * N) / elapsed) / 1.e9;
 
-    size_t bytesPerElem = 2 * NVFields * Np; // Ud, NU
+    size_t bytesPerElem = 2 * Nfields * Np; // Ud, NU
     bytesPerElem += Np; // inv mass matrix
-    bytesPerElem += NVFields * cubNp * nEXT; // U(r,s,t)
+    bytesPerElem += Nfields * cubNp * nEXT; // U(r,s,t)
 
     size_t otherBytes = cubNq * cubNq; // D
     if(cubNq > Nq){
