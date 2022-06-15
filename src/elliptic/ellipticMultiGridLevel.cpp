@@ -333,7 +333,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
 }
 
-void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
+void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
 {
   static bool firstPass = true;
 
@@ -357,16 +357,17 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIs
 
   if(xIsZero) { //skip the Ax if x is zero
     //res = Sr
-    this->smoother(o_r, o_res, xIsZero);
+    elliptic->scaledAddPfloatKernel(Nrows, one, o_b, zero, o_res);
+    this->smoother(o_res, o_Az, xIsZero);
 
     // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} Sr
     const pfloat coeff = 4.0 / 3.0 / this->maxEig;
-    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_res, zero, o_z);
+    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
     flopCount += Nrows;
   } else {
     //res = S(r-Ax)
     this->Ax(o_x,o_res);
-    elliptic->scaledAddPfloatKernel(Nrows, one, o_r, mone, o_res);
+    elliptic->scaledAddPfloatKernel(Nrows, one, o_b, mone, o_res);
     this->smoother(o_res, o_Az, xIsZero);
     flopCount += 2 * Nrows;
 
@@ -397,7 +398,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIs
     // + 2 offset is due to two issues:
     // + 1 is from https://arxiv.org/pdf/2202.08830.pdf being written in 1-based indexing
     // + 1 is from pre-computing z_1 _outside_ of the loop
-    const int id = ChebyshevIterations + 2;
+    const int id = k + 2;
 
     const pfloat zScale = (2.0 * id - 3.0) / (2.0 * id + 1.0);
     const pfloat rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / this->maxEig;
