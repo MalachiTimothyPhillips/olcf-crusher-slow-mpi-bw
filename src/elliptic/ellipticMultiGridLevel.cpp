@@ -335,6 +335,18 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 
 void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
+  static bool firstPass = true;
+
+  if(firstPass){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Values of beta:\n";
+      for(auto&& beta : this->betas){
+        std::cout << "    " << beta << "\n";
+      }
+    }
+    firstPass = false;
+  }
+
   pfloat one = 1., mone = -1., zero = 0.0;
 
   occa::memory o_res = o_smootherResidual;
@@ -355,22 +367,22 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIs
     //res = S(r-Ax)
     this->Ax(o_x,o_res);
     elliptic->scaledAddPfloatKernel(Nrows, one, o_r, mone, o_res);
-    this->smoother(o_res, o_res, xIsZero);
+    this->smoother(o_res, o_Az, xIsZero);
     flopCount += 2 * Nrows;
 
     // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} S(r-Ax)
     const pfloat coeff = 4.0 / 3.0 / this->maxEig;
-    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_res, zero, o_z);
+    elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
     flopCount += Nrows;
   }
 
   for (int k = 0; k < ChebyshevIterations; k++) {
     //x_k+1 = x_k + \beta_k d_k
     if (xIsZero && (k == 0)) {
-      elliptic->scaledAddPfloatKernel(Nrows, this->betas[k], o_z, zero, o_x);
+      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, zero, o_x);
     }
     else {
-      elliptic->scaledAddPfloatKernel(Nrows, this->betas[k], o_z, one, o_x);
+      elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, one, o_x);
       flopCount += 2 * Nrows;
     }
 
