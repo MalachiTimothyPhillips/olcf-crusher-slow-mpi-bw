@@ -3,6 +3,45 @@
 #include <unistd.h>
 #include <regex>
 
+namespace {
+
+void compileDummyAtomicKernel(device_t &device)
+{
+  const bool buildNodeLocal = useNodeLocalCache();
+  const std::string dummyKernelName = "simpleAtomicAdd";
+  const std::string dummyKernelStr = std::string("@kernel void simpleAtomicAdd(int N, double * result) {"
+                                                 "  for (int i = 0; i < N; ++i; @tile(64, @outer, @inner)) {"
+                                                 "    @atomic result[0] += i;"
+                                                 "  }"
+                                                 "}");
+
+  occa::properties noKernelInfo;
+
+  device.occaDevice().buildKernelFromString(dummyKernelStr, dummyKernelName, noKernelInfo);
+}
+
+bool atomicsAvailable(device_t &device, MPI_Comm comm)
+{
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+
+  int atomicSupported = 1;
+
+  if (rank == 0) {
+    try {
+      compileDummyAtomicKernel(device);
+    }
+    catch (std::exception &e) {
+      atomicSupported = 0;
+    }
+  }
+
+  MPI_Bcast(&atomicSupported, 1, MPI_INT, 0, comm);
+
+  return atomicSupported;
+}
+} // namespace
+
 occa::kernel
 device_t::buildNativeKernel(const std::string &fileName,
                          const std::string &kernelName,
@@ -271,5 +310,5 @@ device_t::device_t(setupAide& options, comm_t& comm)
 
   _device_id = device_id;
 
-  deviceAtomic = this->mode() == "CUDA";
+  deviceAtomic = atomicsAvailable(*this, comm);
 }
