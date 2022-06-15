@@ -645,6 +645,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     {"cheby"},
     {"jac"},
     {"degree"},
+    {"optimal"},
     {"mineigenvalueboundfactor"},
     {"maxeigenvalueboundfactor"},
   };
@@ -742,6 +743,12 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
           }
         }
       }
+
+      if(p_smoother.find("optimal") != std::string::npos){
+          options.setArgs(parSection + " MULTIGRID SMOOTHER",
+                          "OPTIMAL+" + options.getArgs(parSection + " MULTIGRID SMOOTHER"));
+      }
+
       if(!surrogateSmootherSet){
         append_error("Inner Chebyshev smoother not set");
       }
