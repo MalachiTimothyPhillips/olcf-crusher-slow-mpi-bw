@@ -5,6 +5,10 @@
 #include "postProcessing.hpp"
 void registerPostProcessingKernels()
 {
+  // gatherPlanarValues and scatterPlanarValues kernels require use of atomics
+  if (!platform->device.deviceAtomic)
+    return;
+
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
   const int Nq = N + 1;

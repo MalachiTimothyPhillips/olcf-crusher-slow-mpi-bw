@@ -95,6 +95,23 @@ void fusedPlanarAvg(nrs_t *nrs, const std::string & direction, int NELGX, int NE
 {
   static_assert(std::is_same<dlong,int>::value, "dlong != int");
 
+  static bool issueWarning = true;
+
+  if (!platform->device.deviceAtomic) {
+    if (platform->comm.mpiRank == 0 && issueWarning) {
+      std::cout << "Device atomics are not supported!\n";
+      std::cout << "Relying on slower, separate planar averaging operations.\n";
+    }
+    issueWarning = false;
+
+    const auto firstDir = direction.substr(0, 1);
+    const auto secondDir = direction.substr(1);
+    postProcessing::planarAvg(nrs, firstDir, NELGX, NELGY, NELGZ, nflds, o_avg);
+    postProcessing::planarAvg(nrs, secondDir, NELGX, NELGY, NELGZ, nflds, o_avg);
+
+    return;
+  }
+
   const auto * mesh = nrs->meshV;
   static occa::memory o_locToGlobE;
 
