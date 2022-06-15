@@ -30,11 +30,11 @@ MPI_Datatype comm_t::toMPI_Datatype(comm_t::type t) const
 {
   switch(t)
   {
-    case comm_t::type::DFLOAT:
+    case comm_t::type::dfloat:
       return MPI_DFLOAT;
-    case comm_t::type::DLONG:
+    case comm_t::type::dlong:
       return MPI_DLONG;
-    case comm_t::type::HLONG:
+    case comm_t::type::hlong:
       return MPI_HLONG;
   }
 }
@@ -43,11 +43,11 @@ MPI_Op comm_t::toMPI_Op(comm_t::op o)const
 {
   switch(o)
   {
-    case comm_t::op::SUM:
+    case comm_t::op::sum:
       return MPI_SUM;
-    case comm_t::op::MAX:
+    case comm_t::op::max:
       return MPI_MAX;
-    case comm_t::op::MIN:
+    case comm_t::op::min:
       return MPI_MIN;
   }
 }

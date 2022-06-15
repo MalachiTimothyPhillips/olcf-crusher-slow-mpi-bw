@@ -13,15 +13,15 @@ public:
   int localRank;
 
   enum class type{
-    DFLOAT,
-    DLONG,
-    HLONG,
+    dfloat,
+    dlong,
+    hlong,
   };
 
   enum class op{
-    SUM,
-    MAX,
-    MIN,
+    sum,
+    max,
+    min,
   };
 
   std::string to_string() const {

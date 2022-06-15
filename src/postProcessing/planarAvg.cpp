@@ -155,7 +155,7 @@ void fusedPlanarAvg(nrs_t *nrs, const std::string & direction, int NELGX, int NE
     o_avg,
     o_scratch);
 
-  platform->comm.allreduce(o_scratch, Nwords, comm_t::type::DFLOAT, comm_t::op::SUM, platform->comm.mpiComm);
+  platform->comm.allreduce(o_scratch, Nwords, comm_t::type::dfloat, comm_t::op::sum, platform->comm.mpiComm);
 
   scatterPlanarValuesKernel(mesh->Nelements,
     nflds,
