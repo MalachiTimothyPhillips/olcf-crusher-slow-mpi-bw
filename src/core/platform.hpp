@@ -5,6 +5,7 @@
 #include "flopCounter.hpp"
 #include "nrssys.hpp"
 #include "timer.hpp"
+#include "comm.hpp"
 #include "inipp.hpp"
 #include "device.hpp"
 #include "kernelRequestManager.hpp"
@@ -67,48 +68,6 @@ struct deviceMemPool_t{
   occa::memory slice19;
   occa::memory o_ptr;
   size_t bytesAllocated;
-};
-
-
-class comm_t{
-public:
-  comm_t(MPI_Comm, MPI_Comm);
-  MPI_Comm mpiCommParent;
-  MPI_Comm mpiComm;
-  int mpiRank;
-  int mpiCommSize;
-
-  MPI_Comm mpiCommLocal;
-  int mpiCommLocalSize;
-  int localRank;
-
-  std::string to_string() const {
-    std::ostringstream ss;
-    ss << "mpiRank = " << mpiRank << std::endl;
-    ss << "mpiCommSize = " << mpiCommSize << std::endl;
-    ss << "mpiCommLocalSize = " << mpiCommLocalSize << std::endl;
-    ss << "localRank = " << localRank << std::endl;
-    return ss.str();
-  }
-
-  int allreduce(const void *sendbuf, void *recvbuf, int count,
-                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) const;
-  int allreduce(occa::memory sendbuf, occa::memory recvbuf, int count,
-                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) const;
-  
-  // in place
-  int allreduce(occa::memory recvbuf, int count,
-                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm) const;
-  
-private:
-  void reallocScratch(int Nbytes) const;
-  bool useGPUAware;
-
-  mutable occa::memory h_recvBuf;
-  mutable occa::memory h_sendBuf;
-  mutable void* recv;
-  mutable void* send;
-
 };
 
 struct platform_t{

@@ -200,6 +200,7 @@ set(SRC
     src/core/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
+    src/core/comm.cpp
     src/core/flopCounter.cpp
     src/core/kernelRequestManager.cpp
     src/core/device.cpp
