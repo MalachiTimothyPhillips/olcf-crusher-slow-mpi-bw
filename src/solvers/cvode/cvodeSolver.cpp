@@ -43,6 +43,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 
   setupEToLMapping(nrs);
 
+  std::vector<dlong> scalarIds;
+  std::vector<dlong> cvodeScalarIds(cds->NSfields, -1);
+
   Nscalar = 0;
   fieldOffsetScan = {0};
   fieldOffsetSum = 0;
@@ -52,6 +55,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
       continue;
     if (!cds->cvodeSolve[is])
       continue;
+    
+    cvodeScalarIds[is] = Nscalar;
+    scalarIds.push_back(is);
 
     cvodeScalarToScalarIndex[Nscalar] = is;
     scalarToCvodeScalarIndex[is] = Nscalar;
@@ -63,7 +69,8 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
     Nscalar++;
   }
 
-  o_S = platform->device.malloc(fieldOffsetSum * sizeof(dfloat));
+  o_scalarIds = platform->device.malloc(scalarIds.size() * sizeof(dlong), scalarIds.data());
+  o_cvodeScalarIds = platform->device.malloc(cvodeScalarIds.size() * sizeof(dlong), cvodeScalarIds.data());
 
 }
 
@@ -122,6 +129,8 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
 
   this->mapEToLKernel = platform->kernels.get("mapEToL");
   this->mapLToEKernel = platform->kernels.get("mapLToE");
+  this->packKernel = platform->kernels.get("pack");
+  this->unpackKernel = platform->kernels.get("unpack");
 
   o_Lids.free();
 }
@@ -162,17 +171,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     computeUrst(nrs);
   }
 
-  unpack(o_y, o_S);
-
-  // TODO: move back
-  // map cvode scalars to all scalars
-  for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
-    const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
-    cds->o_S.copyFrom(o_S,
-      fieldOffset[cvodeScalarId] * sizeof(dfloat), 
-      cds->fieldOffsetScan[scalarId] * sizeof(dfloat),
-      fieldOffsetScan[cvodeScalarId] * sizeof(dfloat));
-  }
+  unpack(o_y, cds->o_S);
 
   evaluateProperties(nrs, time);
 
@@ -391,12 +390,20 @@ void cvodeSolver_t::pack()
   }
 }
 
-void cvodeSolver_t::unpack()
+void cvodeSolver_t::unpack(occa::memory & o_y, occa::memory & o_S)
 {
   if(userUnpackFunction){
-    userUnpackFunction();
+    userUnpackFunction(o_y, o_S);
   } else {
-    //default
+    // TODO: move back
+    // map cvode scalars to all scalars
+    for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
+      const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
+      cds->o_S.copyFrom(o_S,
+        fieldOffset[cvodeScalarId] * sizeof(dfloat), 
+        cds->fieldOffsetScan[scalarId] * sizeof(dfloat),
+        fieldOffsetScan[cvodeScalarId] * sizeof(dfloat));
+    }
   }
 }
 

@@ -9,11 +9,15 @@ void registerCvodeKernels(occa::properties kernelInfoBC){
   fileName = oklpath + "cvode/" + kernelName + ".okl";
   platform->kernels.add(kernelName, fileName, platform->kernelInfo);
 
-  kernelName = "mapEToL";
+  kernelName = "extrapolateInPlace";
   fileName = oklpath + "cvode/" + kernelName + ".okl";
   platform->kernels.add(kernelName, fileName, platform->kernelInfo);
 
-  kernelName = "extrapolateInPlace";
+  kernelName = "pack";
+  fileName = oklpath + "cvode/" + kernelName + ".okl";
+  platform->kernels.add(kernelName, fileName, platform->kernelInfo);
+
+  kernelName = "unpack";
   fileName = oklpath + "cvode/" + kernelName + ".okl";
   platform->kernels.add(kernelName, fileName, platform->kernelInfo);
 }

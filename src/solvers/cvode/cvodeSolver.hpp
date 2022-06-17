@@ -73,12 +73,12 @@ private:
   occa::memory o_meshU0;
   occa::memory o_xyz0;
 
-  // TODO: remove
-  occa::memory o_S;
-
   occa::memory o_coeffExt;
   occa::memory o_EToLUnique;
   occa::memory o_EToL;
+
+  occa::memory o_cvodeScalarIds;
+  occa::memory o_scalarIds;
 
   // TODO: how to cleanly handle V/T?
   // combined invLMM * LMM
@@ -91,6 +91,8 @@ private:
   occa::kernel extrapolateInPlaceKernel;
   occa::kernel mapEToLKernel;
   occa::kernel mapLToEKernel;
+  occa::kernel packKernel;
+  occa::kernel unpackKernel;
 };
 } // namespace cvode
 
