@@ -51,8 +51,8 @@ private:
   userPack_t userPack;
   userUnpack_t userUnpack;
 
-  void pack(occa::memory o_field, occa::memory o_y);
-  void unpack(occa::memory o_y, occa::memory o_field);
+  void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
+  void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
   void makeq(nrs_t* nrs, );
 
   void setup(nrs_t* nrs, const Parameters_t & params);

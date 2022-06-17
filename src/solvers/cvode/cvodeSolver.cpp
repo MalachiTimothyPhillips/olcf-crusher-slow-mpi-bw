@@ -381,29 +381,37 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
   }
 }
 
-void cvodeSolver_t::pack()
+void cvodeSolver_t::pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y)
 {
   if(userPackFunction){
-    userPackFunction();
+    userPackFunction(nrs, o_field, o_y);
   } else {
-    // default
+    packKernel(nrs->cds->mesh[0]->Nlocal,
+               nrs->meshV->Nlocal,
+               nrs->cds->Nscalar,
+               nrs->fieldOffset,
+               this->LFieldOffset,
+               this->o_cvodeScalarIds,
+               this->o_EToLUnique,
+               o_field,
+               o_y);
   }
 }
 
-void cvodeSolver_t::unpack(occa::memory & o_y, occa::memory & o_S)
+void cvodeSolver_t::unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field)
 {
   if(userUnpackFunction){
-    userUnpackFunction(o_y, o_S);
+    userUnpackFunction(nrs, o_y, o_field);
   } else {
-    // TODO: move back
-    // map cvode scalars to all scalars
-    for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
-      const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
-      cds->o_S.copyFrom(o_S,
-        fieldOffset[cvodeScalarId] * sizeof(dfloat), 
-        cds->fieldOffsetScan[scalarId] * sizeof(dfloat),
-        fieldOffsetScan[cvodeScalarId] * sizeof(dfloat));
-    }
+    unpackKernel(nrs->cds->mesh[0]->Nlocal,
+               nrs->meshV->Nlocal,
+               this->Nscalar,
+               nrs->fieldOffset,
+               this->LFieldOffset,
+               this->o_cvodeScalarIds,
+               this->o_EToL,
+               o_y,
+               o_field);
   }
 }
 

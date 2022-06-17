@@ -1,5 +1,6 @@
 // pre: EField is C0 continuous
 @kernel void pack(const dlong N,
+                  const dlong NV,
                   const dlong Nscalars,
                   const dlong EFieldOffset,
                   const dlong LFieldOffset,
@@ -12,7 +13,8 @@
     if(lid > - 1){
       for(dlong fld=0;fld<Nscalars;++fld){
         const dlong cvodeField = scalarFieldToCvodeField[fld];
-        if(cvodeField > -1){
+        bool isInMesh = fld == 0 || n < NV;
+        if(cvodeField > -1 && isInMesh){
           LField[lid + LFieldOffset * cvodeField] = EField[n + EFieldOffset * fld];
         }
       }
