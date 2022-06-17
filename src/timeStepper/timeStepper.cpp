@@ -226,9 +226,9 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     mesh_t *mesh = nrs->meshV;
     if (nrs->cht)
       mesh = nrs->cds->mesh[0];
-    const dlong NbyteCubature = nrs->NVfields * nrs->cubatureOffset * sizeof(dfloat);
+    const auto NbyteCubature = nrs->NVfields * nrs->cubatureOffset * sizeof(dfloat);
     for (int s = nrs->nEXT; s > 1; s--) {
-      const dlong Nbyte = nrs->fieldOffset * sizeof(dfloat);
+      const auto Nbyte = nrs->fieldOffset * sizeof(dfloat);
       if (movingMesh) {
         mesh->o_divU.copyFrom(
             mesh->o_divU, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
@@ -307,7 +307,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     if (nrs->cht)
       mesh = nrs->cds->mesh[0];
     for (int s = std::max(nrs->nBDF, nrs->nEXT); s > 1; s--) {
-      const dlong NbyteScalar = nrs->fieldOffset * sizeof(dfloat);
+      const auto NbyteScalar = nrs->fieldOffset * sizeof(dfloat);
       mesh->o_LMM.copyFrom(mesh->o_LMM,
           NbyteScalar,
           (s - 1) * NbyteScalar,
@@ -330,7 +330,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     if (nrs->cht)
       nrs->meshV->computeInvLMM();
     for (int s = std::max(nrs->nEXT, mesh->nAB); s > 1; s--) {
-      const dlong Nbyte = nrs->fieldOffset * nrs->NVfields * sizeof(dfloat);
+      const auto Nbyte = nrs->fieldOffset * nrs->NVfields * sizeof(dfloat);
       mesh->o_U.copyFrom(mesh->o_U, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
     }
   }
@@ -569,7 +569,7 @@ void makeq(
   }
 
   for (int s = std::max(cds->nBDF, cds->nEXT); s > 1; s--) {
-    const dlong Nbyte = cds->fieldOffsetSum * sizeof(dfloat);
+    const auto Nbyte = cds->fieldOffsetSum * sizeof(dfloat);
     cds->o_S.copyFrom(cds->o_S, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
     o_FS.copyFrom(o_FS, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
   }
@@ -726,7 +726,7 @@ void makef(
   }
 
   for (int s = std::max(nrs->nBDF, nrs->nEXT); s > 1; s--) {
-    const dlong Nbyte = nrs->fieldOffset * nrs->NVfields * sizeof(dfloat);
+    const auto Nbyte = nrs->fieldOffset * nrs->NVfields * sizeof(dfloat);
     nrs->o_U.copyFrom(nrs->o_U, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
     o_FU.copyFrom(o_FU, Nbyte, (s - 1) * Nbyte, (s - 2) * Nbyte);
   }
