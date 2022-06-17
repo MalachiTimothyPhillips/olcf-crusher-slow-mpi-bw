@@ -89,7 +89,7 @@ int comm_t::allreduce(occa::memory sendbuf, occa::memory recvbuf, int count,
 
   reallocScratch(Nbytes);
 
-  if(useGPUAware){
+  if(useGPUAware || platform->serial){
     return MPI_Allreduce((void*) sendbuf.ptr(), (void*) recvbuf.ptr(), count, mpiDataType, mpiOp, comm);
   } else {
     int retVal = 0;
@@ -116,7 +116,7 @@ int comm_t::allreduce(occa::memory recvbuf, int count,
 
   reallocScratch(Nbytes);
 
-  if(useGPUAware){
+  if(useGPUAware || platform->serial){
     return MPI_Allreduce(MPI_IN_PLACE, (void*) recvbuf.ptr(), count, mpiDataType, mpiOp, comm);
   } else {
     int retVal = 0;
