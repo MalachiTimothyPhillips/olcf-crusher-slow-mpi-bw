@@ -80,8 +80,12 @@ private:
   occa::memory o_EToLUnique;
   occa::memory o_EToL;
 
+  // TODO: how to cleanly handle V/T?
   // combined invLMM * LMM
-  occa::memory o_invLMMLMM;
+  occa::memory o_invLMMLMMT;
+  occa::memory o_invLMMLMMV;
+
+
   dlong LFieldOffset;
 
   occa::kernel extrapolateInPlaceKernel;
