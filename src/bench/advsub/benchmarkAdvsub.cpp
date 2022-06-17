@@ -194,7 +194,7 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
     referenceKernel = platform->device.buildKernel(fileName, newProps, true);
   }
 
-  const int wordSize = sizeof(dfloat);
+  const auto wordSize = sizeof(dfloat);
 
   auto invLMM   = randomVector<dfloat>(fieldOffset * nEXT);
   auto cubD  = randomVector<dfloat>(cubNq * cubNq);
