@@ -67,8 +67,8 @@ void setField(nrs_t * nrs, occa::memory& o_fld, int field)
 void testDirection(nrs_t* nrs, std::string dir)
 {
   auto * mesh = nrs->meshV;
-  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  auto o_fields = platform->device.malloc((nrs->NVfields  * sizeof(dfloat))*nrs->fieldOffset);
+  auto o_refFields = platform->device.malloc((nrs->NVfields  * sizeof(dfloat))*nrs->fieldOffset);
   for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
   postProcessing::planarAvg(nrs, dir, NELGX, NELGY, NELGZ, nrs->NVfields, o_fields);
 
@@ -107,8 +107,8 @@ void testFusedPlanarAvg(nrs_t * nrs, std::string dir)
     FAIL;
   }
 
-  auto o_fields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-  auto o_refFields = platform->device.malloc(nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  auto o_fields = platform->device.malloc((nrs->NVfields  * sizeof(dfloat))*nrs->fieldOffset);
+  auto o_refFields = platform->device.malloc((nrs->NVfields  * sizeof(dfloat))*nrs->fieldOffset);
   for(int fld = 0; fld < nrs->NVfields; ++fld) setField(nrs, o_fields, fld);
 
   o_refFields.copyFrom(o_fields, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));

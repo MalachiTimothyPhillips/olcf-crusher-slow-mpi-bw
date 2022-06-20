@@ -208,13 +208,13 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   std::iota(elementList.begin(), elementList.end(), 0);
   auto o_elementList = platform->device.malloc(Nelements * sizeof(dlong), elementList.data());
 
-  auto o_invLMM = platform->device.malloc(nEXT * fieldOffset * wordSize, invLMM.data());
+  auto o_invLMM = platform->device.malloc((nEXT * wordSize) * fieldOffset, invLMM.data());
   auto o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD.data());
-  auto o_NU = platform->device.malloc(Nfields * fieldOffset * wordSize, NU.data());
-  auto o_conv = platform->device.malloc(Nfields * cubatureOffset * nEXT * wordSize, conv.data());
+  auto o_NU = platform->device.malloc((Nfields * wordSize) * fieldOffset, NU.data());
+  auto o_conv = platform->device.malloc((Nfields * nEXT * wordSize) * cubatureOffset, conv.data());
   auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
-  auto o_Ud = platform->device.malloc(Nfields * fieldOffset * wordSize, Ud.data());
-  auto o_BdivW = platform->device.malloc(nEXT * fieldOffset * wordSize, BdivW.data());
+  auto o_Ud = platform->device.malloc((Nfields * wordSize) * fieldOffset, Ud.data());
+  auto o_BdivW = platform->device.malloc((nEXT * wordSize) * fieldOffset, BdivW.data());
 
   // popular cubD, cubInterpT with correct data
   readCubDMatrixKernel(o_cubD);
