@@ -36,8 +36,8 @@ void SolutionProjection::matvec(occa::memory& o_Ax,
                                 occa::memory& o_x,
                                 const dlong x_offset)
 {
-  occa::memory o_xtmp = o_x + Nfields * fieldOffset * x_offset * sizeof(dfloat);
-  occa::memory o_Axtmp = o_Ax + Nfields * fieldOffset * Ax_offset * sizeof(dfloat);
+  occa::memory o_xtmp = o_x + (Nfields * x_offset * sizeof(dfloat)) * fieldOffset;
+  occa::memory o_Axtmp = o_Ax + (Nfields * Ax_offset * sizeof(dfloat)) * fieldOffset;
   matvecOperator(o_xtmp, o_Axtmp);
 }
 

@@ -61,7 +61,7 @@ deviceVector_t::deviceVector_t(const size_t _offset, const size_t _nVectors, con
 
   o_vector = platform->device.malloc(nVectors * offset * wordSize);
   for(int s = 0; s < nVectors; ++s){
-    slices.push_back(o_vector + s * offset * wordSize);
+    slices.push_back(o_vector + (s * wordSize) * offset);
   }
 }
 

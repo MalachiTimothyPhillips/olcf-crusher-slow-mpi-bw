@@ -107,9 +107,9 @@ void adjustDt(nrs_t* nrs, int tstep)
           udf.uEqnSource(nrs, startTime, nrs->o_U, nrs->o_FU);
           platform->timer.toc("udfUEqnSource");
 
-          occa::memory o_FUx = nrs->o_FU + 0 * nrs->fieldOffset * sizeof(dfloat);
-          occa::memory o_FUy = nrs->o_FU + 1 * nrs->fieldOffset * sizeof(dfloat);
-          occa::memory o_FUz = nrs->o_FU + 2 * nrs->fieldOffset * sizeof(dfloat);
+          occa::memory o_FUx = nrs->o_FU + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+          occa::memory o_FUy = nrs->o_FU + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+          occa::memory o_FUz = nrs->o_FU + (2 * sizeof(dfloat)) * nrs->fieldOffset;
 
           platform->linAlg->abs(3 * nrs->fieldOffset, nrs->o_FU);
 
