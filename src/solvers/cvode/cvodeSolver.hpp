@@ -30,13 +30,16 @@ public:
   void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
 
+  // TODO: move back to private visibility after finishing up test
+  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
+  dlong LFieldOffset;
+
 private:
 
   std::vector<std::tuple<dlong,dlong, oogs_t*>> gatherScatterOperations;
 
   void setupEToLMapping(nrs_t *nrs);
 
-  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   userRHS_t userRHS;
 
   userLocalPointSource_t userLocalPointSource;
@@ -74,7 +77,6 @@ private:
   occa::memory o_invLMMLMMT;
   occa::memory o_invLMMLMMV;
 
-  dlong LFieldOffset;
 
   occa::kernel extrapolateInPlaceKernel;
   occa::kernel mapEToLKernel;

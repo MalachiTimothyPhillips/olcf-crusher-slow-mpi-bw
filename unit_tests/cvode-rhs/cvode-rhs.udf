@@ -65,7 +65,6 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
   options.getArgs("CI-MODE", ciMode);
-  if (ciMode) ciSetup(comm, options);
   platform->par->extract("casedata", "xlen",XLEN);
   platform->par->extract("casedata", "ylen",YLEN);
   platform->par->extract("casedata", "zlen",ZLEN);
@@ -122,9 +121,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       mesh->o_U);
   }
 
-  if(nrs->isOutputStep){
-    nek::ocopyToNek(time, tstep);
-    nek::userchk();
+  constexpr int NstartTest = 10;
+  if(tstep > NstartTest){
+    checkRHS(nrs, time, tstep);
   }
-  if (ciMode) ciTestErrors(nrs, time, tstep);
+
 }
