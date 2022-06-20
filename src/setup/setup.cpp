@@ -298,7 +298,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   // offset mempool available for elliptic because also used it for ellipticSolve input/output
   auto const o_mempoolElliptic =
-      platform->o_mempool.o_ptr.slice(2 * nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+      platform->o_mempool.o_ptr.slice((2 * nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
   if (options.compareArgs("MOVING MESH", "TRUE")) {
     const int nBDF = std::max(nrs->nBDF, nrs->nEXT);
@@ -356,11 +356,11 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     }
 
   nrs->o_prop = device.malloc((nProperties * sizeof(dfloat)) * nrs->fieldOffset, nrs->prop);
-  nrs->o_mue = nrs->o_prop.slice(0 * nrs->fieldOffset * sizeof(dfloat));
-  nrs->o_rho = nrs->o_prop.slice(1 * nrs->fieldOffset * sizeof(dfloat));
+  nrs->o_mue = nrs->o_prop.slice((0 * sizeof(dfloat)) * nrs->fieldOffset);
+  nrs->o_rho = nrs->o_prop.slice((1 * sizeof(dfloat)) * nrs->fieldOffset);
   if (options.compareArgs("MESH SOLVER", "ELASTICITY")) {
-    nrs->o_meshMue = nrs->o_prop.slice(2 * nrs->fieldOffset * sizeof(dfloat));
-    nrs->o_meshRho = nrs->o_prop.slice(3 * nrs->fieldOffset * sizeof(dfloat));
+    nrs->o_meshMue = nrs->o_prop.slice((2 * sizeof(dfloat)) * nrs->fieldOffset);
+    nrs->o_meshRho = nrs->o_prop.slice((3 * sizeof(dfloat)) * nrs->fieldOffset);
   }
 
   if (platform->options.compareArgs("CONSTANT FLOW RATE", "TRUE")) {
