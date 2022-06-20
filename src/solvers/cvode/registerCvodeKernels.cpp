@@ -1,5 +1,12 @@
 #include "compileKernels.hpp"
+#include "nrs.hpp"
+
 void registerCvodeKernels(occa::properties kernelInfoBC){
+
+  std::string kernelName, fileName;
+  std::string installDir;
+  installDir.assign(getenv("NEKRS_INSTALL_DIR"));
+  const std::string oklpath = installDir + "/okl/";
 
   kernelName = "mapLToE";
   fileName = oklpath + "cvode/" + kernelName + ".okl";

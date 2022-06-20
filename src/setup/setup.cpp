@@ -10,9 +10,7 @@
 #include "udf.hpp"
 #include "filter.hpp"
 #include "avm.hpp"
-
 #include "cdsSetup.cpp"
-#include "mapLVector.hpp"
 
 std::vector<int> determineMGLevels(std::string section)
 {
@@ -379,8 +377,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   // 0);
   nrs->gsh = oogs::setup(mesh->ogs, nrs->NVfields, nrs->fieldOffset, ogsDfloat, NULL, OOGS_AUTO);
 
-  setupEToLMapping(nrs);
-
   nrs->EToB = (int *)calloc(mesh->Nelements * mesh->Nfaces, sizeof(int));
   int cnt = 0;
   for (int e = 0; e < mesh->Nelements; e++) {
@@ -428,6 +424,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
   std::string kernelName;
   const std::string suffix = "Hex3D";
   {
+    const std::string section = "nrs-";
     kernelName = "nStagesSum3";
     nrs->nStagesSum3Kernel = platform->kernels.get(section + kernelName);
 

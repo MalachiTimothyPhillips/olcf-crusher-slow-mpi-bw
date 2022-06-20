@@ -4,6 +4,8 @@
 #include "Urst.hpp"
 #include <limits>
 #include <array>
+#include <numeric>
+#include "udf.hpp"
 
 #include <cvode/cvode.h>
 #include "timeStepper.hpp"
@@ -14,7 +16,7 @@ namespace{
 void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
 {
   o_invLMMLMM.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat));
-  platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM);
+  platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_invLMMLMM);
 }
 }
 
@@ -26,11 +28,11 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 
   o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
 
-  o_U0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
+  o_U0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
   if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
-    o_meshU0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
-    o_xyz0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
+    o_meshU0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
+    o_xyz0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
   }
 
   if(nrs->cht){
@@ -60,9 +62,6 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
     
     cvodeScalarIds[is] = Nscalar;
     scalarIds.push_back(is);
-
-    cvodeScalarToScalarIndex[Nscalar] = is;
-    scalarToCvodeScalarIndex[is] = Nscalar;
 
     fieldOffset.push_back(cds->fieldOffset[is]);
     fieldOffsetScan.push_back(fieldOffsetScan.back() + fieldOffset.back());
@@ -147,6 +146,8 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];
 
+  auto * cds = nrs->cds;
+
   if (time != tprev) {
     tprev = time;
     std::array<dfloat, 3> dtCvode = {0, 0, 0};
@@ -176,13 +177,13 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     computeUrst(nrs);
   }
 
-  unpack(o_y, cds->o_S);
+  unpack(nrs, o_y, cds->o_S);
 
   evaluateProperties(nrs, time);
 
   // terms to include: user source, advection, filtering, add "weak" laplacian
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
-  makeqImpl(nrs);
+  makeq(nrs, time);
 
   // TODO: how to overlap without requiring an allocation?
   if(userLocalPointSource){
@@ -191,7 +192,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
   auto applyOgsOperation = [&](auto ogsFunc)
   {
-    dlong startId, dlong endId;
+    dlong startId, endId;
     oogs_t * gsh;
     for(const auto p : gatherScatterOperations){
       std::tie(startId, endId, gsh) = p;
@@ -204,7 +205,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   applyOgsOperation(oogs::start);
   applyOgsOperation(oogs::finish);
 
-  pack(nrs, o_FS, o_ydot);
+  pack(nrs, cds->o_FS, o_ydot);
 }
 
 void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
@@ -286,7 +287,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     // weak laplcian + boundary terms
     occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
-    platform->linAlg->fill(mesh->Nlocal, platform->o_mempool.slice1, 0.0);
+    platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice1);
 
     cds->helmholtzRhsBCKernel(mesh->Nelements,
                               mesh->o_sgeo,
@@ -310,7 +311,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     auto o_helmholtzPart = cds->o_ellipticCoeff + nrs->fieldOffset * sizeof(dfloat);
     platform->linAlg->fill(mesh->Nlocal, 0.0, o_helmholtzPart);
 
-    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2);
+    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString);
 
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
       -1.0, platform->o_mempool.slice2);
@@ -334,12 +335,12 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
 
 void cvodeSolver_t::pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y)
 {
-  if(userPackFunction){
-    userPackFunction(nrs, o_field, o_y);
+  if(userPack){
+    userPack(nrs, o_field, o_y);
   } else {
     packKernel(nrs->cds->mesh[0]->Nlocal,
                nrs->meshV->Nlocal,
-               nrs->cds->Nscalar,
+               nrs->Nscalar,
                nrs->fieldOffset,
                this->LFieldOffset,
                this->o_cvodeScalarIds,
@@ -351,8 +352,8 @@ void cvodeSolver_t::pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y)
 
 void cvodeSolver_t::unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field)
 {
-  if(userUnpackFunction){
-    userUnpackFunction(nrs, o_y, o_field);
+  if(userUnpack){
+    userUnpack(nrs, o_y, o_field);
   } else {
     unpackKernel(nrs->cds->mesh[0]->Nlocal,
                nrs->meshV->Nlocal,
@@ -378,7 +379,7 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
   if (movingMesh) {
 
-    o_meshU.copyFrom(mesh->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
+    o_meshU0.copyFrom(mesh->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
     o_xyz0.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat), (0 * sizeof(dfloat)) * nrs->fieldOffset, 0);
     o_xyz0.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), (1 * sizeof(dfloat)) * nrs->fieldOffset, 0);

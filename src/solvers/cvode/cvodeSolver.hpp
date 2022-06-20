@@ -17,8 +17,8 @@ class cvodeSolver_t{
 public:
 
   using userRHS_t = std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)>;
-  using userPack_t = std::function<void(occa::memory o_field, occa::memory o_y)>;
-  using userUnpack_t = std::function<void(occa::memory o_y, occa::memory o_field)>;
+  using userPack_t = std::function<void(nrs_t*, occa::memory o_field, occa::memory o_y)>;
+  using userUnpack_t = std::function<void(nrs_t*, occa::memory o_y, occa::memory o_field)>;
   using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
 
   cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
@@ -34,9 +34,9 @@ private:
 
   std::vector<std::tuple<dlong,dlong, oogs_t*>> gatherScatterOperations;
 
-  void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver);
+  void setupEToLMapping(nrs_t *nrs);
 
-  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
+  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   userRHS_t userRHS;
 
   userLocalPointSource_t userLocalPointSource;
@@ -45,7 +45,7 @@ private:
 
   void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
   void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
-  void makeq(nrs_t* nrs, );
+  void makeq(nrs_t* nrs, dfloat time);
 
   void setup(nrs_t* nrs, const Parameters_t & params);
   void reallocBuffer(dlong Nbytes);
