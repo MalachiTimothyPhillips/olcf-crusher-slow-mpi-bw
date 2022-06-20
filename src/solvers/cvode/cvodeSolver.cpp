@@ -26,12 +26,12 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 
   o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
 
-  dlong Nwords = nrs->NVfields * nrs->fieldOffset; // velocities
-  if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
-    Nwords += 2 * nrs->NVfields * nrs->fieldOffset; // coordinates, mesh velocities
-  }
+  o_U0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
 
-  o_oldState = platform->device.malloc(Nwords * sizeof(dfloat));
+  if (platform->options.compareArgs("MOVING MESH", "TRUE")) {
+    o_meshU0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
+    o_xyz0 = platform->device.malloc((nrs->NVfields * sizeof(dfloat) * nrs->fieldOffset);
+  }
 
   if(nrs->cht){
     o_invLMMLMMT = platform->device.malloc(nrs->fieldOffset * sizeof(dfloat));
@@ -51,10 +51,12 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
   fieldOffsetSum = 0;
 
   for (int is = 0; is < cds->NSfields; is++) {
-    if (!cds->compute[is])
+    if (!cds->compute[is]){
       continue;
-    if (!cds->cvodeSolve[is])
+    }
+    if (!cds->cvodeSolve[is]){
       continue;
+    }
     
     cvodeScalarIds[is] = Nscalar;
     scalarIds.push_back(is);
@@ -67,6 +69,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
     fieldOffsetSum += fieldOffset.back();
 
     Nscalar++;
+
+    // TODO: batch gather scatter operations as possible
+    gatherScatterOperations.push_back(std::make_tuple(is, is+1, is == 0 ? cds->gshT : cds->gsh));
   }
 
   o_scalarIds = platform->device.malloc(scalarIds.size() * sizeof(dlong), scalarIds.data());
@@ -179,63 +184,27 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
   makeqImpl(nrs);
 
-  auto o_FS = o_S;
-  // map all scalars to cvode scalars
-  for(int cvodeScalarId = 0; cvodeScalarId < Nscalar; ++cvodeScalarId){
-    const auto scalarId = cvodeScalarToScalarIndex.at(cvodeScalarId);
-    o_FS.copyFrom(nrs->o_FS,
-      fieldOffset[cvodeScalarId] * sizeof(dfloat), 
-      fieldOffsetScan[cvodeScalarId] * sizeof(dfloat),
-      cds->fieldOffsetScan[scalarId] * sizeof(dfloat));
-  }
-
-  // make note: try to lump all cvode scalars contiguously
-  // find contiguous blocks and do the gs that way
-
-  if(nrs->cht){
-    auto * gsh = cds->gsh;
-    auto * gshT = cds->gshT;
-    oogs::start(o_FS, 1, fieldOffset[0], ogsDfloat, ogsAdd, gshT);
-
-    if(Nscalar > 1){
-      auto o_FS_sans_T = o_FS + fieldOffset[0] * sizeof(dfloat);
-
-      // TODO: will not work in the variable scalar field offset case
-      oogs::start(o_FS_sans_T, Nscalar-1, fieldOffset[1], ogsDfloat, ogsAdd, gsh);
-      
-    }
-
-  } else {
-    auto * gsh = cds->gsh;
-    oogs::start(o_FS, Nscalar, fieldOffset[0], ogsDfloat, ogsAdd, gsh);
-  }
-
-  // TODO: overlap...
-  // unresolved issue: worth allocating additional memory?
+  // TODO: how to overlap without requiring an allocation?
   if(userLocalPointSource){
-    userLocalPointSource(nrs, o_S, o_FS);
+    userLocalPointSource(nrs, cds->o_S, cds->o_FS);
   }
 
-
-  if(nrs->cht){
-    auto * gsh = cds->gsh;
-    auto * gshT = cds->gshT;
-    oogs::finish(o_FS, 1, fieldOffset[0], ogsDfloat, ogsAdd, gshT);
-
-    if(Nscalar > 1){
-      auto o_FS_minus_T = o_FS + fieldOffset[0] * sizeof(dfloat);
-
-      // TODO: will not work in the variable scalar field offset case
-      oogs::finish(o_FS_minus_T, Nscalar-1, fieldOffset[1], ogsDfloat, ogsAdd, gsh);
-      
+  auto applyOgsOperation = [&](auto ogsFunc)
+  {
+    dlong startId, dlong endId;
+    oogs_t * gsh;
+    for(const auto p : gatherScatterOperations){
+      std::tie(startId, endId, gsh) = p;
+      const auto Nfields = endId - startId;
+      auto o_fld = cds->o_FS + nrs->cds->fieldOffsetScan[startId] * sizeof(dfloat);
+      ogsFunc(o_fld, Nfields, nrs->cds->fieldOffset[startId], ogsDfloat, ogsAdd, gsh);
     }
+  };
 
-  } else {
-    auto * gsh = cds->gsh;
-    oogs::finish(o_FS, Nscalar, fieldOffset[0], ogsDfloat, ogsAdd, gsh);
-  }
+  applyOgsOperation(oogs::start);
+  applyOgsOperation(oogs::finish);
 
-  pack(o_FS, o_ydot);
+  pack(nrs, o_FS, o_ydot);
 }
 
 void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
@@ -277,11 +246,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       platform->flopCounter->add("scalarFilterRT", flops);
     }
 
-    // TODO: subtract mesh velocity
-    // TODO: apply operator for multiple fields
-
-    // poor man's solution
-    // 2 outer loop Nelements, Nfields
     if (cds->options[is].compareArgs("ADVECTION", "TRUE")) {
       if (cds->options[is].compareArgs("ADVECTION TYPE", "CUBATURE")){
         cds->strongAdvectionCubatureVolumeKernel(cds->meshV->Nelements,
@@ -324,7 +288,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
 
     platform->linAlg->fill(mesh->Nlocal, platform->o_mempool.slice1, 0.0);
 
-    // TODO: confirm sign on this kernel
     cds->helmholtzRhsBCKernel(mesh->Nelements,
                               mesh->o_sgeo,
                               mesh->o_vmapM,
@@ -339,26 +302,14 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                               cds->o_EToB[is],
                               *(cds->o_usrwrk),
                               platform->o_mempool.slice1);
-
-    // TODO: turn off diagonal -- should be no need to call kernel below
-    // just populate cds->o_ellipticCoeff
-    cds->setEllipticCoeffKernel(mesh->Nlocal,
-        cds->g0 * cds->idt,
-        cds->fieldOffsetScan[is],
-        cds->fieldOffset[is],
-        cds->o_diff,
-        cds->o_rho,
-        cds->o_ellipticCoeff);
-
-    if (cds->o_BFDiag.ptr())
-      platform->linAlg->axpby(mesh->Nlocal,
-          1.0,
-          cds->o_BFDiag,
-          1.0,
-          cds->o_ellipticCoeff,
-          cds->fieldOffsetScan[is],
-          cds->fieldOffset[is]);
     
+    cds->o_ellipticCoeff.copyFrom(cds->o_diff, mesh->Nlocal * sizeof(dfloat),
+      cds->fieldOffsetScan[is] * sizeof(dfloat), 0);
+    
+    // make purely Laplacian
+    auto o_helmholtzPart = cds->o_ellipticCoeff + nrs->fieldOffset * sizeof(dfloat);
+    platform->linAlg->fill(mesh->Nlocal, 0.0, o_helmholtzPart);
+
     ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2);
 
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
@@ -423,44 +374,35 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
   bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
 
-  // copy current state into buffer
-  auto o_U = o_oldState + 0 * nrs->fieldOffset * sizeof(dfloat);
-
-  o_U.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
-
-  occa::memory o_x;
-  occa::memory o_y;
-  occa::memory o_z;
-  occa::memory o_meshU;
+  o_U0.copyFrom(nrs->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
 
   if (movingMesh) {
-    o_x = o_oldState + (nrs->NVfields + 0) * nrs->fieldOffset * sizeof(dfloat);
-    o_y = o_oldState + (nrs->NVfields + 1) * nrs->fieldOffset * sizeof(dfloat);
-    o_z = o_oldState + (nrs->NVfields + 2) * nrs->fieldOffset * sizeof(dfloat);
-    o_meshU = o_oldState + (nrs->NVfields + 3) * nrs->fieldOffset * sizeof(dfloat);
 
-    o_x.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat));
-    o_y.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat));
-    o_z.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat));
+    o_meshU.copyFrom(mesh->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
-    o_meshU.copyFrom(mesh->o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    o_xyz0.copyFrom(mesh->o_x, mesh->Nlocal * sizeof(dfloat), (0 * sizeof(dfloat)) * nrs->fieldOffset, 0);
+    o_xyz0.copyFrom(mesh->o_y, mesh->Nlocal * sizeof(dfloat), (1 * sizeof(dfloat)) * nrs->fieldOffset, 0);
+    o_xyz0.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat), (2 * sizeof(dfloat)) * nrs->fieldOffset, 0);
+
   }
 
-  pack();
+  occa::memory o_cvodeY;
+
+  pack(nrs, nrs->cds->o_S, o_cvodeY);
 
   // call cvode solver
 
-  unpack();
+  unpack(nrs, o_cvodeY, nrs->cds->o_S);
 
   // restore previous state
-  nrs->o_U.copyFrom(o_U, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+  nrs->o_U.copyFrom(o_U0, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
   if (movingMesh) {
-    mesh->o_x.copyFrom(o_x, mesh->Nlocal * sizeof(dfloat));
-    mesh->o_y.copyFrom(o_y, mesh->Nlocal * sizeof(dfloat));
-    mesh->o_z.copyFrom(o_z, mesh->Nlocal * sizeof(dfloat));
+    mesh->o_x.copyFrom(o_xyz0, mesh->Nlocal * sizeof(dfloat), 0, (0 * sizeof(dfloat)) * nrs->fieldOffset);
+    mesh->o_y.copyFrom(o_xyz0, mesh->Nlocal * sizeof(dfloat), 0, (1 * sizeof(dfloat)) * nrs->fieldOffset);
+    mesh->o_z.copyFrom(o_xyz0, mesh->Nlocal * sizeof(dfloat), 0, (2 * sizeof(dfloat)) * nrs->fieldOffset);
 
-    mesh->o_U.copyFrom(o_meshU, nrs->NVfields * nrs->fieldOffset * sizeof(dfloat));
+    mesh->o_U.copyFrom(o_meshU0, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
     mesh->update();
 

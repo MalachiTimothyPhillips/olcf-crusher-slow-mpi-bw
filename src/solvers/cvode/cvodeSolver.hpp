@@ -7,12 +7,7 @@
 #include <functional>
 #include <map>
 #include <vector>
-
-// Steps
-// 1. validate rhs implementation in unit test
-//     - include source term, w/ moving mesh, ...
-// 2. add in cvode interface/calls
-
+#include <tuple>
 
 class nrs_t;
 namespace cvode {
@@ -26,8 +21,6 @@ public:
   using userUnpack_t = std::function<void(occa::memory o_y, occa::memory o_field)>;
   using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
 
-  // add user local source term -- makeq style
-
   cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
 
   void solve(nrs_t *nrs, dfloat t0, dfloat t1, int tstep);
@@ -39,8 +32,7 @@ public:
 
 private:
 
-  std::map<int, int> cvodeScalarToScalarIndex;
-  std::map<int, int> scalarToCvodeScalarIndex;
+  std::vector<std::tuple<dlong,dlong, oogs_t*>> gatherScatterOperations;
 
   void setupEToLMapping(nrs_t *nrs, cvodeSolver_t * cvodeSolver);
 
@@ -67,8 +59,6 @@ private:
   std::vector<dlong> fieldOffset;
   std::vector<dlong> fieldOffsetScan;
 
-  // o_U, mesh->o_U, mesh->o_x, 
-  // TODO:
   occa::memory o_U0;
   occa::memory o_meshU0;
   occa::memory o_xyz0;
@@ -80,11 +70,9 @@ private:
   occa::memory o_cvodeScalarIds;
   occa::memory o_scalarIds;
 
-  // TODO: how to cleanly handle V/T?
   // combined invLMM * LMM
   occa::memory o_invLMMLMMT;
   occa::memory o_invLMMLMMV;
-
 
   dlong LFieldOffset;
 
