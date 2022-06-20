@@ -149,7 +149,7 @@ endif()
 # Build CVODE
 ###############################################################################
 
-add_subdirectory(3rd_party/cvode)
+#add_subdirectory(3rd_party/cvode)
 
 ###############################################################################
 # Build HYPRE
@@ -300,7 +300,7 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
-target_link_libraries(nekrs-lib PRIVATE SUNDIALS::cvode_shared SUNDIALS::nveccuda_shared)
+#target_link_libraries(nekrs-lib PRIVATE SUNDIALS::cvode_shared SUNDIALS::nveccuda_shared)
 
 add_executable(nekrs-bin src/main.cpp)
 target_include_directories(nekrs-bin PRIVATE src/lib)

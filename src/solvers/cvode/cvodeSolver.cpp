@@ -7,7 +7,7 @@
 #include <numeric>
 #include "udf.hpp"
 
-#include <cvode/cvode.h>
+//#include <cvode/cvode.h>
 #include "timeStepper.hpp"
 
 // TODO: rename o_FS -> o_RHS
