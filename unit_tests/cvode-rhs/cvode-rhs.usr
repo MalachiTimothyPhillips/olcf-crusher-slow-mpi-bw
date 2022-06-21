@@ -82,6 +82,8 @@ C=======================================================================
       iftran = .true.
 
       if(istep.gt.5) then
+        ! compute vxd, ... terms
+        call set_convect_new(vxd, vyd, vzd, vx, vy, vz)
         ifuservp = .true.
         write(6,*) "istep = ", istep, "time = ", time
         call my_rhs_fun(time, y, ydot)

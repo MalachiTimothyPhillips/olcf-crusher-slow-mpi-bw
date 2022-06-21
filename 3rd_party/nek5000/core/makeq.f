@@ -27,11 +27,11 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       if (ifadvc(ifield) .and. if_conv_std) then
 
          if (ifcvfld(ifield)) then
-            $if (ifmvbd) then
-            $   call sub2 (vx, wx, ntot)
-            $   call sub2 (vy, wy, ntot)
-            $   call sub2 (vz, wz, ntot)
-            $ endif
+            if (ifmvbd) then
+               call sub2 (vx, wx, ntot)
+               call sub2 (vy, wy, ntot)
+               call sub2 (vz, wz, ntot)
+             endif
 
              call convab
              write(6,*) "sum bq after convab",
