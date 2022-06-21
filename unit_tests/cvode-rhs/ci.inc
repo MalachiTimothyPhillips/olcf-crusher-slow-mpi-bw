@@ -29,6 +29,8 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   auto o_y = platform->device.malloc((nrs->Nscalar * sizeof(dfloat)) * LFieldOffset);
   auto o_ydot = platform->device.malloc((nrs->Nscalar * sizeof(dfloat)) * LFieldOffset);
 
+  cvodeSolver.pack(nrs, nrs->cds->o_S, o_y);
+
   const dfloat dt = 1e-2;
   cvodeSolver.rhs(nrs, tstep, time, time + dt, o_y, o_ydot);
 

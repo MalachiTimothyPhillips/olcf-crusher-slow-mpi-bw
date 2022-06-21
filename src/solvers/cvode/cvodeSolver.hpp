@@ -30,9 +30,11 @@ public:
   void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
 
-  // TODO: move back to private visibility after finishing up test
+  // TODO: move the following back to private visibility after finishing up test
   void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   dlong LFieldOffset;
+  void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
+  void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
 
 private:
 
@@ -46,8 +48,6 @@ private:
   userPack_t userPack;
   userUnpack_t userUnpack;
 
-  void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
-  void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
   void makeq(nrs_t* nrs, dfloat time);
 
   void setup(nrs_t* nrs, const Parameters_t & params);
