@@ -279,8 +279,8 @@ dfloat MGLevel::maxEigSmoothAx()
   MPI_Allreduce(&Nlocal, &Ntotal, 1, MPI_HLONG, MPI_SUM, platform->comm.mpiComm);
 
   int k;
-  if(Ntotal > 10) 
-    k = 10;
+  if (Ntotal > 20)
+    k = 20;
   else
     k = (int) Ntotal;
 
