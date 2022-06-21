@@ -32,6 +32,16 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   const dfloat dt = 1e-2;
   cvodeSolver.rhs(nrs, tstep, time, time + dt, o_y, o_ydot);
 
+  // compute norms
+  const auto Ynorm = platform->linAlg->norm2Many(LFieldOffset, nrs->Nscalar, LFieldOffset, o_y, platform->comm.mpiComm);
+  const auto YdotNorm = platform->linAlg->norm2Many(LFieldOffset, nrs->Nscalar, LFieldOffset, o_ydot, platform->comm.mpiComm);
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "Ynorm = " << Ynorm << "\n";
+    std::cout << "YdotNorm = " << YdotNorm << std::endl;
+  }
+  std::cout << std::flush;
+
   o_y.free();
   o_ydot.free();
 

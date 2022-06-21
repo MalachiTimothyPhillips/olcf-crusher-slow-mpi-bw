@@ -76,6 +76,12 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
   o_scalarIds = platform->device.malloc(scalarIds.size() * sizeof(dlong), scalarIds.data());
   o_cvodeScalarIds = platform->device.malloc(cvodeScalarIds.size() * sizeof(dlong), cvodeScalarIds.data());
 
+  this->extrapolateInPlaceKernel = platform->kernels.get("extrapolateInPlace");
+  this->mapEToLKernel = platform->kernels.get("mapEToL");
+  this->mapLToEKernel = platform->kernels.get("mapLToE");
+  this->packKernel = platform->kernels.get("pack");
+  this->unpackKernel = platform->kernels.get("unpack");
+
 }
 
 void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
@@ -130,11 +136,6 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
 
   this->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
   this->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
-
-  this->mapEToLKernel = platform->kernels.get("mapEToL");
-  this->mapLToEKernel = platform->kernels.get("mapLToE");
-  this->packKernel = platform->kernels.get("pack");
-  this->unpackKernel = platform->kernels.get("unpack");
 
   o_Lids.free();
 }

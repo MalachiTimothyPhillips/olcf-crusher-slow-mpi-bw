@@ -124,6 +124,8 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   constexpr int NstartTest = 10;
   if(tstep > NstartTest){
     checkRHS(nrs, time, tstep);
+    PASS;
   }
+
 
 }
