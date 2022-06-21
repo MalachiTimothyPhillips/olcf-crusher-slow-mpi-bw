@@ -76,6 +76,8 @@ struct nekdata_private
 
   /* mesh velocities */
   double *wx, *wy, *wz;
+
+  /* properties */
 };
 
 extern nekdata_private nekData;

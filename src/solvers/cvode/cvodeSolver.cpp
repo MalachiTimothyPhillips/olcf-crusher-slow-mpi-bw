@@ -186,6 +186,19 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
   makeq(nrs, time);
 
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS post makeq = " << sumTerm << std::endl;
+    }
+  }
+
   // TODO: how to overlap without requiring an allocation?
   if(userLocalPointSource){
     userLocalPointSource(nrs, cds->o_S, cds->o_FS);
@@ -285,6 +298,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       timeStepper::advectionFlops(cds->mesh[is], 1);
     }
 
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS post advection = " << sumTerm << std::endl;
+      }
+    }
+
     // weak laplcian + boundary terms
     occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
@@ -324,6 +350,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
         o_FS,
         0,
         isOffset);
+
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS after wlaplacian = " << sumTerm << std::endl;
+      }
+    }
 
     auto o_FS_i = o_FS + isOffset * sizeof(dfloat);
     auto o_rho_i = cds->o_rho + isOffset * sizeof(dfloat);

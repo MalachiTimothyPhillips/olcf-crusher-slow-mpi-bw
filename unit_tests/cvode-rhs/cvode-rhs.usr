@@ -1,3 +1,5 @@
+#include <my_cvode_rhs.f>
+
 C-----------------------------------------------------------------------
 C
 C  This is closed domain with a moving postion.
@@ -61,12 +63,31 @@ C=======================================================================
 
       INCLUDE 'SIZE'
       INCLUDE 'TOTAL'
+      include 'CVODE'
+
+      real y(lx1,ly1,lz1,lelt)
+      real ydot(lx1,ly1,lz1,lelt)
+
 
       !ifusermv = .true.                  ! define our own mesh velocity
       !call user_mvel(time)               ! Fill mesh velocity
 
-      call printdiverr
-      call user_print_err
+      !call printdiverr
+      !call user_print_err
+
+      nxyz = lx1 * ly1 * lz1
+
+      call copy(y, t, nxyz*nelfld(2))
+      ifdiff(2) = .true.
+      iftran = .true.
+
+      if(istep.gt.5) then
+        ifuservp = .true.
+        write(6,*) "istep = ", istep, "time = ", time
+        call my_rhs_fun(time, y, ydot)
+        write(6,*) "sum y ", glsum(y, nxyz * nelfld(2))
+        write(6,*) "sum ydot ", glsum(ydot, nxyz * nelfld(2))
+      endif
 
       RETURN
       END
