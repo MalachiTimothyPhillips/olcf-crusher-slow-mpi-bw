@@ -341,6 +341,8 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
   occa::memory o_Az  = o_smootherResidual2;
   occa::memory o_z   = o_smootherUpdate;
 
+  const auto rho = this->lambda1;
+
   double flopCount = 0.0;
 
   if(xIsZero) { //skip the Ax if x is zero
@@ -349,7 +351,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
     this->smoother(o_res, o_Az, xIsZero);
 
     // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} Sr
-    const pfloat coeff = 4.0 / 3.0 / this->maxEig;
+    const pfloat coeff = 4.0 / 3.0 / rho;
     elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
     flopCount += Nrows;
   } else {
@@ -360,7 +362,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
     flopCount += 2 * Nrows;
 
     // z_1 = \dfrac{4}{3} \dfrac{1}{\rho(SA)} S(r-Ax)
-    const pfloat coeff = 4.0 / 3.0 / this->maxEig;
+    const pfloat coeff = 4.0 / 3.0 / rho;
     elliptic->scaledAddPfloatKernel(Nrows, coeff, o_Az, zero, o_z);
     flopCount += Nrows;
   }
@@ -389,7 +391,7 @@ void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIs
     const int id = k + 2;
 
     const pfloat zScale = (2.0 * id - 3.0) / (2.0 * id + 1.0);
-    const pfloat rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / this->maxEig;
+    const pfloat rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / rho;
     elliptic->scaledAddPfloatKernel(Nrows, rScale, o_Az, zScale, o_z);
     flopCount += 3 * Nrows;
   }
