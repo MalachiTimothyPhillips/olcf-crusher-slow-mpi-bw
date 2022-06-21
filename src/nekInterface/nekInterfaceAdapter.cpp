@@ -496,6 +496,12 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
       const std::string usrname = options.getArgs("CASENAME");
       const std::string meshFile = options.getArgs("MESH FILE");
 
+      int lxd;
+      options.getArgs("CUBATURE POLYNOMIAL DEGREE", lxd);
+      lxd++;
+
+      std::cout << "Compiling nek5000 with lxd = " << lxd << std::endl;
+
       int nelgt, nelgv;
       const int ndim = 3;
       re2::nelg(meshFile, nelgt, nelgv, MPI_COMM_NULL); 
@@ -503,7 +509,7 @@ void buildNekInterface(int ldimt, int N, int np, setupAide& options)
       int lelt = (int)(nelgt/np) + 3;
       if(lelt > nelgt) lelt = (int)nelgt;
       sprintf(buf,"%s/SIZE",cache_dir.c_str());
-      mkSIZE(N + 1, 1, lelt, nelgt, ndim, np, ldimt, options, buf);
+      mkSIZE(N + 1, lxd, lelt, nelgt, ndim, np, ldimt, options, buf);
 
       // generate usr
       char usrFileCache[BUFSIZ];
