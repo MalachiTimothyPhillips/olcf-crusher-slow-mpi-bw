@@ -8,8 +8,9 @@ timeStepper = tombo3
 writeInterval = 50
 
 [MESH]
-boundaryTypeMap = fixedValue, zeroValue, sym
-solver = elasticity
+solver = user
+#boundaryTypeMap = fixedValue, zeroValue, sym
+#solver = elasticity
 
 [PROBLEMTYPE]
 stressFormulation = true
