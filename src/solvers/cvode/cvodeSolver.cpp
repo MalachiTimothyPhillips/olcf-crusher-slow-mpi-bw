@@ -254,6 +254,9 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   // apply lowMach correct, if applicable
   if(platform->options.compareArgs("LOWMACH", "TRUE")){
     lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
+    // TODO: check condition
+    platform->linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
+
     lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
     const auto gamma0 = lowMach::gamma();
     platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, cds->o_FS);
