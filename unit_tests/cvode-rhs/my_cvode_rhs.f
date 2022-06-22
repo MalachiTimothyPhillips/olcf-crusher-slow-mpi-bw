@@ -46,8 +46,10 @@ c
       if (ifrhs .and. ifdp0dt) then
          write(6,*) "Apply lowmach correction in cvpack"
          call qthermal ! computes dp0thdt  
+         write(6,*) "gamma0 = ", gamma0
          dd = (gamma0 - 1.)/gamma0
          dd = dd * dp0thdt
+         write(6,*) "dd = ", dd
          ntot = nxyz*nelfld(2)
          call invers2(dtmp,vtrans(1,1,1,1,2),ntot)
          call cmult(dtmp,dd,ntot)

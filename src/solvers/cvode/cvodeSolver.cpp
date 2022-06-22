@@ -9,6 +9,7 @@
 
 //#include <cvode/cvode.h>
 #include "timeStepper.hpp"
+#include "plugins/lowMach.hpp"
 
 // TODO: rename o_FS -> o_RHS
 
@@ -151,8 +152,6 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
   if (time != tprev) {
     tprev = time;
-    std::array<dfloat, 3> dtCvode = {0, 0, 0};
-    std::array<dfloat, 3> coeffEXT = {0, 0, 0};
 
     const auto cvodeDt = time - t0;
     dtCvode[0] = cvodeDt;
@@ -170,8 +169,13 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     const int bdfOrder = std::min(tstep, nrs->nBDF);
     const int extOrder = std::min(tstep, nrs->nEXT);
     nek::extCoeff(coeffEXT.data(), dtCvode.data(), extOrder, bdfOrder);
-    for (int i = maxExtrapolationOrder; i > extOrder; i--)
+    nek::bdfCoeff(&this->g0, coeffBDF.data(), dtCvode.data(), bdfOrder);
+    for (int i = nrs->nEXT; i > extOrder; i--){
       coeffEXT[i - 1] = 0.0;
+    }
+    for (int i = nrs->nBDF; i > bdfOrder; i--){
+      coeffBDF[i - 1] = 0.0;
+    }
     
     if(platform->comm.mpiRank == 0){
       std::cout << "coeffEXT = ";
@@ -409,6 +413,13 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     
     auto o_invLMMLMM = (nrs->cht && is == 0) ? o_invLMMLMMT : o_invLMMLMMV;
     platform->linAlg->axmy(mesh->Nlocal, 1.0, o_invLMMLMM, o_FS_i);
+
+    // apply lowMach correct, if applicable
+    if(is == 0 && platform->options.getArgs("LOWMACH", "TRUE")){
+      lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
+      lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
+      platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, o_FS_i);
+    }
 
   }
 }

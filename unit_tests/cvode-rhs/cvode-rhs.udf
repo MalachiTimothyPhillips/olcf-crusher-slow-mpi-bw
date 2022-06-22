@@ -123,6 +123,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
   constexpr int NstartTest = 10;
   if(tstep >= NstartTest){
+    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
     nek::ocopyToNek(time, tstep);
     nek::userchk();
     checkRHS(nrs, time, tstep);

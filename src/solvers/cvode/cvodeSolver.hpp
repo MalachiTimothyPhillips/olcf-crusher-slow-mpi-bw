@@ -55,6 +55,10 @@ private:
   void reallocBuffer(dlong Nbytes);
 
   static constexpr int maxExtrapolationOrder = 3;
+  std::array<dfloat, maxExtrapolationOrder> coeffBDF;
+  std::array<dfloat, maxExtrapolationOrder> coeffEXT;
+  std::array<dfloat, maxExtrapolationOrder> dtCvode;
+  dfloat g0;
 
   dlong Nscalar;
   dlong fieldOffsetSum;

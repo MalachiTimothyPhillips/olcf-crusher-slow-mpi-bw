@@ -74,13 +74,15 @@ void lowMach::setup(nrs_t* nrs, dfloat gamma)
 }
 
 // qtl = 1/(rho*cp*T) * (div[k*grad[T] ] + qvol)
-void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
+void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, lowMach::cvodeArguments_t * args)
 {
   qThermal = 1;
   nrs_t* nrs = the_nrs;
   cds_t* cds = nrs->cds;
   mesh_t* mesh = nrs->meshV;
   linAlg_t * linAlg = platform->linAlg;
+
+  const bool insideCVODE = (args != nullptr);
 
   nrs->gradientVolumeKernel(
     mesh->Nelements,
@@ -148,7 +150,7 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
       mesh->o_vmapM,
       nrs->o_EToB,
       nrs->fieldOffset,
-      nrs->o_Ue,
+      insideCVODE ? nrs->o_U : nrs->o_Ue,
       platform->o_mempool.slice0
     );
 
@@ -174,14 +176,22 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
     const dfloat prhs = (termQ - termV)/linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
     linAlg->axpby(Nlocal, -prhs, platform->o_mempool.slice1, 1.0, o_div);
 
+    const auto * coeff = args ? args->coeffBDF.data() : nrs->coeffBDF;
     dfloat Saqpq = 0.0;
     for(int i = 0 ; i < nrs->nBDF; ++i){
-      Saqpq += nrs->coeffBDF[i] * nrs->p0th[i];
+      Saqpq += coeff[i] * nrs->p0th[i];
     }
-    nrs->p0th[2] = nrs->p0th[1];
-    nrs->p0th[1] = nrs->p0th[0];
 
-    nrs->p0th[0] = Saqpq / (nrs->g0 - nrs->dt[0] * prhs);
+    // only lag when not inside CVODE evaluation
+    if(!insideCVODE){
+      nrs->p0th[2] = nrs->p0th[1];
+      nrs->p0th[1] = nrs->p0th[0];
+    }
+
+    const auto g0 = args ? args->g0 : nrs->g0;
+    const auto dt = args ? args->dt : nrs->dt[0];
+
+    nrs->p0th[0] = Saqpq / (g0 - dt * prhs);
     nrs->dp0thdt = prhs * nrs->p0th[0];
 
     surfaceFlops += surfaceFluxFlops + p0thHelperFlops;
@@ -198,7 +208,7 @@ void lowMach::dpdt(occa::memory o_FU)
   auto * cds = nrs->cds;
 
   if(cds->cvodeSolve[0]){
-    return;
+    return; // contribution not applied here
   }
 
   mesh_t* mesh = nrs->meshV;

@@ -82,6 +82,8 @@ C=======================================================================
       iftran = .true.
 
       if(istep.gt.5) then
+        gamma0 = 1.4 ! from par file
+        ifdp0dt = .true.
         ! compute vxd, ... terms
         call set_convect_new(vxd, vyd, vzd, vx, vy, vz)
         ifuservp = .true.
