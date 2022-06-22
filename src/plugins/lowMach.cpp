@@ -195,6 +195,12 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div)
 void lowMach::dpdt(occa::memory o_FU)
 {
   nrs_t* nrs = the_nrs;
+  auto * cds = nrs->cds;
+
+  if(cds->cvodeSolve[0]){
+    return;
+  }
+
   mesh_t* mesh = nrs->meshV;
   if(!qThermal)
     platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, o_FU);

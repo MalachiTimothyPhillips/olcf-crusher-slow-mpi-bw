@@ -44,6 +44,7 @@ c
       nxyz = lx1*ly1*lz1
 
       if (ifrhs .and. ifdp0dt) then
+         write(6,*) "Apply lowmach correction in cvpack"
          call qthermal ! computes dp0thdt  
          dd = (gamma0 - 1.)/gamma0
          dd = dd * dp0thdt
