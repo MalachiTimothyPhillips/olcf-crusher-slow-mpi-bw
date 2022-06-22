@@ -327,6 +327,9 @@ c----------------------------------------------------------------------
       cv_dtlag(3) = 0.001
 
       write(6,*) "cv_dtlag = ", cv_dtlag
+      !write(6,*) "nbd = ", nbd
+      nbd = 3
+      nabmsh = 3
 
       call rzero(cv_abmsh,3)
       call setabbd(cv_abmsh,cv_dtlag,nabmsh,1)
@@ -339,6 +342,11 @@ c----------------------------------------------------------------------
 
       call rzero(cv_bd,4)
       call setbd(cv_bd,cv_dtlag,nbd)
+
+      ! coefficients
+      write(6,*) "cv_abmsh", cv_abmsh
+      write(6,*) "cv_ab", cv_ab
+      write(6,*) "cv_bd", cv_bd
 
       return
       end

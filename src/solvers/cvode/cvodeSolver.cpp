@@ -152,7 +152,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   if (time != tprev) {
     tprev = time;
     std::array<dfloat, 3> dtCvode = {0, 0, 0};
-    std::array<dfloat, 3> coeffAB = {0, 0, 0};
+    std::array<dfloat, 3> coeffEXT = {0, 0, 0};
 
     const auto cvodeDt = time - t0;
     dtCvode[0] = cvodeDt;
@@ -167,12 +167,22 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       std::cout << std::endl;
     }
 
-    const int extOrder = std::min(tstep, maxExtrapolationOrder);
-    nek::coeffAB(coeffAB.data(), dtCvode.data(), extOrder);
+    const int bdfOrder = std::min(tstep, nrs->nBDF);
+    const int extOrder = std::min(tstep, nrs->nEXT);
+    nek::extCoeff(coeffEXT.data(), dtCvode.data(), extOrder, bdfOrder);
     for (int i = maxExtrapolationOrder; i > extOrder; i--)
-      coeffAB[i - 1] = 0.0;
+      coeffEXT[i - 1] = 0.0;
+    
+    if(platform->comm.mpiRank == 0){
+      std::cout << "coeffEXT = ";
+      for(auto && v : coeffEXT){
+        std::cout << v << ", ";
+      }
+      std::cout << std::endl;
+    }
 
-    o_coeffExt.copyFrom(coeffAB.data(), maxExtrapolationOrder * sizeof(dfloat));
+
+    o_coeffExt.copyFrom(coeffEXT.data(), maxExtrapolationOrder * sizeof(dfloat));
 
     extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, nrs->o_U);
 
@@ -182,6 +192,16 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
       extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, mesh->o_U);
     }
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "mesh coeffAB = ";
+      for(int i = 0; i < 3; ++i){
+        std::cout << mesh->coeffAB[i] << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+
 
     computeUrst(nrs);
   }
