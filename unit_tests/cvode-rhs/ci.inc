@@ -42,12 +42,10 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   const auto Ynorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_y, platform->comm.mpiComm);
   const auto YdotNorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_ydot, platform->comm.mpiComm);
 
-  lowMach::qThermalIdealGasSingleComponent(time + dt, nrs->o_div);
-
   if(platform->comm.mpiRank == 0){
     std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
-    std::cout << "Ynorm = " << Ynorm << "\n";
-    std::cout << "YdotNorm = " << YdotNorm << std::endl;
+    std::cout << "Y sum = " << Ynorm << "\n";
+    std::cout << "Ydot sum = " << YdotNorm << std::endl;
   }
   std::cout << std::flush;
 

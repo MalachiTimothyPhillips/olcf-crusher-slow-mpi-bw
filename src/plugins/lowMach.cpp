@@ -143,6 +143,9 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
 
     linAlg->axmyz(Nlocal, 1.0, mesh->o_LMM, o_div, platform->o_mempool.slice0);
     const dfloat termQ = linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "termQ = " << termQ << "\n";
+    }
 
     surfaceFluxKernel(
       mesh->Nelements,
@@ -161,6 +164,10 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     dfloat termV = 0.0;
     for(int i = 0 ; i < mesh->Nelements; ++i) termV += platform->mempool.slice0[i];
     MPI_Allreduce(MPI_IN_PLACE, &termV, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "termV = " << termV << "\n";
+    }
 
     p0thHelperKernel(Nlocal,
       dd,
@@ -214,4 +221,8 @@ void lowMach::dpdt(occa::memory o_FU)
   mesh_t* mesh = nrs->meshV;
   if(!qThermal)
     platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, o_FU);
+}
+
+dfloat lowMach::gamma(){
+  return gamma0;
 }

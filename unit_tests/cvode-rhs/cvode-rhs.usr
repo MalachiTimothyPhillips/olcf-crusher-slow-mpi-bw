@@ -92,6 +92,7 @@ C=======================================================================
         call my_rhs_fun(1e-2, 1e-2, y, ydot)
         write(6,*) "sum y ", glsum(y, nxyz * nelfld(2))
         write(6,*) "sum ydot ", glsum(ydot, nxyz * nelfld(2))
+        write(6,*) "dp0thdt = ", dp0thdt
       endif
 
       RETURN

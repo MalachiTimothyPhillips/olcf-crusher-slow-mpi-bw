@@ -602,8 +602,10 @@ c - - Assemble RHS of T-eqn
          call col2   (w1,bm1,ntot)
 
          termQ = glsum(w1,ntot)
+         write(6,*) "termQ = ", termQ
          if (ifcvfun) then
             termV = glcflux(vx,vy,vz)
+            write(6,*) "termV = ", termV
             prhs  = p0alph1*(termQ - termV)
             pcoef =(cv_bd(1) - cv_dtNek*prhs)
             call add3s2(Saqpq,p0thn,p0thlag(1),cv_bd(2),cv_bd(3),1)

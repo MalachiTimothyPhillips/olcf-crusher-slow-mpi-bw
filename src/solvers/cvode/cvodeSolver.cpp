@@ -251,6 +251,17 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   applyOgsOperation(oogs::start);
   applyOgsOperation(oogs::finish);
 
+  // apply lowMach correct, if applicable
+  if(platform->options.compareArgs("LOWMACH", "TRUE")){
+    lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
+    lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
+    const auto gamma0 = lowMach::gamma();
+    platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, cds->o_FS);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "nrs->dp0thdt = " << nrs->dp0thdt << "\n";
+    }
+  }
+
   pack(nrs, cds->o_FS, o_ydot);
 }
 
@@ -413,13 +424,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     
     auto o_invLMMLMM = (nrs->cht && is == 0) ? o_invLMMLMMT : o_invLMMLMMV;
     platform->linAlg->axmy(mesh->Nlocal, 1.0, o_invLMMLMM, o_FS_i);
-
-    // apply lowMach correct, if applicable
-    if(is == 0 && platform->options.getArgs("LOWMACH", "TRUE")){
-      lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
-      lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
-      platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, o_FS_i);
-    }
 
   }
 }

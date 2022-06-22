@@ -11,6 +11,7 @@ struct cvodeArguments_t{
   dfloat dt;
 };
 
+dfloat gamma();
 void setup(nrs_t* nrs, dfloat gamma0);
 void buildKernel(occa::properties kernelInfo);
 void qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, cvodeArguments_t * args = nullptr);
