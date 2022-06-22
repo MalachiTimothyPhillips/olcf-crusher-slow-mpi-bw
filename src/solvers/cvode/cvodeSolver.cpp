@@ -264,6 +264,24 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     }
   }
 
+#if 1
+  // weight by invLM
+  for (int is = 0; is < cds->NSfields; is++) {
+    if (!cds->compute[is])
+      continue;
+    if (!cds->cvodeSolve[is])
+      continue;
+    mesh_t *mesh;
+    (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
+    const dlong isOffset = cds->fieldOffsetScan[is];
+
+    auto o_FS_i = cds->o_FS + isOffset * sizeof(dfloat);
+    platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
+
+  }
+
+#endif
+
   if(platform->options.compareArgs("LOWMACH", "TRUE")){
     lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
     platform->linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
@@ -457,9 +475,25 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
 
     auto o_FS_i = o_FS + isOffset * sizeof(dfloat);
     auto o_rho_i = cds->o_rho + isOffset * sizeof(dfloat);
-    
+#if 0    
     auto o_invLMMLMM = (nrs->cht && is == 0) ? o_invLMMLMMT : o_invLMMLMMV;
     platform->linAlg->axmy(mesh->Nlocal, 1.0, o_invLMMLMM, o_FS_i);
+#else
+    platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
+#endif
+
+    // TODO: correctly handle CHT case
+    if(nrs->cht){
+      if(platform->comm.mpiRank == 0){
+        std::cout << "CHT not correctly handled in cvodeSolver at the moment!\n";
+      }
+      ABORT(1);
+    } else {
+      // weight by 1/vtrans
+      platform->linAlg->aydx(mesh->Nlocal, 1.0, o_rho_i, o_FS_i);
+    //platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
+
+    }
 
   }
 }
