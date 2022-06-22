@@ -267,7 +267,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       continue;
     if (!cds->cvodeSolve[is])
       continue;
-
     mesh_t *mesh;
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
@@ -287,6 +286,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       double flops = 6 * mesh->Np * mesh->Nq + 4 * mesh->Np;
       flops *= static_cast<double>(mesh->Nelements);
       platform->flopCounter->add("scalarFilterRT", flops);
+    }
+
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS post sEqnSource and filter term = " << sumTerm << std::endl;
+      }
     }
 
     if (cds->options[is].compareArgs("ADVECTION", "TRUE")) {
