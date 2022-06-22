@@ -35,6 +35,7 @@ public:
   dlong LFieldOffset;
   void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
   void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
+  dfloat tprev = std::numeric_limits<dfloat>::max();
 
 private:
 
@@ -53,7 +54,6 @@ private:
   void setup(nrs_t* nrs, const Parameters_t & params);
   void reallocBuffer(dlong Nbytes);
 
-  dfloat tprev = std::numeric_limits<dfloat>::max();
   static constexpr int maxExtrapolationOrder = 3;
 
   dlong Nscalar;

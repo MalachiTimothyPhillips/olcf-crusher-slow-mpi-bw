@@ -159,6 +159,14 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
+    if(platform->comm.mpiRank == 0){
+      std::cout << "cv_dtlag = ";
+      for(int i = 0; i < 3; ++i){
+        std::cout << dtCvode[i] << ", ";
+      }
+      std::cout << std::endl;
+    }
+
     const int extOrder = std::min(tstep, maxExtrapolationOrder);
     nek::coeffAB(coeffAB.data(), dtCvode.data(), extOrder);
     for (int i = maxExtrapolationOrder; i > extOrder; i--)

@@ -159,7 +159,7 @@ c
       return
       end
 c----------------------------------------------------------------------
-      subroutine my_rhs_fun (time_, y, ydot)
+      subroutine my_rhs_fun (time_, timeStepSize, y, ydot)
 c
 c     Compute RHS function f (called within cvode)
 c     CAUTION: never touch y! 
@@ -180,7 +180,8 @@ c
 
       ifcvfun = .true.
       etime1  = dnekclock()
-      time    = time_   
+      timef = time_
+      time    = time_  + timeStepSize
       nxyz    = lx1*ly1*lz1
       ntotv   = nxyz*nelv
 
@@ -314,11 +315,18 @@ c----------------------------------------------------------------------
       include 'TSTEP'
       include 'CVODE'
 
+      write(6,*) "time = ", time, " timef = ", timef
       cv_dtNek = time - timef ! stepsize between nek and cvode    
 
-      cv_dtlag(1) = cv_dtNek 
-      cv_dtlag(2) = dtlag(2)
-      cv_dtlag(3) = dtlag(3)
+      !cv_dtlag(1) = cv_dtNek 
+      !cv_dtlag(2) = dtlag(2)
+      !cv_dtlag(3) = dtlag(3)
+      ! hard code timesteps
+      cv_dtlag(1) = 0.01
+      cv_dtlag(2) = 0.001
+      cv_dtlag(3) = 0.001
+
+      write(6,*) "cv_dtlag = ", cv_dtlag
 
       call rzero(cv_abmsh,3)
       call setabbd(cv_abmsh,cv_dtlag,nabmsh,1)

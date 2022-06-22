@@ -32,7 +32,11 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   cvodeSolver.pack(nrs, nrs->cds->o_S, o_y);
 
   const dfloat dt = 1e-2;
-  cvodeSolver.rhs(nrs, tstep, time, time + dt, o_y, o_ydot);
+  std::cout << "time = " << time << ", dt = " << dt << "\n";
+
+  //cvodeSolver.tprev = ;
+
+  cvodeSolver.rhs(nrs, tstep, time + dt, time, o_y, o_ydot);
 
   // compute norms
   const auto Ynorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_y, platform->comm.mpiComm);
