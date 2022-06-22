@@ -37,15 +37,19 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   //cvodeSolver.tprev = ;
 
   cvodeSolver.rhs(nrs, tstep, time + dt, time, o_y, o_ydot);
+  cvodeSolver.unpack(nrs, o_ydot, nrs->cds->o_FS);
 
   // compute norms
   const auto Ynorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_y, platform->comm.mpiComm);
   const auto YdotNorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_ydot, platform->comm.mpiComm);
+  const auto FSSum = platform->linAlg->sumMany(nrs->meshV->Nlocal, nrs->Nscalar, nrs->fieldOffset, nrs->cds->o_FS, platform->comm.mpiComm);
+
 
   if(platform->comm.mpiRank == 0){
     std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
     std::cout << "Y sum = " << Ynorm << "\n";
     std::cout << "Ydot sum = " << YdotNorm << std::endl;
+    std::cout << "FS sum = " << FSSum << std::endl;
   }
   std::cout << std::flush;
 

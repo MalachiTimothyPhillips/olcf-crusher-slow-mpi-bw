@@ -52,14 +52,20 @@ c
          write(6,*) "dd = ", dd
          ntot = nxyz*nelfld(2)
          call invers2(dtmp,vtrans(1,1,1,1,2),ntot)
+         write(6,*) "sum dtmp, cvpack before dd = ", glsum(dtmp, ntot)
          call cmult(dtmp,dd,ntot)
+         write(6,*) "sum dtmp, cvpack = ", glsum(dtmp, ntot)
+         write(6,*) "sum w1, cvpack before add = ", glsum(w1, ntot)
          call add2 (w1,dtmp,ntot)
       endif
+
+      write(6,*) "sum w1, cvpack = ", glsum(w1, ntot)
 
       j = 1
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then
             ntot = nxyz*nelfld(ifield)
+            write(6,*) "sum w1 = ", glsum(w1(1,1,1,1,ifield-1), ntot)
             call copy (y(j),w1(1,1,1,1,ifield-1),ntot)
             if (ifrhs) call col2(y(j),tmask(1,1,1,1,ifield-1),ntot)
             j = j + ntot
@@ -262,8 +268,10 @@ c
          endif
       enddo
 
-      write(6,*) "sum bq (after makeq+wt)",
-     &  glsum(bq(1,1,1,1,ifield-1), ntot)
+      ifield=2
+      ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
 
       if (ifgsh_fld_same) then ! all fields are on the v-mesh
          istride = lx1*ly1*lz1*lelt
@@ -277,6 +285,11 @@ c
          enddo
       endif
 
+      ifield=2
+      ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott, after dssum",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
+
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
            ntot = nxyz*nelfld(ifield)
@@ -285,6 +298,10 @@ c
            endif
          endif
       enddo
+      ifield=2
+      ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott, after invLMM",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
 
       call cvpack(ydot,ydott,.true.)
 

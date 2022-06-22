@@ -251,17 +251,50 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   applyOgsOperation(oogs::start);
   applyOgsOperation(oogs::finish);
 
-  // apply lowMach correct, if applicable
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS after gs = " << sumTerm << std::endl;
+    }
+  }
+
   if(platform->options.compareArgs("LOWMACH", "TRUE")){
     lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
-    // TODO: check condition
     platform->linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
 
     lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
     const auto gamma0 = lowMach::gamma();
+
+#if 0
     platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, cds->o_FS);
+#else
+    // RHS += 1/vtrans * dp0thdt * (gamma-1)/gamma
+    platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
+    platform->linAlg->ady(mesh->Nlocal, nrs->dp0thdt * (gamma0-1.0)/gamma0, platform->o_mempool.slice0);
+    platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice0, 1.0, cds->o_FS);
+#endif
+    
     if(platform->comm.mpiRank == 0){
       std::cout << "nrs->dp0thdt = " << nrs->dp0thdt << "\n";
+    }
+  }
+
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS before pack = " << sumTerm << std::endl;
     }
   }
 
