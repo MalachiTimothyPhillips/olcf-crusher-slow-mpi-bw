@@ -28,14 +28,15 @@
                                  const int Nstages,
                                  const dlong fieldOffset,
                                  @restrict const dfloat*  c,
+                                 @restrict const dfloat*  U0,
                                  @restrict dfloat*  U)
 {
   for(dlong id = 0; id < N; ++id; @tile(p_blockSize,@outer,@inner)) {
     if(id < N){
       for (int i = 0; i < Nfields; i++) {
-        dfloat Un = 0.;
+        dfloat Un = c[0] * U0[id + i * fieldOffset];
 
-        for (int s = 0; s < Nstages; s++) {
+        for (int s = 1; s < Nstages; s++) {
           const dlong idm = id + i * fieldOffset + s * Nfields * fieldOffset;
           const dfloat Um = U[idm];
           Un += c[s] * Um;

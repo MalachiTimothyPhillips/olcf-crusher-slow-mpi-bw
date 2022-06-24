@@ -211,13 +211,13 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
     o_coeffExt.copyFrom(coeffEXT.data(), maxExtrapolationOrder * sizeof(dfloat));
 
-    extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, nrs->o_U);
+    extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_U0, nrs->o_U);
 
     if (movingMesh) {
       mesh->coeffs(dtCvode.data(), tstep);
       mesh->move();
 
-      extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, mesh->o_U);
+      extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_meshU0, mesh->o_U);
     }
 
     if(platform->comm.mpiRank == 0 && movingMesh){
