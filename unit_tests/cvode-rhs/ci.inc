@@ -31,7 +31,7 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
     if(nrs->cht)
       mesh = nrs->cds->mesh[0];
 
-    cvodeSolver.o_meshU0.copyFrom(mesh->o_U0, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
+    cvodeSolver.o_meshU0.copyFrom(mesh->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
     cvodeSolver.o_xyz0.copyFrom(mesh->o_x,
       mesh->Nlocal * sizeof(dfloat),

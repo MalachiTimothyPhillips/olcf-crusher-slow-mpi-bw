@@ -213,6 +213,9 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
     extrapolateInPlaceKernel(nrs->meshV->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_U0, nrs->o_U);
 
+    // check sum first component...
+    std::cout << "sum Ux_e = " << platform->linAlg->sum(mesh->Nlocal, nrs->o_U, platform->comm.mpiComm) << "\n";
+
     if (movingMesh) {
 
       mesh->coeffs(dtCvode.data(), tstep);
@@ -321,14 +324,10 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
     const auto gamma0 = lowMach::gamma();
 
-#if 0
-    platform->linAlg->add(mesh->Nlocal, nrs->dp0thdt * (gamma0 - 1.0) / gamma0, cds->o_FS);
-#else
     // RHS += 1/vtrans * dp0thdt * (gamma-1)/gamma
     platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
     platform->linAlg->ady(mesh->Nlocal, nrs->dp0thdt * (gamma0-1.0)/gamma0, platform->o_mempool.slice0);
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice0, 1.0, cds->o_FS);
-#endif
     
     if(platform->comm.mpiRank == 0){
       std::cout << "nrs->dp0thdt = " << nrs->dp0thdt << "\n";
@@ -452,6 +451,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       }
     }
 
+#if 0
     // weak laplcian + boundary terms
     occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
@@ -504,6 +504,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
         std::cout << "sum FS after wlaplacian = " << sumTerm << std::endl;
       }
     }
+#endif
 
     auto o_FS_i = o_FS + isOffset * sizeof(dfloat);
     auto o_rho_i = cds->o_rho + isOffset * sizeof(dfloat);

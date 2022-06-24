@@ -206,6 +206,7 @@ c
   10       format(4x,i7,2x,'t=',1pE14.7,'  stepsize=',1pE13.4)
 
          call cv_upd_v
+         write(6,*) "sum v_e = ", glsum(vx, ntotv)
          call copy(w1,vx,ntotv)
          call copy(w2,vy,ntotv)
          if (if3d) call copy(w3,vz,ntotv)
@@ -253,6 +254,7 @@ c
      &       glsum(bq(1,1,1,1,ifield-1), ntot)
 
            if (iftmsh(ifield)) then                                
+              write(6,*) "hit tmsh branch"
               call dssum(bq(1,1,1,1,ifield-1),lx1,ly1,lz1)
               call col2(bq(1,1,1,1,ifield-1),bintm1,ntot)
 
