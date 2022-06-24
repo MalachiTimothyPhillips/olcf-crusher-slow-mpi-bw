@@ -756,6 +756,15 @@ int setup(nrs_t* nrs_in)
   nekData.wy = (double*) ptr("wy");
   nekData.wz = (double*) ptr("wz");
 
+  // lagged states
+  nekData.vxlag = (double*) ptr("vxlag");
+  nekData.vylag = (double*) ptr("vylag");
+  nekData.vzlag = (double*) ptr("vzlag");
+
+  nekData.wxlag = (double*) ptr("wxlag");
+  nekData.wylag = (double*) ptr("wylag");
+  nekData.wzlag = (double*) ptr("wzlag");
+
   int cht = 0;
   if (nekData.nelv != nekData.nelt && nscal) cht = 1;
 
@@ -830,6 +839,24 @@ void copyToNek(dfloat time)
     dfloat* wx = mesh->U + 0 * nrs->fieldOffset;
     dfloat* wy = mesh->U + 1 * nrs->fieldOffset;
     dfloat* wz = mesh->U + 2 * nrs->fieldOffset;
+
+    const auto nLaggedStates = mesh->nAB - 1;
+    for(int s = 1; s <= std::max(nLaggedStates,2); ++s){
+      const dlong nekFieldOffset = nekData.lelt * mesh->Np;
+      auto * wxlag = mesh->U + (s * nrs->NVfields + 0) * nrs->fieldOffset;
+      auto * wylag = mesh->U + (s * nrs->NVfields + 1) * nrs->fieldOffset;
+      auto * wzlag = mesh->U + (s * nrs->NVfields + 2) * nrs->fieldOffset;
+
+      auto * dstx = nekData.wxlag + (s-1) * nekFieldOffset;
+      auto * dsty = nekData.wylag + (s-1) * nekFieldOffset;
+      auto * dstz = nekData.wzlag + (s-1) * nekFieldOffset;
+
+      memcpy(dstx, wxlag, sizeof(dfloat) * Nlocal);
+      memcpy(dsty, wxlag, sizeof(dfloat) * Nlocal);
+      memcpy(dstz, wxlag, sizeof(dfloat) * Nlocal);
+
+    }
+
     memcpy(nekData.wx, wx, sizeof(dfloat) * Nlocal);
     memcpy(nekData.wy, wy, sizeof(dfloat) * Nlocal);
     memcpy(nekData.wz, wz, sizeof(dfloat) * Nlocal);
@@ -842,6 +869,24 @@ void copyToNek(dfloat time)
   memcpy(nekData.vx, vx, sizeof(dfloat) * Nlocal);
   memcpy(nekData.vy, vy, sizeof(dfloat) * Nlocal);
   memcpy(nekData.vz, vz, sizeof(dfloat) * Nlocal);
+
+  nLaggedStates = std::max(nrs->nEXT, nrs->nBDF) - 1;
+  for(int s = 1; s <= std::max(nLaggedStates,2); ++s){
+    const dlong nekFieldOffset = nekData.lelv * mesh->Np;
+    auto * vxlag = nrs->U + (s * nrs->NVfields + 0) * nrs->fieldOffset;
+    auto * vylag = nrs->U + (s * nrs->NVfields + 1) * nrs->fieldOffset;
+    auto * vzlag = nrs->U + (s * nrs->NVfields + 2) * nrs->fieldOffset;
+
+    auto * dstx = nekData.vxlag + (s-1) * nekFieldOffset;
+    auto * dsty = nekData.vylag + (s-1) * nekFieldOffset;
+    auto * dstz = nekData.vzlag + (s-1) * nekFieldOffset;
+
+    memcpy(dstx, vxlag, sizeof(dfloat) * Nlocal);
+    memcpy(dsty, vxlag, sizeof(dfloat) * Nlocal);
+    memcpy(dstz, vxlag, sizeof(dfloat) * Nlocal);
+
+  }
+
   memcpy(nekData.pr, nrs->P, sizeof(dfloat) * Nlocal);
   if(nrs->Nscalar) {
     if(platform->options.compareArgs("LOWMACH", "TRUE")) memcpy(nekData.qtl, nrs->div, sizeof(dfloat) * Nlocal);

@@ -127,6 +127,18 @@ c-----------------------------------------------------------------------
          ptr = loc(bfz(1,1,1,1))
       elseif (id .eq. 'bq') then
          ptr = loc(bq(1,1,1,1,1))
+      elseif (id .eq. 'wxlag') then
+         ptr = loc(wxlag(1,1,1,1,1,1))
+      elseif (id .eq. 'wylag') then
+         ptr = loc(wylag(1,1,1,1,1,1))
+      elseif (id .eq. 'wzlag') then
+         ptr = loc(wzlag(1,1,1,1,1,1))
+      elseif (id .eq. 'vxlag') then
+         ptr = loc(vxlag(1,1,1,1,1,1))
+      elseif (id .eq. 'vylag') then
+         ptr = loc(vylag(1,1,1,1,1,1))
+      elseif (id .eq. 'vzlag') then
+         ptr = loc(vzlag(1,1,1,1,1,1))
       else
          write(6,*) 'ERROR: nek_ptr cannot find ', id
          call exitt 
