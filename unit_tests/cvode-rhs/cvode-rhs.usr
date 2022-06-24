@@ -66,6 +66,17 @@ C=======================================================================
       real y(lx1,ly1,lz1,lelt)
       real ydot(lx1,ly1,lz1,lelt)
 
+      common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
+     &                ,vy_ (lx1,ly1,lz1,lelv)
+     &                ,vz_ (lx1,ly1,lz1,lelv)
+     &                ,xm1_(lx1,ly1,lz1,lelv)
+     &                ,ym1_(lx1,ly1,lz1,lelv)
+     &                ,zm1_(lx1,ly1,lz1,lelv)
+     &                ,wx_ (lx1,ly1,lz1,lelv)
+     &                ,wy_ (lx1,ly1,lz1,lelv)
+     &                ,wz_ (lx1,ly1,lz1,lelv)
+
+
 
       !ifusermv = .true.                  ! define our own mesh velocity
       !call user_mvel(time)               ! Fill mesh velocity
@@ -74,10 +85,6 @@ C=======================================================================
       !call user_print_err
 
       nxyz = lx1 * ly1 * lz1
-
-      call copy(y, t, nxyz*nelfld(2))
-      ifdiff(2) = .true.
-      iftran = .true.
 
       if(istep.gt.5) then
         gamma0 = 1.4 ! from par file
@@ -90,22 +97,25 @@ C=======================================================================
         param(99) = 4 ! enable de-aliasing
         param(86) = 0 ! turn off skew symmetric form
 
-        write(6,*) "ifdeal(2)", ifdeal(2)
-        write(6,*) "param(99) = ", param(99)
-        write(6,*) "param(86) = ", param(86)
-        loglevel = 3
+        call copy(y, t, nxyz*nelfld(2))
+        ifdiff(2) = .true.
+        iftran = .true.
 
-        ! compute vxd, ... terms
-        call set_convect_new(vxd, vyd, vzd, vx, vy, vz)
+        ! set temporary arrays -- this is normally handled by the solver itself
+        ntot = nxyz * nelfld(1)
+        call copy(vx_, vx, ntot)
+        call copy(vy_, vy, ntot)
+        call copy(vz_, vz, ntot)
 
-        write(6,*) "sums prior to rhs evaluation"
-        write(6,*) "sum vx =", glsum(vx, lx1*lx1*lx1*nelv)
-        write(6,*) "sum vy =", glsum(vy, lx1*lx1*lx1*nelv)
-        write(6,*) "sum vz =", glsum(vz, lx1*lx1*lx1*nelv)
-
-        write(6,*) "sum vxd =", glsum(vxd, lxd*lxd*lxd*nelv)
-        write(6,*) "sum vyd =", glsum(vyd, lxd*lxd*lxd*nelv)
-        write(6,*) "sum vzd =", glsum(vzd, lxd*lxd*lxd*nelv)
+        if(mvbdry) then
+          ntot = nxyz * nelfld(0)
+          call copy(wx_, wx, ntot)
+          call copy(wy_, wy, ntot)
+          call copy(wz_, wz, ntot)
+          call copy(xm1_, xm1, ntot)
+          call copy(ym1_, ym1, ntot)
+          call copy(zm1_, zm1, ntot)
+        endif
 
         ifuservp = .true.
         write(6,*) "istep = ", istep, "time = ", time
