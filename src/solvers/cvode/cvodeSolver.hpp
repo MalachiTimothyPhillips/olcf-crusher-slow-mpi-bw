@@ -36,6 +36,10 @@ public:
   void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
   void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
   dfloat tprev = std::numeric_limits<dfloat>::max();
+  occa::memory o_U0;
+  occa::memory o_meshU0;
+  occa::memory o_xyz0;
+
 
 private:
 
@@ -65,10 +69,6 @@ private:
 
   std::vector<dlong> fieldOffset;
   std::vector<dlong> fieldOffsetScan;
-
-  occa::memory o_U0;
-  occa::memory o_meshU0;
-  occa::memory o_xyz0;
 
   occa::memory o_coeffExt;
   occa::memory o_EToLUnique;
