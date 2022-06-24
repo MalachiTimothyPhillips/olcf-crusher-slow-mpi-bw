@@ -853,8 +853,8 @@ void copyToNek(dfloat time)
       auto * dstz = nekData.wzlag + (s-1) * nekFieldOffset;
 
       memcpy(dstx, wxlag, sizeof(dfloat) * Nlocal);
-      memcpy(dsty, wxlag, sizeof(dfloat) * Nlocal);
-      memcpy(dstz, wxlag, sizeof(dfloat) * Nlocal);
+      memcpy(dsty, wylag, sizeof(dfloat) * Nlocal);
+      memcpy(dstz, wzlag, sizeof(dfloat) * Nlocal);
 
     }
 
@@ -883,8 +883,8 @@ void copyToNek(dfloat time)
     auto * dstz = nekData.vzlag + (s-1) * nekFieldOffset;
 
     memcpy(dstx, vxlag, sizeof(dfloat) * Nlocal);
-    memcpy(dsty, vxlag, sizeof(dfloat) * Nlocal);
-    memcpy(dstz, vxlag, sizeof(dfloat) * Nlocal);
+    memcpy(dsty, vylag, sizeof(dfloat) * Nlocal);
+    memcpy(dstz, vzlag, sizeof(dfloat) * Nlocal);
 
   }
 
