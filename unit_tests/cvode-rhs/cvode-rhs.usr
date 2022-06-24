@@ -14,13 +14,11 @@ C Set user variable properties
       INCLUDE 'TOTAL'  
       INCLUDE 'NEKUSE' 
 
-      if (ifield.eq.1) then 
-         utrans = 1.0*p0th/temp
-         udiff  = 1e-2
-      else
-         utrans = 1.0*p0th/temp
-         udiff  = 1e-2 
-      endif
+      !utrans = 1.0*p0th/temp
+      !udiff  = 1e-2
+
+      utrans = 10.
+      udiff  = 1e-1
 
       RETURN
       END
@@ -83,7 +81,7 @@ C=======================================================================
 
       if(istep.gt.5) then
         gamma0 = 1.4 ! from par file
-        ifdp0dt = .true.
+        !ifdp0dt = .true.
         ! compute vxd, ... terms
         call set_convect_new(vxd, vyd, vzd, vx, vy, vz)
         ifuservp = .true.
