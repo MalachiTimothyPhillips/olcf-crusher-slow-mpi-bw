@@ -197,7 +197,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, mesh->o_U);
     }
 
-    if(platform->comm.mpiRank == 0){
+    if(platform->comm.mpiRank == 0 && movingMesh){
       std::cout << "mesh coeffAB = ";
       for(int i = 0; i < 3; ++i){
         std::cout << mesh->coeffAB[i] << ", ";
@@ -572,7 +572,8 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
     mesh->update();
 
-    computeUrst(nrs);
   }
+
+  computeUrst(nrs);
 }
 } // namespace cvode
