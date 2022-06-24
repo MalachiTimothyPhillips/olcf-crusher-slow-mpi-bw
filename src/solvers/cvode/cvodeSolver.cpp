@@ -92,6 +92,8 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
   if (mesh->cht)
     mesh = nrs->cds->mesh[0];
 
+#if 0
+  // Note: these operations seem to be relatively expensive...
   auto o_Lids = platform->device.malloc(mesh->Nlocal * sizeof(dlong));
   std::vector<dlong> Eids(mesh->Nlocal);
   std::iota(Eids.begin(), Eids.end(), 0);
@@ -134,11 +136,23 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
       EToLUnique[eid] = -1;
     }
   }
+#else
+  // for simplicity, force L := E
+  std::vector<dlong> EToL(mesh->Nlocal);
+  std::vector<dlong> EToLUnique(mesh->Nlocal);
+
+  LFieldOffset = nrs->fieldOffset;
+
+  std::iota(EToL.begin(), EToL.end(), 0);
+  std::iota(EToLUnique.begin(), EToLUnique.end(), 0);
+#endif
 
   this->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
   this->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
 
+#if 0
   o_Lids.free();
+#endif
 }
 
 void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)

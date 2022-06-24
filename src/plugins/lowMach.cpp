@@ -147,7 +147,7 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
       std::cout << "termQ = " << termQ << "\n";
     }
 
-#if 1
+#if 0
     // Not sure why this term is differing in the unit test, punt for now...
     platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice0);
 #else
