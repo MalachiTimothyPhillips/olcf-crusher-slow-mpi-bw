@@ -22,6 +22,9 @@ c-----------------------------------------------------------------------
       elseif (id .eq. 'lelt') then 
          llelt = lelt
          ptr = loc(llelt)
+      elseif (id .eq. 'lelv') then 
+         llelv = lelv
+         ptr = loc(llelv)
       elseif (id .eq. 'ldimt') then 
          lldimt = ldimt            
          ptr = loc(lldimt)

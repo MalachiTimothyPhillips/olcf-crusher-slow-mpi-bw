@@ -57,6 +57,7 @@ struct nekdata_private
   /* local problem size */
   int nelv, nelt;
   int lelt;
+  int lelv;
 
   int ldimt;
 

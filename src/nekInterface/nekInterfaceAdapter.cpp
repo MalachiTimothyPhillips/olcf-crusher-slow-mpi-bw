@@ -711,6 +711,7 @@ int setup(nrs_t* nrs_in)
   nekData.nelt = *(int*) ptr("nelt");
   nekData.nelv = *(int*) ptr("nelv");
   nekData.lelt = *(int*) ptr("lelt");
+  nekData.lelv = *(int*) ptr("lelv");
   nekData.ldimt = *(int*) ptr("ldimt");
   nekData.nx1 =  *(int*) ptr("nx1");
 
@@ -870,7 +871,7 @@ void copyToNek(dfloat time)
   memcpy(nekData.vy, vy, sizeof(dfloat) * Nlocal);
   memcpy(nekData.vz, vz, sizeof(dfloat) * Nlocal);
 
-  nLaggedStates = std::max(nrs->nEXT, nrs->nBDF) - 1;
+  const auto nLaggedStates = std::max(nrs->nEXT, nrs->nBDF) - 1;
   for(int s = 1; s <= std::max(nLaggedStates,2); ++s){
     const dlong nekFieldOffset = nekData.lelv * mesh->Np;
     auto * vxlag = nrs->U + (s * nrs->NVfields + 0) * nrs->fieldOffset;
