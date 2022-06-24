@@ -185,6 +185,15 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       std::cout << std::endl;
     }
 
+    if(platform->comm.mpiRank == 0){
+      std::cout << "g0 = " << this->g0 << "\n";
+      std::cout << "coeffBDF = ";
+      for(auto && v : coeffBDF){
+        std::cout << v << ", ";
+      }
+      std::cout << std::endl;
+    }
+
 
     o_coeffExt.copyFrom(coeffEXT.data(), maxExtrapolationOrder * sizeof(dfloat));
 
