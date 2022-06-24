@@ -403,7 +403,7 @@ void mkSIZE(int lx1, int lxd, int lelt, hlong lelg, int ldim, int lpmin, int ldi
     else if(strstr(line, "parameter (lgmres=") != NULL)
       sprintf(line, "      parameter (lgmres=%d)\n", 1);
     else if(strstr(line, "parameter (lorder=") != NULL)
-      sprintf(line, "      parameter (lorder=%d)\n", 1);
+      sprintf(line, "      parameter (lorder=%d)\n", 3);
     else if(strstr(line, "parameter (lhis=") != NULL)
       sprintf(line, "      parameter (lhis=%d)\n", 100000);
     else if(strstr(line, "parameter (lelr=") != NULL)
