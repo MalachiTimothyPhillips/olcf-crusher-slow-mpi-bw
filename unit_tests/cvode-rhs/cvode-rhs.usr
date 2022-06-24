@@ -82,8 +82,31 @@ C=======================================================================
       if(istep.gt.5) then
         gamma0 = 1.4 ! from par file
         !ifdp0dt = .true.
+
+        ! set integrator details
+        nbd = 3
+        nab = 3
+
+        param(99) = 4 ! enable de-aliasing
+        param(86) = 0 ! turn off skew symmetric form
+
+        write(6,*) "ifdeal(2)", ifdeal(2)
+        write(6,*) "param(99) = ", param(99)
+        write(6,*) "param(86) = ", param(86)
+        loglevel = 3
+
         ! compute vxd, ... terms
         call set_convect_new(vxd, vyd, vzd, vx, vy, vz)
+
+        write(6,*) "sums prior to rhs evaluation"
+        write(6,*) "sum vx =", glsum(vx, lx1*lx1*lx1*nelv)
+        write(6,*) "sum vy =", glsum(vy, lx1*lx1*lx1*nelv)
+        write(6,*) "sum vz =", glsum(vz, lx1*lx1*lx1*nelv)
+
+        write(6,*) "sum vxd =", glsum(vxd, lxd*lxd*lxd*nelv)
+        write(6,*) "sum vyd =", glsum(vyd, lxd*lxd*lxd*nelv)
+        write(6,*) "sum vzd =", glsum(vzd, lxd*lxd*lxd*nelv)
+
         ifuservp = .true.
         write(6,*) "istep = ", istep, "time = ", time
         !call my_rhs_fun(time, y, ydot)

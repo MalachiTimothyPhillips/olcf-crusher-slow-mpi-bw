@@ -127,12 +127,20 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   if(tstep >= NstartTest){
     // populate scalar field with random data
     auto S = randomVector<dfloat>(mesh->Nlocal);
+    auto Ux = randomVector<dfloat>(mesh->Nlocal);
+    auto Uy = randomVector<dfloat>(mesh->Nlocal);
+    auto Uz = randomVector<dfloat>(mesh->Nlocal);
     nrs->cds->o_S.copyFrom(S.data(), mesh->Nlocal * sizeof(dfloat));
+
+    auto o_Ux = nrs->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uy = nrs->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uz = nrs->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
+
+    o_Ux.copyFrom(Ux.data(), mesh->Nlocal * sizeof(dfloat));
+    o_Uy.copyFrom(Uy.data(), mesh->Nlocal * sizeof(dfloat));
+    o_Uz.copyFrom(Uz.data(), mesh->Nlocal * sizeof(dfloat));
+
     applyDirichlet(nrs, time);
-
-
-
-
 
     nek::ocopyToNek(time, tstep);
     nek::userchk();
