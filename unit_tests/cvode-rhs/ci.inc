@@ -24,6 +24,31 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
 
   auto cvodeSolver = cvodeSolver_t(nrs, {});
 
+  cvodeSolver.o_U0.copyFrom(nrs->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
+  
+  if(platform->options.compareArgs("MOVING MESH", "TRUE")){
+    auto mesh = nrs->meshV;
+    if(nrs->cht)
+      mesh = nrs->cds->mesh[0];
+
+    cvodeSolver.o_meshU0.copyFrom(mesh->o_U0, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
+
+    cvodeSolver.o_xyz0.copyFrom(mesh->o_x,
+      mesh->Nlocal * sizeof(dfloat),
+      (0 * sizeof(dfloat)) * nrs->fieldOffset,
+      0);
+
+    cvodeSolver.o_xyz0.copyFrom(mesh->o_y,
+      mesh->Nlocal * sizeof(dfloat),
+      (1 * sizeof(dfloat)) * nrs->fieldOffset,
+      0);
+
+    cvodeSolver.o_xyz0.copyFrom(mesh->o_z,
+      mesh->Nlocal * sizeof(dfloat),
+      (2 * sizeof(dfloat)) * nrs->fieldOffset,
+      0);
+  }
+
   const auto LFieldOffset = cvodeSolver.LFieldOffset;
 
   auto o_y = platform->device.malloc((nrs->Nscalar * sizeof(dfloat)) * LFieldOffset);
