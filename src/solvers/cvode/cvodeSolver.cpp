@@ -214,7 +214,13 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     extrapolateInPlaceKernel(nrs->meshV->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_U0, nrs->o_U);
 
     // check sum first component...
-    std::cout << "sum Ux_e = " << platform->linAlg->sum(mesh->Nlocal, nrs->o_U, platform->comm.mpiComm) << "\n";
+    auto o_Ux = nrs->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uy = nrs->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uz = nrs->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
+
+    std::cout << "sum Ux_e = " << platform->linAlg->sum(mesh->Nlocal, o_Ux, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Uy_e = " << platform->linAlg->sum(mesh->Nlocal, o_Uy, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Uz_e = " << platform->linAlg->sum(mesh->Nlocal, o_Uz, platform->comm.mpiComm) << "\n";
 
     if (movingMesh) {
 
@@ -243,6 +249,16 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
 
     computeUrst(nrs);
+
+    auto NlocalD = nrs->meshV->Nelements * mesh->cubNp;
+    auto o_Ur = nrs->o_Urst + (0 * sizeof(dfloat)) * nrs->cubatureOffset;
+    auto o_Us = nrs->o_Urst + (1 * sizeof(dfloat)) * nrs->cubatureOffset;
+    auto o_Ut = nrs->o_Urst + (2 * sizeof(dfloat)) * nrs->cubatureOffset;
+
+    std::cout << "sum Ur = " << platform->linAlg->sum(NlocalD, o_Ur, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Us = " << platform->linAlg->sum(NlocalD, o_Us, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Ut = " << platform->linAlg->sum(NlocalD, o_Ut, platform->comm.mpiComm) << "\n";
+
   }
 
   unpack(nrs, o_y, cds->o_S);
@@ -278,6 +294,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     for(const auto p : gatherScatterOperations){
       std::tie(startId, endId, gsh) = p;
       const auto Nfields = endId - startId;
+      std::cout << "Nfields = " << Nfields << "\n";
       auto o_fld = cds->o_FS + nrs->cds->fieldOffsetScan[startId] * sizeof(dfloat);
       ogsFunc(o_fld, Nfields, nrs->cds->fieldOffset[startId], ogsDfloat, ogsAdd, gsh);
     }
@@ -427,6 +444,10 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                                          cds->o_rho,
                                          platform->o_mempool.slice0);
       }
+#if 1
+      // weight by mass matrix for easier comparison
+      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, platform->o_mempool.slice0);
+#endif
       platform->linAlg->axpby(cds->meshV->Nelements * cds->meshV->Np,
           -1.0,
           platform->o_mempool.slice0,
@@ -512,7 +533,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     auto o_invLMMLMM = (nrs->cht && is == 0) ? o_invLMMLMMT : o_invLMMLMMV;
     platform->linAlg->axmy(mesh->Nlocal, 1.0, o_invLMMLMM, o_FS_i);
 #else
-    platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
+    //platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
 #endif
 
     // TODO: correctly handle CHT case

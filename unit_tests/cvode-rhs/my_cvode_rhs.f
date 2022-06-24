@@ -193,6 +193,7 @@ c
       time    = time_  + timeStepSize
       nxyz    = lx1*ly1*lz1
       ntotv   = nxyz*nelv
+      ntotd = lxd*lxd*lxd*nelv
 
       do ifield = 2,nfield
          ifcvfld(ifield) = .true.
@@ -206,7 +207,9 @@ c
   10       format(4x,i7,2x,'t=',1pE14.7,'  stepsize=',1pE13.4)
 
          call cv_upd_v
-         write(6,*) "sum v_e = ", glsum(vx, ntotv)
+         write(6,*) "sum vx_e = ", glsum(vx, ntotv)
+         write(6,*) "sum vy_e = ", glsum(vy, ntotv)
+         write(6,*) "sum vz_e = ", glsum(vz, ntotv)
          call copy(w1,vx,ntotv)
          call copy(w2,vy,ntotv)
          if (if3d) call copy(w3,vz,ntotv)
@@ -221,6 +224,9 @@ c
          endif
         
          if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+         write(6,*) "sum vxd = ", glsum(vxd, ntotd)
+         write(6,*) "sum vyd = ", glsum(vyd, ntotd)
+         write(6,*) "sum vzd = ", glsum(vzd, ntotd)
 
          call copy(vx,w1,ntotv)
          call copy(vy,w2,ntotv)
