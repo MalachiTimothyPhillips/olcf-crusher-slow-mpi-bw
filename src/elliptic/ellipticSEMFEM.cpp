@@ -110,8 +110,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
         (int) elliptic->allNeumann,
         platform->comm.mpiComm,
         1, /* Nthreads */
-        useDevice ? platform->device.id() : -1,
-        0, /* do not use FP32 - hardwired as no runtime switch is available */
+        0, /* FP32 */
         settings,
         verbose 
       );

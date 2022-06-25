@@ -1,16 +1,34 @@
 #ifndef HYPRE_WRAPPER_H
 #define HYPRE_WRAPPER_H
 
-#ifdef __cplusplus
-extern "C" {
+#ifdef NEKRS_HYPRE_DEVICE 
+#define HYPRE_API_PREFIX NEKRS_DEVICE_
+#else
+#define HYPRE_API_PREFIX NEKRS_
 #endif
 
 #include <dlfcn.h>
 
+#define BOOMERAMG_NPARAM 10
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef NEKRS_HYPRE_DEVICE
+#include "device/HYPRE.h"    
+#include "device/HYPRE_parcsr_ls.h"
+#include "device/_hypre_utilities.h"
+#else
 #include "HYPRE.h"    
 #include "HYPRE_parcsr_ls.h"
+#endif
 
-#define DECLARE(a,b) typedef HYPRE_Int (*t_##a) b; static t_##a __##a
+#define _TOKEN_PASTE(a,b) a##b
+#define _TOKEN_PASTE_(a,b) _TOKEN_PASTE(a,b) 
+#define ADD_PREFIX(a) _TOKEN_PASTE_(HYPRE_API_PREFIX,a)
+
+#define DECLARE(a,b) HYPRE_Int ADD_PREFIX(a) b; typedef HYPRE_Int (*t_##a) b; static t_##a __##a 
 
 //
 // definitions have match HYPRE_parcsr_ls.h
@@ -132,6 +150,24 @@ HYPRE_BoomerAMGSetPrintLevel,
   HYPRE_Int    print_level
 )
 );
+
+
+DECLARE(
+HYPRE_IJMatrixPrint,
+(
+  HYPRE_IJMatrix matrix,
+  const char *filename
+)
+);
+
+DECLARE(
+HYPRE_IJVectorPrint,
+(
+  HYPRE_IJVector vector,
+  const char *filename
+)
+);
+
 
 DECLARE(
 HYPRE_BoomerAMGSetInterpType,
@@ -313,6 +349,65 @@ HYPRE_IJMatrixAddToValues,
 )
 );
 
+DECLARE(
+HYPRE_SetSpGemmUseVendor,
+( 
+  HYPRE_Int use_vendor 
+)
+);
+
+DECLARE(
+HYPRE_SetSpMVUseVendor,
+( 
+  HYPRE_Int use_vendor 
+)
+);
+
+DECLARE(
+HYPRE_SetUseGpuRand,
+( 
+  HYPRE_Int use_gpurand 
+)
+);
+
+DECLARE(
+HYPRE_BoomerAMGSetModuleRAP2,
+(
+  HYPRE_Solver solver,
+  HYPRE_Int    mod_rap2
+)
+);
+
+DECLARE(
+HYPRE_Init,
+(
+)
+);
+
+DECLARE(
+HYPRE_BoomerAMGSetKeepTranspose,
+(
+  HYPRE_Solver solver,
+  HYPRE_Int    keepTranspose
+)
+);
+
+DECLARE
+(HYPRE_SetMemoryLocation,
+(
+  HYPRE_MemoryLocation memory_location 
+)
+);
+
+DECLARE(
+HYPRE_SetExecutionPolicy,
+(
+  HYPRE_ExecutionPolicy exec_policy
+)
+);
+
+
+
 #undef DECLARE
 
 static void check_error(const char* error)
@@ -323,13 +418,36 @@ static void check_error(const char* error)
   }
 }
 
-static void __HYPRE_Load(const char* lib_path)
+#define STRING_IT(a) #a
+#define STRING_IT_(a) STRING_IT(a) 
+#define LIB_LOAD(a) __##a = (t_##a) dlsym(lib_handle, STRING_IT_(ADD_PREFIX(a))); check_error(dlerror());;
+static void __HYPRE_Load()
 {
   //TODO: bcast + load from node-local storage
-  void* lib_handle = dlopen(lib_path, RTLD_LAZY | RTLD_LOCAL);
+
+  const char* install_dir = getenv("NEKRS_HOME");
+#define MAX_PATH 4096
+  char libpath[MAX_PATH];
+  char libname[MAX_PATH];
+#undef MAX_PATH
+  char ext[6];
+
+  snprintf(ext, sizeof(ext), "%s", "so");
+#ifdef __APPLE__
+  snprintf(ext, sizeof(ext), "%s", "dylib");
+#endif
+
+#ifdef NEKRS_HYPRE_DEVICE
+  snprintf(libname, sizeof(libname), "%s", "hypre/libHYPREDevice");
+#else
+  snprintf(libname, sizeof(libname), "%s", "hypre/libHYPRE");
+#endif
+
+  snprintf(libpath, sizeof(libpath), "%s/lib/%s.%s", install_dir, libname, ext);
+
+  void* lib_handle = dlopen(libpath, RTLD_LAZY | RTLD_LOCAL);
   if(!lib_handle) check_error(dlerror());
 
-#define LIB_LOAD(a) __##a = (t_##a) dlsym(lib_handle, #a); check_error(dlerror());;
   LIB_LOAD(HYPRE_BoomerAMGSolve);
   LIB_LOAD(HYPRE_BoomerAMGSetup);
   LIB_LOAD(HYPRE_BoomerAMGCreate); 
@@ -344,6 +462,8 @@ static void __HYPRE_Load(const char* lib_path)
   LIB_LOAD(HYPRE_BoomerAMGSetMaxIter);
   LIB_LOAD(HYPRE_BoomerAMGSetTol); 
   LIB_LOAD(HYPRE_BoomerAMGSetPrintLevel);
+  LIB_LOAD(HYPRE_IJMatrixPrint);
+  LIB_LOAD(HYPRE_IJVectorPrint);
   LIB_LOAD(HYPRE_BoomerAMGSetInterpType);
   LIB_LOAD(HYPRE_BoomerAMGDestroy);
   LIB_LOAD(HYPRE_IJVectorCreate);
@@ -364,9 +484,24 @@ static void __HYPRE_Load(const char* lib_path)
   LIB_LOAD(HYPRE_IJMatrixGetRowCounts);
   LIB_LOAD(HYPRE_IJMatrixGetValues);
   LIB_LOAD(HYPRE_IJMatrixAddToValues);
-
-#undef LIB_LOAD
+  LIB_LOAD(HYPRE_SetSpGemmUseVendor);
+  LIB_LOAD(HYPRE_SetSpMVUseVendor);
+  LIB_LOAD(HYPRE_SetUseGpuRand);
+  LIB_LOAD(HYPRE_BoomerAMGSetModuleRAP2);
+  LIB_LOAD(HYPRE_BoomerAMGSetKeepTranspose);
+  LIB_LOAD(HYPRE_SetMemoryLocation);
+  LIB_LOAD(HYPRE_SetExecutionPolicy);
+  LIB_LOAD(HYPRE_Init);
 }
+
+#undef STRING_IT
+#undef STRING_IT_ 
+#undef LIB_LOAD
+
+#undef _TOKEN_PASTE
+#undef _TOKEN_PASTE_
+#undef ADD_PREFIX
+#undef DECLARE
 
 #ifdef __cplusplus
 }

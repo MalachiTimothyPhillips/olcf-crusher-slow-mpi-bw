@@ -606,9 +606,6 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     else if(entry.find("gpu") != std::string::npos)
     {
       options.setArgs("AMG SOLVER LOCATION", "GPU");
-      if(p_coarseSolver.find("boomeramg") != std::string::npos){
-        append_error("BoomerAMG+CPU is not currently supported!\n");
-      }
     }
   }
 }

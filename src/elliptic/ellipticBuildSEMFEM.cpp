@@ -191,11 +191,11 @@ static HYPRE_IJMatrix A_bc;
 
 struct COOGraph
 {
-  long long nrows;
+  int nrows;
   long long nnz;
   long long * rows;
   long long * rowOffsets;
-  long long * ncols;
+  int * ncols;
   long long * cols;
   double* vals;
 };
@@ -218,6 +218,8 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
                           long long int *gatherGlobalNodes
                           )
 {
+  static_assert(sizeof(HYPRE_Int) == sizeof(int), "HYPRE_Int != int");
+  static_assert(sizeof(HYPRE_BigInt) == sizeof(long long int), "HYPRE_BigInt != long long int");
   n_x = N_;
   n_y = N_;
   n_z = N_;
@@ -245,16 +247,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
 
   matrix_distribution();
 
-  {
-    std::string libPath(getenv("NEKRS_INSTALL_DIR"));
-    libPath += "/lib/libHYPRE";
-#ifdef __APPLE__
-    libPath += ".dylib";
-#else
-    libPath += ".so";
-#endif    
-    __HYPRE_Load(libPath.c_str());
-  }
+  __HYPRE_Load();
 
   fem_assembly();
 
@@ -504,10 +497,10 @@ void construct_coo_graph() {
       }
     }
   }
-  const long long nrows = graph.size();
+  const int nrows = graph.size();
   long long * rows = (long long*) malloc(nrows * sizeof(long long));
   long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
-  long long * ncols = (long long*) malloc(nrows * sizeof(long long));
+  int * ncols = (int*) malloc(nrows * sizeof(int));
   long long nnz = 0;
   long long ctr = 0;
 
@@ -520,10 +513,10 @@ void construct_coo_graph() {
   std::sort(rows, rows + nrows);
   long long entryCtr = 0;
   rowOffsets[0] = 0;
-  for(long long localrow = 0; localrow < nrows; ++localrow){
+  for(auto localrow = 0; localrow < nrows; ++localrow){
     const long long row = rows[localrow];
     const auto& colset = graph[row];
-    const int size = colset.size();
+    const auto size = colset.size();
     ncols[localrow] = size;
     rowOffsets[localrow+1] = rowOffsets[localrow] + size;
     for(auto&& col : colset){
@@ -542,10 +535,10 @@ void construct_coo_graph() {
 
 void fem_assembly_host() {
 
-  const long long nrows = coo_graph.nrows;
+  const int nrows = coo_graph.nrows;
   long long * rows = coo_graph.rows;
   long long * rowOffsets = coo_graph.rowOffsets;
-  long long * ncols = coo_graph.ncols;
+  int * ncols = coo_graph.ncols;
   long long nnz = coo_graph.nnz;
   long long * cols = coo_graph.cols;
   double* vals = coo_graph.vals;
@@ -685,10 +678,10 @@ void fem_assembly_host() {
 }
 void fem_assembly_device() {
 
-  const long long nrows = coo_graph.nrows;
+  const int nrows = coo_graph.nrows;
   long long * rows = coo_graph.rows;
   long long * rowOffsets = coo_graph.rowOffsets;
-  long long * ncols = coo_graph.ncols;
+  int * ncols = coo_graph.ncols;
   long long nnz = coo_graph.nnz;
   long long * cols = coo_graph.cols;
   double* vals = coo_graph.vals;

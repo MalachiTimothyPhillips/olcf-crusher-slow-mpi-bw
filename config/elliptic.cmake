@@ -34,6 +34,7 @@ set(PARALMOND_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/parA
 
 set(PARALMOND_SOURCES
         ${PARALMOND_SOURCE_DIR}/../hypre/boomerAMG.c
+        ${PARALMOND_SOURCE_DIR}/../hypre/boomerAMGDevice.cpp
         ${PARALMOND_SOURCE_DIR}/SpMV.cpp
         ${PARALMOND_SOURCE_DIR}/agmgLevel.cpp
         ${PARALMOND_SOURCE_DIR}/agmgSetup/agmgSetup.cpp

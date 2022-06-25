@@ -5,13 +5,9 @@
 #include <mpi.h>
 #include "omp.h"
 
-#include "boomerAMG.h"
+#include "__HYPRE.h"
 
 static double boomerAMGParam[BOOMERAMG_NPARAM];
-
-#ifdef HYPRE
-
-#include "__HYPRE.h"
 
 typedef struct hypre_data {
   MPI_Comm comm;
@@ -30,21 +26,11 @@ static hypre_data *data;
 
 int boomerAMGSetup(int nrows,
                    int nz, const long long int *Ai, const long long int *Aj, const double *Av,
-                   const int null_space, const MPI_Comm ce, int Nthreads, int deviceID,
+                   const int null_space, const MPI_Comm ce, int Nthreads,
                    const int useFP32, const double *param, const int verbose)
 {
 
-  const char* install_dir = getenv("NEKRS_HOME");
-#define MAX_PATH 4096
-  char lib_path[MAX_PATH];
-#ifdef __APPLE__
-  snprintf(lib_path, MAX_PATH, "%s/lib/libHYPRE.dylib", install_dir);
-#else
-  snprintf(lib_path, MAX_PATH, "%s/lib/libHYPRE.so", install_dir);
-#endif
-#undef MAX_PATH
-
-  __HYPRE_Load(lib_path);
+  __HYPRE_Load();
 
   data = (hypre_data*) malloc(sizeof(struct hypre_data));
 
@@ -61,6 +47,7 @@ int boomerAMGSetup(int nrows,
     MPI_Abort(ce, 1);
   } 
 
+  // Setup matrix
   long long rowStart = nrows;
   MPI_Scan(MPI_IN_PLACE, &rowStart, 1, MPI_LONG_LONG, MPI_SUM, ce);
   rowStart -= nrows;
@@ -75,8 +62,7 @@ int boomerAMGSetup(int nrows,
   __HYPRE_IJMatrixSetObjectType(A_ij,HYPRE_PARCSR);
   __HYPRE_IJMatrixInitialize(A_ij);
 
-  int i;
-  for(i=0; i<nz; i++) 
+  for(int i=0; i<nz; i++) 
   {
     HYPRE_BigInt mati = (HYPRE_BigInt)(Ai[i]);
     HYPRE_BigInt matj = (HYPRE_BigInt)(Aj[i]);
@@ -85,19 +71,14 @@ int boomerAMGSetup(int nrows,
     __HYPRE_IJMatrixSetValues(A_ij, 1, &ncols, &mati, &matj, &matv);
   }
   __HYPRE_IJMatrixAssemble(A_ij);
-  //__HYPRE_IJMatrixPrint(A_ij, "matrix.dat");
 
-  // Create AMG solver
-  __HYPRE_BoomerAMGCreate(&data->solver);
-  HYPRE_Solver solver = data->solver;
+#if 0
+  __HYPRE_IJMatrixPrint(A_ij, "matrix.dat");
+#endif
 
-  int uparam = (int) param[0];
- 
-  // Set AMG parameters
-  if (uparam) {
-    int i;
-    for (i = 0; i < BOOMERAMG_NPARAM; i++)
-        boomerAMGParam[i] = param[i+1]; 
+  if ((int) param[0]) {
+    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
+      boomerAMGParam[i] = param[i+1]; 
   } else {
     boomerAMGParam[0]  = 10;   /* coarsening */
     boomerAMGParam[1]  = 6;    /* interpolation */
@@ -110,11 +91,15 @@ int boomerAMGSetup(int nrows,
     boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
   }
 
+  // Setup solver
+  __HYPRE_BoomerAMGCreate(&data->solver);
+  HYPRE_Solver solver = data->solver;
+
   __HYPRE_BoomerAMGSetCoarsenType(solver,boomerAMGParam[0]);
   __HYPRE_BoomerAMGSetInterpType(solver,boomerAMGParam[1]);
 
-  //__HYPRE_BoomerAMGSetKeepTranspose(solver, 1);
   //__HYPRE_BoomerAMGSetChebyFraction(solver, 0.2); 
+
   if (boomerAMGParam[5] > 0) {
     __HYPRE_BoomerAMGSetCycleRelaxType(solver, boomerAMGParam[5], 1);
     __HYPRE_BoomerAMGSetCycleRelaxType(solver, boomerAMGParam[5], 2);
@@ -179,7 +164,7 @@ int boomerAMGSetup(int nrows,
   data->ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
   data->bb = (HYPRE_Real*) malloc(data->nRows*sizeof(HYPRE_Real));
   data->xx = (HYPRE_Real*) malloc(data->nRows*sizeof(HYPRE_Real));
-  for(i=0;i<data->nRows;++i) 
+  for(int i=0;i<data->nRows;++i) 
     data->ii[i] = ilower + (HYPRE_BigInt)i;
 
   return 0;
@@ -189,24 +174,27 @@ int boomerAMGSolve(void *x, void *b)
 {
   int err;
 
-  HYPRE_Real *xx = (HYPRE_Real*) x; 
-  const HYPRE_Real *bb = (HYPRE_Real*) b; 
+  __HYPRE_IJVectorSetValues(data->b,data->nRows,data->ii,(HYPRE_Real*) b);
+  __HYPRE_IJVectorAssemble(data->b);
+
+  __HYPRE_IJVectorAssemble(data->x);
 
   HYPRE_ParVector par_x;
   HYPRE_ParVector par_b;
   HYPRE_ParCSRMatrix par_A;
 
-  __HYPRE_IJVectorSetValues(data->b,data->nRows,data->ii,bb);
-  __HYPRE_IJVectorAssemble(data->b);
-  __HYPRE_IJVectorGetObject(data->b,(void**) &par_b);
-
-  __HYPRE_IJVectorAssemble(data->x);
   __HYPRE_IJVectorGetObject(data->x,(void **) &par_x);
-
-  __HYPRE_IJMatrixGetObject(data->A,(void**) &par_A);
+  __HYPRE_IJVectorGetObject(data->b,(void **) &par_b);
+  __HYPRE_IJMatrixGetObject(data->A,(void **) &par_A);
 
   const int _Nthreads = omp_get_max_threads();
   omp_set_num_threads(data->Nthreads);
+
+#if 0
+  __HYPRE_IJVectorPrint(data->b, "b.dat");
+  __HYPRE_IJVectorPrint(data->x, "x.dat");
+#endif
+
   err = __HYPRE_BoomerAMGSolve(data->solver,par_A,par_b,par_x);
   if(err > 0) { 
     int rank;
@@ -216,7 +204,7 @@ int boomerAMGSolve(void *x, void *b)
   }
   omp_set_num_threads(_Nthreads);
 
-  __HYPRE_IJVectorGetValues(data->x,data->nRows,data->ii,xx);
+  __HYPRE_IJVectorGetValues(data->x,data->nRows,data->ii,(HYPRE_Real*) x);
 
   return 0; 
 }
@@ -230,35 +218,10 @@ void boomerAMGFree()
   free(data);
 }
 
+#if 0
 // Just to fix a hypre linking error
 void hypre_blas_xerbla() {
 }
 void hypre_blas_lsame() {
-}
-
-#else
-int boomerAMGSetup(int nrows,
-                  int nz, const long long int *Ai, const long long int *Aj, const double *Av,
-                  const int null_space, const MPI_Comm ce, int Nthreads, int deviceID
-                  const double *param, const int verbose)
-{
-  int rank;
-  MPI_Comm_rank(ce,&rank);
-  if(rank == 0) printf("ERROR: Recompile with HYPRE support!\n");
-  return 1;
-}
-int boomerAMGSolve(void *x, void *b)
-{
-  int rank;
-  MPI_Comm_rank(ce,&rank);
-  if(rank == 0) printf("ERROR: Recompile with HYPRE support!\n");
-  return 1;
-}
-void boomerAMGFree()
-{
-  int rank;
-  MPI_Comm_rank(ce,&rank);
-  if(rank == 0) printf("ERROR: Recompile with HYPRE support!\n");
-  MPI_Abort(ce, 1);
 }
 #endif

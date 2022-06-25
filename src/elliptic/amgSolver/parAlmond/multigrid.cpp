@@ -318,10 +318,6 @@ void schwarzSolve(solver_t* M)
       levelC->coarsen(o_res, o_rhsC);
     }
 }
-void coarseSolve(solver_t* M)
-{   
-  M->coarseLevel->BoomerAMGSolve();
-}
 }
 
 void solver_t::additiveVcycle()
@@ -346,7 +342,7 @@ void solver_t::additiveVcycle()
       }
       #pragma omp task
       {
-        coarseSolve(this);
+        this->coarseLevel->solve(o_rhs, o_x);
       }
     }
   }

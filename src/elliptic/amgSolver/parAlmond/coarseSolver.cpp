@@ -33,6 +33,7 @@ SOFTWARE.
 #include "omp.h"
 #include "limits.h"
 #include "boomerAMG.h"
+#include "boomerAMGDevice.hpp"
 #include "amgx.h"
 #include "platform.hpp"
 
@@ -52,10 +53,7 @@ coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
 }
 
 int coarseSolver::getTargetSize() {
-  if(options.compareArgs("AMG SOLVER", "BOOMERAMG"))
-    return INT_MAX;
-  else 
-    return 1000;
+  return 1000;
 }
 
 void coarseSolver::setup(
@@ -89,18 +87,13 @@ void coarseSolver::setup(
 
 
   if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
+    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "GPU");
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
-    if(useFP32)
-    {
+    if(useFP32) {
       if(platform->comm.mpiRank == 0) printf("FP32 is not supported in BoomerAMG.\n");
       MPI_Barrier(platform->comm.mpiComm);
       ABORT(1);
     }
-    if(options.compareArgs("AMG SOLVER LOCATION", "GPU")){
-      if(platform->comm.mpiRank == 0) printf("BoomerAMG only supports CPU!\n");
-      MPI_Barrier(platform->comm.mpiComm);
-      ABORT(1);
-    } 
     int Nthreads = 1;
  
     double settings[BOOMERAMG_NPARAM+1];
@@ -125,18 +118,33 @@ void coarseSolver::setup(
     options.getArgs("BOOMERAMG NONGALERKIN TOLERANCE" , settings[9]);
     options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
-    boomerAMGSetup(Nrows,
-                   nnz,
-                   Ai,
-                   Aj,
-                   Avals,
-                   (int) nullSpace,
-                   comm,
-                   Nthreads,
-                   -1, /* device ID, if negative run on host */
-                   0,  /* useFP32 */
-                   settings,
-                   verbose);
+    if(useDevice) {
+      occa::memory o_Ai = platform->device.malloc(nnz*sizeof(hlong), Ai);
+      occa::memory o_Aj = platform->device.malloc(nnz*sizeof(hlong), Aj);
+      occa::memory o_Avals = platform->device.malloc(nnz*sizeof(dfloat), Avals);
+      boomerAMGSetupDevice(Nrows,
+                           nnz,
+                           o_Ai,
+                           o_Aj,
+                           o_Avals,
+                           (int) nullSpace,
+                           comm,
+                           0,  /* useFP32 */
+                           settings,
+                           verbose);
+    } else {
+      boomerAMGSetup(Nrows,
+                     nnz,
+                     Ai,
+                     Aj,
+                     Avals,
+                     (int) nullSpace,
+                     comm,
+                     Nthreads,
+                     0,  /* useFP32 */
+                     settings,
+                     verbose);
+    }
  
     N = (int) Nrows;
     h_xLocal   = platform->device.mallocHost(N*sizeof(dfloat));
@@ -145,6 +153,7 @@ void coarseSolver::setup(
     rhsLocal = (dfloat*) h_rhsLocal.ptr();
   }
   else if (options.compareArgs("AMG SOLVER", "AMGX")){
+    //TODO: these checks should go into parReader
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
     if(platform->device.mode() != "CUDA") {
       if(platform->comm.mpiRank == 0) printf("AmgX only supports CUDA!\n");
@@ -196,12 +205,10 @@ void coarseSolver::setup(parCSR *A) {
   MPI_Comm_rank(comm,&rank);
   MPI_Comm_size(comm,&size);
 
-  if ((rank==0)&&(options.compareArgs("VERBOSE","TRUE")))
-    printf("Setting up coarse solver...");fflush(stdout);
+  if (rank == 0 && options.compareArgs("VERBOSE","TRUE"))
+    printf("Setting up pMG coarse solver..."); fflush(stdout);
 
-  if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
-    int Nthreads = 1;
- 
+  if (options.compareArgs("AMG SOLVER", "BOOMERAMG") || options.compareArgs("AMG SOLVER", "AMGX")) {
     int totalNNZ = A->diag->nnz + A->offd->nnz;
     hlong *rows;
     hlong *cols;
@@ -239,152 +246,26 @@ void coarseSolver::setup(parCSR *A) {
     }
  
     return;
+  } else {
+    if(rank == 0) printf("coarseSolver::setup: Cannot find valid AMG solver!\n"); fflush(stdout); 
+    ABORT(1);
   }
 
-  //copy the global coarse partition as ints
-  coarseOffsets = (int* ) calloc(size+1,sizeof(int));
-  for (int r=0;r<size+1;r++) coarseOffsets[r] = (int) A->globalRowStarts[r];
-
-  coarseTotal   = coarseOffsets[size];
-  coarseOffset  = coarseOffsets[rank];
-
-  N = (int) A->Nrows;
-
-  coarseCounts = (int*) calloc(size,sizeof(int));
-
-  if(A->nullSpace){
-    if(rank==0) printf("Current null space handling not available for parAlmond!\n");
-    fflush(stdout);
-    exit(1);
-  }
-
-  int sendNNZ = (int) (A->diag->nnz+A->offd->nnz);
-  int *rows;
-  int *cols;
-  dfloat *vals;
-
-  // Make the MPI_NONZERO_T data type
-  nonzero_t NZ;
-  MPI_Datatype MPI_NONZERO_T;
-  MPI_Datatype dtype[3] = {MPI_HLONG, MPI_HLONG, MPI_DFLOAT};
-  int blength[3] = {1, 1, 1};
-  MPI_Aint addr[3], displ[3];
-  MPI_Get_address ( &(NZ.row), addr+0);
-  MPI_Get_address ( &(NZ.col), addr+1);
-  MPI_Get_address ( &(NZ.val), addr+2);
-  displ[0] = 0;
-  displ[1] = addr[1] - addr[0];
-  displ[2] = addr[2] - addr[0];
-  MPI_Type_create_struct (3, blength, displ, dtype, &MPI_NONZERO_T);
-  MPI_Type_commit (&MPI_NONZERO_T);
-
-  nonzero_t *sendNonZeros = (nonzero_t *) calloc(sendNNZ, sizeof(nonzero_t));
-
-  //populate matrix
-  int cnt = 0;
-  for (int n=0;n<N;n++) {
-    int start = (int) A->diag->rowStarts[n];
-    int end   = (int) A->diag->rowStarts[n+1];
-    for (int m=start;m<end;m++) {
-      sendNonZeros[cnt].row = n + coarseOffset;
-      sendNonZeros[cnt].col = A->diag->cols[m] + coarseOffset;
-      sendNonZeros[cnt].val = A->diag->vals[m];
-      cnt++;
-    }
-    start = (int) A->offd->rowStarts[n];
-    end   = (int) A->offd->rowStarts[n+1];
-    for (dlong m=start;m<end;m++) {
-      sendNonZeros[cnt].row = n + coarseOffset;
-      sendNonZeros[cnt].col = A->colMap[A->offd->cols[m]];
-      sendNonZeros[cnt].val = A->offd->vals[m];
-      cnt++;
-    }
-  }
-
-  //get the nonzero counts from all ranks
-  int *recvNNZ    = (int*) calloc(size,sizeof(int));
-  int *NNZoffsets = (int*) calloc(size+1,sizeof(int));
-  MPI_Allgather(&sendNNZ, 1, MPI_INT,
-                 recvNNZ, 1, MPI_INT, comm);
-
-  int totalNNZ = 0;
-  for (int r=0;r<size;r++) {
-    totalNNZ += recvNNZ[r];
-    NNZoffsets[r+1] = NNZoffsets[r] + recvNNZ[r];
-  }
-
-  nonzero_t *recvNonZeros = (nonzero_t *) calloc(totalNNZ, sizeof(nonzero_t));
-
-  MPI_Allgatherv(sendNonZeros, sendNNZ,             MPI_NONZERO_T,
-                 recvNonZeros, recvNNZ, NNZoffsets, MPI_NONZERO_T, comm);
-
-  //gather null vector
-  dfloat *nullTotal = (dfloat*) calloc(coarseTotal,sizeof(dfloat));
-
-  for (int r=0;r<size;r++)
-    coarseCounts[r] = coarseOffsets[r+1]-coarseOffsets[r];
-
-  MPI_Allgatherv(  A->null,          N,                MPI_DFLOAT,
-                 nullTotal, coarseCounts, coarseOffsets, MPI_DFLOAT,
-                 comm);
-
-  //clean up
-  MPI_Barrier(comm);
-  MPI_Type_free(&MPI_NONZERO_T);
-  free(sendNonZeros);
-  free(NNZoffsets);
-  free(recvNNZ);
-
-  //assemble the full matrix
-  dfloat *coarseA = (dfloat *) calloc(coarseTotal*coarseTotal,sizeof(dfloat));
-  for (int i=0;i<totalNNZ;i++) {
-    int n = recvNonZeros[i].row;
-    int m = recvNonZeros[i].col;
-    coarseA[n*coarseTotal+m] = recvNonZeros[i].val;
-  }
-
-  if (A->nullSpace) { //A is dense due to nullspace augmentation
-    for (int n=0;n<coarseTotal;n++) {
-      for (int m=0;m<coarseTotal;m++) {
-        coarseA[n*coarseTotal+m] += A->nullSpacePenalty*nullTotal[n]*nullTotal[m];
-      }
-    }
-  }
-
-  free(recvNonZeros);
-  free(nullTotal);
-
-  matrixInverse(coarseTotal, coarseA);
-
-  //store only the local rows of the full inverse
-  invCoarseA = (dfloat *) calloc(N*coarseTotal,sizeof(dfloat));
-  for (int n=0;n<N;n++) {
-    for (int m=0;m<coarseTotal;m++) {
-      invCoarseA[n*coarseTotal+m] = coarseA[(n+coarseOffset)*coarseTotal+m];
-    }
-  }
-
-  xLocal   = (dfloat*) calloc(N,sizeof(dfloat));
-  rhsLocal = (dfloat*) calloc(N,sizeof(dfloat));
-
-  xCoarse   = (dfloat*) calloc(coarseTotal,sizeof(dfloat));
-  rhsCoarse = (dfloat*) calloc(coarseTotal,sizeof(dfloat));
-
-  free(coarseA);
-
-  if((rank==0)&&(options.compareArgs("VERBOSE","TRUE"))) printf("done.\n");
+  if(rank == 0 && options.compareArgs("VERBOSE","TRUE")) 
+    printf("done.\n"); fflush(stdout);
 }
 
 void coarseSolver::syncToDevice() {}
 
 void coarseSolver::solve(dfloat *rhs, dfloat *x) {
-  exit(1);
+  if(platform->comm.mpiRank == 0) 
+    printf("Trying to call invalid host coarseSolver::solve!\n"); fflush(stdout); 
+  ABORT(1);
 }
 
 void coarseSolver::gather(occa::memory o_rhs, occa::memory o_x)
 {
   if (gatherLevel) {
-    //weight
     vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
     ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
     if(N)
@@ -405,55 +286,40 @@ void coarseSolver::scatter(occa::memory o_rhs, occa::memory o_x)
       o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
   }
 }
-void coarseSolver::BoomerAMGSolve() {
-  boomerAMGSolve(xLocal, rhsLocal);
-}
-void coarseSolver::AmgXSolve(occa::memory o_rhs, occa::memory o_x) {
-  const int useFP32 = options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
-  if(useFP32){
-    convertFP64ToFP32Kernel(N, o_rhs, o_rhsBuffer);
-    AMGXsolve(o_xBuffer.ptr(), o_rhsBuffer.ptr());
-    convertFP32ToFP64Kernel(N, o_xBuffer, o_x);
-  } else {
-    AMGXsolve(o_x.ptr(), o_rhs.ptr());
-  }
-}
+
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   platform->timer.tic("coarseSolve", 1);
+
   if(useSEMFEM){
+
     semfemSolver(o_rhs, o_x);
-  }
-  else {
-    const bool useDevice = options.compareArgs("AMG SOLVER", "AMGX");
+
+  } else {
+    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "GPU");
+    const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
+
     if (gatherLevel) {
-      //weight
       vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
       ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-      if(N && !useDevice)
-        o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      if(N && !useDevice) o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
     } else {
-      if(N && !useDevice)
-        o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
+      if(N && !useDevice) o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
     }
+    occa::memory o_b = gatherLevel ? o_Gx : o_rhs;
 
     if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
-      BoomerAMGSolve(); 
+      if(useDevice) 
+        boomerAMGSolveDevice(o_x.ptr(), o_b.ptr());
+      else
+        boomerAMGSolve(xLocal, rhsLocal); 
     } else if (options.compareArgs("AMG SOLVER", "AMGX")){
-      occa::memory o_b = gatherLevel ? o_Gx : o_rhs;
-      AmgXSolve(o_b, o_x);
-    } else {
-      //gather the full vector
-      MPI_Allgatherv(rhsLocal,             N,                MPI_DFLOAT,
-                     rhsCoarse, coarseCounts, coarseOffsets, MPI_DFLOAT, comm);
-
-      //multiply by local part of the exact matrix inverse
-      // #pragma omp parallel for
-      for (int n=0;n<N;n++) {
-        xLocal[n] = 0.;
-        for (int m=0;m<coarseTotal;m++) {
-          xLocal[n] += invCoarseA[n*coarseTotal+m]*rhsCoarse[m];
-        }
+      if(useFP32){
+        convertFP64ToFP32Kernel(N, o_b, o_rhsBuffer);
+        AMGXsolve(o_xBuffer.ptr(), o_rhsBuffer.ptr());
+        convertFP32ToFP64Kernel(N, o_xBuffer, o_x);
+      } else {
+        AMGXsolve(o_x.ptr(), o_b.ptr());
       }
     }
 
@@ -462,14 +328,15 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
         o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
       if(N && useDevice)
         o_Gx.copyFrom(o_x, N*sizeof(dfloat));
-      ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
+        ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
     } else {
       if(N && !useDevice)
         o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
     }
-  }
-  platform->timer.toc("coarseSolve");
 
+  }
+
+  platform->timer.toc("coarseSolve");
 }
 
 } //namespace parAlmond

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.18)
 project(NekRS LANGUAGES C CXX Fortran VERSION 22.1.0)
 
 if(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
@@ -6,6 +6,7 @@ if(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 endif(${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(CheckCCompilerFlag)
+include(CheckLinkerFlag)
 include(FortranCInterface)
 include(ExternalProject)
 include(FetchContent)
@@ -22,6 +23,7 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/occa/lib")
 
 ###############################################################################
 # Configure Options
@@ -119,14 +121,10 @@ if ("${GIT_COMMIT_HASH}" STREQUAL "")
 endif()
 
 # avoid hijacked symbols with the same name
-set(BSYMBOLIC_FLAG " -Wl,-Bsymbolic -Wl,-Bsymbolic-functions")
-list(APPEND CMAKE_REQUIRED_LIBRARIES ${BSYMBOLIC_FLAG})
-check_c_compiler_flag("" Allowed_LD_Flag_BSYMBOLIC)
-list(REMOVE_ITEM CMAKE_REQUIRED_LIBRARIES ${BSYMBOLIC_FLAG})
+set(BSYMBOLIC_FLAG "LINKER:-Bsymbolic LINKER:-Bsymbolic-functions")
+check_linker_flag(C ${BSYMBOLIC_FLAG} Allowed_LD_Flag_BSYMBOLIC)
 if(NOT Allowed_LD_Flag_BSYMBOLIC OR APPLE)
   set(BSYMBOLIC_FLAG "")
-else()
-#  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${BSYMBOLIC_FLAG}")
 endif()
 
 ###############################################################################
@@ -184,7 +182,7 @@ set(SRC
     src/bdry/bcMap.cpp
     src/core/compileKernels.cpp
     src/setup/setup.cpp
-    src/core/alignment.cpp
+    src/bdry/alignment.cpp
     src/core/registerNrsKernels.cpp
     src/core/registerPostProcessingKernels.cpp
     src/bdry/createEToBV.cpp
@@ -197,7 +195,7 @@ set(SRC
     src/cds/registerCdsKernels.cpp
     src/io/parReader.cpp
     src/io/re2Reader.cpp
-    src/core/configReader.cpp
+    src/io/configReader.cpp
     src/core/timer.cpp
     src/core/platform.cpp
     src/core/comm.cpp
@@ -238,7 +236,7 @@ set_property(
 
 add_library(nekrs-lib SHARED ${SRC})
 
-add_dependencies(nekrs-lib HYPRE_BUILD)
+add_dependencies(nekrs-lib nekrs-hypre-cpu)
 set_target_properties(nekrs-lib PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs)
 target_link_libraries(nekrs-lib PUBLIC libocca OpenMP::OpenMP_CXX PRIVATE gs ${GSLIB})
 

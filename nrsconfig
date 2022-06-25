@@ -11,7 +11,7 @@ set -e -a
 : ${NEKRS_GPU_MPI:=1}
 
 : ${OCCA_CXX:="g++"}
-: ${OCCA_CXXFLAGS:="-O3 -g -march=native -mtune=native"}
+: ${OCCA_CXXFLAGS:="-O3 -g -march=native -mtune=native -fvisibility=hidden"}
 : ${OCCA_CUDA_COMPILER_FLAGS:="-O3 --fmad=true -lineinfo"}
 : ${OCCA_HIP_COMPILER_FLAGS:="-O3 -g -ffp-contract=fast"}
 : ${OCCA_OPENCL_COMPILER_FLAGS:="-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros"}

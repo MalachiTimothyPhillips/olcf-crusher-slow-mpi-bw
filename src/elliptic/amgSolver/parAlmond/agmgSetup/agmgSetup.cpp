@@ -31,7 +31,6 @@ namespace parAlmond {
 void solver_t::AMGSetup(parCSR *A){
   // approximate Nrows at coarsest level  
   coarseLevel = new coarseSolver(options, A->comm);
-  const int gCoarseSize = coarseLevel->getTargetSize();
 
   AMGstartLev = numLevels;
 
@@ -40,7 +39,9 @@ void solver_t::AMGSetup(parCSR *A){
 
   setupAgmgSmoother((agmgLevel*)(levels[numLevels]), stype, ChebyshevIterations);
 
+#if 0
   hlong globalSize = L->A->globalRowStarts[size];
+  const int gCoarseSize = coarseLevel->getTargetSize();
 
   //if the system if already small, dont create MG levels
   bool done = false;
@@ -64,6 +65,11 @@ void solver_t::AMGSetup(parCSR *A){
     }
     globalSize = globalCoarseSize;
   }
+#else
+  coarseLevel->setup(A);
+  baseLevel = numLevels;
+  numLevels++;
+#endif
 
   size_t requiredBytes = 3*levels[AMGstartLev]->Ncols*sizeof(dfloat);
   allocateScratchSpace(requiredBytes, device);
