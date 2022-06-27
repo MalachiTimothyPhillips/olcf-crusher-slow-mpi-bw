@@ -140,7 +140,7 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     const uint *p, *pe, *size=c->size;
     for(p=c->p,pe=p+c->n;p!=pe;++p) {
       const int len = *(size++) * unit_size;
-      MPI_Irecv((void*)buf,len,MPI_UNSIGNED_CHAR,*p,*p,comm->c,req++);
+      MPI_Irecv((void*)buf,len,MPI_UNSIGNED_CHAR,*p,*p,gs->comm,req++);
       buf += len;
     }
   }
@@ -157,7 +157,7 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     const uint *p, *pe, *size=c->size;
     for(p=c->p,pe=p+c->n;p!=pe;++p) {
       const int len = *(size++) * unit_size;
-      MPI_Isend((void*)buf,len,MPI_UNSIGNED_CHAR,*p,comm->id,comm->c,req++);
+      MPI_Isend((void*)buf,len,MPI_UNSIGNED_CHAR,*p,comm->id,gs->comm,req++);
       buf += len;
     }
     MPI_Waitall(pwd->comm[send].n + pwd->comm[recv].n, pwd->req, MPI_STATUSES_IGNORE);
