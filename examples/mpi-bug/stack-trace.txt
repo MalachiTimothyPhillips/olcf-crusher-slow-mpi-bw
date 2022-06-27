@@ -1,0 +1,16 @@
+#0  0x0000151af3bc0657 in write () from /lib64/libpthread.so.0
+#1  0x0000151ae91a8bd9 in device_write (cmd=cmd@entry=0x7ffc9ebd2690, len=len@entry=88, dev=<optimized out>) at src/libcxi.c:45
+
+#2  0x0000151ae91aa067 in cxil_map (lni=0x73f478, va=0x151025b1c638, len=27542592, flags=13, hints=hints@entry=0x7ffc9ebd2770, md=md@entry=0x1043ee28) at src/libcxi.c:828
+#3  0x0000151aea73724a in cxip_map_nocache (attr=0x7ffc9ebd27b0, attr=0x7ffc9ebd27b0, md=0x7ffc9ebd2860, dom=0x7d2b30) at prov/cxi/src/cxip_iomm.c:379
+#4  cxip_map (dom=dom@entry=0x7d2b30, buf=buf@entry=0x151025b1c638, len=len@entry=27542592, flags=flags@entry=0, md=md@entry=0x7ffc9ebd2860) at prov/cxi/src/cxip_iomm.c:516
+--Type <RET> for more, q to quit, c to continue without paging--
+#5  0x0000151aea72e43f in cxip_recv_req_alloc (len=27542592, buf=0x151025b1c638, rxc=0x7d4e10) at prov/cxi/src/cxip_msg.c:171
+#6  cxip_recv_common (rxc=0x7d4e10, buf=0x151025b1c638, len=27542592, desc=<optimized out>, src_addr=<optimized out>, tag=60129542201, ignore=246290604621824, context=0x151af7191980 <MPIR_Request_direct+2208>, flags=16777216, tagged=true, comp_cntr=0x0) at prov/cxi/src/cxip_msg.c:3295
+#7  0x0000151aea72f02f in cxip_trecv (ep=<optimized out>, buf=<optimized out>, len=<optimized out>, desc=<optimized out>, src_addr=<optimized out>, tag=<optimized out>, ignore=246290604621824, context=0x151af7191980 <MPIR_Request_direct+2208>) at prov/cxi/src/cxip_msg.c:4582
+#8  0x0000151af4da1490 in PMPI_Irecv () from /opt/cray/pe/lib64/libmpi_gnu_91.so.12
+#9  0x0000151af8a65bce in oogs::start (o_v=..., k=<optimized out>, stride=<optimized out>, _type=<optimized out>, op=<optimized out>, gs=0x8576d8) at /ccs/home/malachi/develop/crusher-nekRS/3rd_party/gslib/ogs/src/oogs.cpp:674
+#10 0x0000151af8a69d41 in oogs::setup(ogs_t*, int, int, char const*, std::function<void ()>, oogs_mode) (ogs=0x2157908, nVec=3, stride=11789824, type=type@entry=0x151af8a88f46 "double", callback=..., gsMode=gsMode@entry=OOGS_AUTO) at /ccs/home/malachi/develop/crusher-nekRS/3rd_party/gslib/ogs/src/oogs.cpp:437
+#11 0x0000151af88742a5 in nrsSetup (comm=<optimized out>, options=..., nrs=<optimized out>) at /ccs/home/malachi/develop/crusher-nekRS/src/setup/setup.cpp:379
+#12 0x0000151af884e1d8 in nekrs::setup (commg_in=<optimized out>, comm_in=comm_in@entry=-2080374782, buildOnly=0, commSizeTarget=0, ciMode=0, _setupFile=..., _backend=..., _deviceID=..., debug=0) at /ccs/home/malachi/develop/crusher-nekRS/src/lib/nekrs.cpp:186
+#13 0x000000000040451f in main (argc=<optimized out>, argv=<optimized out>) at /ccs/home/malachi/develop/crusher-nekRS/src/main.cpp:415

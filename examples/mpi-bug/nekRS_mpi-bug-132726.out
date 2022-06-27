@@ -1,0 +1,322 @@
+
+Currently Loaded Modules:
+  1) craype-x86-trento                     10) craype/2.7.15
+  2) libfabric/1.15.0.0                    11) cray-dsmml/0.2.2
+  3) craype-network-ofi                    12) PrgEnv-gnu/8.3.3
+  4) perftools-base/22.05.0                13) xalt/1.3.0
+  5) xpmem/2.3.2-2.2_7.8__g93dd7ee.shasta  14) DefApps/default
+  6) cray-pmi/6.1.2                        15) craype-accel-amd-gfx90a
+  7) gcc/11.2.0                            16) cray-mpich/8.1.16
+  8) openblas/0.3.17                       17) rocm/5.1.0
+  9) tmux/3.2a
+
+ 
+
+
+
+======================= ROCm System Management Interface =======================
+================================= Concise Info =================================
+GPU  Temp   AvgPwr  SCLK    MCLK     Fan  Perf  PwrCap  VRAM%  GPU%  
+0    34.0c  86.0W   800Mhz  1600Mhz  0%   auto  500.0W    0%   0%    
+1    38.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+2    32.0c  88.0W   800Mhz  1600Mhz  0%   auto  500.0W    0%   0%    
+3    30.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+4    36.0c  87.0W   800Mhz  1600Mhz  0%   auto  500.0W    0%   0%    
+5    39.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+6    33.0c  91.0W   800Mhz  1600Mhz  0%   auto  500.0W    0%   0%    
+7    34.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+================================================================================
+============================= End of ROCm SMI Log ==============================
+
+
+======================= ROCm System Management Interface =======================
+================================ KFD Processes =================================
+No KFD PIDs currently running
+================================================================================
+============================= End of ROCm SMI Log ==============================
+Mon 27 Jun 2022 02:23:50 PM EDT
+PE 0: MPICH processor detected:
+PE 0:   AMD Milan (25:48:1) (family:model:stepping)
+PE 0: MPICH environment settings =====================================
+PE 0:   MPICH_ENV_DISPLAY                              = 1
+PE 0:   MPICH_VERSION_DISPLAY                          = 0
+PE 0:   MPICH_ABORT_ON_ERROR                           = 0
+PE 0:   MPICH_CPUMASK_DISPLAY                          = 0
+PE 0:   MPICH_STATS_DISPLAY                            = 0
+PE 0:   MPICH_RANK_REORDER_METHOD                      = 1
+PE 0:   MPICH_RANK_REORDER_DISPLAY                     = 0
+PE 0:   MPICH_MEMCPY_MEM_CHECK                         = 0
+PE 0:   MPICH_USE_SYSTEM_MEMCPY                        = 0
+PE 0:   MPICH_OPTIMIZED_MEMCPY                         = 1
+PE 0:   MPICH_ALLOC_MEM_PG_SZ                          = 4096
+PE 0:   MPICH_ALLOC_MEM_POLICY                         = PREFERRED
+PE 0:   MPICH_ALLOC_MEM_AFFINITY                       = SYS_DEFAULT
+PE 0:   MPICH_MALLOC_FALLBACK                          = 0
+PE 0:   MPICH_MEM_DEBUG_FNAME                          = 
+PE 0:   MPICH_INTERNAL_MEM_AFFINITY                    = SYS_DEFAULT
+PE 0:   MPICH_NO_BUFFER_ALIAS_CHECK                    = 0
+PE 0:   MPICH_COLL_SYNC                                = 0
+PE 0:   MPICH_SINGLE_HOST_ENABLED                        = 1
+PE 0: MPICH/RMA environment settings =================================
+PE 0:   MPICH_RMA_MAX_PENDING                          = 128
+PE 0:   MPICH_RMA_SHM_ACCUMULATE                       = 0
+PE 0: MPICH/GPU environment settings =================================
+PE 0:   MPICH_GPU_SUPPORT_ENABLED                      = 1
+PE 0:   MPICH_GPU_IPC_ENABLED                          = 1
+PE 0:   MPICH_GPU_EAGER_REGISTER_HOST_MEM              = 1
+PE 0:   MPICH_GPU_IPC_THRESHOLD                        = 1024
+PE 0:   MPICH_GPU_NO_ASYNC_MEMCPY                      = 0
+PE 0:   MPICH_GPU_COLL_STAGING_AREA_OPT                = 1
+PE 0:   MPICH_GPU_EAGER_DEVICE_MEM                     = 0
+PE 0:   MPICH_USE_GPU_STREAM_TRIGGERED                 = 0
+PE 0:   MPICH_NUM_MAX_GPU_STREAMS                      = 27
+PE 0:   MPICH_ENABLE_YAKSA                             = 0
+PE 0: MPICH/Dynamic Process Management environment settings ==========
+PE 0:   MPICH_DPM_DIR                                  = 7477584
+PE 0:   MPICH_LOCAL_SPAWN_SERVER                       = -1
+PE 0: MPICH/SMP environment settings =================================
+PE 0:   MPICH_SMP_SINGLE_COPY_MODE                     = XPMEM
+PE 0:   MPICH_SMP_SINGLE_COPY_SIZE                     = 8192
+PE 0:   MPICH_SHM_PROGRESS_MAX_BATCH_SIZE              = 8
+PE 0: MPICH/OFI environment settings =================================
+PE 0:   MPICH_OFI_USE_PROVIDER                         = cxi
+PE 0:   MPICH_OFI_VERBOSE                              = 0
+PE 0:   MPICH_OFI_NIC_VERBOSE                          = 0
+PE 0:   FI_CXI_RDZV_THRESHOLD                          = 16384
+PE 0:   FI_CXI_RDZV_EAGER_SIZE                         = 2048
+PE 0:   FI_CXI_DEFAULT_CQ_SIZE                         = 32768
+PE 0:   FI_CXI_OFLOW_BUF_SIZE                          = 12582912
+PE 0:   FI_CXI_OFLOW_BUF_COUNT                         = 3
+PE 0:   FI_MR_CACHE_MAX_SIZE                           = -1
+PE 0:   FI_MR_CACHE_MAX_COUNT                          = 0
+PE 0:   MPICH_OFI_DEFAULT_TCLASS                       = TC_BEST_EFFORT
+PE 0:   MPICH_OFI_TCLASS_ERRORS                        = warn
+PE 0:   MPICH_OFI_CXI_PID_BASE                         = 0
+PE 0:   MPICH_OFI_USE_SCALABLE_STARTUP                 = 1
+PE 0:   MPICH_OFI_NIC_POLICY                           = BLOCK
+PE 0:   MPICH_OFI_NIC_MAPPING                          = NULL
+PE 0:   MPICH_OFI_NUM_NICS                             = NULL
+PE 0:   MPICH_CH4_OFI_ENABLE_CONTROL_AUTO_PROGRESS     = -1
+PE 0:   MPICH_CH4_OFI_ENABLE_DATA_AUTO_PROGRESS        = -1
+PE 0:   MPICH_OFI_RMA_STARTUP_CONNECT                  = 0
+PE 0:   MPICH_OFI_SKIP_NIC_SYMMETRY_TEST               = 0
+PE 0:   MPICH_OFI_STARTUP_CONNECT                      = 0
+PE 0: MPICH/COLLECTIVE environment settings ==========================
+PE 0:   MPICH_COLL_OPT_OFF                             = 0
+PE 0:   MPICH_BCAST_ONLY_TREE                          = 1
+PE 0:   MPICH_BCAST_INTERNODE_RADIX                    = 4
+PE 0:   MPICH_BCAST_INTRANODE_RADIX                    = 4
+PE 0:   MPICH_ALLTOALL_SHORT_MSG                       = 64-512
+PE 0:   MPICH_ALLTOALL_SYNC_FREQ                       = 1-24
+PE 0:   MPICH_ALLTOALL_BLK_SIZE                        = 16384
+PE 0:   MPICH_ALLTOALL_CHUNKING_MAX_NODES              = 90
+PE 0:   MPICH_ALLTOALLV_THROTTLE                       = 8
+PE 0:   MPICH_ALLGATHER_VSHORT_MSG                     = 8192-16384
+PE 0:   MPICH_ALLGATHERV_VSHORT_MSG                    = 8192-16384
+PE 0:   MPICH_GATHERV_SHORT_MSG                        = 131072
+PE 0:   MPICH_GATHERV_MIN_COMM_SIZE                    = 64
+PE 0:   MPICH_GATHERV_MAX_TMP_SIZE                     = 536870912
+PE 0:   MPICH_GATHERV_SYNC_FREQ                        = 16
+PE 0:   MPICH_IGATHERV_RAND_COMMSIZE                   = 2048
+PE 0:   MPICH_IGATHERV_RAND_RECVLIST                   = 0
+PE 0:   MPICH_SCATTERV_SHORT_MSG                       = 2048-8192
+PE 0:   MPICH_SCATTERV_MIN_COMM_SIZE                   = 64
+PE 0:   MPICH_SCATTERV_MAX_TMP_SIZE                    = 536870912
+PE 0:   MPICH_SCATTERV_SYNC_FREQ                       = 16
+PE 0:   MPICH_SCATTERV_SYNCHRONOUS                     = 0
+PE 0:   MPICH_ALLREDUCE_MAX_SMP_SIZE                   = 262144
+PE 0:   MPICH_ALLREDUCE_BLK_SIZE                       = 716800
+PE 0:   MPICH_GPU_ALLREDUCE_USE_KERNEL                 = 0
+PE 0:   MPICH_ALLREDUCE_NO_SMP                         = 0
+PE 0:   MPICH_REDUCE_NO_SMP                            = 0
+PE 0:   MPICH_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE = 524288
+PE 0:   MPICH_REDUCE_SCATTER_MAX_COMMSIZE              = 1000
+PE 0:   MPICH_SHARED_MEM_COLL_OPT                      = 1
+PE 0:   MPICH_SHARED_MEM_COLL_NCELLS                   = 8
+PE 0:   MPICH_SHARED_MEM_COLL_CELLSZ                   = 256
+PE 0: MPICH MPIIO environment settings ===============================
+PE 0:   MPICH_MPIIO_HINTS_DISPLAY                      = 0
+PE 0:   MPICH_MPIIO_HINTS                              = NULL
+PE 0:   MPICH_MPIIO_ABORT_ON_RW_ERROR                  = disable
+PE 0:   MPICH_MPIIO_CB_ALIGN                           = 2
+PE 0:   MPICH_MPIIO_DVS_MAXNODES                       = -1
+PE 0:   MPICH_MPIIO_AGGREGATOR_PLACEMENT_DISPLAY       = 0
+PE 0:   MPICH_MPIIO_AGGREGATOR_PLACEMENT_STRIDE        = -1
+PE 0:   MPICH_MPIIO_MAX_NUM_IRECV                      = 50
+PE 0:   MPICH_MPIIO_MAX_NUM_ISEND                      = 50
+PE 0:   MPICH_MPIIO_MAX_SIZE_ISEND                     = 10485760
+PE 0:   MPICH_MPIIO_OFI_STARTUP_CONNECT                = disable
+PE 0:   MPICH_MPIIO_OFI_STARTUP_NODES_AGGREGATOR        = 2
+PE 0: MPICH MPIIO statistics environment settings ====================
+PE 0:   MPICH_MPIIO_STATS                              = 0
+PE 0:   MPICH_MPIIO_TIMERS                             = 0
+PE 0:   MPICH_MPIIO_WRITE_EXIT_BARRIER                 = 1
+PE 0: MPICH Thread Safety settings ===================================
+PE 0:   MPICH_ASYNC_PROGRESS                           = 0
+PE 0:   MPICH_OPT_THREAD_SYNC                          = 1
+PE 0:   rank 0 required = single, was provided = single
+                 __    ____  _____
+   ____   ___   / /__ / __ \/ ___/
+  / __ \ / _ \ / //_// /_/ /\__ \ 
+ / / / //  __// ,<  / _, _/___/ / 
+/_/ /_/ \___//_/|_|/_/ |_|/____/  v22.0.0 (a181149b)
+
+COPYRIGHT (c) 2019-2022 UCHICAGO ARGONNE, LLC
+
+MPI tasks: 64
+
+reading par file ...
+
+using NEKRS_HOME: /gpfs/alpine/scratch/malachi/csc262/installs/nekrs-crusher-v22.0-early-prepost
+using NEKRS_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache
+using OCCA_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/occa/
+
+Initializing device 
+active occa mode: HIP
+
+building udf ... 
+[100%] Built target UDF
+cd /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/udf && make  (retVal: 0)
+done (0.207759s)
+using existing SIZE file /gpfs/alpine/csc262/scratch/malachi/mpi-bug/.cache/SIZE
+skip building nekInterface (SIZE requires no update)
+loading nek ... 
+done
+loading kernels (this may take awhile) ...
+loading udf kernels ... done (0.00782529s)
+Error in kernel 0 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=23 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00452686 wordSize=64 GDOF/s=4.52569 GB/s=431.002 GFLOPS/s=3129.95 kernelVer=0
+Error in kernel 1 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00472621 wordSize=64 GDOF/s=4.3348 GB/s=412.822 GFLOPS/s=2997.93 kernelVer=1
+Error in kernel 2 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=21 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00474098 wordSize=64 GDOF/s=4.3213 GB/s=411.537 GFLOPS/s=2988.59 kernelVer=2
+Error in kernel 3 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00454811 wordSize=64 GDOF/s=4.50455 GB/s=428.988 GFLOPS/s=3115.33 kernelVer=3
+Error in kernel 4 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=23 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00447538 wordSize=64 GDOF/s=4.57775 GB/s=435.96 GFLOPS/s=3165.95 kernelVer=4
+Error in kernel 5 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=23 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00439721 wordSize=64 GDOF/s=4.65913 GB/s=443.71 GFLOPS/s=3222.23 kernelVer=5
+Error in kernel 6 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=23 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.0043919 wordSize=64 GDOF/s=4.66477 GB/s=444.247 GFLOPS/s=3226.13 kernelVer=6
+Error in kernel 7 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=24 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.004269 wordSize=64 GDOF/s=4.79905 GB/s=457.035 GFLOPS/s=3319 kernelVer=7
+Error in kernel 8 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00454344 wordSize=64 GDOF/s=4.50918 GB/s=429.429 GFLOPS/s=3118.53 kernelVer=8
+Error in kernel 9 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=22 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00455766 wordSize=64 GDOF/s=4.4951 GB/s=428.089 GFLOPS/s=3108.8 kernelVer=9
+Error in kernel 10 is 1.61537e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.0059144 wordSize=64 GDOF/s=3.46395 GB/s=329.887 GFLOPS/s=2395.65 kernelVer=10
+Error in kernel 11 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=14 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00708979 wordSize=64 GDOF/s=2.88967 GB/s=275.197 GFLOPS/s=1998.49 kernelVer=11
+Error in kernel 12 is 1.63758e-14 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00586996 wordSize=64 GDOF/s=3.49017 GB/s=332.385 GFLOPS/s=2413.79 kernelVer=12
+Error in kernel 13 is 0 compared to reference implementation.
+advSub: MPItasks=64 OMPthreads=8 NRepetitions=18 N=8 cubN=12 nEXT=2 Nfields=3 Nelements=13338 elapsed time=0.00570421 wordSize=64 GDOF/s=3.59159 GB/s=342.043 GFLOPS/s=2483.93 kernelVer=13
+Error in kernel compared to reference implementation 0: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=138 N=8 Nelements=13338 elapsed time=0.000737942 wordSize=64 GDOF/s=9.25419 GB/s=843.288 GFLOPS/s=1620.69 bkMode=1 kernelVer=0
+Error in kernel compared to reference implementation 1: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=136 N=8 Nelements=13338 elapsed time=0.000758689 wordSize=64 GDOF/s=9.00113 GB/s=820.228 GFLOPS/s=1576.38 bkMode=1 kernelVer=1
+Error in kernel compared to reference implementation 2: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=137 N=8 Nelements=13338 elapsed time=0.000736053 wordSize=64 GDOF/s=9.27795 GB/s=845.453 GFLOPS/s=1624.85 bkMode=1 kernelVer=2
+Error in kernel compared to reference implementation 4: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=144 N=8 Nelements=13338 elapsed time=0.000711599 wordSize=64 GDOF/s=9.59678 GB/s=874.507 GFLOPS/s=1680.69 bkMode=1 kernelVer=4
+Error in kernel compared to reference implementation 5: 0
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=144 N=8 Nelements=13338 elapsed time=0.000711423 wordSize=64 GDOF/s=9.59915 GB/s=874.722 GFLOPS/s=1681.11 bkMode=1 kernelVer=5
+Error in kernel compared to reference implementation 6: 2.13163e-14
+Ax: MPItasks=64 OMPthreads=8 NRepetitions=136 N=8 Nelements=13338 elapsed time=0.00075851 wordSize=64 GDOF/s=9.00325 GB/s=820.421 GFLOPS/s=1576.75 bkMode=1 kernelVer=6
+done (11.0579s)
+
+ Reading /gpfs/alpine/csc262/scratch/malachi/mpi-bug/mpi-bug.re2                                                                             
+ reading mesh 
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file    0.48     sec
+
+Running parCon ... (tol=0.2)
+Running parRSB ...
+parRSB finished in 1.35106 s
+
+ reading mesh 
+ reading curved sides      5296896
+ reading boundary faces      49704 for ifield   1
+ done :: read .re2 file     1.4     sec
+
+ setup mesh topology
+   Right-handed check complete for      853632 elements. OK.
+gs_setup: 5843584 unique labels shared
+   pairwise times (avg, min, max): 0.000187208 0.00017662 0.000195287
+   crystal router                : 0.00170084 0.00169129 0.00170995
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 6.17077e+07 61675820 61739380
+   buffer bytes (avg, min, max): 2.97503e+06 2949552 3000272
+   setupds time 1.7569E+00 seconds   0  9   145666944      853632
+ 
+ nElements   max/min/bal: 13338 13338 1.00
+ nMessages   max/min/avg: 11 8 9.50
+ msgSize     max/min/avg: 47817 17 20046.00
+ msgSizeSum  max/min/avg: 187517 184347 185939.50
+ 
+ max multiplicity            8
+ done :: setup mesh topology
+  
+ call usrdat
+ done :: usrdat
+
+ generate geometry data
+ done :: generate geometry data
+  
+ call usrdat2
+ done :: usrdat2
+
+  5.0664E-07  5.0664E-07  1.8503E-15  5.0664E-07  5.0664E-07  6.6382E-16 xyz repair 1
+  4.8125E-07  4.8125E-07  1.8503E-15  4.8125E-07  4.8125E-07  3.3528E-15 xyz repair 2
+  3.1247E-08  3.1247E-08  1.8433E-15  3.1247E-08  3.1247E-08  2.7558E-15 xyz repair 3
+  5.5511E-17  5.5511E-17  6.6498E-16  5.5511E-17  5.5511E-17  6.6498E-16 xyz repair 4
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ verify mesh topology
+ -0.50000000000001021       0.50000000000000999       Xrange
+ -0.50000000000000000       0.50000000000001832       Yrange
+   0.0000000000000000        12.000000000000000       Zrange
+ done :: verify mesh topology
+  
+ mesh metrics:
+ GLL grid spacing min/max    : 2.86E-04 7.57E-03
+ scaled Jacobian  min/max/avg: 7.44E-01 9.99E-01 9.57E-01
+ aspect ratio     min/max/avg: 2.08E+00 7.30E+00 3.22E+00
+
+ call usrdat3
+ done :: usrdat3
+
+gridpoints unique/tot:     438462720    622297728
+dofs vel/pr:               435661056    438462720
+ nek setup done in    1.4460E+01 s
+
+ set initial conditions
+ nekuic (1) for ifld            1
+ call nekuic for vel  
+ xyz min   -0.50000     -0.50000       0.0000    
+ uvwpt min  0.45434E-10 -0.99997E-01 -0.20998       0.0000       0.0000    
+ PS min      0.0000       0.0000       0.0000      0.99000E+22
+ xyz max    0.50000      0.50000       12.000    
+ uvwpt max  0.49999E-01  0.99997E-01   1.2100       0.0000       0.0000    
+ PS max      0.0000       0.0000       0.0000     -0.99000E+22
+ done :: set initial conditions
+  
+calling nek_userchk ...
+
+generating t-mesh ...
+loading mesh from nek ... NboundaryIDs: 1, NboundaryFaces: 5121792 done (0.00171709s)
+N: 8, Nq: 9, cubNq: 13
+computing geometric factors ... J [5.33842e-07,2.08687e-06] done (3.30057s)
+meshParallelGatherScatterSetup N=8
+timing gs modes: 4.95e-04s 1.21e-03s 1.00e-03s 1.00e-03s 1.02e-03s 6.11e-04s 6.12e-04s 
+used config: pw+device (MPI: 2.28e-04s / bi-bw: 78.3GB/s/rank)
+min 80% of the local elements are internal
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 132726.0 ON crusher009 CANCELLED AT 2022-06-27T14:40:45 ***
+slurmstepd: error: *** JOB 132726 ON crusher009 CANCELLED AT 2022-06-27T14:40:45 ***
+timing gs modes: 1.47e-03s 3.55e-03s 2.82e-03s 
