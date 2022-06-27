@@ -116,10 +116,12 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   props["flags"].asObject();
   props["include_paths"].asArray();
 
+  constexpr int NVfields {3};
+
   props["defines/p_cubNq"] = cubNq;
   props["defines/p_cubNp"] = cubNp;
   props["defines/p_nEXT"] = nEXT;
-  props["defines/p_NVfields"] = 3;
+  props["defines/p_NVfields"] = NVfields;
   props["defines/p_MovingMesh"] = platform->options.compareArgs("MOVING MESH", "TRUE");
 
   std::string installDir;
@@ -198,7 +200,7 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   auto invLMM   = randomVector<dfloat>(fieldOffset * nEXT);
   auto cubD  = randomVector<dfloat>(cubNq * cubNq);
   auto NU  = randomVector<dfloat>(Nfields * fieldOffset);
-  auto conv  = randomVector<dfloat>(Nfields * cubatureOffset * nEXT);
+  auto conv  = randomVector<dfloat>(NVfields * cubatureOffset * nEXT);
   auto cubInterpT  = randomVector<dfloat>(Nq * cubNq);
   auto Ud  = randomVector<dfloat>(Nfields * fieldOffset);
   auto BdivW  = randomVector<dfloat>(fieldOffset * nEXT);
@@ -211,7 +213,7 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
   auto o_invLMM = platform->device.malloc((nEXT * wordSize) * fieldOffset, invLMM.data());
   auto o_cubD = platform->device.malloc(cubNq * cubNq * wordSize, cubD.data());
   auto o_NU = platform->device.malloc((Nfields * wordSize) * fieldOffset, NU.data());
-  auto o_conv = platform->device.malloc((Nfields * nEXT * wordSize) * cubatureOffset, conv.data());
+  auto o_conv = platform->device.malloc((NVfields * nEXT * wordSize) * cubatureOffset, conv.data());
   auto o_cubInterpT = platform->device.malloc(Nq * cubNq * wordSize, cubInterpT.data());
   auto o_Ud = platform->device.malloc((Nfields * wordSize) * fieldOffset, Ud.data());
   auto o_BdivW = platform->device.malloc((nEXT * wordSize) * fieldOffset, BdivW.data());
@@ -240,8 +242,8 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
     if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return kernel;
 
     // perform correctness check
-    std::vector<dfloat> referenceResults(3*fieldOffset);
-    std::vector<dfloat> results(3*fieldOffset);
+    std::vector<dfloat> referenceResults(Nfields*fieldOffset);
+    std::vector<dfloat> results(Nfields*fieldOffset);
 
     kernelRunner(referenceKernel);
     o_NU.copyTo(referenceResults.data(), referenceResults.size() * sizeof(dfloat));
@@ -254,7 +256,8 @@ benchmarkAdvsub(int Nfields, int Nelements, int Nq, int cubNq, int nEXT, bool de
       err = std::max(err, std::abs(results[i] - referenceResults[i]));
     }
 
-    if(platform->comm.mpiRank == 0 && verbosity > 1){
+    const auto tol = 100. * std::numeric_limits<dfloat>::epsilon();
+    if(platform->comm.mpiRank == 0 && verbosity > 1 && err > tol){
       std::cout << "Error in kernel " << kernelVariant << " is " << err << " compared to reference implementation.\n";
     }
 
