@@ -409,7 +409,7 @@ oogs_t* oogs::setup(ogs_t *ogs, int nVec, dlong stride, const char *type, std::f
         if(gs->modeExchange == OOGS_EX_NBC && gs->mode == OOGS_DEVICEMPI)
   	      continue; // not yet supported by some MPI implementations
 
-        int nPass = 1;
+        int nPass = 2;
         for(int pass = 0; pass < nPass; pass++) {
           gs->earlyPrepostRecv = pass;
 
