@@ -211,10 +211,6 @@ c
             if (if3d) call sub2(vz,wz,ntotv)
          endif
 
-         write(6,*) "sum wx_e = ", glsum(wx, ntotv)
-         write(6,*) "sum wy_e = ", glsum(wy, ntotv)
-         write(6,*) "sum wz_e = ", glsum(wz, ntotv)
-        
          if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
 
          call copy(vx,w1,ntotv)
