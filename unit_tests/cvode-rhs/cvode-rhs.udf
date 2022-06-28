@@ -129,6 +129,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     auto Ux = randomVector<dfloat>(mesh->Nlocal);
     auto Uy = randomVector<dfloat>(mesh->Nlocal);
     auto Uz = randomVector<dfloat>(mesh->Nlocal);
+    auto meshUx = randomVector<dfloat>(mesh->Nlocal);
+    auto meshUy = randomVector<dfloat>(mesh->Nlocal);
+    auto meshUz = randomVector<dfloat>(mesh->Nlocal);
     nrs->cds->o_S.copyFrom(S.data(), mesh->Nlocal * sizeof(dfloat));
 
     auto o_Ux = nrs->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
@@ -139,15 +142,21 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     o_Uy.copyFrom(Uy.data(), mesh->Nlocal * sizeof(dfloat));
     o_Uz.copyFrom(Uz.data(), mesh->Nlocal * sizeof(dfloat));
 
+    auto o_meshUx = mesh->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUy = mesh->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUz = mesh->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
+
+    o_meshUx.copyFrom(meshUx.data(), mesh->Nlocal * sizeof(dfloat));
+    o_meshUy.copyFrom(meshUy.data(), mesh->Nlocal * sizeof(dfloat));
+    o_meshUz.copyFrom(meshUz.data(), mesh->Nlocal * sizeof(dfloat));
+
     applyDirichlet(nrs, time);
 
     nek::ocopyToNek(time, tstep);
     nek::userchk();
 
-    // flush output
-    std::cout << std::flush;
-
     checkRHS(nrs, time, tstep);
+
     PASS;
   }
 
