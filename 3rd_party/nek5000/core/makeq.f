@@ -54,14 +54,20 @@ C     !! NOTE: Do not change the content of the array BQ until the current
 
          if (ifcvfld(ifield)) then
 
-c           if (ifdiff(ifield)) then
-c              ntot = lx1*ly1*lz1*nelfld(ifield)
-c              call wlaplacian(w1,t(1,1,1,1,ifield-1),
-c     &                        vdiff(1,1,1,1,ifield),ifield)
-c              call add2(bq(1,1,1,1,ifield-1),w1,ntot)
-c              write(6,*) "sum bq after wlaplacian",
-c     $         glsum(bq(1,1,1,1,ifield-1), ntot)
-c           endif
+           if (ifdiff(ifield)) then
+              ntot = lx1*ly1*lz1*nelfld(ifield)
+              write(6,*) "norm bq before wlaplacian",
+     $         gl2normNoWt(bq(1,1,1,1,ifield-1), ntot)
+              write(6,*) "sum bq before wlaplacian",
+     $         glsum(bq(1,1,1,1,ifield-1), ntot)
+              call wlaplacian(w1,t(1,1,1,1,ifield-1),
+     &                        vdiff(1,1,1,1,ifield),ifield)
+              call add2(bq(1,1,1,1,ifield-1),w1,ntot)
+              write(6,*) "sum bq after wlaplacian",
+     $         glsum(bq(1,1,1,1,ifield-1), ntot)
+              write(6,*) "norm bq after wlaplacian",
+     $         gl2normNoWt(bq(1,1,1,1,ifield-1), ntot)
+           endif
 
          else
 

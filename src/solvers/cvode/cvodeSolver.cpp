@@ -472,7 +472,13 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       }
     }
 
-#if 0
+#if 1
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_FS, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "2 norm prior to applying weak laplacian " << norm2 << "\n";
+      }
+    }
     // weak laplcian + boundary terms
     occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
@@ -492,6 +498,12 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                               cds->o_EToB[is],
                               *(cds->o_usrwrk),
                               platform->o_mempool.slice1);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice1, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm helmholtzRHS term  = " << norm2 << "\n";
+      }
+    }
     
     cds->o_ellipticCoeff.copyFrom(cds->o_diff, mesh->Nlocal * sizeof(dfloat),
       cds->fieldOffsetScan[is] * sizeof(dfloat), 0);
@@ -500,10 +512,43 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     auto o_helmholtzPart = cds->o_ellipticCoeff + nrs->fieldOffset * sizeof(dfloat);
     platform->linAlg->fill(mesh->Nlocal, 0.0, o_helmholtzPart);
 
-    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_ellipticCoeff, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm diff field term  = " << norm2 << "\n";
+      }
+    }
 
+    platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice2);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm input field term  = " << norm2 << "\n";
+      }
+    }
+
+    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm helmholtz term  = " << norm2 << "\n";
+      }
+    }
+
+#if 1
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
       -1.0, platform->o_mempool.slice2);
+#else
+    platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
+      1.0, platform->o_mempool.slice2);
+#endif
+
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm bcneusc - axhelm term  = " << norm2 << "\n";
+      }
+    }
 
     platform->linAlg->axpby(mesh->Nlocal,
         1.0,
@@ -523,6 +568,12 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       );
       if(platform->comm.mpiRank == 0){
         std::cout << "sum FS after wlaplacian = " << sumTerm << std::endl;
+      }
+    }
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_FS, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "2 norm after applying weak laplacian " << norm2 << "\n";
       }
     }
 #endif
