@@ -27,7 +27,7 @@ void userq(nrs_t* nrs, dfloat time, occa::memory o_S, occa::memory o_SU)
 
   lowMach::dpdt(o_SU);
   // apply constant forcing
-  platform->linAlg->fill(nrs->meshV->Nlocal, 2.5, o_SU);
+  //platform->linAlg->fill(nrs->meshV->Nlocal, 2.5, o_SU);
 }
 
 void qtl(nrs_t* nrs, dfloat time, occa::memory o_div)

@@ -50,7 +50,8 @@ C Set user forcing function for the energy and species
       INCLUDE 'TOTAL'  
       INCLUDE 'NEKUSE' 
       
-      qvol = 2.5
+      !qvol = 2.5
+      qvol = 0.0
 
       RETURN
       END
