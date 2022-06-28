@@ -3,6 +3,8 @@
 
 #include "cvodeSolver.hpp"
 
+static int ciMode = 0;
+
 #define PASS { if (platform->comm.mpiRank == 0) printf("TESTS passed \n"); MPI_Finalize(); exit(0); }
 #define FAIL { if (platform->comm.mpiRank == 0) printf("TESTS failed!\n"); MPI_Finalize(); exit(2); }
 
