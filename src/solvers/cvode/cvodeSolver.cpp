@@ -246,9 +246,15 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       std::cout << std::endl;
     }
 
+    auto o_meshUx = mesh->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUy = mesh->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUz = mesh->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
 
+    std::cout << "sum meshUx_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUx, platform->comm.mpiComm) << "\n";
+    std::cout << "sum meshUy_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUy, platform->comm.mpiComm) << "\n";
+    std::cout << "sum meshUz_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUz, platform->comm.mpiComm) << "\n";
 
-    computeUrst(nrs);
+    computeUrst(nrs, true);
 
     auto NlocalD = nrs->meshV->Nelements * mesh->cubNp;
     auto o_Ur = nrs->o_Urst + (0 * sizeof(dfloat)) * nrs->cubatureOffset;
@@ -687,6 +693,6 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
   }
 
-  computeUrst(nrs);
+  computeUrst(nrs, false);
 }
 } // namespace cvode
