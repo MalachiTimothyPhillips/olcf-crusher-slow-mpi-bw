@@ -23,8 +23,6 @@ C     !! NOTE: Do not change the content of the array BQ until the current
       if (ifmhd.and.ifaxis) if_conv_std = .false. ! conv. treated in induct.f
 
       call makeq_aux ! nekuq, etc.
-      write(6,*) "sum bq after makeq_aux",
-     $  glsum(bq(1,1,1,1,ifield-1), ntot)
 
       if (ifadvc(ifield) .and. if_conv_std) then
 
@@ -36,8 +34,6 @@ C     !! NOTE: Do not change the content of the array BQ until the current
              endif
 
              call convab
-             write(6,*) "sum bq after convab",
-     $         glsum(bq(1,1,1,1,ifield-1), ntot)
 
              if (ifmvbd) then
                 call add2 (vx, wx, ntot)
@@ -56,17 +52,9 @@ C     !! NOTE: Do not change the content of the array BQ until the current
 
            if (ifdiff(ifield)) then
               ntot = lx1*ly1*lz1*nelfld(ifield)
-              write(6,*) "norm bq before wlaplacian",
-     $         gl2normNoWt(bq(1,1,1,1,ifield-1), ntot)
-              write(6,*) "sum bq before wlaplacian",
-     $         glsum(bq(1,1,1,1,ifield-1), ntot)
               call wlaplacian(w1,t(1,1,1,1,ifield-1),
      &                        vdiff(1,1,1,1,ifield),ifield)
               call add2(bq(1,1,1,1,ifield-1),w1,ntot)
-              write(6,*) "sum bq after wlaplacian",
-     $         glsum(bq(1,1,1,1,ifield-1), ntot)
-              write(6,*) "norm bq after wlaplacian",
-     $         gl2normNoWt(bq(1,1,1,1,ifield-1), ntot)
            endif
 
          else
