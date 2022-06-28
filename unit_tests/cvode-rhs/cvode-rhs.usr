@@ -124,12 +124,8 @@ C=======================================================================
         endif
 
         ifuservp = .true.
-        write(6,*) "istep = ", istep, "time = ", time
         !call my_rhs_fun(time, y, ydot)
         call my_rhs_fun(1e-2, 1e-2, y, ydot)
-        write(6,*) "sum y ", glsum(y, nxyz * nelfld(2))
-        write(6,*) "sum ydot ", glsum(ydot, nxyz * nelfld(2))
-        write(6,*) "dp0thdt = ", dp0thdt
       endif
 
       RETURN
