@@ -825,6 +825,21 @@ c
       return
       end
 c-----------------------------------------------------------------------
+      real function gl2normNoWt(a,n)
+
+      include 'SIZE'
+      include 'MASS'
+
+      real a(1)
+
+      common /scrsf/ w1 (lx1,ly1,lz1,lelt)
+
+      call col3 (w1,a,a,n)
+      gl2normNoWt = sqrt(glsum (w1,n))
+
+      return
+      end
+c-----------------------------------------------------------------------
       real function gl2norm(a,n)
 
       include 'SIZE'

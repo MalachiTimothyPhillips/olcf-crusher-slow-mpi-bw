@@ -92,6 +92,7 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
   if (mesh->cht)
     mesh = nrs->cds->mesh[0];
 
+#if 0
   // Note: these operations seem to be relatively expensive...
   auto o_Lids = platform->device.malloc(mesh->Nlocal * sizeof(dlong));
   std::vector<dlong> Eids(mesh->Nlocal);
@@ -135,11 +136,23 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
       EToLUnique[eid] = -1;
     }
   }
+#else
+  // for simplicity, force L := E
+  std::vector<dlong> EToL(mesh->Nlocal);
+  std::vector<dlong> EToLUnique(mesh->Nlocal);
+
+  LFieldOffset = nrs->fieldOffset;
+
+  std::iota(EToL.begin(), EToL.end(), 0);
+  std::iota(EToLUnique.begin(), EToLUnique.end(), 0);
+#endif
 
   this->o_EToL = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToL.data());
   this->o_EToLUnique = platform->device.malloc(mesh->Nlocal * sizeof(dlong), EToLUnique.data());
 
+#if 0
   o_Lids.free();
+#endif
 }
 
 void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
@@ -159,6 +172,14 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
+    if(platform->comm.mpiRank == 0){
+      std::cout << "cv_dtlag = ";
+      for(int i = 0; i < 3; ++i){
+        std::cout << dtCvode[i] << ", ";
+      }
+      std::cout << std::endl;
+    }
+
     const int bdfOrder = std::min(tstep, nrs->nBDF);
     const int extOrder = std::min(tstep, nrs->nEXT);
     nek::extCoeff(coeffEXT.data(), dtCvode.data(), extOrder, bdfOrder);
@@ -170,9 +191,36 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       coeffBDF[i - 1] = 0.0;
     }
     
+    if(platform->comm.mpiRank == 0){
+      std::cout << "coeffEXT = ";
+      for(auto && v : coeffEXT){
+        std::cout << v << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "g0 = " << this->g0 << "\n";
+      std::cout << "coeffBDF = ";
+      for(auto && v : coeffBDF){
+        std::cout << v << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+
     o_coeffExt.copyFrom(coeffEXT.data(), maxExtrapolationOrder * sizeof(dfloat));
 
     extrapolateInPlaceKernel(nrs->meshV->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_U0, nrs->o_U);
+
+    // check sum first component...
+    auto o_Ux = nrs->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uy = nrs->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_Uz = nrs->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
+
+    std::cout << "sum Ux_e = " << platform->linAlg->sum(mesh->Nlocal, o_Ux, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Uy_e = " << platform->linAlg->sum(mesh->Nlocal, o_Uy, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Uz_e = " << platform->linAlg->sum(mesh->Nlocal, o_Uz, platform->comm.mpiComm) << "\n";
 
     if (movingMesh) {
 
@@ -190,7 +238,32 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_meshU0, mesh->o_U);
     }
 
+    if(platform->comm.mpiRank == 0 && movingMesh){
+      std::cout << "mesh coeffAB = ";
+      for(int i = 0; i < 3; ++i){
+        std::cout << mesh->coeffAB[i] << ", ";
+      }
+      std::cout << std::endl;
+    }
+
+    auto o_meshUx = mesh->o_U + (0 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUy = mesh->o_U + (1 * sizeof(dfloat)) * nrs->fieldOffset;
+    auto o_meshUz = mesh->o_U + (2 * sizeof(dfloat)) * nrs->fieldOffset;
+
+    std::cout << "sum meshUx_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUx, platform->comm.mpiComm) << "\n";
+    std::cout << "sum meshUy_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUy, platform->comm.mpiComm) << "\n";
+    std::cout << "sum meshUz_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUz, platform->comm.mpiComm) << "\n";
+
     computeUrst(nrs, true);
+
+    auto NlocalD = nrs->meshV->Nelements * mesh->cubNp;
+    auto o_Ur = nrs->o_Urst + (0 * sizeof(dfloat)) * nrs->cubatureOffset;
+    auto o_Us = nrs->o_Urst + (1 * sizeof(dfloat)) * nrs->cubatureOffset;
+    auto o_Ut = nrs->o_Urst + (2 * sizeof(dfloat)) * nrs->cubatureOffset;
+
+    std::cout << "sum Ur = " << platform->linAlg->sum(NlocalD, o_Ur, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Us = " << platform->linAlg->sum(NlocalD, o_Us, platform->comm.mpiComm) << "\n";
+    std::cout << "sum Ut = " << platform->linAlg->sum(NlocalD, o_Ut, platform->comm.mpiComm) << "\n";
 
   }
 
@@ -201,6 +274,19 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   // terms to include: user source, advection, filtering, add "weak" laplacian
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
   makeq(nrs, time);
+
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS post makeq = " << sumTerm << std::endl;
+    }
+  }
 
   // TODO: how to overlap without requiring an allocation?
   if(userLocalPointSource){
@@ -214,6 +300,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     for(const auto p : gatherScatterOperations){
       std::tie(startId, endId, gsh) = p;
       const auto Nfields = endId - startId;
+      std::cout << "Nfields = " << Nfields << "\n";
       auto o_fld = cds->o_FS + nrs->cds->fieldOffsetScan[startId] * sizeof(dfloat);
       ogsFunc(o_fld, Nfields, nrs->cds->fieldOffset[startId], ogsDfloat, ogsAdd, gsh);
     }
@@ -222,6 +309,20 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
   applyOgsOperation(oogs::start);
   applyOgsOperation(oogs::finish);
 
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS after gs = " << sumTerm << std::endl;
+    }
+  }
+
+#if 1
   // weight by invLM
   for (int is = 0; is < cds->NSfields; is++) {
     if (!cds->compute[is])
@@ -237,6 +338,8 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
 
   }
 
+#endif
+
   if(platform->options.compareArgs("LOWMACH", "TRUE")){
     lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
     platform->linAlg->fill(mesh->Nlocal, 0.0, nrs->o_div);
@@ -248,6 +351,23 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
     platform->linAlg->ady(mesh->Nlocal, nrs->dp0thdt * (gamma0-1.0)/gamma0, platform->o_mempool.slice0);
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice0, 1.0, cds->o_FS);
+    
+    if(platform->comm.mpiRank == 0){
+      std::cout << "nrs->dp0thdt = " << nrs->dp0thdt << "\n";
+    }
+  }
+
+  {
+    const auto sumTerm = platform->linAlg->sumMany(
+      mesh->Nlocal,
+      nrs->Nscalar,
+      nrs->fieldOffset,
+      cds->o_FS,
+      platform->comm.mpiComm
+    );
+    if(platform->comm.mpiRank == 0){
+      std::cout << "sum FS before pack = " << sumTerm << std::endl;
+    }
   }
 
   pack(nrs, cds->o_FS, o_ydot);
@@ -293,6 +413,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       platform->flopCounter->add("scalarFilterRT", flops);
     }
 
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS post sEqnSource and filter term = " << sumTerm << std::endl;
+      }
+    }
+
     if (cds->options[is].compareArgs("ADVECTION", "TRUE")) {
       if (cds->options[is].compareArgs("ADVECTION TYPE", "CUBATURE")){
         cds->strongAdvectionCubatureVolumeKernel(cds->meshV->Nelements,
@@ -334,6 +467,26 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       timeStepper::advectionFlops(cds->mesh[is], 1);
     }
 
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS post advection = " << sumTerm << std::endl;
+      }
+    }
+
+#if 1
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_FS, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "2 norm prior to applying weak laplacian " << norm2 << "\n";
+      }
+    }
     // weak laplcian + boundary terms
     occa::memory o_Si = cds->o_S.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
 
@@ -353,6 +506,12 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                               cds->o_EToB[is],
                               *(cds->o_usrwrk),
                               platform->o_mempool.slice1);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice1, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm helmholtzRHS term  = " << norm2 << "\n";
+      }
+    }
     cds->o_ellipticCoeff.copyFrom(cds->o_diff, mesh->Nlocal * sizeof(dfloat),
       cds->fieldOffsetScan[is] * sizeof(dfloat), 0);
     
@@ -360,15 +519,49 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     auto o_helmholtzPart = cds->o_ellipticCoeff + nrs->fieldOffset * sizeof(dfloat);
     platform->linAlg->fill(mesh->Nlocal, 0.0, o_helmholtzPart);
 
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_ellipticCoeff, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm diff field term  = " << norm2 << "\n";
+      }
+    }
+
     platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice2);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_Si, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm input field term  = " << norm2 << "\n";
+      }
+    }
+
+    // do not apply any masking
+    //ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString, false);
 
     // no masking, no gather scatter
     const bool applyMask = false;
     const bool skipGatherScatter = true;
     ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString, applyMask, skipGatherScatter);
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm helmholtz term  = " << norm2 << "\n";
+      }
+    }
 
+#if 1
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
       -1.0, platform->o_mempool.slice2);
+#else
+    platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice1,
+      1.0, platform->o_mempool.slice2);
+#endif
+
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "norm bcneusc - axhelm term  = " << norm2 << "\n";
+      }
+    }
 
     platform->linAlg->axpby(mesh->Nlocal,
         1.0,
@@ -378,8 +571,34 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
         0,
         isOffset);
 
+    {
+      const auto sumTerm = platform->linAlg->sumMany(
+        mesh->Nlocal,
+        nrs->Nscalar,
+        nrs->fieldOffset,
+        cds->o_FS,
+        platform->comm.mpiComm
+      );
+      if(platform->comm.mpiRank == 0){
+        std::cout << "sum FS after wlaplacian = " << sumTerm << std::endl;
+      }
+    }
+    {
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_FS, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << "2 norm after applying weak laplacian " << norm2 << "\n";
+      }
+    }
+#endif
+
     auto o_FS_i = o_FS + isOffset * sizeof(dfloat);
     auto o_rho_i = cds->o_rho + isOffset * sizeof(dfloat);
+#if 0    
+    auto o_invLMMLMM = (nrs->cht && is == 0) ? o_invLMMLMMT : o_invLMMLMMV;
+    platform->linAlg->axmy(mesh->Nlocal, 1.0, o_invLMMLMM, o_FS_i);
+#else
+    //platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
+#endif
 
     // TODO: correctly handle CHT case
     if(nrs->cht){
@@ -388,7 +607,10 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
       }
       ABORT(1);
     } else {
+      // weight by 1/vtrans
       platform->linAlg->aydx(mesh->Nlocal, 1.0, o_rho_i, o_FS_i);
+    //platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
+
     }
 
   }
