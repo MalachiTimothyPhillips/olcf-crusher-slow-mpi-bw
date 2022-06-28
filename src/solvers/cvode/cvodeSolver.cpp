@@ -397,7 +397,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
 
-
     if(cds->options[is].compareArgs("REGULARIZATION METHOD", "RELAXATION")){
       cds->filterRTKernel(
         cds->meshV->Nelements,
@@ -453,10 +452,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                                          cds->o_rho,
                                          platform->o_mempool.slice0);
       }
-#if 1
-      // weight by mass matrix for easier comparison
-      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, platform->o_mempool.slice0);
-#endif
       platform->linAlg->axpby(cds->meshV->Nelements * cds->meshV->Np,
           -1.0,
           platform->o_mempool.slice0,
@@ -464,6 +459,10 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
           o_FS,
           0,
           isOffset);
+
+      auto o_FS_i = o_FS + isOffset * sizeof(dfloat);
+
+      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
 
       timeStepper::advectionFlops(cds->mesh[is], 1);
     }

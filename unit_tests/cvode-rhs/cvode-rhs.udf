@@ -93,7 +93,7 @@ void UDF_Setup0(MPI_Comm comm, setupAide &options)
 void UDF_Setup(nrs_t *nrs)
 {
   udf.properties = &uservp;
-  //udf.sEqnSource = &userq;
+  udf.sEqnSource = &userq;
 
   //lowMach::setup(nrs, P_GAMMA);
   //udf.div = &qtl;
