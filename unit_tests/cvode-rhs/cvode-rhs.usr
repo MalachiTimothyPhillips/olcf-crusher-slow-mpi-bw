@@ -114,7 +114,7 @@ C=======================================================================
         call copy(vz_, vz, ntot)
 
         if(ifmvbd) then
-          ntot = nxyz * nelfld(0)
+          ntot = nxyz * nelfld(1)
           call copy(wx_, wx, ntot)
           call copy(wy_, wy, ntot)
           call copy(wz_, wz, ntot)
