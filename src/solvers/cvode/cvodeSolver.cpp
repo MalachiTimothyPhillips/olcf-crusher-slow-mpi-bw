@@ -259,6 +259,9 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
   auto * cds = nrs->cds;
   auto o_FS = nrs->cds->o_FS;
 
+  bool useRelativeVelocity = platform->options.compareArgs("MOVING MESH", "TRUE");
+  auto & o_Urst = useRelativeVelocity ? cds->o_relUrst : cds->o_Urst;
+
   if (udf.sEqnSource) {
     platform->timer.tic("udfSEqnSource", 1);
     udf.sEqnSource(nrs, time, cds->o_S, o_FS);
@@ -302,7 +305,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                                                  isOffset,
                                                  cds->vCubatureOffset,
                                                  cds->o_S,
-                                                 cds->o_Urst,
+                                                 o_Urst,
                                                  cds->o_rho,
                                                  platform->o_mempool.slice0);
       }
@@ -313,7 +316,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
                                          cds->vFieldOffset,
                                          isOffset,
                                          cds->o_S,
-                                         cds->o_Urst,
+                                         o_Urst,
                                          cds->o_rho,
                                          platform->o_mempool.slice0);
       }

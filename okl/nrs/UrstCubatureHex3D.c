@@ -3,6 +3,7 @@ extern "C" void FUNC(UrstCubatureHex3D)(const dlong &Nelements,
                                         const dfloat *__restrict__ cubInterpT,
                                         const dlong &offset,
                                         const dlong &cubatureOffset,
+                                        const dlong &useRelativeVelocity,
                                         const dfloat *__restrict__ U,
                                         const dfloat *__restrict__ W,
                                         dfloat *__restrict__ result)
@@ -41,7 +42,7 @@ extern "C" void FUNC(UrstCubatureHex3D)(const dlong &Nelements,
             dfloat Ue = U[id + 0 * offset];
             dfloat Ve = U[id + 1 * offset];
             dfloat We = U[id + 2 * offset];
-            if (p_relative) {
+            if (useRelativeVelocity) {
               Ue -= W[id + 0 * offset];
               Ve -= W[id + 1 * offset];
               We -= W[id + 2 * offset];

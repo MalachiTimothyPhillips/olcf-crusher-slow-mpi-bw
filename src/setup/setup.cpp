@@ -319,10 +319,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   {
     const dlong Nstates = nrs->Nsubsteps ? std::max(nrs->nBDF, nrs->nEXT) : 1;
-    if (nrs->Nsubsteps && platform->options.compareArgs("MOVING MESH", "TRUE"))
+    if (platform->options.compareArgs("MOVING MESH", "TRUE")){
       nrs->o_relUrst = platform->device.malloc(Nstates * nrs->NVfields * nrs->cubatureOffset, sizeof(dfloat));
-    else
-      nrs->o_Urst = platform->device.malloc(Nstates * nrs->NVfields * nrs->cubatureOffset, sizeof(dfloat));
+    }
+    nrs->o_Urst = platform->device.malloc(Nstates * nrs->NVfields * nrs->cubatureOffset, sizeof(dfloat));
   }
 
   nrs->U =

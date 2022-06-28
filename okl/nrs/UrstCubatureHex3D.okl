@@ -3,6 +3,7 @@
                                @restrict const dfloat* cubInterpT,
                                const dlong offset,
                                const dlong cubatureOffset,
+                               const dlong useRelativeVelocity,
                                @restrict const dfloat*  U,
                                @restrict const dfloat*  W,
                                @restrict dfloat*  result)
@@ -49,7 +50,7 @@
             dfloat Ue = U[id + 0 * offset];
             dfloat Ve = U[id + 1 * offset];
             dfloat We = U[id + 2 * offset];
-            if(p_relative){
+            if(useRelativeVelocity){
               Ue -= W[id + 0 * offset];
               Ve -= W[id + 1 * offset];
               We -= W[id + 2 * offset];

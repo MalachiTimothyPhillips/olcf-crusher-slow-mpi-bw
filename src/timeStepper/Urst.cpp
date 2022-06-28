@@ -1,9 +1,9 @@
 #include "Urst.hpp"
 #include "nrs.hpp"
 
-void computeUrst(nrs_t *nrs)
+void computeUrst(nrs_t *nrs, bool cvode)
 {
-  const bool relative = platform->options.compareArgs("MOVING MESH", "TRUE") && nrs->Nsubsteps;
+  bool relative = platform->options.compareArgs("MOVING MESH", "TRUE") && (nrs->Nsubsteps || cvode);
   occa::memory &o_Urst = relative ? nrs->o_relUrst : nrs->o_Urst;
   auto *mesh = nrs->meshV;
   double flopCount = 0.0;
@@ -14,6 +14,7 @@ void computeUrst(nrs_t *nrs)
                             mesh->o_cubInterpT,
                             nrs->fieldOffset,
                             nrs->cubatureOffset,
+                            dlong(relative),
                             nrs->o_U,
                             mesh->o_U,
                             o_Urst);
@@ -24,7 +25,7 @@ void computeUrst(nrs_t *nrs)
     flopCount *= mesh->Nelements;
   }
   else {
-    nrs->UrstKernel(mesh->Nelements, mesh->o_vgeo, nrs->fieldOffset, nrs->o_U, mesh->o_U, o_Urst);
+    nrs->UrstKernel(mesh->Nelements, mesh->o_vgeo, nrs->fieldOffset, dlong(relative), nrs->o_U, mesh->o_U, o_Urst);
     flopCount += 24 * static_cast<double>(mesh->Nlocal);
   }
   platform->flopCounter->add("Urst", flopCount);

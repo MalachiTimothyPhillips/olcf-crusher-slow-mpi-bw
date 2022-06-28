@@ -1,6 +1,7 @@
 @kernel void UrstHex3D(const dlong Nelements,
                                           @restrict const dfloat*  vgeo,
                                           const dlong offset,
+                                          const dlong useRelativeVelocity,
                                           @restrict const dfloat*  U,
                                           @restrict const dfloat*  W,
                                           @restrict dfloat*  result)
@@ -33,7 +34,7 @@
           dfloat Un = U[id + 0 * offset];
           dfloat Vn = U[id + 1 * offset];
           dfloat Wn = U[id + 2 * offset];
-          if(p_relative){
+          if(useRelativeVelocity){
             Un -= W[id + 0 * offset];
             Vn -= W[id + 1 * offset];
             Wn -= W[id + 2 * offset];
