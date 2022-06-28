@@ -504,7 +504,6 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
         std::cout << "norm helmholtzRHS term  = " << norm2 << "\n";
       }
     }
-    
     cds->o_ellipticCoeff.copyFrom(cds->o_diff, mesh->Nlocal * sizeof(dfloat),
       cds->fieldOffsetScan[is] * sizeof(dfloat), 0);
     
@@ -521,13 +520,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
 
     platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice2);
     {
-      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
+      auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_Si, platform->comm.mpiComm);
       if(platform->comm.mpiRank == 0){
         std::cout << "norm input field term  = " << norm2 << "\n";
       }
     }
 
-    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString);
+    // do not apply any masking
+    //ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString, false);
+
+    // no masking, no gather scatter
+    const bool applyMask = false;
+    const bool skipGatherScatter = true;
+    ellipticOperator(cds->solver[is], o_Si, platform->o_mempool.slice2, dfloatString, applyMask, skipGatherScatter);
     {
       auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice2, platform->comm.mpiComm);
       if(platform->comm.mpiRank == 0){

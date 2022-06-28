@@ -223,7 +223,8 @@ void ellipticOperator(elliptic_t* elliptic,
                       occa::memory &o_q,
                       occa::memory &o_Aq,
                       const char* precision,
-                      bool masked = true);
+                      bool masked = true,
+                      bool skipGatherScatter = false);
 
 void ellipticAx(elliptic_t* elliptic,
                 dlong NelementsList,

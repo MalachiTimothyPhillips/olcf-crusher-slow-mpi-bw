@@ -144,6 +144,10 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
     nek::ocopyToNek(time, tstep);
     nek::userchk();
+
+    // flush output
+    std::cout << std::flush;
+
     checkRHS(nrs, time, tstep);
     PASS;
   }

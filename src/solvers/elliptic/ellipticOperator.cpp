@@ -111,7 +111,8 @@ void ellipticOperator(elliptic_t* elliptic,
                       occa::memory &o_q,
                       occa::memory &o_Aq,
                       const char* precision,
-                      bool masked)
+                      bool masked,
+                      bool skipGatherScatter)
 {
   mesh_t* mesh = elliptic->mesh;
   setupAide &options = elliptic->options;
@@ -131,7 +132,11 @@ void ellipticOperator(elliptic_t* elliptic,
                       o_Aq,
                       precision);
   }
-  oogs::start(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+
+  if(!skipGatherScatter){
+    oogs::start(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+  }
+
   ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_q, o_Aq, precision);
 
   if (masked) {
@@ -143,5 +148,8 @@ void ellipticOperator(elliptic_t* elliptic,
                       o_Aq,
                       precision);
   }
-  oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+
+  if(!skipGatherScatter){
+    oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+  }
 }

@@ -1,3 +1,4 @@
+#include <stdio.h>
 extern "C" void FUNC(ellipticPartialAxCoeffHex3D)(const dlong & Nelements,
                         const dlong & offset,
                         const dlong & loffset,
@@ -41,6 +42,7 @@ extern "C" void FUNC(ellipticPartialAxCoeffHex3D)(const dlong & Nelements,
 
           const dlong id = element * p_Np + k * p_Nq * p_Nq + j * p_Nq + i;
           const dfloat r_lam0 = lambda[id + 0 * offset];
+          //printf("r_lam0 = %f\n", r_lam0);
 
           dfloat qr = 0.f;
           dfloat qs = 0.f;
@@ -79,6 +81,7 @@ extern "C" void FUNC(ellipticPartialAxCoeffHex3D)(const dlong & Nelements,
           dfloat r_Aq = 0;
 #ifndef p_poisson
           const dfloat r_lam1 = lambda[id + 1 * offset];
+          //printf("r_lam1 = %f\n", r_lam1);
           r_Aq = ggeo[gbase + p_GWJID * p_Np] * r_lam1 * s_q[k][j][i];
 #endif
           dfloat r_Aqr = 0, r_Aqs = 0, r_Aqt = 0;
