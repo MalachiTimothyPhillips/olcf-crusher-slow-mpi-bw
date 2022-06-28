@@ -15,6 +15,9 @@ using namespace cvode;
 void checkRHS(nrs_t * nrs, dfloat time, int tstep)
 {
   auto * cds = nrs->cds;
+  auto mesh = nrs->meshV;
+  if(nrs->cht)
+    mesh = nrs->cds->mesh[0];
 
   // mark all scalar fields as CVODE
   for(int is = 0; is < nrs->Nscalar; ++is){
@@ -27,9 +30,6 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   cvodeSolver.o_U0.copyFrom(nrs->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
   
   if(platform->options.compareArgs("MOVING MESH", "TRUE")){
-    auto mesh = nrs->meshV;
-    if(nrs->cht)
-      mesh = nrs->cds->mesh[0];
 
     cvodeSolver.o_meshU0.copyFrom(mesh->o_U, (nrs->NVfields * sizeof(dfloat)) * nrs->fieldOffset);
 
@@ -57,28 +57,32 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
   cvodeSolver.pack(nrs, nrs->cds->o_S, o_y);
 
   const dfloat dt = 1e-2;
-  std::cout << "time = " << time << ", dt = " << dt << "\n";
-
-  //cvodeSolver.tprev = ;
 
   cvodeSolver.rhs(nrs, tstep, time + dt, time, o_y, o_ydot);
   cvodeSolver.unpack(nrs, o_ydot, nrs->cds->o_FS);
 
-  // compute norms
-  const auto Ynorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_y, platform->comm.mpiComm);
-  const auto YdotNorm = platform->linAlg->sumMany(LFieldOffset, nrs->Nscalar, LFieldOffset, o_ydot, platform->comm.mpiComm);
-  const auto FSSum = platform->linAlg->sumMany(nrs->meshV->Nlocal, nrs->Nscalar, nrs->fieldOffset, nrs->cds->o_FS, platform->comm.mpiComm);
+  auto * expectedValues = static_cast<double*> (nek::scPtr(1));
 
+  std::vector<double> realValues(mesh->Nlocal);
+  nrs->cds->o_FS.copyTo(realValues.data(), mesh->Nlocal * sizeof(dfloat));
 
-  if(platform->comm.mpiRank == 0){
-    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
-    std::cout << "Y sum = " << Ynorm << "\n";
-    std::cout << "Ydot sum = " << YdotNorm << std::endl;
-    std::cout << "FS sum = " << FSSum << std::endl;
+  double LinfError = 0.0;
+  for(int i = 0; i < mesh->Nlocal; ++i){
+    LinfError = std::max(LinfError, std::abs(expectedValues[i] - realValues[i]));
   }
-  std::cout << std::flush;
 
+  MPI_Allreduce(MPI_IN_PLACE, &LinfError, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);
+
+  // free memory prior to potential FAIL
   o_y.free();
   o_ydot.free();
+  
+  double tol = 1e-8;
+  if(LinfError > tol){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Linf error in ydot: " << LinfError << "\n";
+    }
+    FAIL;
+  }
 
 }

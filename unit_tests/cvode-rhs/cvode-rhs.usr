@@ -66,6 +66,10 @@ C=======================================================================
       real y(lx1,ly1,lz1,lelt)
       real ydot(lx1,ly1,lz1,lelt)
 
+      save ydot
+      COMMON /NRSSCPTR/ nrs_scptr(1)
+      integer*8         nrs_scptr
+
       common /CVWRK2/  vx_ (lx1,ly1,lz1,lelv) 
      &                ,vy_ (lx1,ly1,lz1,lelv)
      &                ,vz_ (lx1,ly1,lz1,lelv)
@@ -76,7 +80,8 @@ C=======================================================================
      &                ,wy_ (lx1,ly1,lz1,lelv)
      &                ,wz_ (lx1,ly1,lz1,lelv)
 
-
+      if (istep.lt.1) return
+      nrs_scptr(1) = loc(ydot(1,1,1,1))
 
       !ifusermv = .true.                  ! define our own mesh velocity
       !call user_mvel(time)               ! Fill mesh velocity
