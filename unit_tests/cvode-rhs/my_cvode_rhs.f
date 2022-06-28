@@ -44,19 +44,28 @@ c
       nxyz = lx1*ly1*lz1
 
       if (ifrhs .and. ifdp0dt) then
+         write(6,*) "Apply lowmach correction in cvpack"
          call qthermal ! computes dp0thdt  
+         write(6,*) "gamma0 = ", gamma0
          dd = (gamma0 - 1.)/gamma0
          dd = dd * dp0thdt
+         write(6,*) "dd = ", dd
          ntot = nxyz*nelfld(2)
          call invers2(dtmp,vtrans(1,1,1,1,2),ntot)
+         write(6,*) "sum dtmp, cvpack before dd = ", glsum(dtmp, ntot)
          call cmult(dtmp,dd,ntot)
+         write(6,*) "sum dtmp, cvpack = ", glsum(dtmp, ntot)
+         write(6,*) "sum w1, cvpack before add = ", glsum(w1, ntot)
          call add2 (w1,dtmp,ntot)
       endif
+
+      write(6,*) "sum w1, cvpack = ", glsum(w1, ntot)
 
       j = 1
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then
             ntot = nxyz*nelfld(ifield)
+            write(6,*) "sum w1 = ", glsum(w1(1,1,1,1,ifield-1), ntot)
             call copy (y(j),w1(1,1,1,1,ifield-1),ntot)
             if (ifrhs) call col2(y(j),tmask(1,1,1,1,ifield-1),ntot)
             j = j + ntot
@@ -198,6 +207,9 @@ c
   10       format(4x,i7,2x,'t=',1pE14.7,'  stepsize=',1pE13.4)
 
          call cv_upd_v
+         write(6,*) "sum vx_e = ", glsum(vx, ntotv)
+         write(6,*) "sum vy_e = ", glsum(vy, ntotv)
+         write(6,*) "sum vz_e = ", glsum(vz, ntotv)
          call copy(w1,vx,ntotv)
          call copy(w2,vy,ntotv)
          if (if3d) call copy(w3,vz,ntotv)
@@ -212,6 +224,9 @@ c
          endif
 
          if (param(99).gt.0) call set_convect_new(vxd,vyd,vzd,vx,vy,vz)
+         write(6,*) "sum vxd = ", glsum(vxd, ntotd)
+         write(6,*) "sum vyd = ", glsum(vyd, ntotd)
+         write(6,*) "sum vzd = ", glsum(vzd, ntotd)
 
          call copy(vx,w1,ntotv)
          call copy(vy,w2,ntotv)
@@ -222,18 +237,30 @@ c
 
       call cvunpack(t,y)          
 
+      write(6,*) 'fcvfun',
+     $                                 ifdqj
+
       ifield = 1
       call vprops ! we may use fluid properties somewhere
       do ifield=2,nfield
          if (ifcvfld(ifield)) call vprops
       enddo  
+      do ifield=1,nfield
+        write(6,*) "ifield = ", ifield
+        write(6,*) "vtrans = ", vtrans(1,1,1,1,ifield)
+        write(6,*) "vdiff = ", vdiff(1,1,1,1,ifield)
+      enddo
 
       do ifield=2,nfield
          if (ifcvfld(ifield)) then
+           write(6,*) "computing rhs for ifield", ifield
            ntot = nxyz*nelfld(ifield)
            call makeq
+            write(6,*) "sum bq (before wt)",
+     &       glsum(bq(1,1,1,1,ifield-1), ntot)
 
            if (iftmsh(ifield)) then                                
+              write(6,*) "hit tmsh branch"
               call dssum(bq(1,1,1,1,ifield-1),lx1,ly1,lz1)
               call col2(bq(1,1,1,1,ifield-1),bintm1,ntot)
 
@@ -251,6 +278,8 @@ c
 
       ifield=2
       ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
 
       if (ifgsh_fld_same) then ! all fields are on the v-mesh
          istride = lx1*ly1*lz1*lelt
@@ -266,6 +295,8 @@ c
 
       ifield=2
       ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott, after dssum",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
 
       do ifield = 2,nfield
          if (ifcvfld(ifield)) then                                
@@ -277,6 +308,8 @@ c
       enddo
       ifield=2
       ntot = nxyz*nelfld(ifield)
+      write(6,*) "sum ydott, after invLMM",
+     &  glsum(ydott(1,1,1,1,ifield-1), ntot)
 
       call cvpack(ydot,ydott,.true.)
 
@@ -310,6 +343,7 @@ c----------------------------------------------------------------------
       include 'TSTEP'
       include 'CVODE'
 
+      write(6,*) "time = ", time, " timef = ", timef
       cv_dtNek = time - timef ! stepsize between nek and cvode    
 
       !cv_dtlag(1) = cv_dtNek 
@@ -320,6 +354,8 @@ c----------------------------------------------------------------------
       cv_dtlag(2) = 0.001
       cv_dtlag(3) = 0.001
 
+      write(6,*) "cv_dtlag = ", cv_dtlag
+      !write(6,*) "nbd = ", nbd
       nbd = 3
       nabmsh = 3
 
@@ -334,6 +370,11 @@ c----------------------------------------------------------------------
 
       call rzero(cv_bd,4)
       call setbd(cv_bd,cv_dtlag,nbd)
+
+      ! coefficients
+      write(6,*) "cv_abmsh", cv_abmsh
+      write(6,*) "cv_ab", cv_ab
+      write(6,*) "cv_bd", cv_bd
 
       return
       end
