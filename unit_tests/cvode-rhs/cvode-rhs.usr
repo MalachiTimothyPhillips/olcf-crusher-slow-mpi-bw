@@ -94,7 +94,7 @@ C=======================================================================
       if(istep.gt.5) then
         ifmvbd = .true. ! set
         gamma0 = 1.4 ! from par file
-        !ifdp0dt = .true.
+        ifdp0dt = .true.
 
         ! set integrator details
         nbd = 3

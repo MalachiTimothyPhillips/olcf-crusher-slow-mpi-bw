@@ -23,7 +23,9 @@ static dfloat P_ROT;
  
 void userq(nrs_t* nrs, dfloat time, occa::memory o_S, occa::memory o_SU)
 {
-  //lowMach::dpdt(o_SU);
+  // cvode will automatically ignore this term
+
+  lowMach::dpdt(o_SU);
   // apply constant forcing
   platform->linAlg->fill(nrs->meshV->Nlocal, 2.5, o_SU);
 }
@@ -94,8 +96,8 @@ void UDF_Setup(nrs_t *nrs)
   udf.properties = &uservp;
   udf.sEqnSource = &userq;
 
-  //lowMach::setup(nrs, P_GAMMA);
-  //udf.div = &qtl;
+  lowMach::setup(nrs, P_GAMMA);
+  udf.div = &qtl;
 }
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
