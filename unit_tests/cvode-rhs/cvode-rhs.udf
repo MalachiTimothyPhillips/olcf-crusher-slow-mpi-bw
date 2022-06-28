@@ -68,7 +68,6 @@ void UDF_LoadKernels(occa::properties& kernelInfo)
 
 void UDF_Setup0(MPI_Comm comm, setupAide &options)
 {
-  options.getArgs("CI-MODE", ciMode);
   platform->par->extract("casedata", "xlen",XLEN);
   platform->par->extract("casedata", "ylen",YLEN);
   platform->par->extract("casedata", "zlen",ZLEN);
