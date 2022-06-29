@@ -71,6 +71,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
     Nscalar++;
 
     // TODO: batch gather scatter operations as possible
+
+    if(is == 0 && cds->cht) continue; // gather-scatter is handled directly
+
     gatherScatterOperations.push_back(std::make_tuple(is, is+1, is == 0 ? cds->gshT : cds->gsh));
   }
 
@@ -331,6 +334,10 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       continue;
     if (!cds->cvodeSolve[is])
       continue;
+
+    // already applied elsewhere
+    if(is == 0 && nrs->cht) continue;
+
     mesh_t *mesh;
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0];
     const dlong isOffset = cds->fieldOffsetScan[is];
@@ -602,12 +609,19 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     //platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, o_FS_i);
 #endif
 
-    // TODO: correctly handle CHT case
-    if(nrs->cht){
-      if(platform->comm.mpiRank == 0){
-        std::cout << "CHT not correctly handled in cvodeSolver at the moment!\n";
-      }
-      ABORT(1);
+    if(nrs->cht && is == 0){
+      auto gsh = cds->mesh[0]->gshT;
+
+      oogs::startFinish(o_FS_i, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
+
+      platform->o_mempool.slice0.copyFrom(o_rho_i, cds->fieldOffset[is] * sizeof(dfloat));
+      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_LMM, platform->o_mempool.slice0);
+      oogs::startFinish(platform->o_mempool.slice0, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
+      platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, platform->o_mempool.slice0);
+
+      platform->linAlg->aydx(mesh->Nlocal, 1.0, platform->o_mempool.slice0, o_FS_i);
+
     } else {
       // weight by 1/vtrans
       platform->linAlg->aydx(mesh->Nlocal, 1.0, o_rho_i, o_FS_i);
