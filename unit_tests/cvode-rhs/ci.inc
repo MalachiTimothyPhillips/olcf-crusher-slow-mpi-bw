@@ -68,7 +68,9 @@ void checkRHS(nrs_t * nrs, dfloat time, int tstep)
 
   double LinfError = 0.0;
   for(int i = 0; i < mesh->Nlocal; ++i){
-    LinfError = std::max(LinfError, std::abs(expectedValues[i] - realValues[i]));
+    auto denom = std::max(std::abs(expectedValues[i]), std::abs(realValues[i]));
+    denom = std::abs(denom) > 1e-16 ? denom : 1.0;
+    LinfError = std::max(LinfError, std::abs(expectedValues[i] - realValues[i]) / denom);
   }
 
   MPI_Allreduce(MPI_IN_PLACE, &LinfError, 1, MPI_DFLOAT, MPI_MAX, platform->comm.mpiComm);

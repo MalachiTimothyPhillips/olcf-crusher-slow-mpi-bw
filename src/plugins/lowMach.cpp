@@ -264,12 +264,16 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     const auto g0 = args ? args->g0 : nrs->g0;
     const auto dt = args ? args->dt : nrs->dt[0];
 
-    nrs->p0th[0] = Saqpq / (g0 - dt * prhs);
+    const auto pcoef = (g0 - dt * prhs);
+
+    nrs->p0th[0] = Saqpq / pcoef;
     nrs->dp0thdt = prhs * nrs->p0th[0];
 
+    std::cout << "Saqpq = " << Saqpq << "\n";
+    std::cout << "pcoef = " << pcoef << "\n";
     std::cout << "prhs = " << prhs << "\n";
     std::cout << "p0th = " << nrs->p0th[0] << "\n";
-    std::cout << "dp0thdt = " << dp0thdt << "\n";
+    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
 
     surfaceFlops += surfaceFluxFlops + p0thHelperFlops;
   }

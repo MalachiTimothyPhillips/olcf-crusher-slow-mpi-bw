@@ -751,6 +751,7 @@ int setup(nrs_t* nrs_in)
   nekData.comm = MPI_Comm_f2c(*(int*) ptr("nekcomm"));
   
   nekData.p0th = (double*) ptr("p0th");
+  nekData.p0thn = (double*) ptr("p0thn");
   nekData.p0thlag = (double*) ptr("p0thlag");
   nekData.dp0thdt = (double*) ptr("dp0thdt");
 
@@ -832,6 +833,7 @@ void copyToNek(dfloat time)
 
   *(nekData.time) = time;
   *(nekData.p0th) = nrs->p0th[0];
+  *(nekData.p0thn) = nrs->p0th[0];
   nekData.p0thlag[0] = nrs->p0th[1];
   nekData.p0thlag[1] = nrs->p0th[2];
   *(nekData.dp0thdt) = nrs->dp0thdt;

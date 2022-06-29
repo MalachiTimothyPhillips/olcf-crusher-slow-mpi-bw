@@ -73,6 +73,7 @@ struct nekdata_private
 
   /* thermodynamic pressure */
   double* p0th;
+  double* p0thn;
   double* p0thlag;
   double* dp0thdt;
 

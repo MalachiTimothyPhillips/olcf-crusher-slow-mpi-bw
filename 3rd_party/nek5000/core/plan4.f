@@ -645,6 +645,8 @@ c - - Assemble RHS of T-eqn
          endif
 
          dp0thdt= prhs*p0th
+         write(6,*) "Saqpq = ", Saqpq
+         write(6,*) "pcoef = ", pcoef
          write(6,*) "prhs = ", prhs
          write(6,*) "p0th = ", p0th
          write(6,*) "dp0thdt = ", dp0thdt

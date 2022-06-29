@@ -114,6 +114,8 @@ c-----------------------------------------------------------------------
          ptr = loc(sc_nrs(1))
       elseif (id .eq. 'p0th') then
          ptr = loc(p0th)
+      elseif (id .eq. 'p0thn') then
+         ptr = loc(p0thn)
       elseif (id .eq. 'p0thlag') then
          ptr = loc(p0thlag(1))
       elseif (id .eq. 'dp0thdt') then
