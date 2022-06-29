@@ -93,7 +93,7 @@ C=======================================================================
       nxyz = lx1 * ly1 * lz1
 
       if(istep.gt.5) then
-        ifmvbd = .true. ! set
+        ifmvbd = .false. ! set
         gamma0 = 1.4 ! from par file
         ifdp0dt = .true.
 

@@ -568,6 +568,9 @@ c - - Assemble RHS of T-eqn
       call makeuq
       call copy(qtl,bq,ntot)
 
+      write(6,*) "norm bq =", gl2normNoWt(bq, ntot)
+      write(6,*) "norm t =", gl2normNoWt(t, ntot)
+
       ifield=1     !set right gs handle (QTL is only defined on the velocity mesh)
       call opgrad  (tx,ty,tz,t)
       call opdssum (tx,ty,tz)
@@ -582,6 +585,7 @@ c - - Assemble RHS of T-eqn
       ! QTL = T_RHS/(rho*cp**T)
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
       call invcol2 (qtl,w2,ntot)
+      write(6,*) "norm qtl =", gl2normNoWt(qtl, ntot)
 
       dp0thdt = 0.0
       if (ifdp0dt) then

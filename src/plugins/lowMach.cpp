@@ -76,11 +76,26 @@ void lowMach::setup(nrs_t* nrs, dfloat gamma)
 // qtl = 1/(rho*cp*T) * (div[k*grad[T] ] + qvol)
 void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, lowMach::cvodeArguments_t * args)
 {
-  qThermal = 1;
   nrs_t* nrs = the_nrs;
   cds_t* cds = nrs->cds;
   mesh_t* mesh = nrs->meshV;
   linAlg_t * linAlg = platform->linAlg;
+
+  {
+    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_div, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "norm 2 init div = " << norm2 << "\n";
+    }
+  }
+
+  {
+    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_S, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "norm 2 s = " << norm2 << "\n";
+    }
+  }
+
+  qThermal = 1;
 
   const bool insideCVODE = (args != nullptr);
 
@@ -111,6 +126,12 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     udf.sEqnSource(nrs, time, cds->o_S, platform->o_mempool.slice3);
     platform->timer.toc("udfSEqnSource");
   }
+  {
+    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice3, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "norm 2 qvol = " << norm2 << "\n";
+    }
+  }
 
   qtlKernel(
     mesh->Nelements,
@@ -136,6 +157,12 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     o_div);
 
   double surfaceFlops = 0.0;
+  {
+    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_div, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "norm qtl = " << norm2 << "\n";
+    }
+  }
 
   if(nrs->pSolver->allNeumann){
     const dfloat dd = (1.0 - gamma0) / gamma0;

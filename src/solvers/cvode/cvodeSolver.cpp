@@ -238,6 +238,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
       extrapolateInPlaceKernel(mesh->Nlocal, nrs->NVfields, extOrder, nrs->fieldOffset, o_coeffExt, this->o_meshU0, mesh->o_U);
     }
 
+    if(movingMesh){
     if(platform->comm.mpiRank == 0 && movingMesh){
       std::cout << "mesh coeffAB = ";
       for(int i = 0; i < 3; ++i){
@@ -253,6 +254,7 @@ void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::mem
     std::cout << "sum meshUx_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUx, platform->comm.mpiComm) << "\n";
     std::cout << "sum meshUy_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUy, platform->comm.mpiComm) << "\n";
     std::cout << "sum meshUz_e = " << platform->linAlg->sum(mesh->Nlocal, o_meshUz, platform->comm.mpiComm) << "\n";
+    }
 
     computeUrst(nrs, true);
 
