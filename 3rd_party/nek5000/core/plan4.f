@@ -568,41 +568,21 @@ c - - Assemble RHS of T-eqn
       call makeuq
       call copy(qtl,bq,ntot)
 
-      write(6,*) "norm bq =", gl2normNoWt(bq, ntot)
-      write(6,*) "norm t =", gl2normNoWt(t, ntot)
-
       ifield=1     !set right gs handle (QTL is only defined on the velocity mesh)
       call opgrad  (tx,ty,tz,t)
-      write(6,*) "norm grad =", gl2normNoWt(tx, ntot)
-      write(6,*) "norm grad =", gl2normNoWt(ty, ntot)
-      write(6,*) "norm grad =", gl2normNoWt(tz, ntot)
       call opdssum (tx,ty,tz)
-      write(6,*) "norm grad, post dssum =", gl2normNoWt(tx, ntot)
-      write(6,*) "norm grad, post dssum =", gl2normNoWt(ty, ntot)
-      write(6,*) "norm grad, post dssum =", gl2normNoWt(tz, ntot)
       call opcolv  (tx,ty,tz,binvm1)
-      write(6,*) "norm grad, post invLMM =", gl2normNoWt(tx, ntot)
-      write(6,*) "norm grad, post invLMM =", gl2normNoWt(ty, ntot)
-      write(6,*) "norm grad, post invLMM =", gl2normNoWt(tz, ntot)
 
-      ! difference somewhere between here...
       call opcolv  (tx,ty,tz,vdiff(1,1,1,1,2))
       call opdiv   (w2,tx,ty,tz)
-      write(6,*) "norm w2 =", gl2normNoWt(w2, ntot)
 
       call add2    (qtl,w2,ntot)
       call dssum   (qtl,lx1,ly1,lz1)
       call col2    (qtl,binvm1,ntot)
-      write(6,*) "vdiff = ", vdiff(1,1,1,1,2)
-      write(6,*) "vtrans =", vtrans(1,1,1,1,2)
-      write(6,*) "norm vtrans =", gl2normNoWt(vtrans(1,1,1,1,2), ntot)
 
       ! QTL = T_RHS/(rho*cp**T)
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
       call invcol2 (qtl,w2,ntot)
-
-      ! and here!
-      write(6,*) "norm qtl =", gl2normNoWt(qtl, ntot)
 
       dp0thdt = 0.0
       if (ifdp0dt) then
@@ -623,10 +603,8 @@ c - - Assemble RHS of T-eqn
          call col2   (w1,bm1,ntot)
 
          termQ = glsum(w1,ntot)
-         write(6,*) "termQ = ", termQ
          if (ifcvfun) then
             termV = glcflux(vx,vy,vz)
-            write(6,*) "termV = ", termV
             prhs  = p0alph1*(termQ - termV)
             pcoef =(cv_bd(1) - cv_dtNek*prhs)
             call add3s2(Saqpq,p0thn,p0thlag(1),cv_bd(2),cv_bd(3),1)
@@ -645,11 +623,6 @@ c - - Assemble RHS of T-eqn
          endif
 
          dp0thdt= prhs*p0th
-         write(6,*) "Saqpq = ", Saqpq
-         write(6,*) "pcoef = ", pcoef
-         write(6,*) "prhs = ", prhs
-         write(6,*) "p0th = ", p0th
-         write(6,*) "dp0thdt = ", dp0thdt
 
          dd =-prhs
          call cmult(w2,dd,ntot)
