@@ -588,12 +588,14 @@ c - - Assemble RHS of T-eqn
       ! difference somewhere between here...
       call opcolv  (tx,ty,tz,vdiff(1,1,1,1,2))
       call opdiv   (w2,tx,ty,tz)
+      write(6,*) "norm w2 =", gl2normNoWt(w2, ntot)
 
       call add2    (qtl,w2,ntot)
       call dssum   (qtl,lx1,ly1,lz1)
       call col2    (qtl,binvm1,ntot)
       write(6,*) "vdiff = ", vdiff(1,1,1,1,2)
       write(6,*) "vtrans =", vtrans(1,1,1,1,2)
+      write(6,*) "norm vtrans =", gl2normNoWt(vtrans(1,1,1,1,2), ntot)
 
       ! QTL = T_RHS/(rho*cp**T)
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
@@ -643,6 +645,9 @@ c - - Assemble RHS of T-eqn
          endif
 
          dp0thdt= prhs*p0th
+         write(6,*) "prhs = ", prhs
+         write(6,*) "p0th = ", p0th
+         write(6,*) "dp0thdt = ", dp0thdt
 
          dd =-prhs
          call cmult(w2,dd,ntot)

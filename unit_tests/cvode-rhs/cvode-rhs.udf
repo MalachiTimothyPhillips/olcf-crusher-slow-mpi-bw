@@ -144,6 +144,10 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     o_Uy.copyFrom(Uy.data(), mesh->Nlocal * sizeof(dfloat));
     o_Uz.copyFrom(Uz.data(), mesh->Nlocal * sizeof(dfloat));
 
+    // make fields continuous
+    oogs::startFinish(nrs->o_U, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+    oogs::startFinish(nrs->cds->o_S, 1, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
     applyDirichlet(nrs, time);
 
     nek::ocopyToNek(time, tstep);

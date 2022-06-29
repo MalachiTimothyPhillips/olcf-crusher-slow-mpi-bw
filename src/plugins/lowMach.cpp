@@ -161,6 +161,8 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     }
   }
 
+  printNormField(cds->o_rho, "norm rhoCp");
+
   qtlKernel(
     mesh->Nelements,
     mesh->o_vgeo,
@@ -264,6 +266,10 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
 
     nrs->p0th[0] = Saqpq / (g0 - dt * prhs);
     nrs->dp0thdt = prhs * nrs->p0th[0];
+
+    std::cout << "prhs = " << prhs << "\n";
+    std::cout << "p0th = " << nrs->p0th[0] << "\n";
+    std::cout << "dp0thdt = " << dp0thdt << "\n";
 
     surfaceFlops += surfaceFluxFlops + p0thHelperFlops;
   }
