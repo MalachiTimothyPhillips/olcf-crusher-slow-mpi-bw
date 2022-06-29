@@ -4390,18 +4390,9 @@ c
 
       call bcneusc(out,1)
 
-      write(6,*) "norm bcneusc term = ", gl2normNoWt(out, ntot)
-
-      write(6,*) "norm input field = ", gl2normNoWt(a, ntot)
-      write(6,*) "norm diff field = ", gl2normNoWt(diff, ntot)
-
       call axhelm(wrk,a,diff,h2,imesh,1)
 
-      write(6,*) "norm axhelm term = ", gl2normNoWt(wrk, ntot)
-
       call sub2 (out,wrk,ntot)  
-
-      write(6,*) "norm bcneusc - axhelm term = ", gl2normNoWt(out, ntot)
  
       ifield = ifield_ 
 
