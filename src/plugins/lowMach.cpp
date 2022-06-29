@@ -107,10 +107,36 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     cds->o_S,
     platform->o_mempool.slice0);
 
+  auto printGradFieldNorms = [&](std::string name)
+  {
+    auto o_0 = platform->o_mempool.slice0;
+    auto o_1 = platform->o_mempool.slice1;
+    auto o_2 = platform->o_mempool.slice2;
+    for(occa::memory o_fld : {o_0, o_1, o_2}){
+      const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_fld, platform->comm.mpiComm);
+      if(platform->comm.mpiRank == 0){
+        std::cout << name << " " << norm2 << "\n";
+      }
+    }
+  };
+
+  auto printNormField = [&](occa::memory o_fld, std::string name)
+  {
+    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_fld, platform->comm.mpiComm);
+    if(platform->comm.mpiRank == 0){
+      std::cout << name << " " << norm2 << "\n";
+    }
+  };
+
+  printGradFieldNorms("norm grad fld");
+
+
   double flopsGrad = 6 * mesh->Np * mesh->Nq + 18 * mesh->Np;
   flopsGrad *= static_cast<double>(mesh->Nelements);
 
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
+
+  printGradFieldNorms("norm grad fld, post gs");
 
   platform->linAlg->axmyVector(
     mesh->Nlocal,
@@ -119,6 +145,8 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     1.0,
     nrs->meshV->o_invLMM,
     platform->o_mempool.slice0);
+
+  printGradFieldNorms("norm grad fld, post invLMM");
 
   platform->linAlg->fill(mesh->Nelements * mesh->Np, 0.0, platform->o_mempool.slice3);
   if(udf.sEqnSource) {
@@ -144,17 +172,21 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     cds->o_rho,
     platform->o_mempool.slice3,
     o_div);
+  
+  printNormField(o_div, "divergence, post qtlKernel");
 
   double flopsQTL = 18 * mesh->Np * mesh->Nq + 23 * mesh->Np;
   flopsQTL *= static_cast<double>(mesh->Nelements);
 
   oogs::startFinish(o_div, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
+  printNormField(o_div, "divergence, post gs");
 
   platform->linAlg->axmy(
     mesh->Nlocal,
     1.0,
     nrs->meshV->o_invLMM,
     o_div);
+  printNormField(o_div, "divergence, post invLMM");
 
   double surfaceFlops = 0.0;
   {

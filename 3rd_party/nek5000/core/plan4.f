@@ -573,18 +573,33 @@ c - - Assemble RHS of T-eqn
 
       ifield=1     !set right gs handle (QTL is only defined on the velocity mesh)
       call opgrad  (tx,ty,tz,t)
+      write(6,*) "norm grad =", gl2normNoWt(tx, ntot)
+      write(6,*) "norm grad =", gl2normNoWt(ty, ntot)
+      write(6,*) "norm grad =", gl2normNoWt(tz, ntot)
       call opdssum (tx,ty,tz)
+      write(6,*) "norm grad, post dssum =", gl2normNoWt(tx, ntot)
+      write(6,*) "norm grad, post dssum =", gl2normNoWt(ty, ntot)
+      write(6,*) "norm grad, post dssum =", gl2normNoWt(tz, ntot)
       call opcolv  (tx,ty,tz,binvm1)
+      write(6,*) "norm grad, post invLMM =", gl2normNoWt(tx, ntot)
+      write(6,*) "norm grad, post invLMM =", gl2normNoWt(ty, ntot)
+      write(6,*) "norm grad, post invLMM =", gl2normNoWt(tz, ntot)
+
+      ! difference somewhere between here...
       call opcolv  (tx,ty,tz,vdiff(1,1,1,1,2))
       call opdiv   (w2,tx,ty,tz)
 
       call add2    (qtl,w2,ntot)
       call dssum   (qtl,lx1,ly1,lz1)
       call col2    (qtl,binvm1,ntot)
+      write(6,*) "vdiff = ", vdiff(1,1,1,1,2)
+      write(6,*) "vtrans =", vtrans(1,1,1,1,2)
 
       ! QTL = T_RHS/(rho*cp**T)
       call col3    (w2,vtrans(1,1,1,1,2),t,ntot)
       call invcol2 (qtl,w2,ntot)
+
+      ! and here!
       write(6,*) "norm qtl =", gl2normNoWt(qtl, ntot)
 
       dp0thdt = 0.0
