@@ -1,9 +1,3 @@
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <mpi.h>
-
 #include "nrssys.hpp"
 #include "platform.hpp"
 
@@ -204,13 +198,13 @@ int boomerAMGSetupDevice(int nrows, int nz,
   return 0;
 }
 
-int boomerAMGSolveDevice(void *x, void *b)
+int boomerAMGSolveDevice(const occa::memory& o_x, const occa::memory& o_b)
 {
   int err;
 
   // note x is ALWAYS zero
 
-  __HYPRE_IJVectorSetValues(data->b,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) b);
+  __HYPRE_IJVectorSetValues(data->b,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_b.ptr());
   __HYPRE_IJVectorAssemble(data->b);
 
   HYPRE_ParVector par_x;
@@ -233,7 +227,7 @@ int boomerAMGSolveDevice(void *x, void *b)
     return 1;
   }
 
-  __HYPRE_IJVectorGetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) x);
+  __HYPRE_IJVectorGetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_x.ptr());
 
   return 0; 
 }

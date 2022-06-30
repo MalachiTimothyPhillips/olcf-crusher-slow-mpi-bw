@@ -547,7 +547,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
       {"fp32"},
       {"fp64"},
       {"cpu"},
-      {"gpu"},
+      {"device"},
   };
 
   std::vector<std::string> entries = serializeString(p_coarseSolver, '+');
@@ -578,7 +578,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
     options.setArgs("AMG SOLVER PRECISION", "FP32");
     options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
-    options.setArgs("AMG SOLVER LOCATION", "GPU");
+    options.setArgs("AMG SOLVER LOCATION", "DEVICE");
   }
 
   // parse fp type + location
@@ -603,9 +603,9 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
         append_error("AMGX+CPU is not currently supported!\n");
       }
     }
-    else if(entry.find("gpu") != std::string::npos)
+    else if(entry.find("device") != std::string::npos)
     {
-      options.setArgs("AMG SOLVER LOCATION", "GPU");
+      options.setArgs("AMG SOLVER LOCATION", "DEVICE");
     }
   }
 }
@@ -795,6 +795,8 @@ void parsePreconditioner(const int rank, setupAide &options,
       {"multigrid"},
       {"semfem"},
       {"amgx"},
+      {"boomeramg"},
+      {"device"},
       {"fp32"},
       {"fp64"},
       {"additive"},
@@ -831,6 +833,7 @@ void parsePreconditioner(const int rank, setupAide &options,
      ) {
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
     options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
+    options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
     options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
     std::vector<std::string> list;
     list = serializeString(p_preconditioner, '+');
@@ -842,12 +845,13 @@ void parsePreconditioner(const int rank, setupAide &options,
         }
         options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
+        options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
       } else if (s.find("fp32") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
         if (options.compareArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG"))
           append_error("FP32 is currently not supported for BoomerAMG");
-      } else if (s.find("fp64") != std::string::npos) {
-        options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
+      } else if (s.find("device") != std::string::npos) {
+        options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
       } else {
           std::ostringstream error;
           error << "SEMFEM preconditioner flag " << s << " is not recognized!\n";
@@ -1346,12 +1350,10 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       {"cuda"},
       {"hip"},
       {"opencl"},
-      {"openmp"},
     };
     const std::vector<std::string> validArchitectures = {
       {"arch"}, // include the arch= specifier here
       {"x86"},
-      {"a64fx"},
     };
 
     std::vector<std::string> validValues = validBackends;

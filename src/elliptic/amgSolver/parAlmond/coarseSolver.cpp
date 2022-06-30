@@ -87,7 +87,7 @@ void coarseSolver::setup(
 
 
   if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
-    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "GPU");
+    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "DEVICE");
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
     if(useFP32) {
       if(platform->comm.mpiRank == 0) printf("FP32 is not supported in BoomerAMG.\n");
@@ -161,7 +161,7 @@ void coarseSolver::setup(
       ABORT(1);
     } 
     if(options.compareArgs("AMG SOLVER LOCATION", "CPU")){
-      if(platform->comm.mpiRank == 0) printf("AmgX only supports GPU!\n");
+      if(platform->comm.mpiRank == 0) printf("AmgX only supports DEVICE!\n");
       MPI_Barrier(platform->comm.mpiComm);
       ABORT(1);
     } 
@@ -296,7 +296,7 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     semfemSolver(o_rhs, o_x);
 
   } else {
-    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "GPU");
+    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "DEVICE");
     const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
 
     if (gatherLevel) {
@@ -310,7 +310,7 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
     if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
       if(useDevice) 
-        boomerAMGSolveDevice(o_x.ptr(), o_b.ptr());
+        boomerAMGSolveDevice(o_x, o_b);
       else
         boomerAMGSolve(xLocal, rhsLocal); 
     } else if (options.compareArgs("AMG SOLVER", "AMGX")){

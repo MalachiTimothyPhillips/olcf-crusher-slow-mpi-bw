@@ -217,11 +217,3 @@ void boomerAMGFree()
   __HYPRE_IJVectorDestroy(data->b);
   free(data);
 }
-
-#if 0
-// Just to fix a hypre linking error
-void hypre_blas_xerbla() {
-}
-void hypre_blas_lsame() {
-}
-#endif

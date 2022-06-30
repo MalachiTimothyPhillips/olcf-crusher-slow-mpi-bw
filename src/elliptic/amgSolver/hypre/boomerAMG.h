@@ -1,6 +1,9 @@
 #ifndef BOOMERAMG_CPU_H
 #define BOOMERAMG_CPU_H
 
+#include <mpi.h>
+#include "occa.hpp"
+
 #define BOOMERAMG_NPARAM 10
 
 #ifdef __cplusplus

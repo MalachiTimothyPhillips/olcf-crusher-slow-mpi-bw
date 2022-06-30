@@ -41,8 +41,13 @@ set(OCCA_CUDA_COMPILER_FLAGS "-O3 --fmad=true" CACHE STRING "CUDA flags for OCCA
 set(OCCA_HIP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "HIP flags for OCCA JIT compile")
 set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros" CACHE STRING "OPENCL flags for OCCA JIT compile")
 
+set(OCCA_CUDA_ENABLED ON CACHE BOOL "Enable OCCA CUDA support")
+set(OCCA_HIP_ENABLED ON CACHE BOOL "Enable OCCA HIP support")
+set(OCCA_OPENCL_ENABLED OFF CACHE BOOL "Enable OCCA OpenCL support")
+
 set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
+set(ENABLE_HYPRE_GPU OFF CACHE BOOL "Enable HYPRE GPUX support")
 set(GPU_MPI "1" CACHE STRING "GPU aware MPI")
 
 ###############################################################################
@@ -236,7 +241,11 @@ set_property(
 
 add_library(nekrs-lib SHARED ${SRC})
 
-add_dependencies(nekrs-lib nekrs-hypre-cpu)
+add_dependencies(nekrs-lib nekrs-hypre) # we need the header files
+if(ENABLE_HYPRE_GPU)
+  add_dependencies(nekrs-lib nekrs-hypre-device) # we need the header files
+endif()
+
 set_target_properties(nekrs-lib PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs)
 target_link_libraries(nekrs-lib PUBLIC libocca OpenMP::OpenMP_CXX PRIVATE gs ${GSLIB})
 

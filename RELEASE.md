@@ -2,20 +2,18 @@
 
 ## What is new? 
 
-* single udf source 
+* Single source for udf+oudf 
+* Support BoomerAMG on Device
 
 ## Good to know
 
 * ... 
 
 ## Breaking Changes
-
-* ... 
-
-## Known Bugs / Restrictions
-
+* [nrsconfig] Optional build settings have to be passed as a command line arg. To enable e.g. AMGX run with `-DENABLE_AMGX=ON`
 * [par] Rename writeControl value `runTime` => `simulationTime`
 
+## Known Bugs / Restrictions
 
 * Mesh solver does not support CHT and unaligned sym/shl BCs
 * [729](https://github.com/Nek5000/Nek5000/issues/759)

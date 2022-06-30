@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e -a
 
+#########################################################################
 : ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs}
 
 : ${NEKRS_CC:="mpicc"}
@@ -15,11 +16,7 @@ set -e -a
 : ${OCCA_CUDA_COMPILER_FLAGS:="-O3 --fmad=true -lineinfo"}
 : ${OCCA_HIP_COMPILER_FLAGS:="-O3 -g -ffp-contract=fast"}
 : ${OCCA_OPENCL_COMPILER_FLAGS:="-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros"}
-
-: ${OCCA_ENABLE_CUDA:=1}
-: ${OCCA_ENABLE_HIP:=1}
-: ${OCCA_ENABLE_OPENCL:=0}
-: ${ENABLE_AMGX:=0}
+#########################################################################
 
 if uname -a | grep 'ppc64'; then
   NEKRS_COMPILER_FLAGS=$(echo "$NEKRS_COMPILER_FLAGS" | sed -e "s/march/mcpu/g")
@@ -54,11 +51,7 @@ cmake -Wno-dev \
       -DOCCA_CUDA_COMPILER_FLAGS="${OCCA_CUDA_COMPILER_FLAGS}" \
       -DOCCA_HIP_COMPILER_FLAGS="${OCCA_HIP_COMPILER_FLAGS}" \
       -DOCCA_OPENCL_COMPILER_FLAGS="${OCCA_OPENCL_COMPILER_FLAGS}" \
-      -DENABLE_CUDA="${OCCA_ENABLE_CUDA}" \
-      -DENABLE_HIP="${OCCA_ENABLE_HIP}" \
-      -DENABLE_OPENCL="${OCCA_ENABLE_OPENCL}" \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
-      -DENABLE_AMGX="${ENABLE_AMGX}" \
       $@ \
       .. 
 
