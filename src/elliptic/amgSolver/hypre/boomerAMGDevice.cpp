@@ -1,6 +1,7 @@
 #include "nrssys.hpp"
 #include "platform.hpp"
 
+#ifdef ENABLE_HYPRE_GPU_SUPPORT
 #define NEKRS_HYPRE_DEVICE
 #include "__HYPRE.h"
 #undef NEKRS_HYPRE_DEVICE 
@@ -241,3 +242,32 @@ void boomerAMGFreeDevice()
   data->o_ii.free();
   free(data);
 }
+
+#else
+
+int boomerAMGSetupDevice(int nrows, int nz,
+                         const occa::memory& o_Ai, const occa::memory& o_Aj, const occa::memory& o_Av,
+                         const int null_space, const MPI_Comm ce,
+                         const int useFP32, const double *param, const int verbose)
+{
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
+  if(rank == 0) printf("ERROR: Recompile with HYPRE GPU support!\n");
+  return 1;
+}
+
+int boomerAMGSolveDevice(const occa::memory& o_x, const occa::memory& o_b)
+{
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
+  if(rank == 0) printf("ERROR: Recompile with HYPRE GPU support!\n");
+  return 1;
+}
+
+void boomerAMGFreeDevice()
+{
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
+  if(rank == 0) printf("ERROR: Recompile with HYPRE GPU support!\n");
+}
+#endif

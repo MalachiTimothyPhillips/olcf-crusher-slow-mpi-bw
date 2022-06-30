@@ -243,6 +243,7 @@ add_library(nekrs-lib SHARED ${SRC})
 
 add_dependencies(nekrs-lib nekrs-hypre) # we need the header files
 if(ENABLE_HYPRE_GPU)
+  target_compile_definitions(nekrs-lib PUBLIC -DENABLE_HYPRE_GPU_SUPPORT)
   add_dependencies(nekrs-lib nekrs-hypre-device) # we need the header files
 endif()
 
