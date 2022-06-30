@@ -7,6 +7,8 @@
 
 #include "__HYPRE.h"
 
+#include <map>
+
 #include "boomerAMG.h"
 
 static double boomerAMGParam[BOOMERAMG_NPARAM];
@@ -64,6 +66,44 @@ int boomerAMGSetup(int nrows,
   __HYPRE_IJMatrixSetObjectType(A_ij,HYPRE_PARCSR);
   __HYPRE_IJMatrixInitialize(A_ij);
 
+#if 1
+  std::map<HYPRE_BigInt, std::vector<std::pair<HYPRE_BigInt, HYPRE_Real>>> rowToColAndVal;
+  for(int i=0; i<nz; i++) 
+  {
+    HYPRE_BigInt mati = (HYPRE_BigInt)(Ai[i]);
+    HYPRE_BigInt matj = (HYPRE_BigInt)(Aj[i]);
+    HYPRE_Real matv = (HYPRE_Real) Av[i]; 
+    rowToColAndVal[mati].emplace_back(std::make_pair(matj, matv));
+  }
+
+  const HYPRE_Int rowsToSet = rowToColAndVal.size();
+  std::vector<HYPRE_Int> ncols(rowsToSet);
+  std::vector<HYPRE_BigInt> rows(rowsToSet);
+  std::vector<HYPRE_BigInt> cols(nz);
+  std::vector<HYPRE_Real> vals(nz);
+
+  unsigned rowCtr = 0;
+  unsigned colCtr = 0;
+  for(auto&& rowAndColValPair : rowToColAndVal){
+    const auto & row = rowAndColValPair.first;
+    const auto & colAndValues = rowAndColValPair.second;
+
+    rows[rowCtr] = row;
+    ncols[rowCtr] = colAndValues.size();
+
+    for(auto&& colAndValue : colAndValues){
+      const auto & col = colAndValue.first;
+      const auto & val = colAndValue.second;
+      cols[colCtr] = col;
+      vals[colCtr] = val;
+      ++colCtr;
+    }
+    ++rowCtr;
+  }
+
+  __HYPRE_IJMatrixSetValues(A_ij, rowsToSet, ncols.data(), rows.data(), cols.data(), vals.data());
+
+#else
   for(int i=0; i<nz; i++) 
   {
     HYPRE_BigInt mati = (HYPRE_BigInt)(Ai[i]);
@@ -72,6 +112,7 @@ int boomerAMGSetup(int nrows,
     HYPRE_Int ncols = 1; // number of columns per row
     __HYPRE_IJMatrixSetValues(A_ij, 1, &ncols, &mati, &matj, &matv);
   }
+#endif
   __HYPRE_IJMatrixAssemble(A_ij);
 
 #if 0
