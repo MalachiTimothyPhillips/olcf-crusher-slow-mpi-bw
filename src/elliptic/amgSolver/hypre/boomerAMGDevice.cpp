@@ -1,5 +1,7 @@
 #include "nrssys.hpp"
 #include "platform.hpp"
+#include <map>
+#include <vector>
 
 #ifdef ENABLE_HYPRE_GPU_SUPPORT
 #define NEKRS_HYPRE_DEVICE
@@ -24,7 +26,7 @@ struct hypre_data_t {
 static hypre_data_t *data;
 
 int boomerAMGSetupDevice(int nrows, int nz,
-                         const occa::memory& o_Ai, const occa::memory& o_Aj, const occa::memory& o_Av,
+                         const long long int * Ai, const long long int * Aj, const double * Av,
                          const int null_space, const MPI_Comm ce,
                          const int useFP32, const double *param, const int verbose)
 {
@@ -89,16 +91,58 @@ int boomerAMGSetupDevice(int nrows, int nz,
     __HYPRE_IJMatrixCreate(comm,data->ilower,data->iupper,data->ilower,data->iupper,&data->A);
     __HYPRE_IJMatrixSetObjectType(data->A,HYPRE_PARCSR);
     __HYPRE_IJMatrixInitialize(data->A);
-    HYPRE_Int ncols = 1;
-    occa::memory o_ncols = platform->device.malloc(sizeof(HYPRE_Int), &ncols);
-    for(int i=0; i<nz; i++) {
-      __HYPRE_IJMatrixSetValues(data->A, 
-                                1 /* values for nrows */, 
-                                (HYPRE_Int*) o_ncols.ptr() /* cols for each row */, 
-                                (HYPRE_BigInt*) o_Ai.slice(i*sizeof(HYPRE_BigInt)).ptr(),
-                                (HYPRE_BigInt*) o_Aj.slice(i*sizeof(HYPRE_BigInt)).ptr(),
-                                (HYPRE_Real*) o_Av.slice(i*sizeof(HYPRE_Real)).ptr());
+
+    std::map<HYPRE_BigInt, std::vector<std::pair<HYPRE_BigInt, HYPRE_Real>>> rowToColAndVal;
+    for(int i=0; i<nz; i++) 
+    {
+      HYPRE_BigInt mati = (HYPRE_BigInt)(Ai[i]);
+      HYPRE_BigInt matj = (HYPRE_BigInt)(Aj[i]);
+      HYPRE_Real matv = (HYPRE_Real) Av[i]; 
+      rowToColAndVal[mati].emplace_back(std::make_pair(matj, matv));
     }
+
+    const HYPRE_Int rowsToSet = rowToColAndVal.size();
+    std::vector<HYPRE_Int> ncols(rowsToSet);
+    std::vector<HYPRE_BigInt> rows(rowsToSet);
+    std::vector<HYPRE_BigInt> cols(nz);
+    std::vector<HYPRE_Real> vals(nz);
+
+    unsigned rowCtr = 0;
+    unsigned colCtr = 0;
+    for(auto&& rowAndColValPair : rowToColAndVal){
+      const auto & row = rowAndColValPair.first;
+      const auto & colAndValues = rowAndColValPair.second;
+
+      rows[rowCtr] = row;
+      ncols[rowCtr] = colAndValues.size();
+
+      for(auto&& colAndValue : colAndValues){
+        const auto & col = colAndValue.first;
+        const auto & val = colAndValue.second;
+        cols[colCtr] = col;
+        vals[colCtr] = val;
+        ++colCtr;
+      }
+      ++rowCtr;
+    }
+
+    auto o_ncols = platform->device.malloc(ncols.size() * sizeof(HYPRE_Int),ncols.data());
+    auto o_rows = platform->device.malloc(rows.size() * sizeof(HYPRE_BigInt),rows.data());
+    auto o_cols = platform->device.malloc(cols.size() * sizeof(HYPRE_BigInt),cols.data());
+    auto o_vals = platform->device.malloc(vals.size() * sizeof(HYPRE_Real),vals.data());
+
+    __HYPRE_IJMatrixSetValues(data->A, 
+                              rowsToSet /* values for nrows */, 
+                              (HYPRE_Int*) o_ncols.ptr() /* cols for each row */, 
+                              (HYPRE_BigInt*) o_rows.ptr(),
+                              (HYPRE_BigInt*) o_rows.ptr(),
+                              (HYPRE_Real*) o_vals.ptr());
+
+    auto o_ncols.free();
+    auto o_rows.free();
+    auto o_cols.free();
+    auto o_vals.free();
+
     __HYPRE_IJMatrixAssemble(data->A);
 #if 0
     __HYPRE_IJMatrixPrint(data->A, "matrix.dat");
@@ -246,7 +290,7 @@ void boomerAMGFreeDevice()
 #else
 
 int boomerAMGSetupDevice(int nrows, int nz,
-                         const occa::memory& o_Ai, const occa::memory& o_Aj, const occa::memory& o_Av,
+                         const long long int * Ai, const long long int * Aj, const double * Av,
                          const int null_space, const MPI_Comm ce,
                          const int useFP32, const double *param, const int verbose)
 {

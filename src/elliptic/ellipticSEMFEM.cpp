@@ -97,22 +97,16 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       }
 
       if(platform->device.mode() != "Serial" && useDevice) {
-        occa::memory o_Ai = platform->device.malloc(data->nnz*sizeof(hlong), data->Ai);
-        occa::memory o_Aj = platform->device.malloc(data->nnz*sizeof(hlong), data->Aj);
-        occa::memory o_Avals = platform->device.malloc(data->nnz*sizeof(dfloat), data->Av);
         setupRetVal = boomerAMGSetupDevice(numRows,
                                            data->nnz,
-                                           o_Ai,
-                                           o_Aj,
-                                           o_Avals,
+                                           data->Ai,
+                                           data->Aj,
+                                           data->Av,
                                            (int) elliptic->allNeumann,
                                            platform->comm.mpiComm,
                                            useFP32,
                                            settings,
                                            verbose);
-        o_Ai.free();
-        o_Aj.free();
-        o_Avals.free();
       } else {
         setupRetVal = boomerAMGSetup(
           numRows,

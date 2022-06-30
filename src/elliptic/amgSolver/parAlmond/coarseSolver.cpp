@@ -119,14 +119,11 @@ void coarseSolver::setup(
     options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
     if(useDevice) {
-      occa::memory o_Ai = platform->device.malloc(nnz*sizeof(hlong), Ai);
-      occa::memory o_Aj = platform->device.malloc(nnz*sizeof(hlong), Aj);
-      occa::memory o_Avals = platform->device.malloc(nnz*sizeof(dfloat), Avals);
       boomerAMGSetupDevice(Nrows,
                            nnz,
-                           o_Ai,
-                           o_Aj,
-                           o_Avals,
+                           Ai,
+                           Aj,
+                           Avals,
                            (int) nullSpace,
                            comm,
                            0,  /* useFP32 */

@@ -66,7 +66,6 @@ int boomerAMGSetup(int nrows,
   __HYPRE_IJMatrixSetObjectType(A_ij,HYPRE_PARCSR);
   __HYPRE_IJMatrixInitialize(A_ij);
 
-#if 1
   std::map<HYPRE_BigInt, std::vector<std::pair<HYPRE_BigInt, HYPRE_Real>>> rowToColAndVal;
   for(int i=0; i<nz; i++) 
   {
@@ -103,16 +102,6 @@ int boomerAMGSetup(int nrows,
 
   __HYPRE_IJMatrixSetValues(A_ij, rowsToSet, ncols.data(), rows.data(), cols.data(), vals.data());
 
-#else
-  for(int i=0; i<nz; i++) 
-  {
-    HYPRE_BigInt mati = (HYPRE_BigInt)(Ai[i]);
-    HYPRE_BigInt matj = (HYPRE_BigInt)(Aj[i]);
-    HYPRE_Real matv = (HYPRE_Real) Av[i]; 
-    HYPRE_Int ncols = 1; // number of columns per row
-    __HYPRE_IJMatrixSetValues(A_ij, 1, &ncols, &mati, &matj, &matv);
-  }
-#endif
   __HYPRE_IJMatrixAssemble(A_ij);
 
 #if 0
