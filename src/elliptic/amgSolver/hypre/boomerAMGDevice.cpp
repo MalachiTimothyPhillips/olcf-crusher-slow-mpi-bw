@@ -135,7 +135,7 @@ int boomerAMGSetupDevice(int nrows, int nz,
                               rowsToSet /* values for nrows */, 
                               (HYPRE_Int*) o_ncols.ptr() /* cols for each row */, 
                               (HYPRE_BigInt*) o_rows.ptr(),
-                              (HYPRE_BigInt*) o_rows.ptr(),
+                              (HYPRE_BigInt*) o_cols.ptr(),
                               (HYPRE_Real*) o_vals.ptr());
 
     auto o_ncols.free();
