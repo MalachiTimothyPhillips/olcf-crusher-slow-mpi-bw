@@ -7,9 +7,11 @@
 
 #include "__HYPRE.h"
 
+#include "boomerAMG.h"
+
 static double boomerAMGParam[BOOMERAMG_NPARAM];
 
-typedef struct hypre_data {
+struct hypre_data {
   MPI_Comm comm;
   HYPRE_Solver solver;
   HYPRE_IJMatrix A;
@@ -21,7 +23,7 @@ typedef struct hypre_data {
   HYPRE_Real *xx;
   int nRows;
   int Nthreads;
-} hypre_data;
+};
 static hypre_data *data;
 
 int boomerAMGSetup(int nrows,
