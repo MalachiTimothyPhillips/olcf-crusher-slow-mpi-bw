@@ -216,11 +216,6 @@ if (HYPRE_WITH_CUDA)
 
   message(STATUS "Using CXX standard: c++${CMAKE_CXX_STANDARD}")
 
-  # Use ${CMAKE_CXX_COMPILER} as the cuda host compiler.
-  if (NOT CMAKE_CUDA_HOST_COMPILER)
-    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
-  endif ()
-
   # Add any extra CXX compiler flags HYPRE_WITH_EXTRA_CXXFLAGS
   if (NOT HYPRE_WITH_EXTRA_CXXFLAGS STREQUAL "")
     string(REPLACE " " ";" HYPRE_WITH_EXTRA_CXXFLAGS "${HYPRE_WITH_EXTRA_CXXFLAGS}")
@@ -232,8 +227,11 @@ if (HYPRE_WITH_CUDA)
   check_language(CUDA)
   if (CMAKE_CUDA_COMPILER)
 
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "")
+
     enable_language(CUDA)
     message(STATUS "Enabled support for CUDA.")
+
 
     if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
       set(CMAKE_CUDA_STANDARD 11)

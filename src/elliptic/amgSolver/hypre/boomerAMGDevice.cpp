@@ -138,10 +138,10 @@ int boomerAMGSetupDevice(int nrows, int nz,
                               (HYPRE_BigInt*) o_cols.ptr(),
                               (HYPRE_Real*) o_vals.ptr());
 
-    auto o_ncols.free();
-    auto o_rows.free();
-    auto o_cols.free();
-    auto o_vals.free();
+    o_ncols.free();
+    o_rows.free();
+    o_cols.free();
+    o_vals.free();
 
     __HYPRE_IJMatrixAssemble(data->A);
 #if 0
