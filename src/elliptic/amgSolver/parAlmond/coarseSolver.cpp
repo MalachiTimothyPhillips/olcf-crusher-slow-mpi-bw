@@ -126,6 +126,7 @@ void coarseSolver::setup(
                            Avals,
                            (int) nullSpace,
                            comm,
+                           platform->device.occaDevice(),
                            0,  /* useFP32 */
                            settings,
                            verbose);

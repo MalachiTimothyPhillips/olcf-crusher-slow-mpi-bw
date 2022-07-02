@@ -8,7 +8,7 @@
 
 int boomerAMGSetupDevice(int nrows, int nz,
                          const long long int * Ai, const long long int * Aj, const double * Av,
-                         const int null_space, const MPI_Comm ce,
+                         const int null_space, const MPI_Comm ce, occa::device device,
                          const int useFP32, const double *param, const int verbose);
 
 int boomerAMGSolveDevice(const occa::memory& o_x, const occa::memory& o_b);

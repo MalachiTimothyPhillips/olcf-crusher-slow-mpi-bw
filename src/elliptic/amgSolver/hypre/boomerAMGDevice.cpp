@@ -1,5 +1,4 @@
-#include "nrssys.hpp"
-#include "platform.hpp"
+#include "occa.hpp"
 #include <map>
 #include <vector>
 
@@ -27,7 +26,7 @@ static hypre_data_t *data;
 
 int boomerAMGSetupDevice(int nrows, int nz,
                          const long long int * Ai, const long long int * Aj, const double * Av,
-                         const int null_space, const MPI_Comm ce,
+                         const int null_space, const MPI_Comm ce, occa::device device,
                          const int useFP32, const double *param, const int verbose)
 {
   MPI_Comm comm;
@@ -126,10 +125,10 @@ int boomerAMGSetupDevice(int nrows, int nz,
       ++rowCtr;
     }
 
-    auto o_ncols = platform->device.malloc(ncols.size() * sizeof(HYPRE_Int),ncols.data());
-    auto o_rows = platform->device.malloc(rows.size() * sizeof(HYPRE_BigInt),rows.data());
-    auto o_cols = platform->device.malloc(cols.size() * sizeof(HYPRE_BigInt),cols.data());
-    auto o_vals = platform->device.malloc(vals.size() * sizeof(HYPRE_Real),vals.data());
+    auto o_ncols = device.malloc(ncols.size() * sizeof(HYPRE_Int),ncols.data());
+    auto o_rows = device.malloc(rows.size() * sizeof(HYPRE_BigInt),rows.data());
+    auto o_cols = device.malloc(cols.size() * sizeof(HYPRE_BigInt),cols.data());
+    auto o_vals = device.malloc(vals.size() * sizeof(HYPRE_Real),vals.data());
 
     __HYPRE_IJMatrixSetValues(data->A, 
                               rowsToSet /* values for nrows */, 
@@ -237,7 +236,7 @@ int boomerAMGSetupDevice(int nrows, int nz,
   HYPRE_BigInt *ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
   for(int i=0;i<data->nRows;++i) 
     ii[i] = data->ilower + i;
-  data->o_ii = platform->device.malloc(data->nRows*sizeof(HYPRE_BigInt), ii);
+  data->o_ii = device.malloc(data->nRows*sizeof(HYPRE_BigInt), ii);
   free(ii);
 
   return 0;

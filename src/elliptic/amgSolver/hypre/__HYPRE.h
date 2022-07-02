@@ -15,14 +15,8 @@
 extern "C" {
 #endif
 
-#ifdef NEKRS_HYPRE_DEVICE
-#include "device/HYPRE.h"    
-#include "device/HYPRE_parcsr_ls.h"
-#include "device/_hypre_utilities.h"
-#else
 #include "HYPRE.h"    
 #include "HYPRE_parcsr_ls.h"
-#endif
 
 #define _TOKEN_PASTE(a,b) a##b
 #define _TOKEN_PASTE_(a,b) _TOKEN_PASTE(a,b) 

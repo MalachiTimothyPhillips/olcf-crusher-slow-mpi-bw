@@ -7,6 +7,7 @@
 
 #include "__HYPRE.h"
 
+#include <vector>
 #include <map>
 
 #include "boomerAMG.h"

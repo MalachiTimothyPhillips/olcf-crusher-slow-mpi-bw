@@ -89,13 +89,6 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       platform->options.getArgs("BOOMERAMG NONGALERKIN TOLERANCE" , settings[9]);
       platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
-
-      if(useFP32) {
-        if(platform->comm.mpiRank == 0) printf("HYPRE does not support FP32!\n");
-        MPI_Barrier(platform->comm.mpiComm);
-        ABORT(1);
-      }
-
       if(platform->device.mode() != "Serial" && useDevice) {
         setupRetVal = boomerAMGSetupDevice(numRows,
                                            data->nnz,
@@ -104,6 +97,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
                                            data->Av,
                                            (int) elliptic->allNeumann,
                                            platform->comm.mpiComm,
+                                           platform->device.occaDevice(),
                                            useFP32,
                                            settings,
                                            verbose);

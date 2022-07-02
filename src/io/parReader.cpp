@@ -359,6 +359,7 @@ void checkValidity(
   for(auto && v : validValues){
     valid |= (entry.find(v) != std::string::npos);
   }
+
   if(!valid){
     std::ostringstream ss;
     ss << "Value " << entry << " is not recognized!\n";
@@ -817,9 +818,7 @@ void parsePreconditioner(const int rank, setupAide &options,
 
   const std::vector<std::string> list = serializeString(p_preconditioner, '+');
   for(std::string s : list)
-  {
     checkValidity(rank, validValues, s);
-  }
 
   if (p_preconditioner == "none") {
     options.setArgs(parSection + " PRECONDITIONER", "NONE");
@@ -834,22 +833,24 @@ void parsePreconditioner(const int rank, setupAide &options,
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
     options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
     options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
-    options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
+    options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
     std::vector<std::string> list;
     list = serializeString(p_preconditioner, '+');
     for (std::string s : list) {
-      if (s.find("semfem") != std::string::npos) {
+      if (s.find("semfem") != std::string::npos) { 
       } else if (s.find("amgx") != std::string::npos) {
         if(!AMGXenabled()){
             append_error("AMGX was requested but is not compiled!\n");
         }
         options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
-        options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
         options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
+      } else if (s.find("boomeramg") != std::string::npos) {
       } else if (s.find("fp32") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
+      } else if (s.find("fp64") != std::string::npos) {
+        options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
         if (options.compareArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG"))
-          append_error("FP32 is currently not supported for BoomerAMG");
+          append_error("FP64 is currently not supported for selected SEMFEM SOLVER!");
       } else if (s.find("device") != std::string::npos) {
         options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
       } else {

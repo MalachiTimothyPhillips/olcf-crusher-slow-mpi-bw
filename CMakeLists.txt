@@ -241,12 +241,6 @@ set_property(
 
 add_library(nekrs-lib SHARED ${SRC})
 
-add_dependencies(nekrs-lib nekrs-hypre) # we need the header files
-if(ENABLE_HYPRE_GPU)
-  target_compile_definitions(nekrs-lib PUBLIC -DENABLE_HYPRE_GPU_SUPPORT)
-  add_dependencies(nekrs-lib nekrs-hypre-device) # we need the header files
-endif()
-
 set_target_properties(nekrs-lib PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs)
 target_link_libraries(nekrs-lib PUBLIC libocca OpenMP::OpenMP_CXX PRIVATE gs ${GSLIB})
 
@@ -294,6 +288,20 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
+add_library(nekrs-hypre-wrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/boomerAMG.cpp)
+add_dependencies(nekrs-hypre-wrapper nekrs-hypre)
+target_include_directories(nekrs-hypre-wrapper PRIVATE ${HYPRE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src/core)
+target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-wrapper)
+
+if(ENABLE_HYPRE_GPU AND ENABLE_CUDA)
+  add_library(nekrs-hypre-device-wrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/boomerAMGDevice.cpp)
+  target_compile_definitions(nekrs-hypre-device-wrapper PUBLIC -DENABLE_HYPRE_GPU_SUPPORT)
+  add_dependencies(nekrs-hypre-device-wrapper nekrs-hypre-device) 
+  target_include_directories(nekrs-hypre-device-wrapper PRIVATE ${HYPRE_DEVICE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src/core)
+  target_link_libraries(nekrs-hypre-device-wrapper PRIVATE libocca)
+  target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-device-wrapper)
+endif()
+
 add_executable(nekrs-bin src/main.cpp)
 target_include_directories(nekrs-bin PRIVATE src/lib)
 set_target_properties(nekrs-bin PROPERTIES LINKER_LANGUAGE CXX OUTPUT_NAME nekrs)
@@ -332,7 +340,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin nekrs-hypre-wrapper nekrs-hypre-device-wrapper
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
