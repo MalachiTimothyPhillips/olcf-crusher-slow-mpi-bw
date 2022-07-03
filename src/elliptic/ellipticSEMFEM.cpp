@@ -1,8 +1,7 @@
 #include <string>
 #include "platform.hpp"
 #include "gslib.h"
-#include "boomerAMG.h"
-#include "boomerAMGDevice.hpp"
+#include "hypreWrapper.hpp"
 #include "elliptic.h"
 #include "ellipticBuildSEMFEM.hpp"
 #include "amgx.h"
@@ -90,19 +89,20 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
       if(platform->device.mode() != "Serial" && useDevice) {
-        setupRetVal = boomerAMGSetupDevice(numRows,
-                                           data->nnz,
-                                           data->Ai,
-                                           data->Aj,
-                                           data->Av,
-                                           (int) elliptic->allNeumann,
-                                           platform->comm.mpiComm,
-                                           platform->device.occaDevice(),
-                                           useFP32,
-                                           settings,
-                                           verbose);
+        setupRetVal = hypreWrapperDevice::BoomerAMGSetup(
+                        numRows,
+                        data->nnz,
+                        data->Ai,
+                        data->Aj,
+                        data->Av,
+                        (int) elliptic->allNeumann,
+                        platform->comm.mpiComm,
+                        platform->device.occaDevice(),
+                        useFP32,
+                        settings,
+                        verbose);
       } else {
-        setupRetVal = boomerAMGSetup(
+        setupRetVal = hypreWrapper::BoomerAMGSetup(
           numRows,
           data->nnz,
           data->Ai,
@@ -180,11 +180,11 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     if(platform->device.mode() != "Serial" && !useDevice)
     {
       o_buffer.copyTo(SEMFEMBuffer1_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
-      boomerAMGSolve(SEMFEMBuffer2_h_d, SEMFEMBuffer1_h_d);
+      hypreWrapper::BoomerAMGSolve(SEMFEMBuffer2_h_d, SEMFEMBuffer1_h_d);
       o_buffer2.copyFrom(SEMFEMBuffer2_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
 
     } else {
-      boomerAMGSolveDevice(o_buffer2, o_buffer);
+      hypreWrapperDevice::BoomerAMGSolve(o_buffer2, o_buffer);
     }
   } else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX")){
     AMGXsolve(o_buffer2.ptr(), o_buffer.ptr());

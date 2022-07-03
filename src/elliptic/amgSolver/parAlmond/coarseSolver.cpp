@@ -32,8 +32,7 @@ SOFTWARE.
 
 #include "omp.h"
 #include "limits.h"
-#include "boomerAMG.h"
-#include "boomerAMGDevice.hpp"
+#include "hypreWrapper.hpp"
 #include "amgx.h"
 #include "platform.hpp"
 
@@ -119,7 +118,7 @@ void coarseSolver::setup(
     options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
     if(useDevice) {
-      boomerAMGSetupDevice(Nrows,
+      hypreWrapperDevice::BoomerAMGSetup(Nrows,
                            nnz,
                            Ai,
                            Aj,
@@ -131,7 +130,7 @@ void coarseSolver::setup(
                            settings,
                            verbose);
     } else {
-      boomerAMGSetup(Nrows,
+      hypreWrapper::BoomerAMGSetup(Nrows,
                      nnz,
                      Ai,
                      Aj,
@@ -307,11 +306,21 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     occa::memory o_b = gatherLevel ? o_Gx : o_rhs;
 
     if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
-      if(useDevice) 
-        boomerAMGSolveDevice(o_x, o_b);
-      else
-        boomerAMGSolve(xLocal, rhsLocal); 
+
+      if(useDevice) {
+        if(useFP32){
+          convertFP64ToFP32Kernel(N, o_b, o_rhsBuffer);
+          hypreWrapperDevice::BoomerAMGSolve(o_xBuffer, o_rhsBuffer);
+          convertFP32ToFP64Kernel(N, o_xBuffer, o_x);
+        } else {
+          hypreWrapperDevice::BoomerAMGSolve(o_x, o_b);
+        }
+      } else {
+        hypreWrapper::BoomerAMGSolve(xLocal, rhsLocal); 
+      }
+
     } else if (options.compareArgs("AMG SOLVER", "AMGX")){
+
       if(useFP32){
         convertFP64ToFP32Kernel(N, o_b, o_rhsBuffer);
         AMGXsolve(o_xBuffer.ptr(), o_rhsBuffer.ptr());
@@ -319,6 +328,7 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
       } else {
         AMGXsolve(o_x.ptr(), o_b.ptr());
       }
+
     }
 
     if (gatherLevel) {

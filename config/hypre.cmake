@@ -2,8 +2,7 @@ set(HYPRE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rd_party/hypre)
 file(MAKE_DIRECTORY ${CMAKE_INSTALL_PREFIX}/include)
 set(HYPRE_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include/hypre)
 set(HYPRE_INSTALL_LIB_DIR ${CMAKE_CURRENT_BINARY_DIR}/HYPRE_BUILD-prefix)
-
-#set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/lib/hypre")
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/lib/hypre")
 
 ExternalProject_Add(
     HYPRE_BUILD
@@ -23,19 +22,18 @@ ExternalProject_Add(
                 -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
 )
 
-add_library(nekrs-hypre MODULE ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/wrapper.c)
+add_library(nekrs-hypre SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/hypreWrapper.cpp)
 add_dependencies(nekrs-hypre HYPRE_BUILD)
 target_include_directories(nekrs-hypre PRIVATE ${HYPRE_INSTALL_INCLUDE_DIR})
 # lacking of a better alternative adding dependencies manually 
-target_link_libraries(nekrs-hypre PRIVATE MPI::MPI_C ${HYPRE_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a)
-target_compile_definitions(nekrs-hypre PRIVATE HYPRE_API_PREFIX=NEKRS_)
-set_target_properties(nekrs-hypre PROPERTIES LIBRARY_OUTPUT_NAME HYPRE)
+target_link_libraries(nekrs-hypre PUBLIC MPI::MPI_C 
+                                  PRIVATE ${HYPRE_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a)
+set_target_properties(nekrs-hypre PROPERTIES CXX_VISIBILITY_PRESET hidden)
 install(TARGETS nekrs-hypre
   LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/hypre
   PRIVATE_HEADER DESTINATION ${HYPRE_INSTALL_INCLUDE_DIR} 
   PUBLIC_HEADER DESTINATION ${HYPRE_INSTALL_INCLUDE_DIR} 
 )
-set(HYPRE_INCLUDE_DIR ${HYPRE_INSTALL_INCLUDE_DIR})
 
 if(ENABLE_CUDA AND ENABLE_HYPRE_GPU)
   find_package(CUDAToolkit 10.0 REQUIRED)
@@ -53,7 +51,7 @@ if(ENABLE_CUDA AND ENABLE_HYPRE_GPU)
       CMAKE_ARGS  
                   -DHYPRE_ENABLE_SHARED=OFF
                   -DHYPRE_ENABLE_MIXEDINT=ON
-                  -DHYPRE_ENABLE_SINGLE=OFF
+                  -DHYPRE_ENABLE_SINGLE=ON
                   -DHYPRE_WITH_CUDA=ON
                   -DHYPRE_ENABLE_CUSPARSE=ON
                   -DHYPRE_BUILD_TYPE=RelWithDebInfo
@@ -72,19 +70,19 @@ if(ENABLE_CUDA AND ENABLE_HYPRE_GPU)
 
   )
 
-  add_library(nekrs-hypre-device MODULE ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/wrapper.c)
+  add_library(nekrs-hypre-device SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/hypreWrapperDevice.cpp)
   add_dependencies(nekrs-hypre-device HYPRE_BUILD_DEVICE)
+  target_compile_definitions(nekrs-hypre-device PRIVATE -DENABLE_HYPRE_GPU)
   target_include_directories(nekrs-hypre-device PRIVATE ${HYPRE_INSTALL_INCLUDE_DIR})
   # lacking of a better alternative adding dependencies manually 
   target_link_libraries(nekrs-hypre-device 
-                        PRIVATE MPI::MPI_C CUDA::curand CUDA::cublas CUDA::cusparse CUDA::cusolver 
-                        ${HYPRE_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a)
-  target_compile_definitions(nekrs-hypre-device PRIVATE HYPRE_API_PREFIX=NEKRS_DEVICE_)
-  set_target_properties(nekrs-hypre-device PROPERTIES LIBRARY_OUTPUT_NAME HYPREDevice)
+                        PUBLIC libocca MPI::MPI_C 
+                        PRIVATE CUDA::curand CUDA::cublas CUDA::cusparse CUDA::cusolver 
+                        ${HYPRE_INSTALL_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a) 
+  set_target_properties(nekrs-hypre-device PROPERTIES CXX_VISIBILITY_PRESET hidden)
   install(TARGETS nekrs-hypre-device
     LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/hypre
     PRIVATE_HEADER DESTINATION ${HYPRE_INSTALL_INCLUDE_DIR} 
     PUBLIC_HEADER DESTINATION ${HYPRE_INSTALL_INCLUDE_DIR} 
   )
-  set(HYPRE_DEVICE_INCLUDE_DIR ${HYPRE_INSTALL_INCLUDE_DIR})
 endif()

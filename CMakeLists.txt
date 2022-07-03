@@ -12,9 +12,7 @@ include(ExternalProject)
 include(FetchContent)
 include(config/utils.cmake)
 
-#set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 set(CMAKE_INSTALL_MESSAGE NEVER)
-#set(CMAKE_VERBOSE_MAKEFILE ON)
 set(FETCHCONTENT_QUIET on)
 set(FETCHCONTENT_UPDATES_DISCONNECTED on)
 
@@ -44,11 +42,12 @@ set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros
 set(OCCA_CUDA_ENABLED ON CACHE BOOL "Enable OCCA CUDA support")
 set(OCCA_HIP_ENABLED ON CACHE BOOL "Enable OCCA HIP support")
 set(OCCA_OPENCL_ENABLED OFF CACHE BOOL "Enable OCCA OpenCL support")
-
 set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
+
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
-set(ENABLE_HYPRE_GPU OFF CACHE BOOL "Enable HYPRE GPUX support")
-set(GPU_MPI "1" CACHE STRING "GPU aware MPI")
+set(ENABLE_HYPRE_GPU OFF CACHE BOOL "Enable HYPRE GPU support")
+
+set(GPU_MPI "1" CACHE STRING "Enable GPU aware MPI")
 
 ###############################################################################
 # Check compiler/MPI vendor, version and Fortran/C compatibility              #
@@ -125,7 +124,6 @@ if ("${GIT_COMMIT_HASH}" STREQUAL "")
   set(GIT_COMMIT_HASH "no sha")
 endif()
 
-# avoid hijacked symbols with the same name
 set(BSYMBOLIC_FLAG "LINKER:-Bsymbolic LINKER:-Bsymbolic-functions")
 check_linker_flag(C ${BSYMBOLIC_FLAG} Allowed_LD_Flag_BSYMBOLIC)
 if(NOT Allowed_LD_Flag_BSYMBOLIC OR APPLE)
@@ -143,7 +141,6 @@ set(ENABLE_OPENCL ${OCCA_OPENCL_ENABLED})
 ###############################################################################
 # Build AMGX                                                                  #
 ###############################################################################
-
 if(ENABLE_CUDA AND ENABLE_AMGX)
   add_subdirectory(3rd_party/AMGX)
 endif()
@@ -151,19 +148,16 @@ endif()
 ###############################################################################
 # Build HYPRE
 ###############################################################################
-
 include(config/hypre.cmake)
 
 ###############################################################################
 # Build Nek5000 dependencies                                                  #
 ###############################################################################
-
 include(config/nek5000.cmake)
 
 ###############################################################################
 # Build NekRS
 ###############################################################################
-
 include(config/bench.cmake)
 include(config/mesh.cmake)
 include(config/elliptic.cmake)
@@ -279,7 +273,6 @@ target_include_directories(nekrs-lib
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/hypre
   ${ELLIPTIC_SOURCE_DIR}/amgSolver/amgx
   ${PARALMOND_SOURCE_DIR}
-  ${HYPRE_INCLUDE_DIR}
 )
 
 if(ENABLE_AMGX AND ENABLE_CUDA)
@@ -288,18 +281,10 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
-add_library(nekrs-hypre-wrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/boomerAMG.cpp)
-add_dependencies(nekrs-hypre-wrapper nekrs-hypre)
-target_include_directories(nekrs-hypre-wrapper PRIVATE ${HYPRE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src/core)
-target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-wrapper)
+target_link_libraries(nekrs-lib PUBLIC nekrs-hypre)
 
 if(ENABLE_HYPRE_GPU AND ENABLE_CUDA)
-  add_library(nekrs-hypre-device-wrapper SHARED ${CMAKE_CURRENT_SOURCE_DIR}/src/elliptic/amgSolver/hypre/boomerAMGDevice.cpp)
-  target_compile_definitions(nekrs-hypre-device-wrapper PUBLIC -DENABLE_HYPRE_GPU_SUPPORT)
-  add_dependencies(nekrs-hypre-device-wrapper nekrs-hypre-device) 
-  target_include_directories(nekrs-hypre-device-wrapper PRIVATE ${HYPRE_DEVICE_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src/core)
-  target_link_libraries(nekrs-hypre-device-wrapper PRIVATE libocca)
-  target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-device-wrapper)
+  target_link_libraries(nekrs-lib PUBLIC nekrs-hypre-device)
 endif()
 
 add_executable(nekrs-bin src/main.cpp)
@@ -340,7 +325,7 @@ configure_file(
   @ONLY)
 
 #install nekRS
-install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin nekrs-hypre-wrapper nekrs-hypre-device-wrapper
+install(TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin nekrs-hypre nekrs-hypre-device
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
