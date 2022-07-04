@@ -896,6 +896,10 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                           options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR"));
     nrs->pOptions.setArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR",
                           options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR"));
+    nrs->pOptions.setArgs("MULTIGRID NUMBER PRE SMOOTHINGS",
+                          options.getArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS"));
+    nrs->pOptions.setArgs("MULTIGRID NUMBER POST SMOOTHINGS",
+                          options.getArgs("POSTSSURE MULTIGRID NUMBER POST SMOOTHINGS"));
 
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";
