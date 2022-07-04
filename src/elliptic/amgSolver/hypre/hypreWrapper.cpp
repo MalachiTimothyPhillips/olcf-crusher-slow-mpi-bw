@@ -49,9 +49,24 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
   MPI_Comm_rank(comm,&rank);
 
   if(sizeof(HYPRE_Real) != ((useFP32) ? sizeof(float) : sizeof(double))) {
-    if(rank == 0) printf("HYPRE has not been built to support FP32.\n");
+    if(rank == 0) printf("hypreWrapperDevice: HYPRE floating point precision does not match!\n");
     MPI_Abort(ce, 1);
   } 
+
+  if ((int) param[0]) {
+    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
+      boomerAMGParam[i] = param[i+1]; 
+  } else {
+    boomerAMGParam[0]  = 8;    /* coarsening */
+    boomerAMGParam[1]  = 6;    /* interpolation */
+    boomerAMGParam[2]  = 1;    /* number of cycles */
+    boomerAMGParam[3]  = 16;   /* smoother for crs level */
+    boomerAMGParam[4]  = 3;    /* sweeps */
+    boomerAMGParam[5]  = 16;   /* smoother */
+    boomerAMGParam[6]  = 1;    /* sweeps   */
+    boomerAMGParam[7]  = 0.25; /* threshold */
+    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
+  }
 
   // Setup matrix
   long long rowStart = nrows;
@@ -109,21 +124,6 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
 #if 0
   HYPRE_IJMatrixPrint(A_ij, "matrix.dat");
 #endif
-
-  if ((int) param[0]) {
-    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
-      boomerAMGParam[i] = param[i+1]; 
-  } else {
-    boomerAMGParam[0]  = 8;    /* coarsening */
-    boomerAMGParam[1]  = 6;    /* interpolation */
-    boomerAMGParam[2]  = 1;    /* number of cycles */
-    boomerAMGParam[3]  = 16;   /* smoother for crs level */
-    boomerAMGParam[4]  = 3;    /* sweeps */
-    boomerAMGParam[5]  = 16;   /* smoother */
-    boomerAMGParam[6]  = 1;    /* sweeps   */
-    boomerAMGParam[7]  = 0.25; /* threshold */
-    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
-  }
 
   // Setup solver
   HYPRE_BoomerAMGCreate(&data->solver);
@@ -249,6 +249,7 @@ void __attribute__((visibility("default"))) Free()
   HYPRE_IJMatrixDestroy(data->A);
   HYPRE_IJVectorDestroy(data->x);
   HYPRE_IJVectorDestroy(data->b);
+  HYPRE_Finalize();
   free(data);
 }
 

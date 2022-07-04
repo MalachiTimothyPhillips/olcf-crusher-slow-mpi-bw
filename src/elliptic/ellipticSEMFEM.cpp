@@ -1,9 +1,9 @@
-#include <string>
+#include "nrssys.hpp"
 #include "platform.hpp"
 #include "gslib.h"
-#include "hypreWrapper.hpp"
 #include "elliptic.h"
 #include "ellipticBuildSEMFEM.hpp"
+#include "hypreWrapper.hpp"
 #include "amgx.h"
 
 namespace{
@@ -12,8 +12,8 @@ occa::kernel scatterKernel;
 occa::memory o_dofMap;
 occa::memory o_SEMFEMBuffer1;
 occa::memory o_SEMFEMBuffer2;
-double* SEMFEMBuffer1_h_d;
-double* SEMFEMBuffer2_h_d;
+void* SEMFEMBuffer1_h_d;
+void* SEMFEMBuffer2_h_d;
 dlong numRowsSEMFEM;
 }
 
@@ -58,8 +58,8 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   o_SEMFEMBuffer2 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal,sizeType);
 
   if(!useDevice){
-    SEMFEMBuffer1_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
-    SEMFEMBuffer2_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeof(dfloat));
+    void *SEMFEMBuffer1_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
+    void *SEMFEMBuffer2_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
   }
 
   numRowsSEMFEM = numRows;
@@ -165,6 +165,8 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
   occa::memory& o_buffer = o_SEMFEMBuffer1;
   occa::memory& o_buffer2 = o_SEMFEMBuffer2;
 
+  platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_z);
+
   gatherKernel(
     numRowsSEMFEM,
     o_dofMap,
@@ -172,26 +174,32 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     o_buffer
   );
 
-  platform->linAlg->fill(mesh->Np * mesh->Nelements, 0.0, o_z);
+  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
+  const bool useDevice = elliptic->options.compareArgs("SEMFEM SOLVER LOCATION", "DEVICE");
+  const int sizeType = useFP32 ? sizeof(float) : sizeof(dfloat);
 
   if(elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")){
 
-    const bool useDevice = elliptic->options.compareArgs("SEMFEM SOLVER LOCATION", "DEVICE");
-    if(platform->device.mode() != "Serial" && !useDevice)
+    if(!useDevice)
     {
-      o_buffer.copyTo(SEMFEMBuffer1_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+      o_buffer.copyTo(SEMFEMBuffer1_h_d, elliptic->Ntotal * elliptic->Nfields * sizeType);
       hypreWrapper::BoomerAMGSolve(SEMFEMBuffer2_h_d, SEMFEMBuffer1_h_d);
-      o_buffer2.copyFrom(SEMFEMBuffer2_h_d, elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
+      o_buffer2.copyFrom(SEMFEMBuffer2_h_d, elliptic->Ntotal * elliptic->Nfields * sizeType);
 
     } else {
       hypreWrapperDevice::BoomerAMGSolve(o_buffer2, o_buffer);
     }
-  } else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX")){
+
+  } else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX") && useDevice){
+
     AMGXsolve(o_buffer2.ptr(), o_buffer.ptr());
+
   } else {
+
     if(platform->comm.mpiRank == 0)
-      printf("Trying to call an unknnown SEMFEM solver!\n");
+      printf("Trying to call an unknown SEMFEM solver!\n");
     ABORT(1);
+
   }
 
   scatterKernel(
@@ -201,5 +209,5 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
     o_z
   );
 
-  oogs::startFinish(o_z, 1, mesh->Np * mesh->Nelements, ogsDfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_z, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
 }

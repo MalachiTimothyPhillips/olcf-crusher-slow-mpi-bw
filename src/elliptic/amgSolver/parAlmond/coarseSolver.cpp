@@ -69,6 +69,9 @@ void coarseSolver::setup(
   MPI_Comm_size(comm,&size);
 
   const int verbose = (options.compareArgs("VERBOSE","TRUE")) ? 1: 0;
+  const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "DEVICE");
+  const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
+
 
   if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
     return; // bail early as this will not get used
@@ -84,16 +87,13 @@ void coarseSolver::setup(
     vectorDotStarKernel2 = platform->kernels.get(kernelName);
   }
 
+  if(useFP32)
+  {
+    o_rhsBuffer = platform->device.malloc(Nrows * sizeof(float));
+    o_xBuffer = platform->device.malloc(Nrows * sizeof(float));
+  }
 
   if (options.compareArgs("AMG SOLVER", "BOOMERAMG")){
-    const bool useDevice = options.compareArgs("AMG SOLVER LOCATION", "DEVICE");
-    const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
-    if(useFP32) {
-      if(platform->comm.mpiRank == 0) printf("FP32 is not supported in BoomerAMG.\n");
-      MPI_Barrier(platform->comm.mpiComm);
-      ABORT(1);
-    }
-    int Nthreads = 1;
  
     double settings[BOOMERAMG_NPARAM+1];
     settings[0]  = 1;    /* custom settings              */
@@ -118,29 +118,32 @@ void coarseSolver::setup(
     options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
 
     if(useDevice) {
-      hypreWrapperDevice::BoomerAMGSetup(Nrows,
-                           nnz,
-                           Ai,
-                           Aj,
-                           Avals,
-                           (int) nullSpace,
-                           comm,
-                           platform->device.occaDevice(),
-                           0,  /* useFP32 */
-                           settings,
-                           verbose);
+      hypreWrapperDevice::BoomerAMGSetup(
+        Nrows,
+        nnz,
+        Ai,
+        Aj,
+        Avals,
+        (int) nullSpace,
+        comm,
+        platform->device.occaDevice(),
+        useFP32,
+        settings,
+        verbose);
     } else {
-      hypreWrapper::BoomerAMGSetup(Nrows,
-                     nnz,
-                     Ai,
-                     Aj,
-                     Avals,
-                     (int) nullSpace,
-                     comm,
-                     Nthreads,
-                     0,  /* useFP32 */
-                     settings,
-                     verbose);
+      const int Nthreads = 1;
+      hypreWrapper::BoomerAMGSetup(
+        Nrows,
+        nnz,
+        Ai,
+        Aj,
+        Avals,
+        (int) nullSpace,
+        comm,
+        Nthreads,
+        useFP32,
+        settings,
+        verbose);
     }
  
     N = (int) Nrows;
@@ -151,7 +154,6 @@ void coarseSolver::setup(
   }
   else if (options.compareArgs("AMG SOLVER", "AMGX")){
     //TODO: these checks should go into parReader
-    const int useFP32 = options.compareArgs("AMG SOLVER PRECISION", "FP32");
     if(platform->device.mode() != "CUDA") {
       if(platform->comm.mpiRank == 0) printf("AmgX only supports CUDA!\n");
       MPI_Barrier(platform->comm.mpiComm);
@@ -179,11 +181,6 @@ void coarseSolver::setup(
       std::stoi(getenv("NEKRS_GPU_MPI")),
       cfg);
     N = (int) Nrows;
-    if(useFP32)
-    {
-      o_rhsBuffer = platform->device.malloc(N * sizeof(float));
-      o_xBuffer = platform->device.malloc(N * sizeof(float));
-    }
   } else {
     if(platform->comm.mpiRank == 0){
       std::string amgSolver;

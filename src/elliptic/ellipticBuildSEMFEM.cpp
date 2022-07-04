@@ -2,17 +2,17 @@
  * Low-Order finite element preconditioner computed with HYPRE's AMG solver
 */
 
-#include <platform.hpp>
 #include <math.h>
 #include <limits>
-
-#include "hypreWrapper.hpp"
-
-#include "gslib.h"
-#include "ellipticBuildSEMFEM.hpp"
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
+
+#include "nrssys.hpp"
+#include "platform.hpp"
+#include "hypreWrapper.hpp"
+#include "gslib.h"
+#include "ellipticBuildSEMFEM.hpp"
 
 namespace{
  void quadrature_rule(double q_r[4][3], double q_w[4]) {

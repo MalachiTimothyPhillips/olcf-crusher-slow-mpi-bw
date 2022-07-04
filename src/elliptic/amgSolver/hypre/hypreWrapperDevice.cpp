@@ -8,6 +8,7 @@
 
 #include "HYPRE.h"
 #include "HYPRE_parcsr_ls.h"
+#include "_hypre_utilities.h"
 
 #define BOOMERAMG_NPARAM 10
 static double boomerAMGParam[BOOMERAMG_NPARAM];
@@ -30,10 +31,11 @@ static hypre_data_t *data;
 namespace hypreWrapperDevice
 {
 
-int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
-                         const long long int * Ai, const long long int * Aj, const double * Av,
-                         int null_space, MPI_Comm ce, occa::device device,
-                         int useFP32, const double *param, int verbose)
+int __attribute__((visibility("default")))
+BoomerAMGSetup(int nrows, int nz,
+               const long long int * Ai, const long long int * Aj, const double * Av,
+               int null_space, MPI_Comm ce, occa::device device,
+               int useFP32, const double *param, int verbose)
 {
   MPI_Comm comm;
   MPI_Comm_dup(ce, &comm);
@@ -42,9 +44,25 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
   MPI_Comm_rank(comm,&rank);
 
   if(sizeof(HYPRE_Real) != ((useFP32) ? sizeof(float) : sizeof(double))) {
-    if(rank == 0) printf("HYPRE has not been built to support FP32.\n");
-    MPI_Abort(ce, 1);
+    if(rank == 0) printf("hypreWrapperDevice: HYPRE floating point precision does not match!\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
   } 
+
+  if ((int) param[0]) {
+    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
+      boomerAMGParam[i] = param[i+1]; 
+  } else {
+    boomerAMGParam[0]  = 8;    /* coarsening */
+    boomerAMGParam[1]  = 6;    /* interpolation */
+    boomerAMGParam[2]  = 1;    /* number of cycles */
+    boomerAMGParam[3]  = 8;    /* smoother for crs level */
+    boomerAMGParam[4]  = 3;    /* sweeps */
+    boomerAMGParam[5]  = 8;    /* smoother */
+    boomerAMGParam[6]  = 1;    /* sweeps   */
+    boomerAMGParam[7]  = 0.25; /* threshold */
+    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
+    boomerAMGParam[9]  = 0;    /* agressive coarsening */
+  }
 
   data = new hypre_data_t();
   data->comm = comm;
@@ -54,21 +72,18 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
   data->ilower -= data->nRows;
   data->iupper = (data->ilower + data->nRows) - 1; 
 
+  HYPRE_BigInt *ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
+  for(int i=0;i<data->nRows;++i) 
+    ii[i] = data->ilower + i;
+  data->o_ii = device.malloc(data->nRows*sizeof(HYPRE_BigInt), ii);
+  free(ii);
+
   HYPRE_Init();
 
   HYPRE_SetMemoryLocation(HYPRE_MEMORY_DEVICE);
   HYPRE_SetExecutionPolicy(HYPRE_EXEC_DEVICE);
 
-#if 0
-  hypre_uint mempool_bin_growth   = 8,
-             mempool_min_bin      = 3,
-             mempool_max_bin      = 9;
-  size_t mempool_max_cached_bytes = 2000LL * 1024 * 1024;
-  HYPRE_SetGPUMemoryPoolSize(mempool_bin_growth, mempool_min_bin,
-                               mempool_max_bin, mempool_max_cached_bytes);
-#endif
-
-  HYPRE_Int use_vendor = 0; 
+  HYPRE_Int spgemm_use_vendor = 0; 
 #if defined(HYPRE_USING_HIP) || defined(HYPRE_USING_SYCL)
   use_vendor = 1;
 
@@ -78,13 +93,13 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
   HYPRE_Real spgemm_rowest_mult = 1.5;
   char       spgemm_hash_type = 'L';
 
-  HYPRE_SetSpGemmAlgorithm(spgemm_alg);
-  HYPRE_SetSpGemmRownnzEstimateMethod(spgemm_rowest_mtd);
-  HYPRE_SetSpGemmRownnzEstimateNSamples(spgemm_rowest_nsamples);
-  HYPRE_SetSpGemmRownnzEstimateMultFactor(spgemm_rowest_mult);
-  HYPRE_SetSpGemmHashType(spgemm_hash_type);
+  hypre_SetSpGemmAlgorithm(spgemm_alg);
+  hypre_SetSpGemmRownnzEstimateMethod(spgemm_rowest_mtd);
+  hypre_SetSpGemmRownnzEstimateNSamples(spgemm_rowest_nsamples);
+  hypre_SetSpGemmRownnzEstimateMultFactor(spgemm_rowest_mult);
+  hypre_SetSpGemmHashType(spgemm_hash_type);
 #endif
-  HYPRE_SetSpGemmUseVendor(use_vendor);
+  HYPRE_SetSpGemmUseVendor(spgemm_use_vendor);
   HYPRE_SetSpMVUseVendor(1);
 
   HYPRE_SetUseGpuRand(1);
@@ -152,27 +167,13 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
 #endif
   }
 
-  if ((int) param[0]) {
-    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
-      boomerAMGParam[i] = param[i+1]; 
-  } else {
-    boomerAMGParam[0]  = 8;    /* coarsening */
-    boomerAMGParam[1]  = 6;    /* interpolation */
-    boomerAMGParam[2]  = 1;    /* number of cycles */
-    boomerAMGParam[3]  = 8;    /* smoother for crs level */
-    boomerAMGParam[4]  = 3;    /* sweeps */
-    boomerAMGParam[5]  = 8;    /* smoother */
-    boomerAMGParam[6]  = 1;    /* sweeps   */
-    boomerAMGParam[7]  = 0.25; /* threshold */
-    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
-  }
-
   // Setup solver
   HYPRE_BoomerAMGCreate(&data->solver);
 
   HYPRE_BoomerAMGSetCoarsenType(data->solver,boomerAMGParam[0]);
   HYPRE_BoomerAMGSetInterpType(data->solver,boomerAMGParam[1]);
 
+  HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetKeepTranspose(data->solver, 1);
 
@@ -196,7 +197,7 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
 
   HYPRE_BoomerAMGSetStrongThreshold(data->solver,boomerAMGParam[7]);
 
-// not supported yet
+// NonGalerkin not supported yet
 #if 0
   if (boomerAMGParam[8] > 1e-3) {
     HYPRE_BoomerAMGSetNonGalerkinTol(data->solver,boomerAMGParam[8]);
@@ -205,10 +206,14 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.05, 2);
   }
 #endif
+  
+  if(boomerAMGParam[9] > 0) {
+    HYPRE_BoomerAMGSetAggNumLevels(data->solver, boomerAMGParam[9]); 
+    HYPRE_BoomerAMGSetAggInterpType(data->solver, 5);
+    //HYPRE_BoomerAMGSetNumPaths(data->solver, 10);
+  }
 
-  HYPRE_BoomerAMGSetAggNumLevels(data->solver, boomerAMGParam[9]); 
-
-  HYPRE_BoomerAMGSetMaxIter(data->solver, boomerAMGParam[2]); // number of V-cycles
+  HYPRE_BoomerAMGSetMaxIter(data->solver, boomerAMGParam[2]);
   HYPRE_BoomerAMGSetTol(data->solver,0);
 
   if(verbose)
@@ -234,23 +239,15 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
   HYPRE_IJVectorGetObject(data->b,(void**) &par_b);
   HYPRE_IJVectorGetObject(data->x,(void**) &par_x);
   HYPRE_IJMatrixGetObject(data->A,(void**) &par_A);
-
   HYPRE_BoomerAMGSetup(data->solver,par_A,par_b,par_x);
-
-  HYPRE_BigInt *ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
-  for(int i=0;i<data->nRows;++i) 
-    ii[i] = data->ilower + i;
-  data->o_ii = device.malloc(data->nRows*sizeof(HYPRE_BigInt), ii);
-  free(ii);
 
   return 0;
 }
 
-int __attribute__((visibility("default"))) BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
+int __attribute__((visibility("default")))
+BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
 {
-  int err;
-
-  // note x is ALWAYS zero
+  // note: x is ALWAYS zero
 
   HYPRE_IJVectorSetValues(data->b,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_b.ptr());
   HYPRE_IJVectorAssemble(data->b);
@@ -268,11 +265,12 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(const occa::memory& o_
   HYPRE_IJVectorPrint(data->x, "x.dat");
 #endif
 
-  if(HYPRE_BoomerAMGSolve(data->solver,par_A,par_b,par_x) > 0) { 
+  const int retVal = HYPRE_BoomerAMGSolve(data->solver,par_A,par_b,par_x);
+  if(retVal > 0) { 
     int rank;
     MPI_Comm_rank(data->comm,&rank);
-    if(rank == 0) printf("HYPRE_BoomerAMGSolve failed!\n");
-    return 1;
+    if(rank == 0) printf("HYPRE_BoomerAMGSolve failed with retVal=%d!\n", retVal);
+    MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   HYPRE_IJVectorGetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_x.ptr());
@@ -280,12 +278,14 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(const occa::memory& o_
   return 0; 
 }
 
-void __attribute__((visibility("default"))) Free()
+void __attribute__((visibility("default"))) 
+Free()
 {
   HYPRE_BoomerAMGDestroy(data->solver);
   HYPRE_IJMatrixDestroy(data->A);
   HYPRE_IJVectorDestroy(data->x);
   HYPRE_IJVectorDestroy(data->b);
+  HYPRE_Finalize();
   data->o_ii.free();
   free(data);
 }
@@ -297,10 +297,11 @@ void __attribute__((visibility("default"))) Free()
 namespace hypreWrapperDevice
 {
 
-int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
-                         const long long int * Ai, const long long int * Aj, const double * Av,
-                         int null_space, MPI_Comm ce, occa::device device,
-                         int useFP32, const double *param, int verbose)
+int __attribute__((visibility("default"))) 
+BoomerAMGSetup(int nrows, int nz,
+               const long long int * Ai, const long long int * Aj, const double * Av,
+               int null_space, MPI_Comm ce, occa::device device,
+               int useFP32, const double *param, int verbose)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
@@ -308,7 +309,8 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows, int nz,
   return 1;
 }
 
-int __attribute__((visibility("default"))) BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
+int __attribute__((visibility("default"))) 
+BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
@@ -316,7 +318,8 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(const occa::memory& o_
   return 1;
 }
 
-void __attribute__((visibility("default"))) Free()
+void __attribute__((visibility("default"))) 
+Free()
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
@@ -326,4 +329,3 @@ void __attribute__((visibility("default"))) Free()
 } // namespace
 
 #endif
-

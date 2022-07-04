@@ -607,6 +607,11 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     else if(entry.find("device") != std::string::npos)
     {
       options.setArgs("AMG SOLVER LOCATION", "DEVICE");
+      if(p_coarseSolver.find("boomeramg") != std::string::npos){
+        options.setArgs("AMG SOLVER PRECISION", "FP32");
+        options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
+      }
+     
     }
   }
 }
