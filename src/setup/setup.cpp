@@ -899,7 +899,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("MULTIGRID NUMBER PRE SMOOTHINGS",
                           options.getArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS"));
     nrs->pOptions.setArgs("MULTIGRID NUMBER POST SMOOTHINGS",
-                          options.getArgs("POSTSSURE MULTIGRID NUMBER POST SMOOTHINGS"));
+                          options.getArgs("PRESSURE MULTIGRID NUMBER POST SMOOTHINGS"));
 
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";
