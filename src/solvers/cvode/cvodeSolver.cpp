@@ -7,9 +7,21 @@
 #include <numeric>
 #include "udf.hpp"
 
-//#include <cvode/cvode.h>
 #include "timeStepper.hpp"
 #include "plugins/lowMach.hpp"
+
+// cvode includes
+#include <sunlinsol/sunlinsol_spgmr.h>
+#include <sundials/sundials_types.h>
+#include <sundials/sundials_math.h>
+#include <cvode/cvode.h>
+#include <nvector/nvector_mpiplusx.h>
+#ifdef ENABLE_CUDA
+#include <nvector/nvector_cuda.h>
+#endif
+#ifdef ENABLE_HIP
+#include <nvector/nvector_hip.h>
+#endif
 
 namespace{
 void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
@@ -83,6 +95,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
   this->mapLToEKernel = platform->kernels.get("mapLToE");
   this->packKernel = platform->kernels.get("pack");
   this->unpackKernel = platform->kernels.get("unpack");
+
+  // set up CVODE
+
 
 }
 

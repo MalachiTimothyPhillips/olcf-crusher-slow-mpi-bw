@@ -30,7 +30,8 @@ public:
   void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
 
-  // TODO: move the following back to private visibility after finishing up test
+private:
+
   void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   dlong LFieldOffset;
   void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
@@ -40,8 +41,6 @@ public:
   occa::memory o_meshU0;
   occa::memory o_xyz0;
 
-
-private:
 
   std::vector<std::tuple<dlong,dlong, oogs_t*>> gatherScatterOperations;
 
