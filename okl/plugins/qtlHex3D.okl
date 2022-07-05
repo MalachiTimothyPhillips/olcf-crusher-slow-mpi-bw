@@ -59,9 +59,6 @@
           const dfloat Vn = gradQ[id + 1 * offset];
           const dfloat Wn = gradQ[id + 2 * offset];
           const dfloat cond = DIFF[id];
-          if(id == 0){
-            printf("cond = %f\n", cond);
-          }
 
           s_U[j][i] = cond * Un;
           s_V[j][i] = cond * Vn;
@@ -95,9 +92,6 @@
           const dfloat JW   = vgeo[gid + p_JWID * p_Np];
 
           const dfloat iRhoCpT = 1 / (RHOCP[id] * Q[id]);
-          if(id == 0){
-            printf("RHOCP = %f\n", RHOCP[id]);
-          }
           const dfloat qvol    = SRC[id];
 
           dfloat dudr = 0, duds = 0, dudt = 0;

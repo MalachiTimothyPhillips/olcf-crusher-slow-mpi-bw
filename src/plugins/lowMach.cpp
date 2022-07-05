@@ -81,20 +81,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
   mesh_t* mesh = nrs->meshV;
   linAlg_t * linAlg = platform->linAlg;
 
-  {
-    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_div, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << "norm 2 init div = " << norm2 << "\n";
-    }
-  }
-
-  {
-    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, cds->o_S, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << "norm 2 s = " << norm2 << "\n";
-    }
-  }
-
   qThermal = 1;
 
   const bool insideCVODE = (args != nullptr);
@@ -107,36 +93,10 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     cds->o_S,
     platform->o_mempool.slice0);
 
-  auto printGradFieldNorms = [&](std::string name)
-  {
-    auto o_0 = platform->o_mempool.slice0;
-    auto o_1 = platform->o_mempool.slice1;
-    auto o_2 = platform->o_mempool.slice2;
-    for(occa::memory o_fld : {o_0, o_1, o_2}){
-      const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_fld, platform->comm.mpiComm);
-      if(platform->comm.mpiRank == 0){
-        std::cout << name << " " << norm2 << "\n";
-      }
-    }
-  };
-
-  auto printNormField = [&](occa::memory o_fld, std::string name)
-  {
-    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_fld, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << name << " " << norm2 << "\n";
-    }
-  };
-
-  printGradFieldNorms("norm grad fld");
-
-
   double flopsGrad = 6 * mesh->Np * mesh->Nq + 18 * mesh->Np;
   flopsGrad *= static_cast<double>(mesh->Nelements);
 
   oogs::startFinish(platform->o_mempool.slice0, nrs->NVfields, nrs->fieldOffset,ogsDfloat, ogsAdd, nrs->gsh);
-
-  printGradFieldNorms("norm grad fld, post gs");
 
   platform->linAlg->axmyVector(
     mesh->Nlocal,
@@ -146,22 +106,12 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     nrs->meshV->o_invLMM,
     platform->o_mempool.slice0);
 
-  printGradFieldNorms("norm grad fld, post invLMM");
-
   platform->linAlg->fill(mesh->Nelements * mesh->Np, 0.0, platform->o_mempool.slice3);
   if(udf.sEqnSource) {
     platform->timer.tic("udfSEqnSource", 1);
     udf.sEqnSource(nrs, time, cds->o_S, platform->o_mempool.slice3);
     platform->timer.toc("udfSEqnSource");
   }
-  {
-    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, platform->o_mempool.slice3, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << "norm 2 qvol = " << norm2 << "\n";
-    }
-  }
-
-  printNormField(cds->o_rho, "norm rhoCp");
 
   qtlKernel(
     mesh->Nelements,
@@ -175,28 +125,18 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     platform->o_mempool.slice3,
     o_div);
   
-  printNormField(o_div, "divergence, post qtlKernel");
-
   double flopsQTL = 18 * mesh->Np * mesh->Nq + 23 * mesh->Np;
   flopsQTL *= static_cast<double>(mesh->Nelements);
 
   oogs::startFinish(o_div, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, nrs->gsh);
-  printNormField(o_div, "divergence, post gs");
 
   platform->linAlg->axmy(
     mesh->Nlocal,
     1.0,
     nrs->meshV->o_invLMM,
     o_div);
-  printNormField(o_div, "divergence, post invLMM");
 
   double surfaceFlops = 0.0;
-  {
-    const auto norm2 = platform->linAlg->norm2(mesh->Nlocal, o_div, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << "norm qtl = " << norm2 << "\n";
-    }
-  }
 
   if(nrs->pSolver->allNeumann){
     const dfloat dd = (1.0 - gamma0) / gamma0;
@@ -204,14 +144,7 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
 
     linAlg->axmyz(Nlocal, 1.0, mesh->o_LMM, o_div, platform->o_mempool.slice0);
     const dfloat termQ = linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
-    if(platform->comm.mpiRank == 0){
-      std::cout << "termQ = " << termQ << "\n";
-    }
 
-#if 0
-    // Not sure why this term is differing in the unit test, punt for now...
-    platform->linAlg->fill(mesh->Nlocal, 0.0, platform->o_mempool.slice0);
-#else
     surfaceFluxKernel(
       mesh->Nelements,
       mesh->o_sgeo,
@@ -221,7 +154,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
       insideCVODE ? nrs->o_U : nrs->o_Ue,
       platform->o_mempool.slice0
     );
-#endif
 
     double surfaceFluxFlops = 13 * mesh->Nq * mesh->Nq;
     surfaceFluxFlops *= static_cast<double>(mesh->Nelements);
@@ -230,10 +162,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     dfloat termV = 0.0;
     for(int i = 0 ; i < mesh->Nelements; ++i) termV += platform->mempool.slice0[i];
     MPI_Allreduce(MPI_IN_PLACE, &termV, 1, MPI_DFLOAT, MPI_SUM, platform->comm.mpiComm);
-
-    if(platform->comm.mpiRank == 0){
-      std::cout << "termV = " << termV << "\n";
-    }
 
     p0thHelperKernel(Nlocal,
       dd,
@@ -268,12 +196,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
 
     nrs->p0th[0] = Saqpq / pcoef;
     nrs->dp0thdt = prhs * nrs->p0th[0];
-
-    std::cout << "Saqpq = " << Saqpq << "\n";
-    std::cout << "pcoef = " << pcoef << "\n";
-    std::cout << "prhs = " << prhs << "\n";
-    std::cout << "p0th = " << nrs->p0th[0] << "\n";
-    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
 
     surfaceFlops += surfaceFluxFlops + p0thHelperFlops;
   }
