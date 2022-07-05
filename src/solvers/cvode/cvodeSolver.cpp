@@ -11,8 +11,6 @@
 #include "timeStepper.hpp"
 #include "plugins/lowMach.hpp"
 
-// TODO: rename o_FS -> o_RHS
-
 namespace{
 void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
 {
@@ -72,7 +70,7 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 
     // TODO: batch gather scatter operations as possible
 
-    if(is == 0 && cds->cht) continue; // gather-scatter is handled directly
+    if(is == 0 && nrs->cht) continue; // gather-scatter is handled directly
 
     gatherScatterOperations.push_back(std::make_tuple(is, is+1, is == 0 ? cds->gshT : cds->gsh));
   }
@@ -389,7 +387,7 @@ void cvodeSolver_t::makeq(nrs_t* nrs, dfloat time)
     auto o_rho_i = cds->o_rho + isOffset * sizeof(dfloat);
 
     if(nrs->cht && is == 0){
-      auto gsh = cds->mesh[0]->gshT;
+      auto gsh = cds->mesh[0]->oogs;
 
       oogs::startFinish(o_FS_i, 1, nrs->fieldOffset, ogsDfloat, ogsAdd, gsh);
       platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
