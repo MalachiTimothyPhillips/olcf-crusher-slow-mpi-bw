@@ -20,9 +20,8 @@ dlong numRowsSEMFEM;
 void ellipticSEMFEMSetup(elliptic_t* elliptic)
 {
   const int verbose = (platform->options.compareArgs("VERBOSE","TRUE")) ? 1: 0;
-  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
-  const int sizeType = useFP32 ? sizeof(float) : sizeof(dfloat);
-  const bool useDevice = elliptic->options.compareArgs("SEMFEM SOLVER LOCATION", "DEVICE");
+  const int useFP32 = elliptic->options.compareArgs("COARSE SOLVER PRECISION", "FP32");
+  const bool useDevice = elliptic->options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
 
   gatherKernel = platform->kernels.get("gather");
   scatterKernel = platform->kernels.get("scatter");
@@ -52,20 +51,20 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
     mesh->globalIds
   );
 
-  const long long numRows = data->rowEnd - data->rowStart + 1;
-  o_dofMap = platform->device.malloc(numRows * sizeof(long long), data->dofMap);
-  o_SEMFEMBuffer1 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal,sizeType);
-  o_SEMFEMBuffer2 = platform->device.malloc(elliptic->Nfields * elliptic->Ntotal,sizeType);
-
-  if(!useDevice){
-    void *SEMFEMBuffer1_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
-    void *SEMFEMBuffer2_h_d = (dfloat*) calloc(elliptic->Nfields * elliptic->Ntotal, sizeType);
-  }
-
+  const dlong numRows = data->rowEnd - data->rowStart + 1;
   numRowsSEMFEM = numRows;
 
-  int setupRetVal;
-  if(elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")){
+  o_dofMap = platform->device.malloc(numRows * sizeof(long long), data->dofMap);
+
+  o_SEMFEMBuffer1 = platform->device.malloc(numRows * sizeof(pfloat));
+  o_SEMFEMBuffer2 = platform->device.malloc(numRows * sizeof(pfloat));
+  if(!useDevice){
+    SEMFEMBuffer1_h_d = (pfloat*) calloc(numRows, sizeof(pfloat));
+    SEMFEMBuffer2_h_d = (pfloat*) calloc(numRows, sizeof(pfloat));
+  }
+
+  int setupRetVal = 0;
+  if(elliptic->options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
       double settings[BOOMERAMG_NPARAM+1];
       settings[0]  = 1;    /* custom settings              */
       settings[1]  = 8;    /* coarsening                   */
@@ -78,6 +77,11 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       settings[8]  = 0.25; /* strong threshold             */
       settings[9]  = 0.05; /* non galerkin tol             */
       settings[10] = 0;    /* aggressive coarsening levels */
+
+//      if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
+        settings[4]  = 16;
+        settings[6]  = 16;
+//      }  
 
       platform->options.getArgs("BOOMERAMG COARSEN TYPE", settings[1]);
       platform->options.getArgs("BOOMERAMG INTERPOLATION TYPE", settings[2]);
@@ -117,7 +121,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
         );
       }
   }
-  else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX")){
+  else if(elliptic->options.compareArgs("COARSE SOLVER", "AMGX")){
     if(platform->device.mode() != "CUDA") {
       if(platform->comm.mpiRank == 0) printf("AmgX only supports CUDA!\n");
       ABORT(1);
@@ -143,11 +147,12 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   else {
     if(platform->comm.mpiRank == 0){
       std::string amgSolver;
-      elliptic->options.getArgs("SEMFEM SOLVER", amgSolver);
-      printf("SEMFEM SOLVER %s is not supported!\n", amgSolver.c_str());
+      elliptic->options.getArgs("COARSE SOLVER", amgSolver);
+      printf("COARSE SOLVER %s is not supported!\n", amgSolver.c_str());
     }
     ABORT(EXIT_FAILURE);
   }
+
   if(setupRetVal) {
    if(platform->comm.mpiRank == 0)
      printf("AMG solver setup failed!\n");
@@ -158,41 +163,39 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }
 
+// o_r and o_z are of type dfloat 
 void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& o_z)
 {
   mesh_t* mesh = elliptic->mesh;
 
-  occa::memory& o_buffer = o_SEMFEMBuffer1;
-  occa::memory& o_buffer2 = o_SEMFEMBuffer2;
+  const bool useDevice = elliptic->options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
 
-  platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_z);
+  occa::memory& o_bufr = o_SEMFEMBuffer1;
+  occa::memory& o_bufz = o_SEMFEMBuffer2;
 
+  // E->T
   gatherKernel(
     numRowsSEMFEM,
     o_dofMap,
-    o_r,
-    o_buffer
+    o_r,   /* dfloat */
+    o_bufr /* pfloat */
   );
 
-  const int useFP32 = elliptic->options.compareArgs("SEMFEM SOLVER PRECISION", "FP32");
-  const bool useDevice = elliptic->options.compareArgs("SEMFEM SOLVER LOCATION", "DEVICE");
-  const int sizeType = useFP32 ? sizeof(float) : sizeof(dfloat);
-
-  if(elliptic->options.compareArgs("SEMFEM SOLVER", "BOOMERAMG")){
+  if(elliptic->options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
 
     if(!useDevice)
     {
-      o_buffer.copyTo(SEMFEMBuffer1_h_d, elliptic->Ntotal * elliptic->Nfields * sizeType);
-      hypreWrapper::BoomerAMGSolve(SEMFEMBuffer2_h_d, SEMFEMBuffer1_h_d);
-      o_buffer2.copyFrom(SEMFEMBuffer2_h_d, elliptic->Ntotal * elliptic->Nfields * sizeType);
+      o_bufr.copyTo(SEMFEMBuffer1_h_d, numRowsSEMFEM * sizeof(pfloat));
+      hypreWrapper::BoomerAMGSolve(SEMFEMBuffer1_h_d, SEMFEMBuffer2_h_d);
+      o_bufz.copyFrom(SEMFEMBuffer2_h_d, numRowsSEMFEM * sizeof(pfloat));
 
     } else {
-      hypreWrapperDevice::BoomerAMGSolve(o_buffer2, o_buffer);
+      hypreWrapperDevice::BoomerAMGSolve(o_bufr, o_bufz);
     }
 
-  } else if(elliptic->options.compareArgs("SEMFEM SOLVER", "AMGX") && useDevice){
+  } else if(elliptic->options.compareArgs("COARSE SOLVER", "AMGX") && useDevice){
 
-    AMGXsolve(o_buffer2.ptr(), o_buffer.ptr());
+    AMGXsolve(o_bufr.ptr(), o_bufz.ptr());
 
   } else {
 
@@ -202,12 +205,13 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
 
   }
 
+  // T->E
   scatterKernel(
     numRowsSEMFEM,
     o_dofMap,
-    o_buffer2,
-    o_z
+    o_bufz, /* pfloat */
+    o_z     /* dfloat */ 
   );
 
-  oogs::startFinish(o_z, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_z, 1, 0, ogsDfloat, ogsAdd, elliptic->oogs);
 }

@@ -11,7 +11,7 @@ ExternalProject_Add(
                 -DCMAKE_C_FLAGS_RELWITHDEBINFO=${CMAKE_C_FLAGS_RELWITHDEBINFO}
                 -DHYPRE_ENABLE_SHARED=OFF
                 -DHYPRE_ENABLE_MIXEDINT=ON
-                -DHYPRE_ENABLE_SINGLE=OFF
+                -DHYPRE_ENABLE_SINGLE=ON
                 -DHYPRE_WITH_OPENMP=OFF
                 -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                 -DCMAKE_C_VISIBILITY_PRESET=hidden
@@ -67,8 +67,8 @@ if(ENABLE_CUDA)
   # lacking of a better alternative adding dependencies manually 
   target_link_libraries(nekrs-hypre-device 
                         PUBLIC libocca MPI::MPI_C 
-                        PRIVATE CUDA::curand CUDA::cublas CUDA::cusparse CUDA::cusolver 
-                        ${HYPRE_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a) 
+                        PRIVATE ${HYPRE_INSTALL_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}HYPRE.a 
+                        CUDA::curand CUDA::cublas CUDA::cusparse CUDA::cusolver) 
   set_target_properties(nekrs-hypre-device PROPERTIES CXX_VISIBILITY_PRESET hidden)
 elseif(ENABLE_HIP)
   message(FATAL_ERROR "HYPRE wrapper build does not support HIP!")

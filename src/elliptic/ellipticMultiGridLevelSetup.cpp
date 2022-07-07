@@ -200,13 +200,13 @@ void MGLevel::Report()
 
   if (platform->comm.mpiRank == 0) {
     if(isCoarse && options.compareArgs("MULTIGRID COARSE SOLVE","TRUE")) {
-      if(options.compareArgs("AMG SOLVER","BOOMERAMG")) strcpy(smootherString, "BoomerAMG        ");
-      if(options.compareArgs("AMG SOLVER","AMGX"))      strcpy(smootherString, "AMGX             ");
-      printf(     "|    AMG     |   Matrix        | %s |\n", smootherString);
-      printf("     |            |     Degree %2d   |                   |\n", degree);
+      std::string solver;
+      if(options.getArgs("COARSE SOLVER", solver)) strcpy(smootherString, solver.c_str());
+      printf(     "|    AMG     |   Matrix        | %s\n", smootherString);
+      printf("     |            |     Degree %2d   |\n", degree);
     } else {
-      printf(     "|    pMG     |   Matrix-free   | %s |\n", smootherString);
-      printf("     |            |     Degree %2d   |                   |\n", degree);
+      printf(     "|    pMG     |   Matrix-free   | %s\n", smootherString);
+      printf("     |            |     Degree %2d   |\n", degree);
     }
   }
 }

@@ -164,12 +164,13 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   }
 
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
-    if(options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")){
+    if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
       ellipticSEMFEMSetup(ellipticCoarse);
       precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options, platform->comm.mpiComm);
       precon->parAlmond->coarseLevel->useSEMFEM = true;
       precon->parAlmond->coarseLevel->semfemSolver = [ellipticCoarse](occa::memory o_rhs, occa::memory o_x)
       {
+        platform->linAlg->fill(ellipticCoarse->mesh->Nlocal, 0.0, o_x);
         ellipticSEMFEMSolve(ellipticCoarse, o_rhs, o_x);
       };
       precon->parAlmond->baseLevel = precon->parAlmond->numLevels;
@@ -239,7 +240,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
                          precon->parAlmond->ctype);
 
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
-    if(options.compareArgs("MULTIGRID COARSE SEMFEM", "TRUE")){
+    if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
     } else {
       //tell parAlmond to gather when going to the next level
       if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {

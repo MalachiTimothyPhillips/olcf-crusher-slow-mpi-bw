@@ -197,7 +197,7 @@ struct COOGraph
   long long * rowOffsets;
   int * ncols;
   long long * cols;
-  double* vals;
+  float* vals;
 };
 
 static COOGraph coo_graph;
@@ -505,7 +505,7 @@ void construct_coo_graph() {
     nnz += row_and_colset.second.size();
   }
   long long * cols = (long long*) malloc(nnz * sizeof(long long));
-  double* vals = (double*) calloc(nnz,sizeof(double));
+  float* vals = (float*) calloc(nnz,sizeof(float));
   std::sort(rows, rows + nrows);
   long long entryCtr = 0;
   rowOffsets[0] = 0;
@@ -537,7 +537,7 @@ void fem_assembly_host() {
   int * ncols = coo_graph.ncols;
   long long nnz = coo_graph.nnz;
   long long * cols = coo_graph.cols;
-  double* vals = coo_graph.vals;
+  float* vals = coo_graph.vals;
 
   double q_r[4][3];
   double q_w[4];
@@ -680,7 +680,7 @@ void fem_assembly_device() {
   int * ncols = coo_graph.ncols;
   long long nnz = coo_graph.nnz;
   long long * cols = coo_graph.cols;
-  double* vals = coo_graph.vals;
+  float* vals = coo_graph.vals;
 
   struct AllocationTracker{
     bool o_maskAlloc;
@@ -741,7 +741,7 @@ void fem_assembly_device() {
   );
   occa::memory o_vals = scratchOrAllocateMemory(
     nnz,
-    sizeof(double),
+    sizeof(float),
     vals,
     bytesRemaining,
     byteOffset,
@@ -762,7 +762,7 @@ void fem_assembly_device() {
     o_cols,
     o_vals
   );
-  o_vals.copyTo(vals, nnz * sizeof(double));
+  o_vals.copyTo(vals, nnz * sizeof(float));
 
   if(allocations.o_maskAlloc) o_mask.free();
   if(allocations.o_glo_numAlloc) o_glo_num.free();

@@ -522,10 +522,10 @@ void parseCoarseGridDiscretization(const int rank, setupAide &options, inipp::In
 
   // coarse grid discretization
   if (p_coarseGridDiscretization.find("semfem") != std::string::npos) {
-    options.setArgs(parSectionName + "MULTIGRID COARSE SEMFEM", "TRUE");
+    options.setArgs(parSectionName + "MULTIGRID SEMFEM", "TRUE");
   }
   else if (p_coarseGridDiscretization.find("fem") != std::string::npos) {
-    options.setArgs(parSectionName + "MULTIGRID COARSE SEMFEM", "FALSE");
+    options.setArgs(parSectionName + "MULTIGRID SEMFEM", "FALSE");
     options.setArgs("GALERKIN COARSE OPERATOR", "FALSE");
     if (p_coarseGridDiscretization.find("galerkin") != std::string::npos) {
       options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
@@ -537,16 +537,29 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
 {
   std::string parSectionName = parPrefixFromParSection(parScope);
   UPPER(parSectionName);
+
+  // defaults
+  options.setArgs(parSectionName + "COARSE SOLVER", "BOOMERAMG");
+  if(options.compareArgs(parSectionName + "PRECONDITIONER", "MULTIGRID")) {
+    options.setArgs(parSectionName + "COARSE SOLVER PRECISION", "FP32");
+    if(options.compareArgs(parSectionName + "MULTIGRID SEMFEM", "TRUE"))
+      options.setArgs(parSectionName + "COARSE SOLVER LOCATION", "DEVICE");
+    else
+      options.setArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU");
+  } else if (options.compareArgs(parSectionName + "PRECONDITIONER", "SEMFEM")) {
+    options.setArgs(parSectionName + "COARSE SOLVER PRECISION", "FP32");
+    options.setArgs(parSectionName + "COARSE SOLVER LOCATION", "DEVICE");
+  }
+  
+
   std::string p_coarseSolver;
-  const bool continueParsing = par->extract(parScope, "coarsesolver", p_coarseSolver);
-  if(!continueParsing)
-    return;
+  const bool keyExist = par->extract(parScope, "coarsesolver", p_coarseSolver);
+  if(!keyExist) return;
 
   const std::vector<std::string> validValues = {
+      {"smoother"},
       {"boomeramg"},
       {"amgx"},
-      {"fp32"},
-      {"fp64"},
       {"cpu"},
       {"device"},
   };
@@ -556,63 +569,43 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     checkValidity(rank, validValues, entry);
   }
 
-  // exit early if not using multigrid as preconditioner
-  if (!options.compareArgs(parSectionName + "PRECONDITIONER", "MULTIGRID")) {
-    return;
-  }
+  const int smoother = p_coarseSolver.find("smoother") != std::string::npos;
+  const int amgx = p_coarseSolver.find("amgx") != std::string::npos;
+  const int boomer = p_coarseSolver.find("boomeramg") != std::string::npos;
+  if(smoother + amgx + boomer > 1)
+    append_error("Conflicting solver types in coarseSolver!\n");
 
-  // solution methods
-  if(p_coarseSolver.find("boomeramg") != std::string::npos){
-    options.setArgs("AMG SOLVER", "BOOMERAMG");
-    options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
-    options.setArgs("AMG SOLVER PRECISION", "FP64");
-    options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
-    options.setArgs("AMG SOLVER LOCATION", "CPU");
-  }
-  else if(p_coarseSolver.find("amgx") != std::string::npos){
-
-    if(!AMGXenabled()){
-        append_error("AMGX was requested but is not compiled!\n");
-    }
-
-    options.setArgs("AMG SOLVER", "AMGX");
-    options.setArgs(parSectionName + "SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
-    options.setArgs("AMG SOLVER PRECISION", "FP32");
-    options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
-    options.setArgs("AMG SOLVER LOCATION", "DEVICE");
+  if(amgx)
+  {
+    if(!AMGXenabled())
+        append_error("AMGX was requested but is not enabled!\n");
+    options.setArgs(parSectionName + "COARSE SOLVER", "AMGX");
   }
 
   // parse fp type + location
   for (std::string entry : entries) {
-    if(entry.find("fp32") != std::string::npos)
+    if(entry.find("smoother") != std::string::npos) 
     {
-      options.setArgs("AMG SOLVER PRECISION", "FP32");
-      options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
-      if(p_coarseSolver.find("boomeramg") != std::string::npos){
-        append_error("BoomerAMG+FP32 is not currently supported!\n");
-      }
-    }
-    else if(entry.find("fp64") != std::string::npos)
-    {
-      options.setArgs("AMG SOLVER PRECISION", "FP64");
-      options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP64");
-    }
+      options.setArgs(parSectionName + "COARSE SOLVER", "SMOOTHER");
+      options.removeArgs(parSectionName + "COARSE SOLVER PRECISION");
+      options.removeArgs(parSectionName + "COARSE SOLVER LOCATION");
+      options.setArgs(parSectionName + " MULTIGRID COARSE SOLVE", "FALSE");
+      options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
+    } 
     else if(entry.find("cpu") != std::string::npos)
     {
-      options.setArgs("AMG SOLVER LOCATION", "CPU");
-      if(p_coarseSolver.find("amgx") != std::string::npos){
-        append_error("AMGX+CPU is not currently supported!\n");
-      }
+      options.setArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU");
     }
     else if(entry.find("device") != std::string::npos)
     {
-      options.setArgs("AMG SOLVER LOCATION", "DEVICE");
-      if(p_coarseSolver.find("boomeramg") != std::string::npos){
-        options.setArgs("AMG SOLVER PRECISION", "FP32");
-        options.setArgs(parSectionName + "SEMFEM SOLVER PRECISION", "FP32");
-      }
-     
+      options.setArgs(parSectionName +  "COARSE SOLVER LOCATION", "DEVICE");
     }
+  }
+
+  if(amgx && 
+     options.compareArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU"))
+  {
+    append_error("AMGX on CPU is not supported!\n");
   }
 }
 
@@ -791,24 +784,19 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     }
   }
 }
+
 void parsePreconditioner(const int rank, setupAide &options,
                          inipp::Ini *par, std::string parScope) {
   const std::vector<std::string> validValues = {
       {"none"},
       {"jac"},
       {"semfem"},
+      {"femsem"},
       {"pmg"},
       {"multigrid"},
-      {"semfem"},
-      {"amgx"},
-      {"boomeramg"},
-      {"device"},
-      {"fp32"},
-      {"fp64"},
       {"additive"},
       {"multiplicative"},
       {"overlap"},
-      {"coarse"},
   };
 
   std::string parSection =
@@ -825,48 +813,14 @@ void parsePreconditioner(const int rank, setupAide &options,
   for(std::string s : list)
     checkValidity(rank, validValues, s);
 
+  const bool mg = p_preconditioner.find("pmg") != std::string::npos ||
+                  p_preconditioner.find("multigrid") != std::string::npos;
+
   if (p_preconditioner == "none") {
     options.setArgs(parSection + " PRECONDITIONER", "NONE");
   } else if (p_preconditioner.find("jac") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "JACOBI");
-  } else if(p_preconditioner.find("semfem") != std::string::npos
-     && (p_preconditioner.find("pmg") == std::string::npos
-         &&
-         p_preconditioner.find("multigrid") == std::string::npos
-        )
-     ) {
-    options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
-    options.setArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG");
-    options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
-    options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
-    std::vector<std::string> list;
-    list = serializeString(p_preconditioner, '+');
-    for (std::string s : list) {
-      if (s.find("semfem") != std::string::npos) { 
-      } else if (s.find("amgx") != std::string::npos) {
-        if(!AMGXenabled()){
-            append_error("AMGX was requested but is not compiled!\n");
-        }
-        options.setArgs(parSection + " SEMFEM SOLVER", "AMGX");
-        options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
-      } else if (s.find("boomeramg") != std::string::npos) {
-      } else if (s.find("fp32") != std::string::npos) {
-        options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP32");
-      } else if (s.find("fp64") != std::string::npos) {
-        options.setArgs(parSection + " SEMFEM SOLVER PRECISION", "FP64");
-        if (options.compareArgs(parSection + " SEMFEM SOLVER", "BOOMERAMG"))
-          append_error("FP64 is currently not supported for selected SEMFEM SOLVER!");
-      } else if (s.find("device") != std::string::npos) {
-        options.setArgs(parSection + " SEMFEM SOLVER LOCATION", "DEVICE");
-      } else {
-          std::ostringstream error;
-          error << "SEMFEM preconditioner flag " << s << " is not recognized!\n";
-          append_error(error.str());
-      }
-    }
-  }
-  else if (p_preconditioner.find("multigrid") != std::string::npos ||
-           p_preconditioner.find("pmg") != std::string::npos) {
+  } else if (mg) {
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
     std::string key = "VCYCLE";
     if (p_preconditioner.find("additive") != std::string::npos)
@@ -877,16 +831,12 @@ void parsePreconditioner(const int rank, setupAide &options,
       key += "+OVERLAPCRS";
     options.setArgs(parSection + " PARALMOND CYCLE", key);
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
-
-    options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "FALSE");
-    options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
-    if(p_preconditioner.find("coarse") != std::string::npos){
-      options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "TRUE");
-      options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
-    }
-
-    options.setArgs(parSection + " SEMFEM SOLVER", options.getArgs("AMG SOLVER"));
-  }
+    options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "TRUE");
+    options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
+  } else if(p_preconditioner.find("semfem") != std::string::npos || 
+            p_preconditioner.find("femsem") != std::string::npos) {
+    options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
+  } 
 }
 
 bool checkForTrue(const std::string& s)
@@ -1265,13 +1215,10 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE PRECONDITIONER", "MULTIGRID");
   options.setArgs("PRESSURE DISCRETIZATION", "CONTINUOUS");
   options.setArgs("PRESSURE BASIS", "NODAL");
-  options.setArgs("AMG SOLVER", "BOOMERAMG");
-  options.setArgs("AMG SOLVER PRECISION", "FP64");
-  options.setArgs("AMG SOLVER LOCATION", "CPU");
 
   options.setArgs("PRESSURE PARALMOND CYCLE", "VCYCLE");
   options.setArgs("PRESSURE MULTIGRID COARSE SOLVE", "TRUE");
-  options.setArgs("PRESSURE MULTIGRID COARSE SEMFEM", "FALSE");
+  options.setArgs("PRESSURE MULTIGRID SEMFEM", "FALSE");
   options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
   options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
@@ -1806,6 +1753,15 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
     parsePreconditioner(rank, options, par, "pressure");
 
+    parseSmoother(rank, options, par, "pressure");
+
+    parseCoarseGridDiscretization(rank, options, par, "pressure");
+
+    if (options.compareArgs("PRESSURE PRECONDITIONER", "MULTIGRID") || 
+        options.compareArgs("PRESSURE PRECONDITIONER", "SEMFEM")) {
+      parseCoarseSolver(rank, options, par, "pressure");
+    }
+
     if (options.compareArgs("PRESSURE PRECONDITIONER", "MULTIGRID")) {
       std::string p_mglevels;
       if (par->extract("pressure", "pmultigridcoarsening", p_mglevels))
@@ -1866,10 +1822,6 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       options.setArgs("PRESSURE KRYLOV SOLVER", p_solver);
     }
 
-    parseSmoother(rank, options, par, "pressure");
-
-    parseCoarseGridDiscretization(rank, options, par, "pressure");
-    parseCoarseSolver(rank, options, par, "pressure");
 
     if (par->sections.count("boomeramg")) {
       int coarsenType;
@@ -2176,6 +2128,9 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
     if(length > 0) ABORT(EXIT_FAILURE);
   }
+
+  if(verbose)
+    std::cout << options << std::endl;
 
   return options;
 }

@@ -12,7 +12,7 @@ namespace hypreWrapper
 // has to match HYPRE config
 typedef int Int;
 typedef long long int BigInt;
-typedef double Real;
+typedef float Real;
 typedef void IJMatrix;
 
 typedef Int HYPRE_Int;
@@ -25,7 +25,7 @@ int BoomerAMGSetup(int nrows,
                    int null_space, MPI_Comm ce, int Nthreads,
                    int useFP32, const double *param, int verbose);
 
-int BoomerAMGSolve(void *x, void *b);
+int BoomerAMGSolve(void *b, void *x);
 
 void Free();
 
@@ -103,7 +103,7 @@ int BoomerAMGSetup(int nrows, int nz,
                    int null_space, MPI_Comm ce, occa::device device,
                    int useFP32, const double *param, int verbose);
 
-int BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b);
+int BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x);
 
 void Free();
 

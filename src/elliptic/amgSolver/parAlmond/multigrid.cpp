@@ -41,8 +41,7 @@ void solver_t::kcycle(int k){
 
   //check for base level
   if(k==baseLevel) {
-    if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE") &&
-       !options.compareArgs("AMG SOLVER", "AMG"))
+    if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
       level->smooth(rhs,x,true);
     else
       coarseLevel->solve(rhs, x);
@@ -234,13 +233,9 @@ void solver_t::device_vcycle(int k){
     return;
   }
 
-  //check for base level
   if(k==baseLevel) {
-    //    coarseLevel->solve(o_rhs, o_x);
-
-    if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE")){
+    if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
       level->smooth(o_rhs,o_x,true);
-    }
     else
       coarseLevel->solve(o_rhs, o_x);
     

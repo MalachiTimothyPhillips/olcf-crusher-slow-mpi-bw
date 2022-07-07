@@ -56,6 +56,7 @@ void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memor
   }else if (options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
     parAlmond::Precon(precon->parAlmond, o_z, o_r);
   }else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
+    platform->linAlg->fill(elliptic->Ntotal*elliptic->Nfields, 0.0, o_z);
     ellipticSEMFEMSolve(elliptic, o_r, o_z);
   }else if (options.compareArgs("PRECONDITIONER", "NONE")) {
     o_z.copyFrom(o_r, elliptic->Ntotal*elliptic->Nfields*sizeof(dfloat));

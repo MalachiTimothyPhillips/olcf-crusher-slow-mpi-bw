@@ -365,7 +365,7 @@ void registerMultiGridKernels(const std::string &section, int poissonEquation) {
   if (platform->options.compareArgs(
           optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
     if (platform->options.compareArgs(
-            optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE")) {
+            optionsPrefix + "MULTIGRID SEMFEM", "TRUE")) {
       registerSEMFEMKernels(section, coarseLevel, poissonEquation);
     } else {
       {
@@ -394,7 +394,7 @@ void registerSEMFEMKernels(const std::string &section, int N, int poissonEquatio
   const int Np = Nq * Nq * Nq;
   const std::string optionsPrefix = createOptionsPrefix(section);
   const int useFP32 = platform->options.compareArgs(
-      optionsPrefix + "SEMFEM SOLVER PRECISION", "FP32");
+      optionsPrefix + "COARSE SOLVER PRECISION", "FP32");
   occa::properties SEMFEMKernelProps = platform->kernelInfo;
   if (useFP32) {
     SEMFEMKernelProps["defines/pfloat"] = "float";

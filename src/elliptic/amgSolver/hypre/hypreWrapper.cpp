@@ -23,7 +23,6 @@ struct hypre_data {
   HYPRE_BigInt ilower;
   HYPRE_BigInt *ii;
   HYPRE_Real *bb;
-  HYPRE_Real *xx;
   int nRows;
   int Nthreads;
 };
@@ -197,20 +196,20 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
 
   data->ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
   data->bb = (HYPRE_Real*) malloc(data->nRows*sizeof(HYPRE_Real));
-  data->xx = (HYPRE_Real*) malloc(data->nRows*sizeof(HYPRE_Real));
   for(int i=0;i<data->nRows;++i) 
     data->ii[i] = ilower + (HYPRE_BigInt)i;
 
   return 0;
 }
 
-int __attribute__((visibility("default"))) BoomerAMGSolve(void *x, void *b)
+int __attribute__((visibility("default"))) BoomerAMGSolve(void *b, void *x)
 {
   int err;
 
   HYPRE_IJVectorSetValues(data->b,data->nRows,data->ii,(HYPRE_Real*) b);
   HYPRE_IJVectorAssemble(data->b);
 
+  HYPRE_IJVectorSetValues(data->x,data->nRows,data->ii,(HYPRE_Real*) x);
   HYPRE_IJVectorAssemble(data->x);
 
   HYPRE_ParVector par_x;

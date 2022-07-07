@@ -47,9 +47,6 @@ public:
   dfloat *xLocal=NULL;
   dfloat *rhsLocal=NULL;
 
-  dfloat *xCoarse=NULL;
-  dfloat *rhsCoarse=NULL;
-
   bool gatherLevel;
   ogs_t *ogs;
   dfloat *Gx, *Sx;

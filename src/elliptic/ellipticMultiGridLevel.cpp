@@ -80,7 +80,9 @@ void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)
 void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 {
   platform->timer.tic(elliptic->name + " preconditioner smoother", 1);
+
   if(!x_is_zero && stype == SmootherType::SCHWARZ) return;
+
   if(!strstr(pfloatString,dfloatString)) {
     elliptic->fusedCopyDfloatToPfloatKernel(Nrows, o_x, o_rhs, o_xPfloat, o_rhsPfloat);
     if (stype == SmootherType::CHEBYSHEV)
@@ -99,6 +101,7 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
     else if (stype == SmootherType::JACOBI)
       this->smoothJacobi(o_rhs, o_x, x_is_zero);
   }
+
   platform->timer.toc(elliptic->name + " preconditioner smoother");
 }
 

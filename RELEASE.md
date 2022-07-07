@@ -2,8 +2,9 @@
 
 ## What is new? 
 
-* Single source for udf+oudf 
-* Support BoomerAMG on Device
+* Single source udf+oudf 
+* Support BoomerAMG on vevice
+* Latest HYPRE and AMGX version
 
 ## Good to know
 
@@ -12,6 +13,8 @@
 ## Breaking Changes
 * [nrsconfig] Optional build settings have to be passed as a command line arg. To enable e.g. AMGX run with `-DENABLE_AMGX=ON`
 * [par] Rename writeControl value `runTime` => `simulationTime`
+* [par] preconditioner = multigrid & `coarseSolver = smooth` replaces `preconditioner = multigrid` 
+* [par] SEMFEM solver is now specified by `coarseSolver`
 
 ## Known Bugs / Restrictions
 
@@ -21,6 +24,8 @@
 * [258](https://github.com/Nek5000/nekRS/issues/258)
 
 ## Thanks to our Contributors
+
+@pwang234
 
 We are grateful to all who added new features, filed issues or helped resolve them, 
 asked and answered questions, and were part of inspiring discussions.

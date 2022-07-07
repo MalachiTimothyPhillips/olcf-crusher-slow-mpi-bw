@@ -245,9 +245,10 @@ BoomerAMGSetup(int nrows, int nz,
 }
 
 int __attribute__((visibility("default")))
-BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
+BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
 {
-  // note: x is ALWAYS zero
+  HYPRE_IJVectorSetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_x.ptr());
+  HYPRE_IJVectorAssemble(data->x);
 
   HYPRE_IJVectorSetValues(data->b,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_b.ptr());
   HYPRE_IJVectorAssemble(data->b);
