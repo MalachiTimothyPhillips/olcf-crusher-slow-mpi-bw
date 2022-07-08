@@ -78,13 +78,14 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       settings[9]  = 0.05; /* non galerkin tol             */
       settings[10] = 0;    /* aggressive coarsening levels */
 
-//      if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
+      if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
         settings[4]  = 16;
         settings[6]  = 16;
-//      }  
+      }  
 
       platform->options.getArgs("BOOMERAMG COARSEN TYPE", settings[1]);
       platform->options.getArgs("BOOMERAMG INTERPOLATION TYPE", settings[2]);
+      platform->options.getArgs("BOOMERAMG COARSE SMOOTHER TYPE", settings[4]);
       platform->options.getArgs("BOOMERAMG SMOOTHER TYPE", settings[6]);
       platform->options.getArgs("BOOMERAMG SMOOTHER SWEEPS", settings[7]);
       platform->options.getArgs("BOOMERAMG ITERATIONS", settings[3]);

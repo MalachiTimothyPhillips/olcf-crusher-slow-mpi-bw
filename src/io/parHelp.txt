@@ -89,11 +89,9 @@ coarseGridDiscretization    FEM [D]                                    linear fi
                               +Galerkin                                coarse grid matrix by Galerkin projection 
                             SEMFEM                                     linear FEM approx on high-order nodes
 
-coarseSolver                smoother                                     
+coarseSolver/semfemSolver   smoother                                     
                             boomerAMG [D]                              HYPRE's AMG solver
                             AmgX                                       NVIDIA's AMG solver
-                            +FP32 [D for SEMFEM] 
-                            +FP64 [D for multigrid]
                             +device [D for SEMFEM] 
                             +cpu [D for multigrid]
 

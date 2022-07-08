@@ -135,6 +135,7 @@ static std::vector<std::string> commonKeys = {
     {"pMultigridCoarsening"},
     {"smootherType"},
     {"coarseSolver"},
+    {"semfemSolver"},
     {"coarseGridDiscretization"},
     {"boundaryTypeMap"},
     {"maxIterations"},
@@ -526,9 +527,9 @@ void parseCoarseGridDiscretization(const int rank, setupAide &options, inipp::In
   }
   else if (p_coarseGridDiscretization.find("fem") != std::string::npos) {
     options.setArgs(parSectionName + "MULTIGRID SEMFEM", "FALSE");
-    options.setArgs("GALERKIN COARSE OPERATOR", "FALSE");
+    options.setArgs(parSectionName + "GALERKIN COARSE OPERATOR", "FALSE");
     if (p_coarseGridDiscretization.find("galerkin") != std::string::npos) {
-      options.setArgs("GALERKIN COARSE OPERATOR", "TRUE");
+      options.setArgs(parSectionName + "GALERKIN COARSE OPERATOR", "TRUE");
     }
   }
 }
@@ -553,7 +554,8 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
   
 
   std::string p_coarseSolver;
-  const bool keyExist = par->extract(parScope, "coarsesolver", p_coarseSolver);
+  const bool keyExist = par->extract(parScope, "coarsesolver", p_coarseSolver) ||
+                        par->extract(parScope, "semfemsolver", p_coarseSolver);
   if(!keyExist) return;
 
   const std::vector<std::string> validValues = {
@@ -577,12 +579,11 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
 
   if(amgx)
   {
-    if(!AMGXenabled())
-        append_error("AMGX was requested but is not enabled!\n");
     options.setArgs(parSectionName + "COARSE SOLVER", "AMGX");
+    if(!AMGXenabled())
+      append_error("AMGX was requested but is not enabled!\n");
   }
 
-  // parse fp type + location
   for (std::string entry : entries) {
     if(entry.find("smoother") != std::string::npos) 
     {
@@ -602,8 +603,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
     }
   }
 
-  if(amgx && 
-     options.compareArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU"))
+  if(amgx && options.compareArgs(parSectionName + "COARSE SOLVER LOCATION", "CPU"))
   {
     append_error("AMGX on CPU is not supported!\n");
   }
@@ -1241,7 +1241,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("VELOCITY COEFF FIELD", "TRUE");
 }
 
-setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
+void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &options) {
   int rank;
   MPI_Comm_rank(comm, &rank);
 
@@ -1250,14 +1250,13 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
     foundPar = 1;
     const char *ptr = realpath(setupFile.c_str(), NULL);
     if (!ptr) {
-      std::cout << "ERROR: cannot find " << setupFile << "!\n";
+      std::cout << "ERROR: cannot find setup file " << setupFile << "!\n";
       foundPar = 0;
     }
   }
   MPI_Bcast(&foundPar, sizeof(foundPar), MPI_BYTE, 0, comm);
   if (!foundPar) ABORT(EXIT_FAILURE);
 
-  setupAide options;
   std::string casename = setupFile.substr(0, setupFile.find(".par"));
   setDefaultSettings(options, casename, rank);
 
@@ -2131,6 +2130,4 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
   if(verbose)
     std::cout << options << std::endl;
-
-  return options;
 }

@@ -79,6 +79,9 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
   kernels(*this)
 {
 
+  srand48((long int) comm.mpiRank);
+  oogs::gpu_mpi(std::stoi(getenv("NEKRS_GPU_MPI")));
+
   flopCounter = std::make_unique<flopCounter_t>();
 
   kernelInfo["defines/" "p_NVec"] = 3;

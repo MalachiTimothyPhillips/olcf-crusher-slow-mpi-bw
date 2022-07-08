@@ -114,6 +114,7 @@ void coarseSolver::setup(
 
     options.getArgs("BOOMERAMG COARSEN TYPE", settings[1]);
     options.getArgs("BOOMERAMG INTERPOLATION TYPE", settings[2]);
+    options.getArgs("BOOMERAMG COARSE SMOOTHER TYPE", settings[4]);
     options.getArgs("BOOMERAMG SMOOTHER TYPE", settings[6]);
     options.getArgs("BOOMERAMG SMOOTHER SWEEPS", settings[7]);
     options.getArgs("BOOMERAMG ITERATIONS", settings[3]);

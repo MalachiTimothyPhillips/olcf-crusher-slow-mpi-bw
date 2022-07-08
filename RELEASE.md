@@ -11,10 +11,10 @@
 * ... 
 
 ## Breaking Changes
-* [nrsconfig] Optional build settings have to be passed as a command line arg. To enable e.g. AMGX run with `-DENABLE_AMGX=ON`
+* [nrsconfig] Optional build settings have to be passed as a command line arg e.g. `-DENABLE_AMGX=ON`
 * [par] Rename writeControl value `runTime` => `simulationTime`
-* [par] preconditioner = multigrid & `coarseSolver = smooth` replaces `preconditioner = multigrid` 
-* [par] SEMFEM solver is now specified by `coarseSolver`
+* [par] Remove multigrid qualifier `coarse`
+* [par] Remove SEMFEM solver specification from key `preconditioner`, use `semfemSolver` instead
 
 ## Known Bugs / Restrictions
 
