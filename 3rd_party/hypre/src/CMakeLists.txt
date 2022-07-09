@@ -79,7 +79,7 @@ if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif ()
 
 # Configuration options
-option(HYPRE_ENABLE_SHARED           "Build a shared library" ON)
+option(HYPRE_ENABLE_SHARED           "Build a shared library" OFF)
 option(HYPRE_ENABLE_BIGINT           "Use long long int for HYPRE_Int" OFF)
 option(HYPRE_ENABLE_MIXEDINT         "Use long long int for HYPRE_BigInt, int for HYPRE_INT" OFF)
 option(HYPRE_ENABLE_SINGLE           "Use float for HYPRE_Real" OFF)
@@ -90,6 +90,7 @@ option(HYPRE_ENABLE_HYPRE_LAPACK     "Use internal LAPACK library" ON)
 option(HYPRE_ENABLE_PERSISTENT_COMM  "Use persistent communication" OFF)
 option(HYPRE_ENABLE_FEI              "Use FEI" OFF) # TODO: Add this cmake feature
 option(HYPRE_WITH_MPI                "Compile with MPI" ON)
+option(HYPRE_WITH_GPU_AWARE_MPI      "Compile with device aware GPU support" OFF)
 option(HYPRE_WITH_OPENMP             "Use OpenMP" OFF)
 option(HYPRE_ENABLE_HOPSCOTCH        "Use hopscotch hashing with OpenMP" OFF)
 option(HYPRE_WITH_DSUPERLU           "Use TPL SuperLU_Dist" OFF)
@@ -108,6 +109,7 @@ option(HYPRE_ENABLE_UNIFIED_MEMORY   "Use unified memory for allocating the memo
 # CUDA options
 option(HYPRE_ENABLE_CUDA_STREAMS     "Use CUDA streams" ON)
 option(HYPRE_ENABLE_CUSPARSE         "Use cuSPARSE" ON)
+option(HYPRE_ENABLE_CUSOLVER         "Use cuSOLVER" OFF)
 option(HYPRE_ENABLE_DEVICE_POOL      "Use device memory pool" OFF)
 option(HYPRE_ENABLE_CUBLAS           "Use cuBLAS" OFF)
 option(HYPRE_ENABLE_CURAND           "Use cuRAND" ON)
@@ -225,13 +227,16 @@ if (HYPRE_WITH_CUDA)
   # Check if CUDA is available, then enable it
   include(CheckLanguage)
   check_language(CUDA)
-  if (CMAKE_CUDA_COMPILER)
 
-    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE STRING "")
+  # Use ${CMAKE_CXX_COMPILER} as the cuda host compiler.
+  if (NOT CMAKE_CUDA_HOST_COMPILER)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+  endif ()
+  
+  if (CMAKE_CUDA_COMPILER)
 
     enable_language(CUDA)
     message(STATUS "Enabled support for CUDA.")
-
 
     if (NOT CMAKE_CUDA_STANDARD OR CMAKE_CUDA_STANDARD EQUAL 98)
       set(CMAKE_CUDA_STANDARD 11)

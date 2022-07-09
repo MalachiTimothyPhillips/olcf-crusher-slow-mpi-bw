@@ -332,6 +332,14 @@ HYPRE_Int HYPRE_IJMatrixRead(const char     *filename,
                              HYPRE_IJMatrix *matrix);
 
 /**
+ * Read the matrix from MM file.  This is mainly for debugging purposes.
+ **/
+HYPRE_Int HYPRE_IJMatrixReadMM(const char     *filename,
+                               MPI_Comm        comm,
+                               HYPRE_Int       type,
+                               HYPRE_IJMatrix *matrix);
+
+/**
  * Print the matrix to file.  This is mainly for debugging purposes.
  **/
 HYPRE_Int HYPRE_IJMatrixPrint(HYPRE_IJMatrix  matrix,
@@ -444,6 +452,15 @@ HYPRE_Int HYPRE_IJVectorAddToValues(HYPRE_IJVector       vector,
  * Finalize the construction of the vector before using.
  **/
 HYPRE_Int HYPRE_IJVectorAssemble(HYPRE_IJVector vector);
+
+/**
+ *
+ **/
+HYPRE_Int HYPRE_IJVectorUpdateValues(HYPRE_IJVector       vector,
+                                     HYPRE_Int            nvalues,
+                                     const HYPRE_BigInt  *indices,
+                                     const HYPRE_Complex *values,
+                                     HYPRE_Int            action);
 
 /**
  * Gets values in vector.  Usage details are analogous to

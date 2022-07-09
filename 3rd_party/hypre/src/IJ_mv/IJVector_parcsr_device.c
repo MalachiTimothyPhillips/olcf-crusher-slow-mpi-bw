@@ -35,7 +35,8 @@ HYPRE_Int hypre_IJVectorAssembleSortAndReduce3(HYPRE_Int N0, HYPRE_BigInt *I0, c
 HYPRE_Int hypre_IJVectorAssembleSortAndReduce1(HYPRE_Int N0, HYPRE_BigInt *I0, char *X0,
                                                HYPRE_Complex *A0, HYPRE_Int *N1, HYPRE_BigInt **I1, char **X1, HYPRE_Complex **A1 );
 
-__global__ void hypreCUDAKernel_IJVectorAssemblePar(HYPRE_Int n, HYPRE_Complex *x,
+__global__ void hypreCUDAKernel_IJVectorAssemblePar(hypre_DeviceItem &item, HYPRE_Int n,
+                                                    HYPRE_Complex *x,
                                                     HYPRE_BigInt *map, HYPRE_BigInt offset, char *SorA, HYPRE_Complex *y);
 
 /*
@@ -102,15 +103,17 @@ hypre_IJVectorSetAddValuesParDevice(hypre_IJVector       *vector,
                                       stack_elmts_max_new);
       stack_elmts_max_new = hypre_max(stack_elmts_required, stack_elmts_max_new);
 
-      hypre_AuxParVectorStackI(aux_vector)    = stack_i    =
-                                                   hypre_TReAlloc_v2(stack_i,    HYPRE_BigInt,  stack_elmts_max, HYPRE_BigInt,  stack_elmts_max_new,
-                                                                     HYPRE_MEMORY_DEVICE);
-      hypre_AuxParVectorStackData(aux_vector) = stack_data =
-                                                   hypre_TReAlloc_v2(stack_data, HYPRE_Complex, stack_elmts_max, HYPRE_Complex, stack_elmts_max_new,
-                                                                     HYPRE_MEMORY_DEVICE);
-      hypre_AuxParVectorStackSorA(aux_vector) = stack_sora =
-                                                   hypre_TReAlloc_v2(stack_sora,          char, stack_elmts_max,          char, stack_elmts_max_new,
-                                                                     HYPRE_MEMORY_DEVICE);
+      hypre_AuxParVectorStackI(aux_vector) =
+         stack_i = hypre_TReAlloc_v2(stack_i, HYPRE_BigInt, stack_elmts_max, HYPRE_BigInt,
+                                     stack_elmts_max_new, HYPRE_MEMORY_DEVICE);
+
+      hypre_AuxParVectorStackData(aux_vector) =
+         stack_data = hypre_TReAlloc_v2(stack_data, HYPRE_Complex, stack_elmts_max, HYPRE_Complex,
+                                        stack_elmts_max_new, HYPRE_MEMORY_DEVICE);
+
+      hypre_AuxParVectorStackSorA(aux_vector) =
+         stack_sora = hypre_TReAlloc_v2(stack_sora, char, stack_elmts_max, char, stack_elmts_max_new,
+                                        HYPRE_MEMORY_DEVICE);
 
       hypre_AuxParVectorMaxStackElmts(aux_vector) = stack_elmts_max_new;
    }
@@ -380,10 +383,15 @@ hypre_IJVectorAssembleSortAndReduce3(HYPRE_Int  N0, HYPRE_BigInt  *I0, char *X0,
 /* y[map[i]-offset] = x[i] or y[map[i]] += x[i] depending on SorA,
  * same index cannot appear more than once in map */
 __global__ void
-hypreCUDAKernel_IJVectorAssemblePar(HYPRE_Int n, HYPRE_Complex *x, HYPRE_BigInt *map,
-                                    HYPRE_BigInt offset, char *SorA, HYPRE_Complex *y)
+hypreCUDAKernel_IJVectorAssemblePar( hypre_DeviceItem &item,
+                                     HYPRE_Int         n,
+                                     HYPRE_Complex    *x,
+                                     HYPRE_BigInt     *map,
+                                     HYPRE_BigInt      offset,
+                                     char             *SorA,
+                                     HYPRE_Complex    *y )
 {
-   HYPRE_Int i = hypre_cuda_get_grid_thread_id<1, 1>();
+   HYPRE_Int i = hypre_gpu_get_grid_thread_id<1, 1>(item);
 
    if (i >= n)
    {
@@ -400,4 +408,84 @@ hypreCUDAKernel_IJVectorAssemblePar(HYPRE_Int n, HYPRE_Complex *x, HYPRE_BigInt 
    }
 }
 
+__global__ void
+hypreCUDAKernel_IJVectorUpdateValues( hypre_DeviceItem    &item,
+                                      HYPRE_Int            n,
+                                      const HYPRE_Complex *x,
+                                      const HYPRE_BigInt  *indices,
+                                      HYPRE_BigInt         start,
+                                      HYPRE_BigInt         stop,
+                                      HYPRE_Int            action,
+                                      HYPRE_Complex       *y )
+{
+   HYPRE_Int i = hypre_gpu_get_grid_thread_id<1, 1>(item);
+
+   if (i >= n)
+   {
+      return;
+   }
+
+   HYPRE_Int j;
+
+   if (indices)
+   {
+      j = (HYPRE_Int) (read_only_load(&indices[i]) - start);
+   }
+   else
+   {
+      j = i;
+   }
+
+   if (j < 0 || j > (HYPRE_Int) (stop - start))
+   {
+      return;
+   }
+
+   if (action)
+   {
+      y[j] = x[i];
+   }
+   else
+   {
+      y[j] += x[i];
+   }
+}
+
+HYPRE_Int
+hypre_IJVectorUpdateValuesDevice( hypre_IJVector      *vector,
+                                  HYPRE_Int            num_values,
+                                  const HYPRE_BigInt  *indices,
+                                  const HYPRE_Complex *values,
+                                  HYPRE_Int            action)
+{
+   HYPRE_BigInt *IJpartitioning = hypre_IJVectorPartitioning(vector);
+   HYPRE_BigInt  vec_start = IJpartitioning[0];
+   HYPRE_BigInt  vec_stop  = IJpartitioning[1] - 1;
+
+   if (!indices)
+   {
+      num_values = vec_stop - vec_start + 1;
+   }
+
+   if (num_values <= 0)
+   {
+      return hypre_error_flag;
+   }
+
+   /* set/add to local vector */
+   dim3 bDim = hypre_GetDefaultDeviceBlockDimension();
+   dim3 gDim = hypre_GetDefaultDeviceGridDimension(num_values, "thread", bDim);
+
+   hypre_ParVector *par_vector = (hypre_ParVector*) hypre_IJVectorObject(vector);
+
+   HYPRE_GPU_LAUNCH( hypreCUDAKernel_IJVectorUpdateValues,
+                     gDim, bDim,
+                     num_values, values, indices,
+                     vec_start, vec_stop, action,
+                     hypre_VectorData(hypre_ParVectorLocalVector(par_vector)) );
+
+   return hypre_error_flag;
+}
+
 #endif
+
