@@ -321,11 +321,13 @@ void solver_t::additiveVcycle()
     coarsenV(this);
   }
 
+  const bool useDevice = false;
+
   const int nThreads = this->overlapCrsGridSolve ? 2 : 1;
   occa::memory o_rhs = levels[baseLevel]->o_rhs;
   occa::memory o_x   = levels[baseLevel]->o_x;
 
-  coarseLevel->gather(o_rhs, o_x);
+  coarseLevel->gather(o_rhs, useDevice);
   o_x.getDevice().finish();
   #pragma omp parallel proc_bind(close) num_threads(nThreads)
   {
@@ -342,7 +344,7 @@ void solver_t::additiveVcycle()
     }
   }
   o_x.getDevice().finish();
-  coarseLevel->scatter(o_rhs, o_x);
+  coarseLevel->scatter(o_x, useDevice);
   o_x.getDevice().finish();
 
   {

@@ -21,7 +21,6 @@ struct hypre_data {
   HYPRE_IJVector b;
   HYPRE_IJVector x;
   HYPRE_BigInt ilower;
-  HYPRE_BigInt *ii;
   HYPRE_Real *bb;
   int nRows;
   int Nthreads;
@@ -166,7 +165,7 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
   if(verbose)
     HYPRE_BoomerAMGSetPrintLevel(solver,3);
   else
-    HYPRE_BoomerAMGSetPrintLevel(solver,1);
+    HYPRE_BoomerAMGSetPrintLevel(solver,0);
 
   // Create and initialize rhs and solution vectors
   HYPRE_IJVectorCreate(comm,ilower,iupper,&data->b);
@@ -194,11 +193,6 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
   HYPRE_BoomerAMGSetup(solver,par_A,par_b,par_x);
   omp_set_num_threads(_Nthreads);
 
-  data->ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
-  data->bb = (HYPRE_Real*) malloc(data->nRows*sizeof(HYPRE_Real));
-  for(int i=0;i<data->nRows;++i) 
-    data->ii[i] = ilower + (HYPRE_BigInt)i;
-
   return 0;
 }
 
@@ -206,10 +200,10 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(void *b, void *x)
 {
   int err;
 
-  HYPRE_IJVectorSetValues(data->b,data->nRows,data->ii,(HYPRE_Real*) b);
+  HYPRE_IJVectorSetValues(data->b,data->nRows,NULL,(HYPRE_Real*) b);
   HYPRE_IJVectorAssemble(data->b);
 
-  HYPRE_IJVectorSetValues(data->x,data->nRows,data->ii,(HYPRE_Real*) x);
+  HYPRE_IJVectorSetValues(data->x,data->nRows,NULL,(HYPRE_Real*) x);
   HYPRE_IJVectorAssemble(data->x);
 
   HYPRE_ParVector par_x;
@@ -237,7 +231,7 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(void *b, void *x)
   }
   omp_set_num_threads(_Nthreads);
 
-  HYPRE_IJVectorGetValues(data->x,data->nRows,data->ii,(HYPRE_Real*) x);
+  HYPRE_IJVectorGetValues(data->x,data->nRows,NULL,(HYPRE_Real*) x);
 
   return 0; 
 }

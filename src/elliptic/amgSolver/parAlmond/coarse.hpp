@@ -71,8 +71,8 @@ public:
 
   void solve(dfloat *rhs, dfloat *x);
   void solve(occa::memory o_rhs, occa::memory o_x);
-  void gather(occa::memory o_rhs, occa::memory o_x);
-  void scatter(occa::memory o_rhs, occa::memory o_x);
+  void gather(occa::memory o_rhs, bool useDevice);
+  void scatter(occa::memory o_x, bool useDevice);
 };
 
 }

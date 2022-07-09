@@ -251,7 +251,7 @@ void coarseSolver::solve(dfloat *rhs, dfloat *x) {
   ABORT(1);
 }
 
-void coarseSolver::gather(occa::memory o_rhs, occa::memory o_x)
+void coarseSolver::gather(occa::memory o_rhs, bool useDevice)
 {
   if (gatherLevel) {
     vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
@@ -263,15 +263,20 @@ void coarseSolver::gather(occa::memory o_rhs, occa::memory o_x)
       o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
   }
 }
-void coarseSolver::scatter(occa::memory o_rhs, occa::memory o_x)
+void coarseSolver::scatter(occa::memory o_x, bool useDevice)
 {
+  if(!N) return;
+
   if (gatherLevel) {
-    if(N)
+    if(useDevice) 
+      o_Gx.copyFrom(o_x, N*sizeof(dfloat), 0);
+    else
       o_Gx.copyFrom(xLocal, N*sizeof(dfloat), 0);
+
     ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
   } else {
-    if(N)
-      o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
+      if(!useDevice)
+        o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
   }
 }
 

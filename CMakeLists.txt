@@ -45,7 +45,7 @@ set(OCCA_OPENCL_ENABLED OFF CACHE BOOL "Enable OCCA OpenCL support")
 set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
 
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
-set(ENABLE_HYPRE_GPU OFF CACHE BOOL "Enable HYPRE GPU support")
+set(ENABLE_HYPRE_GPU ON CACHE BOOL "Enable HYPRE GPU support")
 
 set(GPU_MPI "1" CACHE STRING "Enable GPU aware MPI")
 

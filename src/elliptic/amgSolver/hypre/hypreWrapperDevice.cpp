@@ -23,7 +23,7 @@ struct hypre_data_t {
   HYPRE_IJVector x;
   HYPRE_BigInt iupper;
   HYPRE_BigInt ilower;
-  occa::memory o_ii;
+  occa::device device;
   int nRows;
 };
 static hypre_data_t *data;
@@ -66,17 +66,12 @@ BoomerAMGSetup(int nrows, int nz,
 
   data = new hypre_data_t();
   data->comm = comm;
+  data->device = device;
   data->nRows = nrows;
   data->ilower = data->nRows;
   MPI_Scan(MPI_IN_PLACE, &data->ilower, 1, MPI_LONG_LONG, MPI_SUM, ce);
   data->ilower -= data->nRows;
   data->iupper = (data->ilower + data->nRows) - 1; 
-
-  HYPRE_BigInt *ii = (HYPRE_BigInt*) malloc(data->nRows*sizeof(HYPRE_BigInt));
-  for(int i=0;i<data->nRows;++i) 
-    ii[i] = data->ilower + i;
-  data->o_ii = device.malloc(data->nRows*sizeof(HYPRE_BigInt), ii);
-  free(ii);
 
   HYPRE_Init();
 
@@ -144,10 +139,10 @@ BoomerAMGSetup(int nrows, int nz,
       ++rowCtr;
     }
 
-    auto o_ncols = device.malloc(ncols.size() * sizeof(HYPRE_Int),ncols.data());
-    auto o_rows = device.malloc(rows.size() * sizeof(HYPRE_BigInt),rows.data());
-    auto o_cols = device.malloc(cols.size() * sizeof(HYPRE_BigInt),cols.data());
-    auto o_vals = device.malloc(vals.size() * sizeof(HYPRE_Real),vals.data());
+    auto o_ncols = data->device.malloc(ncols.size() * sizeof(HYPRE_Int),ncols.data());
+    auto o_rows = data->device.malloc(rows.size() * sizeof(HYPRE_BigInt),rows.data());
+    auto o_cols = data->device.malloc(cols.size() * sizeof(HYPRE_BigInt),cols.data());
+    auto o_vals = data->device.malloc(vals.size() * sizeof(HYPRE_Real),vals.data());
 
     HYPRE_IJMatrixSetValues(data->A, 
                               rowsToSet /* values for nrows */, 
@@ -173,7 +168,6 @@ BoomerAMGSetup(int nrows, int nz,
   HYPRE_BoomerAMGSetCoarsenType(data->solver,boomerAMGParam[0]);
   HYPRE_BoomerAMGSetInterpType(data->solver,boomerAMGParam[1]);
 
-  HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetKeepTranspose(data->solver, 1);
 
@@ -219,7 +213,7 @@ BoomerAMGSetup(int nrows, int nz,
   if(verbose)
     HYPRE_BoomerAMGSetPrintLevel(data->solver,3);
   else
-    HYPRE_BoomerAMGSetPrintLevel(data->solver,1);
+    HYPRE_BoomerAMGSetPrintLevel(data->solver,0);
 
   // Create and initialize rhs and solution vectors
   HYPRE_IJVectorCreate(comm,data->ilower,data->iupper,&data->b);
@@ -247,11 +241,21 @@ BoomerAMGSetup(int nrows, int nz,
 int __attribute__((visibility("default")))
 BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
 {
-  HYPRE_IJVectorSetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_x.ptr());
-  HYPRE_IJVectorAssemble(data->x);
+  data->device.finish(); // input buffers ready
 
-  HYPRE_IJVectorSetValues(data->b,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_b.ptr());
+#if 1
+  HYPRE_IJVectorUpdateValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr(), 1);
+#else
+  HYPRE_IJVectorSetValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr());
+  HYPRE_IJVectorAssemble(data->x);
+#endif
+
+#if 1
+  HYPRE_IJVectorUpdateValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_b.ptr(), 1);
+#else
+  HYPRE_IJVectorSetValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_b.ptr());
   HYPRE_IJVectorAssemble(data->b);
+#endif
 
   HYPRE_ParVector par_x;
   HYPRE_ParVector par_b;
@@ -274,7 +278,8 @@ BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
-  HYPRE_IJVectorGetValues(data->x,data->nRows,(HYPRE_BigInt*) data->o_ii.ptr(),(HYPRE_Real*) o_x.ptr());
+  // sync copy (blocks host until buffer is ready) 
+  HYPRE_IJVectorGetValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr());
 
   return 0; 
 }
@@ -287,7 +292,6 @@ Free()
   HYPRE_IJVectorDestroy(data->x);
   HYPRE_IJVectorDestroy(data->b);
   HYPRE_Finalize();
-  data->o_ii.free();
   free(data);
 }
 
@@ -311,7 +315,7 @@ BoomerAMGSetup(int nrows, int nz,
 }
 
 int __attribute__((visibility("default"))) 
-BoomerAMGSolve(const occa::memory& o_x, const occa::memory& o_b)
+BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
