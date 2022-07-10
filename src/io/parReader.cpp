@@ -175,6 +175,16 @@ static std::vector<std::string> scalarKeys = {
   {"diffusivity"},
 };
 
+static std::vector<std::string> cvodeKeys = {
+  {"reltol"},
+  {"abstol"},
+  {"nvectorsgmr"},
+  {"maxsteps"},
+  {"hmax"},
+  {"epslin"},
+  {"maxorder"}
+};
+
 static std::vector<std::string> boomeramgKeys = {
   {"coarsenType"},
   {"interpolationType"},
@@ -268,6 +278,8 @@ const std::vector<std::string>& getValidKeys(const std::string& section)
     return pressureKeys;
   if(section.find("scalar") != std::string::npos)
     return scalarKeys;
+  if(section == "cvode")
+    return cvodeKeys;
   if(section == "amgx")
     return amgxKeys;
   if(section == "boomeramg")
@@ -461,6 +473,57 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini *par)
     }
   }
 }
+
+void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
+{
+
+  // [CVODE]
+  // relTol = 1e-4
+  // absTol = 1e-14
+  // nvectorsGMR = 10
+  // maxSteps = 10000
+  // hmax = 3 * dt
+  // epsLin = 0.1
+  // maxOrder = 3
+
+
+  double dt0 = 0.0;
+  options.getArgs("DT", dt0);
+
+  // default values
+  double relTol = 1e-4;
+  double absTol = 1e-14;
+  int nvectorsGMR = 10;
+  int maxSteps = 10000;
+  double hmax = 3 * dt0;
+  double epsLin = 0.1;
+  int maxOrder = 3;
+
+  const std::string parScope = "cvode";
+
+  par->extract(parScope, "reltol", relTol);
+  options.setArgs("CVODE RELATIVE TOLERANCE", to_string_f(relTol));
+
+  par->extract(parScope, "abstol", absTol);
+  options.setArgs("CVODE ABSOLUTE TOLERANCE", to_string_f(absTol));
+
+  par->extract(parScope, "nvectorsgmr", nvectorsGMR);
+  options.setArgs("CVODE GMR VECTORS", std::to_string(nvectorsGMR));
+
+  par->extract(parScope, "maxsteps", maxSteps);
+  options.setArgs("CVODE MAX STEPS", std::to_string(maxSteps));
+
+  par->extract(parScope, "hmax", hmax);
+  options.setArgs("CVODE HMAX", std::to_string(hmax));
+
+  par->extract(parScope, "epslin", epsLin);
+  options.setArgs("CVODE EPS LIN", std::to_string(epsLin));
+
+  par->extract(parScope, "maxorder", maxOrder);
+  options.setArgs("CVODE MAX TIMESTEPPER ORDER", std::to_string(maxOrder));
+
+}
+
 void parseSolverTolerance(const int rank, setupAide &options, inipp::Ini *par, std::string parScope)
 {
 
@@ -1998,11 +2061,17 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
     options.setArgs("SCALAR" + sid + " IS TEMPERATURE", "TRUE");
 
+    options.setArgs("SCALAR" + sid + " SOLVER", "ELLIPTIC");
+
     std::string solver;
     par->extract("temperature", "solver", solver);
     if (solver == "none") {
       options.setArgs("SCALAR" + sid + " SOLVER", "NONE");
     } else {
+
+      if(solver == "cvode"){
+        options.setArgs("SCALAR" + sid + " SOLVER", "CVODE");
+      }
 
       options.setArgs("SCALAR" + sid + " KRYLOV SOLVER", "PCG");
       options.setArgs("SCALAR" + sid + " PRECONDITIONER", "JACOBI");
@@ -2082,11 +2151,15 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
       parseRegularization(rank, options, par, parScope);
     }
 
+    options.setArgs("SCALAR" + sid + " SOLVER", "ELLIPTIC");
+
     std::string solver;
     par->extract(parScope, "solver", solver);
     if (solver == "none") {
       options.setArgs("SCALAR" + sid + " SOLVER", "NONE");
       continue;
+    } else if (solver == "cvode") {
+      options.setArgs("SCALAR" + sid + " SOLVER", "CVODE");
     }
 
     options.setArgs("SCALAR" + sid + " KRYLOV SOLVER", "PCG");
@@ -2151,6 +2224,11 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
           append_error("ERROR: dt not defined!\n");
       }
     }
+  }
+
+  // cvode solver
+  if (par->sections.count("cvode")) {
+    parseCvodeSolver(rank, options, par);
   }
 
   // error checking

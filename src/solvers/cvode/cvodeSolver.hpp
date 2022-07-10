@@ -8,6 +8,8 @@
 #include <map>
 #include <vector>
 #include <tuple>
+#include <cvode/cvode.h>
+#include <memory>
 
 class nrs_t;
 namespace cvode {
@@ -17,6 +19,7 @@ class cvodeSolver_t{
 public:
 
   using userRHS_t = std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)>;
+  using userJacobian_t = std::function<void(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)>;
   using userPack_t = std::function<void(nrs_t*, occa::memory o_field, occa::memory o_y)>;
   using userUnpack_t = std::function<void(nrs_t*, occa::memory o_y, occa::memory o_field)>;
   using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
@@ -26,13 +29,47 @@ public:
   void solve(nrs_t *nrs, dfloat t0, dfloat t1, int tstep);
 
   void setRHS(userRHS_t _userRHS) { userRHS = _userRHS; }
+  void setJacobian(userJacobian_t _userJacobian) { userJacobian = _userJacobian; }
   void setPack(userPack_t _userPack) { userPack = _userPack; }
   void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
+  void printFinalStats() const;
+
+  bool setJacobianEvaluation() { jacEval = true; }
+  bool unsetJacobianEvaluation() { jacEval = false; }
+  bool jacobianEvaluation() const { return jacEval; }
+
+  int timeStep() const { return tstep; }
+  double time() const { return tnekRS; }
+
+  void rhs(nrs_t *nrs, dfloat time, occa::memory o_y, occa::memory o_ydot);
+  void jtvRHS(nrs_t *nrs, dfloat time, occa::memory o_y, occa::memory o_ydot);
+  dlong numEquations() const { return nEq;}
 
 private:
 
-  void rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
+  // package data to pass in as user data
+  struct userData_t{
+
+    userData_t(platform_t* _platform, nrs_t* _nrs, cvodeSolver_t* _cvodeSolver)
+    : platform(_platform),
+      nrs(_nrs),
+      cvodeSolver(_cvodeSolver)
+    {}
+
+
+    platform_t* platform;
+    nrs_t* nrs;
+    cvodeSolver_t* cvodeSolver;
+  };
+  std::shared_ptr<userData_t> userdata;
+
+  // most recent time from nekRS -- used to compute dt in CVODE integration call
+  mutable double tnekRS;
+  mutable int tstep;
+  mutable bool jacEval = false;
+
+  void defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   dlong LFieldOffset;
   void pack(nrs_t * nrs, occa::memory o_field, occa::memory o_y);
   void unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field);
@@ -47,6 +84,7 @@ private:
   void setupEToLMapping(nrs_t *nrs);
 
   userRHS_t userRHS;
+  userJacobian_t userJacobian;
 
   userLocalPointSource_t userLocalPointSource;
   userPack_t userPack;
@@ -86,6 +124,15 @@ private:
   occa::kernel mapLToEKernel;
   occa::kernel packKernel;
   occa::kernel unpackKernel;
+
+  dlong nEq;
+
+  long long int nEqTotal;
+
+  // cvode internals
+  void * cvodeMem;
+  N_Vector cvodeY;
+
 };
 } // namespace cvode
 

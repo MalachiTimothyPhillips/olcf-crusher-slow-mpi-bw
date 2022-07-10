@@ -9,12 +9,14 @@
 
 #include "timeStepper.hpp"
 #include "plugins/lowMach.hpp"
+#include "nekrs.hpp"
 
 // cvode includes
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sundials/sundials_types.h>
 #include <sundials/sundials_math.h>
 #include <cvode/cvode.h>
+#include <nvector/nvector_serial.h>
 #include <nvector/nvector_mpiplusx.h>
 #ifdef ENABLE_CUDA
 #include <nvector/nvector_cuda.h>
@@ -29,6 +31,52 @@ void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
   o_invLMMLMM.copyFrom(mesh->o_LMM, mesh->Nlocal * sizeof(dfloat));
   platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_invLMMLMM);
 }
+
+sunrealtype* __N_VGetDeviceArrayPointer(N_Vector u) 
+{ 
+  bool useDevice = false;
+  useDevice |= platform->device.mode() == "CUDA";
+  useDevice |= platform->device.mode() == "HIP";
+  useDevice |= platform->device.mode() == "OPENCL";
+
+  if(useDevice){
+    return N_VGetDeviceArrayPointer(u);
+  }
+  else{
+    return N_VGetArrayPointer_Serial(u);
+  }
+}
+
+int check_retval(void* returnvalue, const char* funcname, int opt)
+{
+  int* retval;
+
+  /* Check if SUNDIALS function returned NULL pointer - no memory allocated */
+
+  if (opt == 0 && returnvalue == NULL) {
+    fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed - returned NULL pointer\n\n",
+            funcname);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  /* Check if retval < 0 */
+  else if (opt == 1) {
+    retval = (int*) returnvalue;
+    if (*retval < 0) {
+      fprintf(stderr, "\nSUNDIALS_ERROR: %s() failed with retval = %d\n\n",
+              funcname, *retval);
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+  }
+  /* Check if function returned NULL pointer - no memory allocated */
+  else if (opt == 2 && returnvalue == NULL) {
+    fprintf(stderr, "\nMEMORY_ERROR: %s() failed - returned NULL pointer\n\n",
+            funcname);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+
+  return 0;
+}
+
 }
 
 namespace cvode {
@@ -96,8 +144,137 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
   this->packKernel = platform->kernels.get("pack");
   this->unpackKernel = platform->kernels.get("unpack");
 
-  // set up CVODE
+  nEq = Nscalar * LFieldOffset;
 
+  int retval = 0;
+
+  int blockSize = BLOCKSIZE;
+
+  // wrap RHS function into type expected by CVODE
+  CVRhsFn cvodeRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
+  {
+    auto data = static_cast<userData_t*>(user_data);
+    auto nrs = data->nrs;
+    auto platform = data->platform;
+    auto cvodeSolver = data->cvodeSolver;
+
+    occa::memory o_y = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(Y)),
+      cvodeSolver->numEquations());
+
+    occa::memory o_ydot = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(Ydot)),
+      cvodeSolver->numEquations());
+    
+    cvodeSolver->rhs(nrs, time, o_y, o_ydot);
+
+    return 0;
+  };
+
+  CVRhsFn cvodeJtvRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
+  {
+    auto data = static_cast<userData_t*>(user_data);
+    auto nrs = data->nrs;
+    auto platform = data->platform;
+    auto cvodeSolver = data->cvodeSolver;
+
+    occa::memory o_y = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(Y)),
+      cvodeSolver->numEquations());
+
+    occa::memory o_ydot = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(Ydot)),
+      cvodeSolver->numEquations());
+    
+    cvodeSolver->jtvRHS(nrs, time, o_y, o_ydot);
+
+    return 0;
+  };
+
+  SUNContext sunctx = nullptr;
+  retval = SUNContext_Create((void*) &platform->comm.mpiComm, &sunctx);
+  if(check_retval(&retval, "SUNContext_Create", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  {
+    N_Vector y = nullptr;
+    if(platform->device.mode() == "CUDA") {
+  #ifdef ENABLE_CUDA
+      SUNCudaThreadDirectExecPolicy stream_exec_policy(blockSize);
+      SUNCudaBlockReduceExecPolicy reduce_exec_policy(blockSize, 0);
+  
+      y = N_VNew_Cuda(this->nEq, sunctx);
+      if(check_retval((void*)y, "N_VNew_Cuda", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+  
+      retval = N_VSetKernelExecPolicy_Cuda(y, &stream_exec_policy, &reduce_exec_policy);
+      if(check_retval(&retval, "N_VSetKernelExecPolicy_Cuda", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+  #endif
+    } else if(platform->device.mode() == "HIP") {
+  #ifdef ENABLE_HIP
+      y = N_VNew_Hip(data->nEq, sunctx);
+      if(check_retval((void *)y, "N_VNew_Hip", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+  #endif
+    } else if(platform->device.mode() == "Serial") {
+      y = N_VNew_Serial(this->nEq, sunctx);
+      if(check_retval((void *)y, "N_VNew_Serial", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+    }
+    this->cvodeY = N_VMake_MPIPlusX(platform->comm.mpiComm, y, sunctx);
+    this->nEqTotal = N_VGetLength(this->cvodeY);
+  }
+
+  this->cvodeMem = CVodeCreate(CV_BDF, sunctx);
+
+  const auto T0 = nekrs::startTime();
+
+  double relTol = 1e-4;
+  platform->options.getArgs("CVODE RELATIVE TOLERANCE", relTol);
+
+  double absTol = 1e-14;
+  platform->options.getArgs("CVODE ABSOLUTE TOLERANCE", absTol);
+
+  if(check_retval((void*)this->cvodeMem, "CVodeCreate", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+  retval = CVodeInit(this->cvodeMem, cvodeRHS, T0, this->cvodeY);
+  if(check_retval(&retval, "CVodeInit", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  retval = CVodeSStolerances(this->cvodeMem, relTol, absTol);
+  if (check_retval(&retval, "CVodeSStolerances", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  int nvectorsGMR = 10;
+  platform->options.getArgs("CVODE GMR VECTORS", nvectorsGMR);
+
+  SUNLinearSolver LS = SUNLinSol_SPGMR(cvodeY, PREC_NONE, nvectorsGMR, sunctx);
+  if(check_retval(&retval, "SUNLinSol_SPFGMR", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  retval = CVodeSetLinearSolver(this->cvodeMem, LS, NULL);
+  if(check_retval(&retval, "CVodeSetLinearSolver", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  retval = CVodeSetJacTimesRhsFn(this->cvodeMem, cvodeJtvRHS);
+  if(check_retval(&retval, "CVodeSetJacTimesRhsFn", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  // custom settings
+  int mxsteps = 10000;
+  platform->options.getArgs("CVODE MAX STEPS", mxsteps);
+  retval = CVodeSetMaxNumSteps(this->cvodeMem, mxsteps);
+
+  double dt0;
+  platform->options.getArgs("DT", dt0);
+
+  double hmax = 3 * dt0;
+  platform->options.getArgs("CVODE HMAX", hmax);
+  retval = CVodeSetMaxStep(this->cvodeMem, hmax);
+
+  int maxOrder = 3;
+  platform->options.getArgs("CVODE MAX TIMESTEPPER ORDER", maxOrder);
+  retval = CVodeSetMaxOrd(this->cvodeMem, 3);
+
+  double epsLin = 0.1;
+  platform->options.getArgs("CVODE EPS LIN", epsLin);
+  retval = CVodeSetEpsLin(this->cvodeMem, epsLin);
+
+  userdata = std::make_shared<userData_t>(platform, nrs, this);
+
+  // set user data as
+  retval = CVodeSetUserData(this->cvodeMem, userdata.get());
+  if(check_retval(&retval, "CVodeSetUserData", 1)) MPI_Abort(platform->comm.mpiComm, 1);
 
 }
 
@@ -158,7 +335,29 @@ void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
   o_Lids.free();
 }
 
-void cvodeSolver_t::rhs(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
+void cvodeSolver_t::rhs(nrs_t *nrs, dfloat time, occa::memory o_y, occa::memory o_ydot)
+{
+  if(userRHS){
+    userRHS(nrs, tstep, time, tnekRS, o_y, o_ydot);
+  } else {
+    defaultRHS(nrs, tstep, time, tnekRS, o_y, o_ydot);
+  }
+}
+
+void cvodeSolver_t::jtvRHS(nrs_t *nrs, dfloat time, occa::memory o_y, occa::memory o_ydot)
+{
+  this->setJacobianEvaluation();
+
+  if(userJacobian){
+    userJacobian(nrs, tstep, time, tnekRS, o_y, o_ydot);
+  } else {
+    this->rhs(nrs, time, o_y, o_ydot);
+  }
+
+  this->unsetJacobianEvaluation();
+}
+
+void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot)
 {
   const bool movingMesh = platform->options.compareArgs("MOVING MESH", "TRUE");
   mesh_t *mesh = nrs->meshV;
@@ -479,6 +678,8 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
   pack(nrs, nrs->cds->o_S, o_cvodeY);
 
+  this->tnekRS = t0;
+
   // call cvode solver
 
   unpack(nrs, o_cvodeY, nrs->cds->o_S);
@@ -498,5 +699,58 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   }
 
   computeUrst(nrs, false);
+}
+
+void cvodeSolver_t::printFinalStats() const
+{
+  auto cvodeMem = this->cvodeMem;
+
+  long lenrw, leniw;
+  long lenrwLS, leniwLS;
+  long int nst, nfe, nsetups, nni, ncfn, netf;
+  long int nli, npe, nps, ncfl, nfeLS;
+  long int njtv;
+  int retval;
+
+  retval = CVodeGetWorkSpace(cvodeMem, &lenrw, &leniw);
+  check_retval(&retval, "CVodeGetWorkSpace", 1);
+  retval = CVodeGetNumSteps(cvodeMem, &nst);
+  check_retval(&retval, "CVodeGetNumSteps", 1);
+  retval = CVodeGetNumRhsEvals(cvodeMem, &nfe);
+  check_retval(&retval, "CVodeGetNumRhsEvals", 1);
+  retval = CVodeGetNumLinSolvSetups(cvodeMem, &nsetups);
+  check_retval(&retval, "CVodeGetNumLinSolvSetups", 1);
+  retval = CVodeGetNumErrTestFails(cvodeMem, &netf);
+  check_retval(&retval, "CVodeGetNumErrTestFails", 1);
+  retval = CVodeGetNumNonlinSolvIters(cvodeMem, &nni);
+  check_retval(&retval, "CVodeGetNumNonlinSolvIters", 1);
+  retval = CVodeGetNumNonlinSolvConvFails(cvodeMem, &ncfn);
+  check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
+
+  retval = CVodeGetNumJtimesEvals(cvodeMem, &njtv);
+  check_retval(&retval, "CVodeGetNumJtimesEvals", 1);
+
+  retval = CVodeGetLinWorkSpace(cvodeMem, &lenrwLS, &leniwLS);
+  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
+  retval = CVodeGetNumLinIters(cvodeMem, &nli);
+  check_retval(&retval, "CVodeGetNumLinIters", 1);
+  retval = CVodeGetNumPrecEvals(cvodeMem, &npe);
+  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
+  retval = CVodeGetNumPrecSolves(cvodeMem, &nps);
+  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
+  retval = CVodeGetNumLinConvFails(cvodeMem, &ncfl);
+  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
+  retval = CVodeGetNumLinRhsEvals(cvodeMem, &nfeLS);
+  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
+
+  if(platform->comm.mpiRank == 0){
+    printf("\nCVODE Statistics:\n");
+    printf("nst     = %5ld\n", nst);
+    printf("nni     = %5ld     nli     = %5ld     nli/nni = %5ld\n", nni, nli, nli / nni);
+    printf("nfe     = %5ld     nfeLS   = %5ld\n", nfe, nfeLS);
+    printf("netf    = %5ld     ncfn    = %5ld     ncfl    = %5ld\n", netf, ncfn, ncfl);
+  }
+
+  return;
 }
 } // namespace cvode
