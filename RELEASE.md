@@ -2,9 +2,8 @@
 
 ## What is new? 
 
-* Single source udf+oudf 
-* Support BoomerAMG on vevice
-* Latest HYPRE and AMGX version
+* Single source udf+oudf (see ethier example) 
+* Support BoomerAMG on device
 
 ## Good to know
 

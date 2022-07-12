@@ -38,12 +38,6 @@ SOFTWARE.
 #include "platform.hpp"
 #include "linAlg.hpp"
 
-
-namespace {
-  static occa::kernel convertFP64ToFP32Kernel;
-  static occa::kernel convertFP32ToFP64Kernel;
-}
-
 namespace parAlmond {
 
 coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
@@ -59,6 +53,7 @@ void coarseSolver::setup(
                hlong* Ai,                    //-- Local A matrix data (globally indexed, COO storage, row sorted)
                hlong* Aj,                    //--
                dfloat* Avals,                //--
+               pfloat* weight,
                bool nullSpace)
 {
   int rank, size;
@@ -73,16 +68,8 @@ void coarseSolver::setup(
   if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
     return; // bail early as this will not get used
 
-  {
-    std::string kernelName = "convertFP64ToFP32";
-    convertFP64ToFP32Kernel = platform->kernels.get(kernelName);
-
-    kernelName = "convertFP32ToFP64";
-    convertFP32ToFP64Kernel = platform->kernels.get(kernelName);
-
-    kernelName = "vectorDotStar2";
-    vectorDotStarKernel2 = platform->kernels.get(kernelName);
-  }
+  kernelName = "vectorDotStar2";
+  vectorDotStarKernel2 = platform->kernels.get(kernelName);
 
   o_rhsBuffer = platform->device.malloc(Nrows * sizeof(pfloat));
   rhsBuffer = (pfloat*) calloc(Nrows, sizeof(pfloat));
@@ -249,15 +236,13 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   } else {
 
-    platform->linAlg->fill(N, 0.0, o_x);
-    convertFP64ToFP32Kernel(N, o_x, o_xBuffer);
+    platform->linAlg->pfill(N, 0.0, o_xBuffer);
     if(!useDevice) o_xBuffer.copyTo(xBuffer, N*sizeof(pfloat));
 
     // E->L
-    vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
-    ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-    convertFP64ToFP32Kernel(N, o_Gx, o_rhsBuffer);
-    if(!useDevice) o_rhsBuffer.copyTo(rhsBuffer, N*sizeof(pfloat));
+    vectorDotStar(ogs->N, 1.0, o_weight, o_rhs, 0.0, o_Sx);
+    ogsGather(o_Gx, o_Sx, ogsPfloat, ogsAdd, ogs);
+    if(!useDevice) o_Gx.copyTo(rhsBuffer, N*sizeof(pfloat));
 
     if (options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
       if(useDevice)
@@ -269,12 +254,9 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     }
 
     if(useDevice) {
-      convertFP32ToFP64Kernel(N, o_xBuffer, o_Gx);
+      o_Gx.copyFrom(o_xBuffer, N*sizeof(pfloat));
     } else {
-      for(int i = 0; i < N; i++) 
-        xLocal[i] = (dfloat) xBuffer[i];
- 
-      o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
+      o_Gx.copyFrom(xBuffer, N*sizeof(pfloat));
     }
 
     // L->E

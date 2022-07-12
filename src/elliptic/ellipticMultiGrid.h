@@ -80,9 +80,6 @@ public:
   occa::memory o_work2; // scratch space
   occa::memory o_wts; // weights to apply after operation
 
-  occa::memory o_xPfloat; // float-type o_x
-  occa::memory o_rhsPfloat; // float-type o_x
-
   // Eigenvalues
   occa::memory o_invL;
 

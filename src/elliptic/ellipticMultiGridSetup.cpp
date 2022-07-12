@@ -250,14 +250,14 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
           nextLevel->gatherLevel = true;
           nextLevel->ogs = ellipticCoarse->ogs;
-          nextLevel->Gx = (dfloat*) calloc(levels[numMGLevels - 1]->Ncols,sizeof(dfloat));
-          nextLevel->Sx = (dfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
-                                           sizeof(dfloat));
+          nextLevel->Gx = (pfloat*) calloc(levels[numMGLevels - 1]->Ncols,sizeof(pfloat));
+          nextLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
+                                           sizeof(pfloat));
           nextLevel->o_Gx =
-            platform->device.malloc(levels[numMGLevels - 1]->Ncols * sizeof(dfloat),
+            platform->device.malloc(levels[numMGLevels - 1]->Ncols * sizeof(pfloat),
                                                 nextLevel->Gx);
           nextLevel->o_Sx = platform->device.malloc(
-            ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(dfloat),
+            ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(pfloat),
             nextLevel->Sx);
         } else {
           //this level is the base
@@ -265,14 +265,14 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
           coarseLevel->gatherLevel = true;
           coarseLevel->ogs = ellipticCoarse->ogs;
-          coarseLevel->Gx = (dfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(dfloat));
-          coarseLevel->Sx = (dfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
-                                             sizeof(dfloat));
+          coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
+          coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
+                                             sizeof(pfloat));
           coarseLevel->o_Gx =
-            platform->device.malloc(coarseLevel->ogs->Ngather * sizeof(dfloat),
+            platform->device.malloc(coarseLevel->ogs->Ngather * sizeof(pfloat),
                                                 coarseLevel->Gx);
           coarseLevel->o_Sx = platform->device.malloc(
-            ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(dfloat),
+            ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(pfloat),
             coarseLevel->Sx);
         }
       }

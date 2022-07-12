@@ -35,11 +35,11 @@ void MGLevel::Ax(occa::memory o_x, occa::memory o_Ax)
 void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
 {
   if(stype != SmootherType::SCHWARZ) {
-    ellipticOperator(elliptic,o_x,o_res, dfloatString);
+    ellipticOperator(elliptic,o_x,o_res, pfloatString);
     // subtract r = b - A*x
-    platform->linAlg->axpbyMany(Nrows, elliptic->Nfields, elliptic->Ntotal, 1.0, o_rhs, -1.0, o_res);
+    platform->linAlg->paxpbyMany(Nrows, elliptic->Nfields, elliptic->Ntotal, 1.0, o_rhs, -1.0, o_res);
   } else {
-    o_res.copyFrom(o_rhs, Nrows*sizeof(dfloat));
+    o_res.copyFrom(o_rhs, Nrows*sizeof(pfloat));
   }
 }
 
@@ -47,7 +47,7 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
 {
   double flopCounter = 0.0;
   if (options.compareArgs("DISCRETIZATION", "CONTINUOUS")) {
-    platform->linAlg->axmy(mesh->Nelements * NpF, 1.0, o_invDegree, o_x);
+    platform->linAlg->paxmy(mesh->Nelements * NpF, 1.0, o_invDegree, o_x);
     flopCounter += static_cast<double>(mesh->Nelements) * NpF;
   }
 
@@ -59,7 +59,7 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
   flopCounter += static_cast<double>(mesh->Nelements) * workPerElem;
 
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
-    oogs::startFinish(o_Rx, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
+    oogs::startFinish(o_Rx, elliptic->Nfields, elliptic->Ntotal, ogsPfloat, ogsAdd, elliptic->oogs);
     // ellipticApplyMask(elliptic, o_Rx, dfloatString);
   }
 
@@ -83,24 +83,12 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
   if(!x_is_zero && stype == SmootherType::SCHWARZ) return;
 
-  if(!strstr(pfloatString,dfloatString)) {
-    elliptic->fusedCopyDfloatToPfloatKernel(Nrows, o_x, o_rhs, o_xPfloat, o_rhsPfloat);
-    if (stype == SmootherType::CHEBYSHEV)
-      this->smoothChebyshev(o_rhsPfloat, o_xPfloat, x_is_zero);
-    else if (stype == SmootherType::SCHWARZ)
-      this->smoothSchwarz(o_rhsPfloat, o_xPfloat, x_is_zero);
-    else if (stype == SmootherType::JACOBI)
-      this->smoothJacobi(o_rhsPfloat, o_xPfloat, x_is_zero);
-      
-    elliptic->copyPfloatToDPfloatKernel(Nrows, o_xPfloat, o_x);
-  } else {
-    if (stype == SmootherType::CHEBYSHEV)
-      this->smoothChebyshev(o_rhs, o_x, x_is_zero);
-    else if (stype == SmootherType::SCHWARZ)
-      this->smoothSchwarz(o_rhs, o_x, x_is_zero);
-    else if (stype == SmootherType::JACOBI)
-      this->smoothJacobi(o_rhs, o_x, x_is_zero);
-  }
+  if (stype == SmootherType::CHEBYSHEV)
+    this->smoothChebyshev(o_rhs, o_x, x_is_zero);
+  else if (stype == SmootherType::SCHWARZ)
+    this->smoothSchwarz(o_rhs, o_x, x_is_zero);
+  else if (stype == SmootherType::JACOBI)
+    this->smoothJacobi(o_rhs, o_x, x_is_zero);
 
   platform->timer.toc(elliptic->name + " preconditioner smoother");
 }

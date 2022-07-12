@@ -164,7 +164,6 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   if(platform->comm.mpiRank == 0)  printf("done (%gs)\n", MPI_Wtime() - tStart); fflush(stdout);
 }
 
-// o_r and o_z are of type dfloat 
 void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& o_z)
 {
   mesh_t* mesh = elliptic->mesh;
@@ -178,8 +177,8 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
   gatherKernel(
     numRowsSEMFEM,
     o_dofMap,
-    o_r,   /* dfloat */
-    o_bufr /* pfloat */
+    o_r,
+    o_bufr
   );
 
   if(elliptic->options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
@@ -210,9 +209,9 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
   scatterKernel(
     numRowsSEMFEM,
     o_dofMap,
-    o_bufz, /* pfloat */
-    o_z     /* dfloat */ 
+    o_bufz,
+    o_z
   );
 
-  oogs::startFinish(o_z, 1, 0, ogsDfloat, ogsAdd, elliptic->oogs);
+  oogs::startFinish(o_z, 1, 0, ogsPfloat, ogsAdd, elliptic->oogs);
 }

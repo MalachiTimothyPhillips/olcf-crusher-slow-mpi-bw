@@ -32,7 +32,7 @@ size_t MGLevel::smootherResidualBytes;
 pfloat* MGLevel::smootherResidual;
 occa::memory MGLevel::o_smootherResidual;
 occa::memory MGLevel::o_smootherResidual2;
-occa::memory MGLevel::o_smootherUpdate;
+o_xPfloatocca::memory MGLevel::o_smootherUpdate;
 
 //build a single level
 MGLevel::MGLevel(elliptic_t* ellipticBase, int Nc,
@@ -53,15 +53,17 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, int Nc,
   //use weighted inner products
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
     weighted = true;
-    o_weight = elliptic->o_invDegree;
-    weight   = elliptic->invDegree;
+
+    weight = (pfloat*) calloc(mesh->Nlocal, sizeof(pfloat));
+    for(int i = 0; i < mesh->Nlocal; i++) {
+       weight[i] = (pfloat) elliptic->invDegree[i];
+    }
+    o_weight = platform->device.malloc(mesh->Nlocal * sizeof(pfloat), weight);
   }
 
   if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
     this->setupSmoother(ellipticBase);
 
-  o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
-  o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
 }
 
 //build a level and connect it to the previous one
@@ -92,11 +94,21 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   //use weighted inner products
   if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
     weighted = true;
-    o_weight = elliptic->o_invDegree;
-    weight   = elliptic->invDegree;
+
+    weight = (pfloat*) calloc(mesh->Nlocal, sizeof(pfloat));
+    for(int i = 0; i < mesh->Nlocal; i++) {
+       weight[i] = (pfloat) elliptic->invDegree[i];
+    }
+    o_weight = platform->device.malloc(mesh->Nlocal * sizeof(pfloat), weight);
+
+    tmp = (pfloat*) calloc(ellipticFine->mesh->Ntotal, sizeof(pfloat));
+    for(int i = 0; i < ellipticFine->mesh->Ntotal; i++) {
+       tmp[i] = (pfloat) ellipticFine->gs->invDegree[i];
+    }
+    o_invDegree = platform->device.malloc(ellipticFine->mesh->Ntotal * sizeof(pfloat), tmp);
+    free(tmp);
 
     NpF = ellipticFine->mesh->Np;
-    o_invDegree = ellipticFine->ogs->o_invDegree;
   }
 
   /* build coarsening and prologation operators to connect levels */
@@ -104,9 +116,6 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
 
   if(!isCoarse || options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
     this->setupSmoother(ellipticBase);
-
-  o_xPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
-  o_rhsPfloat = platform->device.malloc(Nrows ,  sizeof(pfloat));
 }
 
 void MGLevel::setupSmoother(elliptic_t* ellipticBase)
@@ -217,7 +226,7 @@ void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
   const int Nfq = Nf + 1;
   const int Ncq = Nc + 1;
   dfloat *cToFInterp = (dfloat *)calloc(Nfq * Ncq, sizeof(dfloat));
-  dfloat *R = (dfloat *)calloc(Nfq * Ncq, sizeof(dfloat));
+  pfloat *R = (pfloat *)calloc(Nfq * Ncq, sizeof(pfloat));
   InterpolationMatrix1D(Nc, Ncq, meshLevels[Nc]->r, Nfq, meshLevels[Nf]->r, cToFInterp);
 
   // transpose
@@ -227,7 +236,7 @@ void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
     }
   }
 
-  o_R = platform->device.malloc(Nfq * Ncq * sizeof(dfloat), R);
+  o_R = platform->device.malloc(Nfq * Ncq * sizeof(pfloat), R);
 
   free(R);
   free(cToFInterp);

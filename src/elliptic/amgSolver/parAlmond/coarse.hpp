@@ -39,8 +39,10 @@ public:
   int *coarseOffsets=NULL;
   int *coarseCounts=NULL;
 
+  pfloat *weight=NULL;
+  occa::memory o_weight;
+
   int N;
-  dfloat *invCoarseA=NULL;
 
   occa::memory h_xLocal;
   occa::memory h_rhsLocal;
@@ -68,7 +70,7 @@ public:
   ~coarseSolver();
 
   void setup(parCSR *A);
-  void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
+  void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, pfloat* weight, bool nullSpace);
 
   void syncToDevice();
 

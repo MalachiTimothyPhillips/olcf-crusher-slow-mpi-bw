@@ -47,7 +47,7 @@ public:
 
   //switch for weighted inner products
   bool weighted;
-  dfloat *weight=NULL;
+  pfloat *weight=NULL;
   occa::memory o_weight;
 
   KrylovType ktype;
