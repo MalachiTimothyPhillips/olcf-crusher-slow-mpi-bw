@@ -42,22 +42,14 @@ SOFTWARE.
 namespace {
   static occa::kernel convertFP64ToFP32Kernel;
   static occa::kernel convertFP32ToFP64Kernel;
-  static occa::memory o_rhsBuffer;
-  static occa::memory o_xBuffer;
-  static pfloat *xBuffer;
-  static pfloat *rhsBuffer;
 }
 
 namespace parAlmond {
 
 coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
-  gatherLevel = false;
+  gatherLevel = true;
   options = options_;
   comm = comm_;
-}
-
-int coarseSolver::getTargetSize() {
-  return 1000;
 }
 
 void coarseSolver::setup(
@@ -185,6 +177,8 @@ void coarseSolver::setup(
   }
 }
 
+void coarseSolver::syncToDevice() {}
+
 void coarseSolver::setup(parCSR *A) {
 
   comm = A->comm;
@@ -243,43 +237,6 @@ void coarseSolver::setup(parCSR *A) {
     printf("done.\n"); fflush(stdout);
 }
 
-void coarseSolver::syncToDevice() {}
-
-void coarseSolver::solve(dfloat *rhs, dfloat *x) {
-  if(platform->comm.mpiRank == 0) 
-    printf("Trying to call invalid host coarseSolver::solve!\n"); fflush(stdout); 
-  ABORT(1);
-}
-
-void coarseSolver::gather(occa::memory o_rhs, bool useDevice)
-{
-  if (gatherLevel) {
-    vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
-    ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-    if(N)
-      o_Gx.copyTo(rhsLocal, N*sizeof(dfloat), 0);
-  } else {
-    if(N)
-      o_rhs.copyTo(rhsLocal, N*sizeof(dfloat), 0);
-  }
-}
-void coarseSolver::scatter(occa::memory o_x, bool useDevice)
-{
-  if(!N) return;
-
-  if (gatherLevel) {
-    if(useDevice) 
-      o_Gx.copyFrom(o_x, N*sizeof(dfloat), 0);
-    else
-      o_Gx.copyFrom(xLocal, N*sizeof(dfloat), 0);
-
-    ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
-  } else {
-      if(!useDevice)
-        o_x.copyFrom(xLocal, N*sizeof(dfloat), 0);
-  }
-}
-
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   platform->timer.tic("coarseSolve", 1);
@@ -296,12 +253,10 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     convertFP64ToFP32Kernel(N, o_x, o_xBuffer);
     if(!useDevice) o_xBuffer.copyTo(xBuffer, N*sizeof(pfloat));
 
-    if (gatherLevel) { // E->T
-      vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
-      ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
-    }
-    occa::memory o_b = gatherLevel ? o_Gx : o_rhs;
-    convertFP64ToFP32Kernel(N, o_b, o_rhsBuffer);
+    // E->L
+    vectorDotStar(ogs->N, 1.0, ogs->o_invDegree, o_rhs, 0.0, o_Sx);
+    ogsGather(o_Gx, o_Sx, ogsDfloat, ogsAdd, ogs);
+    convertFP64ToFP32Kernel(N, o_Gx, o_rhsBuffer);
     if(!useDevice) o_rhsBuffer.copyTo(rhsBuffer, N*sizeof(pfloat));
 
     if (options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
@@ -314,23 +269,16 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     }
 
     if(useDevice) {
-      convertFP32ToFP64Kernel(N, o_xBuffer, o_x);
-      if(gatherLevel)
-        o_Gx.copyFrom(o_x, N*sizeof(dfloat));
+      convertFP32ToFP64Kernel(N, o_xBuffer, o_Gx);
     } else {
       for(int i = 0; i < N; i++) 
-        xLocal[i] = (dfloat) xBuffer[i]; 
-      if(gatherLevel) 
-        o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
+        xLocal[i] = (dfloat) xBuffer[i];
+ 
+      o_Gx.copyFrom(xLocal, N*sizeof(dfloat));
     }
 
-    // T->E
-    if(gatherLevel) {
-      ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
-    } else { 
-      if(!useDevice) 
-        o_x.copyFrom(xLocal, N*sizeof(dfloat));
-    }
+    // L->E
+    ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
   }
 
   platform->timer.toc("coarseSolve");

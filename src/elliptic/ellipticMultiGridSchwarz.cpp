@@ -802,26 +802,20 @@ void MGLevel::generate_weights()
 void MGLevel::build(
   elliptic_t* pSolver)
 {
-  //platform_t* platform = platform_t::getInstance();
   if(elliptic->elementType != HEXAHEDRA) {
     printf("ERROR: Unsupported element type!");
     ABORT(EXIT_FAILURE);
   }
 
   const dlong Nelements = elliptic->mesh->Nelements;
-  const int N = elliptic->mesh->Nq;
   const int Nq = elliptic->mesh->Nq;
   const int Np = elliptic->mesh->Np;
 
-  if(N == 1 && elliptic->options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
+  if(Nq == 2 && elliptic->options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
     return;
   }
 
   const bool serial = (platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP");
-
-  overlap = false;
-  if (Nq >= (elliptic_t::minNFDMOverlap + 1) && !serial)
-    overlap = true;
 
   hlong* maskedGlobalIdsExt;
   maskedGlobalIdsExt = (hlong*) calloc(Nelements*(Nq+2)*(Nq+2)*(Nq+2),sizeof(hlong));
@@ -831,6 +825,10 @@ void MGLevel::build(
   const int Np_e = extendedMesh->Np;
   const dlong Nlocal_e = Nelements * Np_e;
 
+  overlap = false;
+  if (extendedMesh->N >= elliptic_t::minNFDMOverlap && !serial)
+    overlap = true;
+
   /** create the element lengths, using the most refined level **/
   ElementLengths* lengths = (ElementLengths*) calloc(1,sizeof(ElementLengths));
   compute_element_lengths(lengths, pSolver);
@@ -839,7 +837,6 @@ void MGLevel::build(
   pfloat* casted_Sy = (pfloat*) calloc(Nq_e * Nq_e * Nelements, sizeof(pfloat));
   pfloat* casted_Sz = (pfloat*) calloc(Nq_e * Nq_e * Nelements, sizeof(pfloat));
   pfloat* casted_D = (pfloat*) calloc(Np_e * Nelements, sizeof(pfloat));
-  pfloat* casted_wts = (pfloat*) calloc(N * N * N * Nelements, sizeof(pfloat));
 
   FDMOperators* op = (FDMOperators*) calloc(1, sizeof(FDMOperators));
   gen_operators(op, lengths, elliptic);

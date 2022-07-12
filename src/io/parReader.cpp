@@ -181,6 +181,7 @@ static std::vector<std::string> boomeramgKeys = {
   {"interpolationType"},
   {"smootherType"},
   {"iterations"},
+  {"coarseSmootherType"},
   {"strongThreshold"},
   {"nonGalerkinTol"},
   {"aggressiveCoarseningLevels"},

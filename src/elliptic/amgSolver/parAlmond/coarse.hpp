@@ -47,6 +47,11 @@ public:
   dfloat *xLocal=NULL;
   dfloat *rhsLocal=NULL;
 
+  occa::memory o_rhsBuffer;
+  occa::memory o_xBuffer;
+  pfloat *xBuffer;
+  pfloat *rhsBuffer;
+
   bool gatherLevel;
   ogs_t *ogs;
   dfloat *Gx, *Sx;
@@ -62,17 +67,12 @@ public:
   coarseSolver(setupAide options, MPI_Comm comm);
   ~coarseSolver();
 
-  int getTargetSize();
-
   void setup(parCSR *A);
   void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
 
   void syncToDevice();
 
-  void solve(dfloat *rhs, dfloat *x);
   void solve(occa::memory o_rhs, occa::memory o_x);
-  void gather(occa::memory o_rhs, bool useDevice);
-  void scatter(occa::memory o_x, bool useDevice);
 };
 
 }

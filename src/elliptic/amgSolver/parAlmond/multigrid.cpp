@@ -25,6 +25,7 @@ SOFTWARE.
 */
 
 #include "parAlmond.hpp"
+#include "hypreWrapper.hpp"
 #include <omp.h>
 
 namespace parAlmond {
@@ -39,7 +40,6 @@ void solver_t::kcycle(int k){
   dfloat*   x = level->x;
   dfloat* res = level->res;
 
-  //check for base level
   if(k==baseLevel) {
     if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
       level->smooth(rhs,x,true);
@@ -114,10 +114,7 @@ void solver_t::device_kcycle(int k){
     return;
   }
 
-  //check for base level
   if(k==baseLevel) {
-    //    coarseLevel->solve(o_rhs, o_x);
-
     if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
       level->smooth(o_rhs,o_x,true);
     else
@@ -327,7 +324,17 @@ void solver_t::additiveVcycle()
   occa::memory o_rhs = levels[baseLevel]->o_rhs;
   occa::memory o_x   = levels[baseLevel]->o_x;
 
-  coarseLevel->gather(o_rhs, useDevice);
+  auto rhsBuffer = this->coarseLevel->rhsBuffer;
+  auto xBuffer = this->coarseLevel->xBuffer;
+  auto ogs = this->coarseLevel->ogs;
+
+  auto Gx = this->coarseLevel->Gx;
+  auto Sx = this->coarseLevel->Sx;
+
+  auto N = this->coarseLevel->N;
+
+  o_rhs.copyTo(Sx, ogs->N*sizeof(dfloat));
+
   o_x.getDevice().finish();
   #pragma omp parallel proc_bind(close) num_threads(nThreads)
   {
@@ -335,22 +342,37 @@ void solver_t::additiveVcycle()
     {
       #pragma omp task
       {
+        //printf("Schwarz solve omp thread%d\n", omp_get_thread_num());
         schwarzSolve(this);
       }
       #pragma omp task
       {
-        this->coarseLevel->solve(o_rhs, o_x);
+        //printf("Coarse solve omp thread %d\n", omp_get_thread_num());
+
+        for(int i = 0; i < ogs->N; i++)
+          Sx[i] *= ogs->invDegree[i]; 
+        ogsGather(Gx, Sx, ogsDfloat, ogsAdd, ogs);
+    
+        for(int i = 0; i < N; i++) {
+          rhsBuffer[i] = (pfloat) Gx[i]; 
+          xBuffer[i] = 0; 
+        }
+
+        hypreWrapper::BoomerAMGSolve(rhsBuffer, xBuffer);
+
+        for(int i = 0; i < N; i++)
+          Gx[i] = (dfloat) xBuffer[i];
+
+        ogsScatter(Sx, Gx, ogsDfloat, ogsAdd, ogs);
       }
     }
   }
-  o_x.getDevice().finish();
-  coarseLevel->scatter(o_x, useDevice);
-  o_x.getDevice().finish();
+
+  o_x.copyFrom(Sx, ogs->N*sizeof(dfloat));
 
   {
     prolongateV(this);
   }
-
 }
 
 } //hamespace parAlmond

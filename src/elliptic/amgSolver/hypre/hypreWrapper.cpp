@@ -200,11 +200,19 @@ int __attribute__((visibility("default"))) BoomerAMGSolve(void *b, void *x)
 {
   int err;
 
-  HYPRE_IJVectorSetValues(data->b,data->nRows,NULL,(HYPRE_Real*) b);
-  HYPRE_IJVectorAssemble(data->b);
-
-  HYPRE_IJVectorSetValues(data->x,data->nRows,NULL,(HYPRE_Real*) x);
+#if 1
+  HYPRE_IJVectorUpdateValues(data->x,data->nRows,NULL,(HYPRE_Real*) x, 1);
+#else
+  HYPRE_IJVectorSetValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr());
   HYPRE_IJVectorAssemble(data->x);
+#endif
+
+#if 1
+  HYPRE_IJVectorUpdateValues(data->b,data->nRows,NULL,(HYPRE_Real*) b, 1);
+#else
+  HYPRE_IJVectorSetValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_b.ptr());
+  HYPRE_IJVectorAssemble(data->b);
+#endif
 
   HYPRE_ParVector par_x;
   HYPRE_ParVector par_b;
