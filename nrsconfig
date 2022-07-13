@@ -17,7 +17,7 @@ set -e -a
 : ${OCCA_OPENCL_COMPILER_FLAGS:="-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros"}
 
 : ${OCCA_ENABLE_CUDA:=1}
-: ${OCCA_ENABLE_HIP:=1}
+: ${OCCA_ENABLE_HIP:=0}
 : ${OCCA_ENABLE_OPENCL:=0}
 : ${ENABLE_AMGX:=0}
 : ${ENABLE_CVODE:=1}
@@ -30,7 +30,9 @@ fi
 : ${NEKRS_CFLAGS:="${NEKRS_COMPILER_FLAGS}"}
 : ${NEKRS_FFLAGS:="${NEKRS_COMPILER_FLAGS}"}
 
+CVODE_INSTALL_DIR="${NEKRS_INSTALL_DIR}/cvode"
 mkdir -p ${NEKRS_INSTALL_DIR} > /dev/null 2>&1
+
 NEKRS_INSTALL_DIR=`echo "$(cd "$(dirname "${NEKRS_INSTALL_DIR}")"; pwd)/$(basename "${NEKRS_INSTALL_DIR}")"`
 
 NEKRS_BUILD_DIR=`pwd`/build
@@ -38,6 +40,46 @@ mkdir -p "${NEKRS_BUILD_DIR}" > /dev/null 2>&1
 cd ${NEKRS_BUILD_DIR}
 
 export CUDAHOSTCXX=${NEKRS_CXX}
+
+if [ $ENABLE_CVODE -ne 0 ]; then
+  echo ""        
+  echo "--> Configuring CVODE"
+
+  mkdir -p cvode-build-dir > /dev/null 2>&1
+  cd cvode-build-dir
+  CVODE_INSTALL_DIR=`echo "$(cd "$(dirname "${CVODE_INSTALL_DIR}")"; pwd)/$(basename "${CVODE_INSTALL_DIR}")"`
+  cmake -Wno-dev \
+        -Wfatal-errors \
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
+        -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+        -DCMAKE_Fortran_COMPILER="${NEKRS_FC}" \
+        -DCMAKE_C_COMPILER="${NEKRS_CC}" \
+        -DCMAKE_CXX_COMPILER="${NEKRS_CXX}" \
+        -DCMAKE_Fortran_FLAGS_RELWITHDEBINFO="${NEKRS_FFLAGS}"  \
+        -DCMAKE_C_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
+        -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="${NEKRS_CFLAGS}" \
+        -DCMAKE_INSTALL_PREFIX=${CVODE_INSTALL_DIR} \
+        -DBUILD_STATIC_LIBS=OFF \
+        -DBUILD_TESTING=OFF \
+        -DENABLE_MPI=ON \
+        -DENABLE_CUDA="${OCCA_ENABLE_CUDA}" \
+        -DENABLE_HIP="${OCCA_ENABLE_HIP}" \
+        -DBUILD_CVODE=ON \
+        -DBUILD_ARKODE=OFF \
+        -DBUILD_CVODES=OFF \
+        -DBUILD_IDA=OFF \
+        -DBUILD_IDAS=OFF \
+        -DBUILD_KINSOL=OFF \
+        ../../3rd_party/cvode
+
+  echo "--> Compiling CVODE"
+
+  make install
+
+  echo "--> Done. Configuring nekRS..."
+
+  cd ../
+fi
 
 cmake -Wno-dev \
       -Wfatal-errors \
