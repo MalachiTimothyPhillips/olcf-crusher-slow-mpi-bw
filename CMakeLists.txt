@@ -279,6 +279,7 @@ target_include_directories(nekrs-lib
   src/navierStokes
   src/cds
   src/postProcessing
+  src/solvers/cvode
   ${BENCH_SOURCE_DIR}
   ${BENCH_SOURCE_DIR}/core
   ${BENCH_SOURCE_DIR}/fdm

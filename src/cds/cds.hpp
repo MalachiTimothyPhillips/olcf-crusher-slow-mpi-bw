@@ -25,7 +25,7 @@ struct cds_t
   mesh_t* meshV;
   elliptic_t* solver[NSCALAR_MAX];
 
-  cvodeSolver_t* cvodeSolver;
+  cvode::cvodeSolver_t* cvodeSolver;
 
   int NVfields;            // Number of velocity fields
   int NSfields;            // Number of scalar fields

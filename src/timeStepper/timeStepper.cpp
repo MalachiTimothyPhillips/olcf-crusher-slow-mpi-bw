@@ -326,7 +326,7 @@ void step(nrs_t *nrs, dfloat time, dfloat dt, int tstep)
     applyDirichlet(nrs, timeNew);
     
     if (nrs->Nscalar)
-      scalarSolve(nrs, time, timeNew, cds->o_S, iter);
+      scalarSolve(nrs, time, timeNew, cds->o_S, iter, tstep);
 
     evaluateProperties(nrs, timeNew);
 
@@ -537,7 +537,7 @@ void makeq(
   }
 }
 
-void scalarSolve(nrs_t *nrs, dfloat tn, dfloat time, occa::memory o_S, int stage) {
+void scalarSolve(nrs_t *nrs, dfloat tn, dfloat time, occa::memory o_S, int stage, int tstep) {
   cds_t *cds = nrs->cds;
 
   platform->timer.tic("scalarSolve", 1);

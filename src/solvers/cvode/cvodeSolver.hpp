@@ -37,8 +37,8 @@ public:
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
   void printFinalStats() const;
 
-  bool setJacobianEvaluation() { jacEval = true; }
-  bool unsetJacobianEvaluation() { jacEval = false; }
+  void setJacobianEvaluation() { jacEval = true; }
+  void unsetJacobianEvaluation() { jacEval = false; }
   bool jacobianEvaluation() const { return jacEval; }
 
   int timeStep() const { return tstep; }
