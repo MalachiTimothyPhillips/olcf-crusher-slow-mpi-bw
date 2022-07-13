@@ -85,7 +85,7 @@ int check_retval(void* returnvalue, const char* funcname, int opt)
 
 namespace cvode {
 
-cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
+cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
 {
 #ifdef ENABLE_CVODE
   auto cds = nrs->cds;
@@ -687,7 +687,11 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 
   this->tnekRS = t0;
 
+  double t;
+
   // call cvode solver
+  int retval = 0;
+  retval = CVode(cvodeMem, t1, cvodeY, &t, CV_NORMAL);
 
   unpack(nrs, o_cvodeY, nrs->cds->o_S);
 

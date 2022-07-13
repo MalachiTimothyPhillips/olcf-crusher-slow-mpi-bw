@@ -17,7 +17,6 @@
 class nrs_t;
 namespace cvode {
 
-struct Parameters_t {};
 class cvodeSolver_t{
 public:
 
@@ -27,7 +26,7 @@ public:
   using userUnpack_t = std::function<void(nrs_t*, occa::memory o_y, occa::memory o_field)>;
   using userLocalPointSource_t = std::function<void(nrs_t* nrs, occa::memory o_y, occa::memory o_ydot)>;
 
-  cvodeSolver_t(nrs_t* nrs, const Parameters_t & params);
+  cvodeSolver_t(nrs_t* nrs);
 
   void solve(nrs_t *nrs, dfloat t0, dfloat t1, int tstep);
 
@@ -94,9 +93,6 @@ private:
   userUnpack_t userUnpack;
 
   void makeq(nrs_t* nrs, dfloat time);
-
-  void setup(nrs_t* nrs, const Parameters_t & params);
-  void reallocBuffer(dlong Nbytes);
 
   static constexpr int maxExtrapolationOrder = 3;
   std::array<dfloat, maxExtrapolationOrder> coeffBDF;
