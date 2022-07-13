@@ -8,8 +8,11 @@
 #include <map>
 #include <vector>
 #include <tuple>
-#include <cvode/cvode.h>
 #include <memory>
+
+#ifdef ENABLE_CVODE
+#include <cvode/cvode.h>
+#endif
 
 class nrs_t;
 namespace cvode {
@@ -131,7 +134,9 @@ private:
 
   // cvode internals
   void * cvodeMem;
+#ifdef ENABLE_CVODE
   N_Vector cvodeY;
+#endif
 
 };
 } // namespace cvode

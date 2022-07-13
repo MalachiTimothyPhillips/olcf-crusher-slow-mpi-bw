@@ -218,6 +218,7 @@ set(SRC
     src/core/flopCounter.cpp
     src/core/kernelRequestManager.cpp
     src/solvers/cvode/registerCvodeKernels.cpp
+    src/solvers/cvode/cvodeSolver.cpp
     src/core/device.cpp
     src/linAlg/linAlg.cpp
     src/linAlg/matrixConditionNumber.cpp
@@ -241,12 +242,6 @@ set(SRC
     ${BLASLAPACK_SOURCES}
     ${OGS_SOURCES}
 )
-
-if(ENABLE_CVODE)
-  set(SRC
-      ${SRC}
-      src/solvers/cvode/cvodeSolver.cpp)
-endif()
 
 set_property(
    SOURCE src/core/printHeader.cpp 

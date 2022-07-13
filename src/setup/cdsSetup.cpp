@@ -98,6 +98,8 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
   cds->o_relUrst = nrs->o_relUrst;
   cds->o_Urst = nrs->o_Urst;
 
+  bool anyCvodeSolver = false;
+
   for (int is = 0; is < cds->NSfields; is++) {
     const int scalarWidth = getDigitsRepresentation(NSCALAR_MAX - 1);
     std::stringstream ss;
@@ -109,6 +111,8 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
       cds->compute[is] = 0;
       continue;
     }
+    cds->cvodeSolve[is] = options.compareArgs("SCALAR" + sid + " SOLVER", "CVODE");
+    anyCvodeSolver |= cds->cvodeSolve[is];
 
     mesh_t *mesh;
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0]; // only first scalar can be a CHT mesh
@@ -243,6 +247,9 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
       kernelName = "subCycleInitU0";
       cds->subCycleInitU0Kernel = platform->kernels.get(section + kernelName);
     }
+  }
+
+  if(anyCvodeSolver){
   }
 
   return cds;

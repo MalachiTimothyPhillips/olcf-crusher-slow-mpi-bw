@@ -11,6 +11,7 @@
 #include "plugins/lowMach.hpp"
 #include "nekrs.hpp"
 
+#ifdef ENABLE_CVODE
 // cvode includes
 #include <sunlinsol/sunlinsol_spgmr.h>
 #include <sundials/sundials_types.h>
@@ -24,6 +25,7 @@
 #ifdef ENABLE_HIP
 #include <nvector/nvector_hip.h>
 #endif
+#endif
 
 namespace{
 void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
@@ -32,6 +34,7 @@ void computeInvLMMLMM(mesh_t* mesh, occa::memory& o_invLMMLMM)
   platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_invLMMLMM);
 }
 
+#ifdef ENABLE_CVODE
 sunrealtype* __N_VGetDeviceArrayPointer(N_Vector u) 
 { 
   bool useDevice = false;
@@ -46,6 +49,7 @@ sunrealtype* __N_VGetDeviceArrayPointer(N_Vector u)
     return N_VGetArrayPointer_Serial(u);
   }
 }
+#endif
 
 int check_retval(void* returnvalue, const char* funcname, int opt)
 {
@@ -83,6 +87,7 @@ namespace cvode {
 
 cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
 {
+#ifdef ENABLE_CVODE
   auto cds = nrs->cds;
 
   o_coeffExt = platform->device.malloc(maxExtrapolationOrder * sizeof(dfloat));
@@ -276,6 +281,7 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs, const Parameters_t & params)
   retval = CVodeSetUserData(this->cvodeMem, userdata.get());
   if(check_retval(&retval, "CVodeSetUserData", 1)) MPI_Abort(platform->comm.mpiComm, 1);
 
+#endif
 }
 
 void cvodeSolver_t::setupEToLMapping(nrs_t *nrs)
@@ -656,6 +662,7 @@ void cvodeSolver_t::unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field)
 
 void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
+#ifdef ENABLE_CVODE
   mesh_t *mesh = nrs->meshV;
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];
@@ -699,10 +706,12 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   }
 
   computeUrst(nrs, false);
+#endif
 }
 
 void cvodeSolver_t::printFinalStats() const
 {
+#ifdef ENABLE_CVODE
   auto cvodeMem = this->cvodeMem;
 
   long lenrw, leniw;
@@ -751,6 +760,6 @@ void cvodeSolver_t::printFinalStats() const
     printf("netf    = %5ld     ncfn    = %5ld     ncfl    = %5ld\n", netf, ncfn, ncfl);
   }
 
-  return;
+#endif
 }
 } // namespace cvode
