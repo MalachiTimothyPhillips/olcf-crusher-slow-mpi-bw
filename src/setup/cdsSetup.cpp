@@ -251,6 +251,8 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
     }
   }
 
+  nrs->cds = cds;
+
   // currently, use only a single cvode solver for all scalars using cvode
   cds->cvodeSolver = nullptr;
   if(anyCvodeSolver){

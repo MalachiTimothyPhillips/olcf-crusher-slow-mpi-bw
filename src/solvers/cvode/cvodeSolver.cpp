@@ -281,6 +281,10 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   retval = CVodeSetUserData(this->cvodeMem, userdata.get());
   if(check_retval(&retval, "CVodeSetUserData", 1)) MPI_Abort(platform->comm.mpiComm, 1);
 
+  o_cvodeY = platform->device.occaDevice().wrapMemory<sunrealtype>(
+    __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(cvodeY)),
+    this->numEquations());
+
 #endif
 }
 
@@ -680,8 +684,6 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
     o_xyz0.copyFrom(mesh->o_z, mesh->Nlocal * sizeof(dfloat), (2 * sizeof(dfloat)) * nrs->fieldOffset, 0);
 
   }
-
-  occa::memory o_cvodeY;
 
   pack(nrs, nrs->cds->o_S, o_cvodeY);
 

@@ -133,6 +133,7 @@ private:
 #ifdef ENABLE_CVODE
   N_Vector cvodeY;
 #endif
+  occa::memory o_cvodeY;
 
 };
 } // namespace cvode
