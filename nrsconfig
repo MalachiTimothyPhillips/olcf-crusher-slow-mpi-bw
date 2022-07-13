@@ -20,7 +20,7 @@ set -e -a
 : ${OCCA_ENABLE_HIP:=1}
 : ${OCCA_ENABLE_OPENCL:=0}
 : ${ENABLE_AMGX:=0}
-: ${ENABLE_CVODE:=0}
+: ${ENABLE_CVODE:=1}
 
 if uname -a | grep 'ppc64'; then
   NEKRS_COMPILER_FLAGS=$(echo "$NEKRS_COMPILER_FLAGS" | sed -e "s/march/mcpu/g")
