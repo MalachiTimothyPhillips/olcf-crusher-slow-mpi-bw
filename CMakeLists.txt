@@ -146,11 +146,25 @@ if(ENABLE_CUDA AND ENABLE_AMGX)
 endif()
 
 ###############################################################################
-# Build CVODE
+# CVODE
 ###############################################################################
 
-if(ENABLE_CVODE)
-  add_subdirectory(3rd_party/cvode)
+if (CVODE_INSTALL_DIR AND ENABLE_CVODE)
+  find_package(SUNDIALS PATHS "${CVODE_INSTALL_DIR}" NO_DEFAULT_PATH)
+  if (TARGET SUNDIALS::cvode_shared)
+    message("-- Found SUNDIALS: " "${CVODE_INSTALL_DIR}")
+    set(ENABLE_SUNDIALS ON)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH};${CVODE_INSTALL_DIR}/lib")
+    set_target_properties(SUNDIALS::cvode_shared PROPERTIES IMPORTED_NO_SONAME FALSE)
+    set_target_properties(SUNDIALS::nvecmpiplusx_shared PROPERTIES IMPORTED_NO_SONAME FALSE)
+    set_target_properties(SUNDIALS::nvecserial_shared PROPERTIES IMPORTED_NO_SONAME FALSE)
+    if (ENABLE_CUDA)
+      set_target_properties(SUNDIALS::nveccuda_shared PROPERTIES IMPORTED_NO_SONAME FALSE)
+    endif()
+    if (ENABLE_HIP)
+      set_target_properties(SUNDIALS::nvechip_shared PROPERTIES IMPORTED_NO_SONAME FALSE)
+    endif()
+  endif()
 endif()
 
 ###############################################################################
@@ -303,19 +317,16 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
-if(ENABLE_CVODE)
-  target_compile_definitions(nekrs-lib PUBLIC -DENABLE_CVODE)
-  target_link_libraries(nekrs-lib PRIVATE SUNDIALS::cvode_shared SUNDIALS::nvecmpiplusx_shared SUNDIALS::nvecserial_shared)
-  
-  if(ENABLE_CUDA)
-    target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nveccuda_shared)
+if (ENABLE_SUNDIALS)
+  target_link_libraries (nekrs-bin PRIVATE SUNDIALS::cvode_shared SUNDIALS::nvecmpiplusx_shared SUNDIALS::nvecserial_shared)
+  if (ENABLE_CUDA)
+    target_link_libraries (nekrs-bin PRIVATE SUNDIALS::nveccuda_shared)
+    add_definitions(-DENABLE_CUDA)
   endif()
-  
-  if(ENABLE_HIP)
-    target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nvechip_shared)
+  if (ENABLE_HIP)
+    target_link_libraries (nekrs-bin PRIVATE SUNDIALS::nvechip_shared)
+    add_definitions(-DENABLE_HIP)
   endif()
-  
-  target_include_directories(nekrs-lib PUBLIC 3rd_party/cvode/include)
 endif()
 
 add_executable(nekrs-bin src/main.cpp)

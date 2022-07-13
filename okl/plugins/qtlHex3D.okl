@@ -23,7 +23,6 @@
    SOFTWARE.
 
  */
-#include <stdio.h>
 @kernel void qtlHex3D(const dlong Nelements,
                          @restrict const dfloat*  vgeo,
                          @restrict const dfloat*  D,
