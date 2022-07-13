@@ -66,6 +66,9 @@ cmake -Wno-dev \
       -DBUILD_IDA=OFF \
       -DBUILD_IDAS=OFF \
       -DBUILD_KINSOL=OFF \
+      -DBUILD_STATIC_LIBS=OFF \
+      -DENABLE_MPI=ON \
+      -DBUILD_TESTING=OFF \
       .. 
 
 if [ $? -eq 0 ]; then
