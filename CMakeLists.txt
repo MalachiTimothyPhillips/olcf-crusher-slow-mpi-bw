@@ -149,7 +149,9 @@ endif()
 # Build CVODE
 ###############################################################################
 
-add_subdirectory(3rd_party/cvode)
+if(ENABLE_CVODE)
+  add_subdirectory(3rd_party/cvode)
+endif()
 
 ###############################################################################
 # Build HYPRE
@@ -215,9 +217,8 @@ set(SRC
     src/core/platform.cpp
     src/core/flopCounter.cpp
     src/core/kernelRequestManager.cpp
-    src/core/device.cpp
-    src/solvers/cvode/cvodeSolver.cpp
     src/solvers/cvode/registerCvodeKernels.cpp
+    src/core/device.cpp
     src/linAlg/linAlg.cpp
     src/linAlg/matrixConditionNumber.cpp
     src/linAlg/matrixInverse.cpp
@@ -240,6 +241,12 @@ set(SRC
     ${BLASLAPACK_SOURCES}
     ${OGS_SOURCES}
 )
+
+if(ENABLE_CVODE)
+  set(SRC
+      ${SRC}
+      src/solvers/cvode/cvodeSolver.cpp)
+endif()
 
 set_property(
    SOURCE src/core/printHeader.cpp 
@@ -300,17 +307,20 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
-target_link_libraries(nekrs-lib PRIVATE SUNDIALS::cvode_shared SUNDIALS::nvecmpiplusx_shared SUNDIALS::nvecserial_shared)
-
-if(ENABLE_CUDA)
-  target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nveccuda_shared)
+if(ENABLE_CVODE)
+  target_compile_definitions(nekrs-lib PUBLIC -DENABLE_CVODE)
+  target_link_libraries(nekrs-lib PRIVATE SUNDIALS::cvode_shared SUNDIALS::nvecmpiplusx_shared SUNDIALS::nvecserial_shared)
+  
+  if(ENABLE_CUDA)
+    target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nveccuda_shared)
+  endif()
+  
+  if(ENABLE_HIP)
+    target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nvechip_shared)
+  endif()
+  
+  target_include_directories(nekrs-lib PUBLIC 3rd_party/cvode/include)
 endif()
-
-if(ENABLE_HIP)
-  target_link_libraries(nekrs-lib PRIVATE SUNDIALS::nvechip_shared)
-endif()
-
-target_include_directories(nekrs-lib PUBLIC 3rd_party/cvode/include)
 
 add_executable(nekrs-bin src/main.cpp)
 target_include_directories(nekrs-bin PRIVATE src/lib)

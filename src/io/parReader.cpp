@@ -2228,6 +2228,9 @@ setupAide parRead(void *ppar, std::string setupFile, MPI_Comm comm) {
 
   // cvode solver
   if (par->sections.count("cvode")) {
+#ifndef ENABLE_CVODE
+    append_error("ERROR: CVODE not enabled! Recompile with CVODE support!\n");
+#endif
     parseCvodeSolver(rank, options, par);
   }
 

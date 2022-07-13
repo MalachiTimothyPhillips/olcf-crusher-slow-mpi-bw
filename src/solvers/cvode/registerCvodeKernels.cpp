@@ -2,7 +2,7 @@
 #include "nrs.hpp"
 
 void registerCvodeKernels(occa::properties kernelInfoBC){
-
+#ifdef ENABLE_CVODE
   std::string kernelName, fileName;
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -27,4 +27,5 @@ void registerCvodeKernels(occa::properties kernelInfoBC){
   kernelName = "unpack";
   fileName = oklpath + "cvode/" + kernelName + ".okl";
   platform->kernels.add(kernelName, fileName, platform->kernelInfo);
+#endif
 }

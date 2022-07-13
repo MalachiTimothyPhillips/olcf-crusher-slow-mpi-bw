@@ -20,6 +20,7 @@ set -e -a
 : ${OCCA_ENABLE_HIP:=1}
 : ${OCCA_ENABLE_OPENCL:=0}
 : ${ENABLE_AMGX:=0}
+: ${ENABLE_CVODE:=0}
 
 if uname -a | grep 'ppc64'; then
   NEKRS_COMPILER_FLAGS=$(echo "$NEKRS_COMPILER_FLAGS" | sed -e "s/march/mcpu/g")
@@ -59,6 +60,7 @@ cmake -Wno-dev \
       -DENABLE_OPENCL="${OCCA_ENABLE_OPENCL}" \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
       -DENABLE_AMGX="${ENABLE_AMGX}" \
+      -DENABLE_CVODE="${ENABLE_CVODE}" \
       .. 
 
 if [ $? -eq 0 ]; then
