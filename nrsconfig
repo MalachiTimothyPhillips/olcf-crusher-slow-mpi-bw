@@ -61,6 +61,11 @@ cmake -Wno-dev \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
       -DENABLE_AMGX="${ENABLE_AMGX}" \
       -DENABLE_CVODE="${ENABLE_CVODE}" \
+      -DBUILD_ARKODE=OFF \
+      -DBUILD_CVODES=OFF \
+      -DBUILD_IDA=OFF \
+      -DBUILD_IDAS=OFF \
+      -DBUILD_KINSOL=OFF \
       .. 
 
 if [ $? -eq 0 ]; then
