@@ -9,9 +9,12 @@
 #include "nrssys.hpp"
 #include "mesh3D.h"
 #include "elliptic.h"
-#include "cvodeSolver.hpp"
 
 #define NSCALAR_MAX 100
+
+namespace cvode{
+class cvodeSolver_t;
+}
 
 struct cds_t
 {

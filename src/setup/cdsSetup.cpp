@@ -1,3 +1,5 @@
+#include "cvodeSolver.hpp"
+
 cds_t *cdsSetup(nrs_t *nrs, setupAide options)
 {
   const std::string section = "cds-";

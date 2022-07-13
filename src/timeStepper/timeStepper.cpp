@@ -14,6 +14,7 @@
 #include "bcMap.hpp"
 #include "bdry.hpp"
 #include "Urst.hpp"
+#include "cvodeSolver.hpp"
 
 void evaluateProperties(nrs_t *nrs, const double timeNew) {
   platform->timer.tic("udfProperties", 1);
