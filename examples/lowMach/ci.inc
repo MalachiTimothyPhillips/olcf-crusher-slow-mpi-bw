@@ -20,7 +20,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("PRESSURE SOLVER TOLERANCE", std::string("1e-08"));
-  options.setArgs("SCALAR01 SOLVER TOLERANCE", std::string("1e-12"));
+  options.setArgs("SCALAR00 SOLVER TOLERANCE", std::string("1e-12"));
 
   // set up CVODE solver details
   if(ciMode == 3){
@@ -41,7 +41,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("CVODE ABSOLUTE TOLERANCE", "1e-12");
     options.setArgs("CVODE GMR VECTORS", "20");
 
-    options.setArgs("SCALAR01 SOLVER", "CVODE");
+    options.setArgs("SCALAR00 SOLVER", "CVODE");
 
   }
 }
@@ -70,9 +70,9 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     case 2: vxErr = abs((err[0] - 2.19E-05)/err[0]);
             prErr = abs((err[1] - 3.22E-03)/err[1]);
             sErr  = abs((err[2] - 1.05E-06)/err[2]);
-    case 3: vxErr = abs((err[0] - 2.19E-05)/err[0]);
-            prErr = abs((err[1] - 3.22E-03)/err[1]);
-            sErr  = abs((err[2] - 9.90E-08)/err[2]);
+    case 3: vxErr = abs((err[0] - 1.59E-05)/err[0]);
+            prErr = abs((err[1] - 3.19E-03)/err[1]);
+            sErr  = abs((err[2] - 3.08E-07)/err[2]);
             break;
   }
 

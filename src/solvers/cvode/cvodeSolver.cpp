@@ -159,7 +159,6 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   // wrap RHS function into type expected by CVODE
   CVRhsFn cvodeRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
   {
-    //std::cout << "Evaluating rhs at time = " << time << "\n";
 
     auto data = static_cast<userData_t*>(user_data);
     auto nrs = data->nrs;
@@ -181,7 +180,6 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
 
   CVRhsFn cvodeJtvRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
   {
-    //std::cout << "Evaluating JtvRHS at time = " << time << "\n";
 
     auto data = static_cast<userData_t*>(user_data);
     auto nrs = data->nrs;
@@ -240,7 +238,6 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
 
   auto integrator = CV_BDF;
   if(platform->options.compareArgs("CVODE INTEGRATOR", "ADAMS")){
-    std::cout << "Using adams as integrator\n";
     integrator = CV_ADAMS;
   }
 
@@ -397,20 +394,15 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
   auto * cds = nrs->cds;
 
   if (time != tprev) {
-    std::cout << "Evaluating at new time t = " << time << "\n";
-    std::cout << "Previous time = " << tprev << "\n";
     tprev = time;
 
     const auto cvodeDt = time - t0;
-    std::cout << "cvodeDt = " << cvodeDt << "\n";
     dtCvode[0] = cvodeDt;
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
     const int bdfOrder = std::min(tstep, nrs->nBDF);
     const int extOrder = std::min(tstep, nrs->nEXT);
-    //std::cout << "bdfOrder = " << bdfOrder << "\n";
-    //std::cout << "extOrder = " << extOrder << "\n";
     nek::extCoeff(coeffEXT.data(), dtCvode.data(), extOrder, bdfOrder);
     nek::bdfCoeff(&this->g0, coeffBDF.data(), dtCvode.data(), bdfOrder);
     for (int i = nrs->nEXT; i > extOrder; i--){
@@ -500,8 +492,6 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
 
     lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
     const auto gamma0 = lowMach::gamma();
-
-    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
 
     // RHS += 1/vtrans * dp0thdt * (gamma-1)/gamma
     platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
@@ -739,13 +729,10 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   this->tstep = tstep;
 
   double t;
-  std::cout << "Integrating from t = " << t0 << " to t = " << t1 << "\n";
 
   // call cvode solver
   int retval = 0;
   retval = CVode(cvodeMem, t1, cvodeY, &t, CV_NORMAL);
-
-  std::cout << "Reached t = " << t << "\n";
 
   unpack(nrs, o_cvodeY, nrs->cds->o_S);
 
