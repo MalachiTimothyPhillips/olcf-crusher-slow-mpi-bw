@@ -50,6 +50,28 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("MESH SOLVER TOLERANCE", "1e-12");
     platform->par->set("casedata", "p_rot", 0.5);
   }
+  if(ciMode == 7){
+    // cvode
+    options.setArgs("CVODE INTEGRATOR", "ADAMS");
+    options.setArgs("CVODE MAX TIMESTEPPER ORDER", "3");
+    options.setArgs("CVODE EPS LIN", "0.05");
+
+    double dt0;
+    options.getArgs("DT", dt0);
+
+    const auto hmax = 3 * dt0;
+    options.setArgs("CVODE HMAX", to_string_f(hmax));
+
+    const auto maxSteps = 10000;
+    options.setArgs("CVODE MAX STEPS", std::to_string(maxSteps));
+
+    options.setArgs("CVODE RELATIVE TOLERANCE", "1e-08");
+    options.setArgs("CVODE ABSOLUTE TOLERANCE", "1e-12");
+    options.setArgs("CVODE GMR VECTORS", "20");
+
+    options.setArgs("SCALAR00 SOLVER", "CVODE");
+
+  }
 }
 
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
@@ -122,6 +144,16 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     expectedErr[3] = 0.21E-05;
     expectedErr[4] = 0.2465620E-05;
     expectedErr[5] = 0.108E-05;
+    expectedPIter = 6;
+  }
+  if(ciMode == 7)
+  {
+    expectedErr[0] = 0.2465620E-06;
+    expectedErr[1] = 0.6938894E-16;
+    expectedErr[2] = 0.3E-05;
+    expectedErr[3] = 0.21E-05;
+    expectedErr[4] = 0.2465620E-05;
+    expectedErr[5] = 0.878E-05;
     expectedPIter = 6;
   }
 
