@@ -228,6 +228,13 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
     this->nEqTotal = N_VGetLength(this->cvodeY);
   }
 
+  o_cvodeY = platform->device.occaDevice().wrapMemory<sunrealtype>(
+    __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(cvodeY)),
+    this->numEquations());
+
+  // set initial condition
+  pack(nrs, nrs->cds->o_S, o_cvodeY);
+
   this->cvodeMem = CVodeCreate(CV_BDF, sunctx);
 
   const auto T0 = nekrs::startTime();
@@ -282,10 +289,6 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   // set user data as
   retval = CVodeSetUserData(this->cvodeMem, userdata.get());
   if(check_retval(&retval, "CVodeSetUserData", 1)) MPI_Abort(platform->comm.mpiComm, 1);
-
-  o_cvodeY = platform->device.occaDevice().wrapMemory<sunrealtype>(
-    __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(cvodeY)),
-    this->numEquations());
 
 #else
   if(platform->comm.mpiRank == 0){
@@ -675,7 +678,6 @@ void cvodeSolver_t::unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field)
 void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
 #ifdef ENABLE_CVODE
-  std::cout << "Calling cvodeSolver_t::solve\n";
   mesh_t *mesh = nrs->meshV;
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];
@@ -699,10 +701,13 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   this->tnekRS = t0;
 
   double t;
+  std::cout << "Integrating from t = " << t0 << " to t = " << t1 < "\n";
 
   // call cvode solver
   int retval = 0;
   retval = CVode(cvodeMem, t1, cvodeY, &t, CV_NORMAL);
+
+  std::cout << "Reached t = " << t << "\n";
 
   unpack(nrs, o_cvodeY, nrs->cds->o_S);
 
