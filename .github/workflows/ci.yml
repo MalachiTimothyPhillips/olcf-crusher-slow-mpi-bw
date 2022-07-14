@@ -156,6 +156,14 @@ jobs:
       working-directory: ${{ env.NEKRS_EXAMPLES }}/lowMach
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi lowMach 2 --cimode 1
 
+    - name: 'lowMach, subcycling'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/lowMach
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi lowMach 2 --cimode 1
+
+    - name: 'lowMach, subcycling, CVODE'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/lowMach
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi lowMach 2 --cimode 3
+
 
   mv_cyl:
     needs: install
@@ -205,6 +213,10 @@ jobs:
     #  working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
     #  run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 --cimode 6
 
+    - name: 'mv_cyl, CVODE'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl 2 --cimode 7
+
     - name: 'mv_cyl, derived bc'
       working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
       run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl_derived_bc 2 --cimode 1
@@ -229,6 +241,10 @@ jobs:
     #- name: 'mv_cyl + unaligned SYM + mesh solver, derived bc'
     #  working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
     #  run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl_derived_bc 2 --cimode 6
+
+    - name: 'mv_cyl, derived bc, CVODE'
+      working-directory: ${{ env.NEKRS_EXAMPLES }}/mv_cyl
+      run: ${{ env.NEKRS_HOME }}/bin/nrsmpi mv_cyl_derived_bc 2 --cimode 7
 
 
   conj_ht:
