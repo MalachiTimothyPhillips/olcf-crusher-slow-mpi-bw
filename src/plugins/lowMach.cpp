@@ -183,19 +183,20 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
       Saqpq += coeff[i] * nrs->p0th[i];
     }
 
-    // only lag when not inside CVODE evaluation
-    if(!insideCVODE){
-      nrs->p0th[2] = nrs->p0th[1];
-      nrs->p0th[1] = nrs->p0th[0];
-    }
-
     const auto g0 = args ? args->g0 : nrs->g0;
     const auto dt = args ? args->dt : nrs->dt[0];
 
     const auto pcoef = (g0 - dt * prhs);
 
-    nrs->p0th[0] = Saqpq / pcoef;
-    nrs->dp0thdt = prhs * nrs->p0th[0];
+    const auto p0thn = Saqpq / pcoef;
+    // only lag when not inside CVODE evaluation
+    if(!insideCVODE){
+      nrs->p0th[2] = nrs->p0th[1];
+      nrs->p0th[1] = nrs->p0th[0];
+      nrs->p0th[0] = p0thn;
+    }
+
+    nrs->dp0thdt = prhs * p0thn;
 
     surfaceFlops += surfaceFluxFlops + p0thHelperFlops;
   }

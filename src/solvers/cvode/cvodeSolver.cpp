@@ -10,6 +10,7 @@
 #include "timeStepper.hpp"
 #include "plugins/lowMach.hpp"
 #include "nekrs.hpp"
+#include "bdry.hpp"
 
 #ifdef ENABLE_CVODE
 // cvode includes
