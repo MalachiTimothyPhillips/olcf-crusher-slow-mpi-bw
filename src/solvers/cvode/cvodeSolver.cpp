@@ -158,6 +158,8 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   // wrap RHS function into type expected by CVODE
   CVRhsFn cvodeRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
   {
+    std::cout << "Doing RHS evaluation!\n";
+
     auto data = static_cast<userData_t*>(user_data);
     auto nrs = data->nrs;
     auto platform = data->platform;
@@ -285,6 +287,12 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
     __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(cvodeY)),
     this->numEquations());
 
+#else
+  if(platform->comm.mpiRank == 0){
+    std::cout << "No cvode installation found. Bailing...\n";
+  }
+  ABORT(1);
+  
 #endif
 }
 
@@ -667,6 +675,7 @@ void cvodeSolver_t::unpack(nrs_t * nrs, occa::memory o_y, occa::memory o_field)
 void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 {
 #ifdef ENABLE_CVODE
+  std::cout << "Calling cvodeSolver_t::solve\n";
   mesh_t *mesh = nrs->meshV;
   if (nrs->cht)
     mesh = nrs->cds->mesh[0];

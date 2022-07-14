@@ -232,6 +232,7 @@ static std::vector<std::string> validSections = {
     {"mesh"},
     {"scalar"},
     {"casedata"},
+    {"cvode"},
 };
 
 void convertToLowerCase(std::vector<std::string>& stringVec)
@@ -250,6 +251,7 @@ void makeStringsLowerCase()
   convertToLowerCase(meshKeys);
   convertToLowerCase(temperatureKeys);
   convertToLowerCase(scalarKeys);
+  convertToLowerCase(cvodeKeys);
   convertToLowerCase(deprecatedKeys);
   convertToLowerCase(amgxKeys);
   convertToLowerCase(boomeramgKeys);

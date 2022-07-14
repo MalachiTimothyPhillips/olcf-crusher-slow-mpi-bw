@@ -61,20 +61,21 @@ if [ $ENABLE_CVODE -ne 0 ]; then
         -DCMAKE_INSTALL_PREFIX=${CVODE_INSTALL_DIR} \
         -DBUILD_STATIC_LIBS=OFF \
         -DBUILD_TESTING=OFF \
+        -DEXAMPLES_ENABLE_C=OFF \
         -DENABLE_MPI=ON \
-        -DENABLE_CUDA="${OCCA_ENABLE_CUDA}" \
-        -DENABLE_HIP="${OCCA_ENABLE_HIP}" \
+        -DENABLE_CUDA=ON \
         -DBUILD_CVODE=ON \
         -DBUILD_ARKODE=OFF \
         -DBUILD_CVODES=OFF \
         -DBUILD_IDA=OFF \
         -DBUILD_IDAS=OFF \
         -DBUILD_KINSOL=OFF \
+        -DEXAMPLES_INSTALL=OFF \
         ../../3rd_party/cvode
 
   echo "--> Compiling CVODE"
 
-  make install
+  make install -j 12
 
   echo "--> Done. Configuring nekRS..."
 
@@ -103,13 +104,7 @@ cmake -Wno-dev \
       -DGPU_MPI="${NEKRS_GPU_MPI}" \
       -DENABLE_AMGX="${ENABLE_AMGX}" \
       -DENABLE_CVODE="${ENABLE_CVODE}" \
-      -DBUILD_ARKODE=OFF \
-      -DBUILD_CVODES=OFF \
-      -DBUILD_IDA=OFF \
-      -DBUILD_IDAS=OFF \
-      -DBUILD_KINSOL=OFF \
-      -DENABLE_MPI=ON \
-      -DBUILD_TESTING=OFF \
+      -DCVODE_INSTALL_DIR=${CVODE_INSTALL_DIR} \
       .. 
 
 if [ $? -eq 0 ]; then
