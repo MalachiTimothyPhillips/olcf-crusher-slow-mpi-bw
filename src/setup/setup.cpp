@@ -574,6 +574,15 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
   nek::ocopyToNek(startTime, 0);
 
+  // setup cvode solver
+  // currently, use only a single cvode solver for all scalars using cvode
+  if(nrs->Nscalar){
+    cds_t *cds = nrs->cds;
+    if(cds->anyCvodeSolver){
+      cds->cvodeSolver = new cvode::cvodeSolver_t(nrs);
+    }
+  }
+
   // setup elliptic solvers
 
   if (nrs->Nscalar) {

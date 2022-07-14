@@ -501,6 +501,8 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
     lowMach::qThermalIdealGasSingleComponent(time, nrs->o_div, &args);
     const auto gamma0 = lowMach::gamma();
 
+    std::cout << "dp0thdt = " << nrs->dp0thdt << "\n";
+
     // RHS += 1/vtrans * dp0thdt * (gamma-1)/gamma
     platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
     platform->linAlg->ady(mesh->Nlocal, nrs->dp0thdt * (gamma0-1.0)/gamma0, platform->o_mempool.slice0);

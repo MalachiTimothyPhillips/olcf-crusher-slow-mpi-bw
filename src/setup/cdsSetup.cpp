@@ -100,7 +100,7 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
   cds->o_relUrst = nrs->o_relUrst;
   cds->o_Urst = nrs->o_Urst;
 
-  bool anyCvodeSolver = false;
+  cds->anyCvodeSolver = false;
 
   for (int is = 0; is < cds->NSfields; is++) {
     const int scalarWidth = getDigitsRepresentation(NSCALAR_MAX - 1);
@@ -114,7 +114,7 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
       continue;
     }
     cds->cvodeSolve[is] = options.compareArgs("SCALAR" + sid + " SOLVER", "CVODE");
-    anyCvodeSolver |= cds->cvodeSolve[is];
+    cds->anyCvodeSolver |= cds->cvodeSolve[is];
 
     mesh_t *mesh;
     (is) ? mesh = cds->meshV : mesh = cds->mesh[0]; // only first scalar can be a CHT mesh
@@ -251,13 +251,7 @@ cds_t *cdsSetup(nrs_t *nrs, setupAide options)
     }
   }
 
-  nrs->cds = cds;
-
-  // currently, use only a single cvode solver for all scalars using cvode
   cds->cvodeSolver = nullptr;
-  if(anyCvodeSolver){
-    cds->cvodeSolver = new cvode::cvodeSolver_t(nrs);
-  }
 
   return cds;
 }
