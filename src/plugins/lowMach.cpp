@@ -93,13 +93,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     cds->o_S,
     platform->o_mempool.slice0);
 
-  auto o_gradSx = platform->o_mempool.slice0 + (0 * sizeof(dfloat)) * nrs->fieldOffset;
-  auto o_gradSy = platform->o_mempool.slice0 + (1 * sizeof(dfloat)) * nrs->fieldOffset;
-  auto o_gradSz = platform->o_mempool.slice0 + (2 * sizeof(dfloat)) * nrs->fieldOffset;
-  std::cout << "Sum (grad S)x = " << linAlg->sum(mesh->Nlocal, o_gradSx, platform->comm.mpiComm) << "\n";
-  std::cout << "Sum (grad S)y = " << linAlg->sum(mesh->Nlocal, o_gradSy, platform->comm.mpiComm) << "\n";
-  std::cout << "Sum (grad S)z = " << linAlg->sum(mesh->Nlocal, o_gradSz, platform->comm.mpiComm) << "\n";
-
   double flopsGrad = 6 * mesh->Np * mesh->Nq + 18 * mesh->Np;
   flopsGrad *= static_cast<double>(mesh->Nelements);
 
@@ -131,7 +124,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     cds->o_rho,
     platform->o_mempool.slice3,
     o_div);
-  std::cout << "Sum o_div, post qtl kernel = " << linAlg->sum(mesh->Nlocal, o_div, platform->comm.mpiComm) << "\n";
   
   double flopsQTL = 18 * mesh->Np * mesh->Nq + 23 * mesh->Np;
   flopsQTL *= static_cast<double>(mesh->Nelements);
@@ -181,8 +173,6 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     );
 
     double p0thHelperFlops = 4 * mesh->Nlocal;
-    std::cout << "termQ = " << termQ << "\n";
-    std::cout << "termV = " << termV << "\n";
 
     const dfloat prhs = (termQ - termV)/linAlg->sum(Nlocal, platform->o_mempool.slice0, platform->comm.mpiComm);
     linAlg->axpby(Nlocal, -prhs, platform->o_mempool.slice1, 1.0, o_div);
@@ -196,23 +186,16 @@ void lowMach::qThermalIdealGasSingleComponent(dfloat time, occa::memory o_div, l
     const auto g0 = args ? args->g0 : nrs->g0;
     const auto dt = args ? args->dt : nrs->dt[0];
 
-    std::cout << "prhs = " << prhs << "\n";
-
     const auto pcoef = (g0 - dt * prhs);
-
-    std::cout << "pcoef = " << pcoef << "\n";
 
     const auto p0thn = Saqpq / pcoef;
 
-    std::cout << "p0thn = " << p0thn << "\n";
     // only lag when not inside CVODE evaluation
     if(!insideCVODE){
       nrs->p0th[2] = nrs->p0th[1];
       nrs->p0th[1] = nrs->p0th[0];
       nrs->p0th[0] = p0thn;
     }
-
-    std::cout << "prhs = " << prhs << "\n";
 
     nrs->dp0thdt = prhs * p0thn;
 
