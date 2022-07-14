@@ -158,7 +158,7 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   // wrap RHS function into type expected by CVODE
   CVRhsFn cvodeRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
   {
-    std::cout << "Doing RHS evaluation!\n";
+    //std::cout << "Evaluating rhs at time = " << time << "\n";
 
     auto data = static_cast<userData_t*>(user_data);
     auto nrs = data->nrs;
@@ -180,6 +180,8 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
 
   CVRhsFn cvodeJtvRHS = [](double time, N_Vector Y, N_Vector Ydot, void* user_data)
   {
+    //std::cout << "Evaluating JtvRHS at time = " << time << "\n";
+
     auto data = static_cast<userData_t*>(user_data);
     auto nrs = data->nrs;
     auto platform = data->platform;
@@ -203,28 +205,28 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   if(check_retval(&retval, "SUNContext_Create", 1)) MPI_Abort(platform->comm.mpiComm, 1);
 
   {
-    N_Vector y = nullptr;
+    this->y = nullptr;
     if(platform->device.mode() == "CUDA") {
   #ifdef ENABLE_CUDA
       SUNCudaThreadDirectExecPolicy stream_exec_policy(blockSize);
       SUNCudaBlockReduceExecPolicy reduce_exec_policy(blockSize, 0);
   
-      y = N_VNew_Cuda(this->nEq, sunctx);
-      if(check_retval((void*)y, "N_VNew_Cuda", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+      this->y = N_VNew_Cuda(this->nEq, sunctx);
+      if(check_retval((void*)this->y, "N_VNew_Cuda", 0)) MPI_Abort(platform->comm.mpiComm, 1);
   
-      retval = N_VSetKernelExecPolicy_Cuda(y, &stream_exec_policy, &reduce_exec_policy);
+      retval = N_VSetKernelExecPolicy_Cuda(this->y, &stream_exec_policy, &reduce_exec_policy);
       if(check_retval(&retval, "N_VSetKernelExecPolicy_Cuda", 0)) MPI_Abort(platform->comm.mpiComm, 1);
   #endif
     } else if(platform->device.mode() == "HIP") {
   #ifdef ENABLE_HIP
-      y = N_VNew_Hip(data->nEq, sunctx);
-      if(check_retval((void *)y, "N_VNew_Hip", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+      this->y = N_VNew_Hip(data->nEq, sunctx);
+      if(check_retval((void *)this->y, "N_VNew_Hip", 0)) MPI_Abort(platform->comm.mpiComm, 1);
   #endif
     } else if(platform->device.mode() == "Serial") {
-      y = N_VNew_Serial(this->nEq, sunctx);
-      if(check_retval((void *)y, "N_VNew_Serial", 0)) MPI_Abort(platform->comm.mpiComm, 1);
+      this->y = N_VNew_Serial(this->nEq, sunctx);
+      if(check_retval((void *)this->y, "N_VNew_Serial", 0)) MPI_Abort(platform->comm.mpiComm, 1);
     }
-    this->cvodeY = N_VMake_MPIPlusX(platform->comm.mpiComm, y, sunctx);
+    this->cvodeY = N_VMake_MPIPlusX(platform->comm.mpiComm, this->y, sunctx);
     this->nEqTotal = N_VGetLength(this->cvodeY);
   }
 
@@ -235,7 +237,13 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   // set initial condition
   pack(nrs, nrs->cds->o_S, o_cvodeY);
 
-  this->cvodeMem = CVodeCreate(CV_BDF, sunctx);
+  auto integrator = CV_BDF;
+  if(platform->options.compareArgs("CVODE INTEGRATOR", "ADAMS")){
+    std::cout << "Using adams as integrator\n";
+    integrator = CV_ADAMS;
+  }
+
+  this->cvodeMem = CVodeCreate(integrator, sunctx);
 
   const auto T0 = nekrs::startTime();
 
@@ -388,15 +396,20 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
   auto * cds = nrs->cds;
 
   if (time != tprev) {
+    std::cout << "Evaluating at new time t = " << time << "\n";
+    std::cout << "Previous time = " << tprev << "\n";
     tprev = time;
 
     const auto cvodeDt = time - t0;
+    std::cout << "cvodeDt = " << cvodeDt << "\n";
     dtCvode[0] = cvodeDt;
     dtCvode[1] = nrs->dt[1];
     dtCvode[2] = nrs->dt[2];
 
     const int bdfOrder = std::min(tstep, nrs->nBDF);
     const int extOrder = std::min(tstep, nrs->nEXT);
+    //std::cout << "bdfOrder = " << bdfOrder << "\n";
+    //std::cout << "extOrder = " << extOrder << "\n";
     nek::extCoeff(coeffEXT.data(), dtCvode.data(), extOrder, bdfOrder);
     nek::bdfCoeff(&this->g0, coeffBDF.data(), dtCvode.data(), bdfOrder);
     for (int i = nrs->nEXT; i > extOrder; i--){
@@ -431,6 +444,9 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
   }
 
   unpack(nrs, o_y, cds->o_S);
+
+  // apply boundary condition
+  applyDirichlet(nrs, time);
 
   evaluateProperties(nrs, time);
 
@@ -488,6 +504,24 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
     platform->o_mempool.slice0.copyFrom(cds->o_rho, mesh->Nlocal * sizeof(dfloat));
     platform->linAlg->ady(mesh->Nlocal, nrs->dp0thdt * (gamma0-1.0)/gamma0, platform->o_mempool.slice0);
     platform->linAlg->axpby(mesh->Nlocal, 1.0, platform->o_mempool.slice0, 1.0, cds->o_FS);
+  }
+
+  // mask Dirichlet portion of RHS
+  auto o_zero = platform->o_mempool.slice0;
+  platform->linAlg->fill(cds->mesh[0]->Nlocal, 0.0, o_zero);
+
+  for (int is = 0; is < cds->NSfields; is++) {
+    if(!cds->compute[is]) continue;
+    if(!cds->cvodeSolve[is]) continue;
+    occa::memory o_FSi =
+        cds->o_FS.slice(cds->fieldOffsetScan[is] * sizeof(dfloat), cds->fieldOffset[is] * sizeof(dfloat));
+    
+    if (cds->solver[is]->Nmasked)
+      cds->maskCopyKernel(cds->solver[is]->Nmasked,
+                          0,
+                          cds->solver[is]->o_maskIds,
+                          o_zero,
+                          o_FSi);
   }
 
   pack(nrs, cds->o_FS, o_ydot);
@@ -699,9 +733,10 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   pack(nrs, nrs->cds->o_S, o_cvodeY);
 
   this->tnekRS = t0;
+  this->tstep = tstep;
 
   double t;
-  std::cout << "Integrating from t = " << t0 << " to t = " << t1 < "\n";
+  std::cout << "Integrating from t = " << t0 << " to t = " << t1 << "\n";
 
   // call cvode solver
   int retval = 0;
@@ -726,6 +761,9 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   }
 
   computeUrst(nrs, false);
+
+  // apply boundary condition at time t1
+  applyDirichlet(nrs, t1);
 #endif
 }
 

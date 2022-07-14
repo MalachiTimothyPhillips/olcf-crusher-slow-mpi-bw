@@ -182,7 +182,8 @@ static std::vector<std::string> cvodeKeys = {
   {"maxsteps"},
   {"hmax"},
   {"epslin"},
-  {"maxorder"}
+  {"maxorder"},
+  {"integrator"},
 };
 
 static std::vector<std::string> boomeramgKeys = {
@@ -487,7 +488,7 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   // hmax = 3 * dt
   // epsLin = 0.1
   // maxOrder = 3
-
+  // integrator = adams # or BDF
 
   double dt0 = 0.0;
   options.getArgs("DT", dt0);
@@ -500,6 +501,8 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   double hmax = 3 * dt0;
   double epsLin = 0.1;
   int maxOrder = 3;
+
+  std::string integrator = "bdf";
 
   const std::string parScope = "cvode";
 
@@ -523,6 +526,16 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
 
   par->extract(parScope, "maxorder", maxOrder);
   options.setArgs("CVODE MAX TIMESTEPPER ORDER", std::to_string(maxOrder));
+
+  par->extract(parScope, "integrator", integrator);
+  const std::vector<std::string> validValues = {
+    {"bdf"},
+    {"adams"},
+  };
+  checkValidity(rank, validValues, integrator);
+  UPPER(integrator);
+  options.setArgs("CVODE INTEGRATOR", integrator);
+
 
 }
 

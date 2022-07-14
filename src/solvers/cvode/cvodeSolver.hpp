@@ -131,6 +131,7 @@ private:
   // cvode internals
   void * cvodeMem;
 #ifdef ENABLE_CVODE
+  N_Vector y;
   N_Vector cvodeY;
 #endif
   occa::memory o_cvodeY;
