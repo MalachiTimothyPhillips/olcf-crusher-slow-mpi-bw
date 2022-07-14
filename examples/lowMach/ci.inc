@@ -15,12 +15,35 @@ void ciSetup(MPI_Comm comm, setupAide &options)
   options.setArgs("END TIME", std::string("0.3"));
   options.setArgs("DT", std::string("1e-3"));
   options.setArgs("SUBCYCLING STEPS", std::string("0"));
-  if (ciMode == 2) options.setArgs("SUBCYCLING STEPS", std::string("1"));
+  if (ciMode >= 2) options.setArgs("SUBCYCLING STEPS", std::string("1"));
   options.setArgs("TIME INTEGRATOR", "TOMBO2");
   options.setArgs("ADVECTION TYPE", "CONVECTIVE+CUBATURE");
   options.setArgs("VELOCITY SOLVER TOLERANCE", std::string("1e-12"));
   options.setArgs("PRESSURE SOLVER TOLERANCE", std::string("1e-08"));
   options.setArgs("SCALAR01 SOLVER TOLERANCE", std::string("1e-12"));
+
+  // set up CVODE solver details
+  if(ciMode == 3){
+    options.setArgs("CVODE INTEGRATOR", "ADAMS");
+    options.setArgs("CVODE MAX TIMESTEPPER ORDER", "3");
+    options.setArgs("CVODE EPS LIN", "0.05");
+
+    double dt0;
+    options.getArgs("DT", dt0);
+
+    const auto hmax = 3 * dt0;
+    options.setArgs("CVODE HMAX", to_string_f(hmax));
+
+    const auto maxSteps = 10000;
+    options.setArgs("CVODE MAX STEPS", std::to_string(maxSteps));
+
+    options.setArgs("CVODE RELATIVE TOLERANCE", "1e-08");
+    options.setArgs("CVODE ABSOLUTE TOLERANCE", "1e-12");
+    options.setArgs("CVODE GMR VECTORS", "20");
+
+    options.setArgs("SCALAR01 SOLVER", "CVODE");
+
+  }
 }
 
 void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
@@ -47,6 +70,9 @@ void ciTestErrors(nrs_t *nrs, dfloat time, int tstep)
     case 2: vxErr = abs((err[0] - 2.19E-05)/err[0]);
             prErr = abs((err[1] - 3.22E-03)/err[1]);
             sErr  = abs((err[2] - 1.05E-06)/err[2]);
+    case 3: vxErr = abs((err[0] - 2.19E-05)/err[0]);
+            prErr = abs((err[1] - 3.22E-03)/err[1]);
+            sErr  = abs((err[2] - 9.90E-08)/err[2]);
             break;
   }
 
