@@ -48,6 +48,10 @@ public:
   void jtvRHS(nrs_t *nrs, dfloat time, occa::memory o_y, occa::memory o_ydot);
   dlong numEquations() const { return nEq;}
 
+  // getters needed for CVLsJacTimesVecFn
+  void * getCvodeMem() { return cvodeMem; }
+  double sigmaScale() const { return sigScale; }
+
 private:
 
   // package data to pass in as user data
@@ -127,6 +131,8 @@ private:
   dlong nEq;
 
   long long int nEqTotal;
+
+  dfloat sigScale = 1.0;
 
   // cvode internals
   void * cvodeMem;

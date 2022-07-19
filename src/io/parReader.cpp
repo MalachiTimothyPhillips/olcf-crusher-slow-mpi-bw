@@ -184,6 +184,7 @@ static std::vector<std::string> cvodeKeys = {
   {"epslin"},
   {"maxorder"},
   {"integrator"},
+  {"sigscale"},
 };
 
 static std::vector<std::string> boomeramgKeys = {
@@ -489,6 +490,7 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   // epsLin = 0.1
   // maxOrder = 3
   // integrator = adams # or BDF
+  // sigScale = 1.0
 
   double dt0 = 0.0;
   options.getArgs("DT", dt0);
@@ -501,6 +503,7 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   double hmax = 3 * dt0;
   double epsLin = 0.1;
   int maxOrder = 3;
+  double sigScale = 1.0;
 
   std::string integrator = "bdf";
 
@@ -535,6 +538,9 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   checkValidity(rank, validValues, integrator);
   UPPER(integrator);
   options.setArgs("CVODE INTEGRATOR", integrator);
+
+  par->extract(parScope, "sigscale", sigScale);
+  options.setArgs("CVODE SIGMA SCALE", to_string_f(sigScale));
 
 
 }

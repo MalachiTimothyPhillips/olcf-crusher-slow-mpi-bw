@@ -199,6 +199,65 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
     return 0;
   };
 
+  // same as cvLsDQJtimes, but with scaling for sig
+  CVLsJacTimesVecFn cvodeLS = [](N_Vector v, N_Vector Jv, realtype t, N_Vector y, N_Vector fy, void *user_data, N_Vector work)
+  {
+    auto data = static_cast<userData_t*>(user_data);
+    auto nrs = data->nrs;
+    auto platform = data->platform;
+    auto cvodeSolver = data->cvodeSolver;
+    const auto sigScale = cvodeSolver->sigmaScale();
+
+    void * cvode_mem = cvodeSolver->getCvodeMem();
+
+    realtype sig, siginv;
+    int iter, retval;
+
+    retval = CVodeGetErrWeights(cvode_mem, work);
+    if (retval != CV_SUCCESS)
+      return (retval);
+
+    /* Initialize perturbation to 1/||v|| */
+    sig = sigScale / N_VWrmsNorm(v, work);
+
+    constexpr int maxDQIters {3};
+
+    occa::memory o_work = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(work)),
+      cvodeSolver->numEquations());
+
+    occa::memory o_Jv = platform->device.occaDevice().wrapMemory<sunrealtype>(
+      __N_VGetDeviceArrayPointer(N_VGetLocalVector_MPIPlusX(Jv)),
+      cvodeSolver->numEquations());
+    
+    for (iter = 0; iter < maxDQIters; iter++) {
+
+      /* Set work = y + sig*v */
+      N_VLinearSum(sig, v, 1.0, y, work);
+
+      /* Set Jv = f(tn, y+sig*v) */
+      //retval = cvls_mem->jt_f(t, work, Jv, user_data);
+      cvodeSolver->jtvRHS(nrs, t, o_work, o_Jv);
+      if (retval == 0)
+        break;
+      if (retval < 0)
+        return (-1);
+
+      /* If f failed recoverably, shrink sig and retry */
+      sig *= 0.25;
+    }
+
+    /* If retval still isn't 0, return with a recoverable failure */
+    if (retval > 0)
+      return (+1);
+
+    /* Replace Jv by (Jv - fy)/sig */
+    siginv = 1.0 / sig;
+    N_VLinearSum(siginv, Jv, -siginv, fy, Jv);
+
+    return (0);
+  };
+
   SUNContext sunctx = nullptr;
   retval = SUNContext_Create((void*) &platform->comm.mpiComm, &sunctx);
   if(check_retval(&retval, "SUNContext_Create", 1)) MPI_Abort(platform->comm.mpiComm, 1);
@@ -251,6 +310,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   double absTol = 1e-14;
   platform->options.getArgs("CVODE ABSOLUTE TOLERANCE", absTol);
 
+  this->sigScale = 1.0;
+  platform->options.getArgs("CVODE SIGMA SCALE", this->sigScale);
+
   if(check_retval((void*)this->cvodeMem, "CVodeCreate", 0)) MPI_Abort(platform->comm.mpiComm, 1);
   retval = CVodeInit(this->cvodeMem, cvodeRHS, T0, this->cvodeY);
   if(check_retval(&retval, "CVodeInit", 1)) MPI_Abort(platform->comm.mpiComm, 1);
@@ -269,6 +331,9 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
 
   retval = CVodeSetJacTimesRhsFn(this->cvodeMem, cvodeJtvRHS);
   if(check_retval(&retval, "CVodeSetJacTimesRhsFn", 1)) MPI_Abort(platform->comm.mpiComm, 1);
+
+  retval = CVodeSetJacTimes(this->cvodeMem, NULL, cvodeLS);
+  if(check_retval(&retval, "CVodeSetJacTimes", 1)) MPI_Abort(platform->comm.mpiComm, 1);
 
   // custom settings
   int mxsteps = 10000;
