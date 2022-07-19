@@ -733,6 +733,24 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
   // call cvode solver
   int retval = 0;
   retval = CVode(cvodeMem, t1, cvodeY, &t, CV_NORMAL);
+  if(retval < 0){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "... Restarting CVODE integrator\n";
+    }
+    pack(nrs, nrs->cds->o_S, o_cvodeY);
+    retval = CVodeReInit(cvodeMem, t0, cvodeY);
+    check_retval(&retval, "CVodeReInit", 1);
+    this->tprev = std::numeric_limits<dfloat>::max();
+
+    retval = CVode(cvodeMem, t1, cvodeY, &t, CV_NORMAL);
+  }
+
+  if(retval < 0){
+    if(platform->comm.mpiRank == 0){
+      std::cout << "CVODE failed after restart. Ending simulation.\n";
+    }
+    ABORT(1);
+  }
 
   unpack(nrs, o_cvodeY, nrs->cds->o_S);
 
