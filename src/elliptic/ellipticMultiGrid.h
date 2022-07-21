@@ -52,7 +52,7 @@ public:
   dfloat* R;
   occa::memory o_R;
   int NpF;
-  occa::memory o_invDegree;
+  occa::memory o_invDegreeFine;
 
   //smoothing params
   SmootherType stype;

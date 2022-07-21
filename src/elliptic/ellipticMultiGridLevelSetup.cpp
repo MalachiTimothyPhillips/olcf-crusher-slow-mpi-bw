@@ -79,7 +79,7 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
   degree = Nc;
 
   NpF = ellipticFine->mesh->Np;
-  // store fine grid invDegree to make it accessable within a MG level
+  o_invDegreeFine = ellipticFine->o_invDegree;
 
   /* build coarsening and prologation operators to connect levels */
   this->buildCoarsenerQuadHex(meshLevels, Nf, Nc);

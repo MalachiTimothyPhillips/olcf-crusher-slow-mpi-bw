@@ -39,9 +39,6 @@ public:
   int *coarseOffsets=NULL;
   int *coarseCounts=NULL;
 
-  pfloat *weight=NULL;
-  occa::memory o_weight;
-
   int N;
 
   occa::memory h_xLocal;
@@ -58,6 +55,7 @@ public:
   ogs_t *ogs;
   pfloat *Gx, *Sx;
   occa::memory o_Sx, o_Gx;
+  occa::memory o_weight;
 
   MPI_Comm comm;
   occa::device device;

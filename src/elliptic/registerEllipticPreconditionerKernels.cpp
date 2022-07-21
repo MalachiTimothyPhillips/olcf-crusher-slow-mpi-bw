@@ -353,8 +353,8 @@ void registerMultiGridKernels(const std::string &section, int poissonEquation) {
         installDir.assign(getenv("NEKRS_INSTALL_DIR"));
         const std::string oklpath = installDir + "/okl/";
 
-        std::string fileName = oklpath + "parAlmond/vectorDotStar2.okl";
-        std::string kernelName = "vectorDotStar2";
+        std::string fileName = oklpath + "parAlmond/vectorDotStar.okl";
+        std::string kernelName = "vectorDotStar";
         platform->kernels.add(
             kernelName, fileName, platform->kernelInfo);
       }

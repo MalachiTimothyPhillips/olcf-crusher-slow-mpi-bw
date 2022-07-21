@@ -46,7 +46,7 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
 {
   double flopCounter = 0.0;
   if (options.compareArgs("DISCRETIZATION", "CONTINUOUS")) {
-    platform->linAlg->paxmy(mesh->Nelements * NpF, 1.0, o_invDegree, o_x);
+    platform->linAlg->paxmy(mesh->Nelements * NpF, 1.0, o_invDegreeFine, o_x);
     flopCounter += static_cast<double>(mesh->Nelements) * NpF;
   }
 

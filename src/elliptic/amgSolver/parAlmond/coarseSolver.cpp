@@ -175,23 +175,23 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   } else {
 
-    platform->linAlg->pfill(N, 0.0, o_xBuffer);
+    const pfloat one = 1.0;
+    const pfloat zero = 0.0;
+    platform->linAlg->pfill(N, zero, o_xBuffer);
     if(!useDevice) o_xBuffer.copyTo(xBuffer, N*sizeof(pfloat));
 
     // T->L
-    const pfloat one = 1.0;
-    const pfloat zero  = 0.0;
-    vectorDotStarKernel(ogs->N, one, zero, ogs->o_invDegree, o_rhs, o_Sx); 
+    vectorDotStarKernel(ogs->N, one, zero, o_weight, o_rhs, o_Sx); 
     ogsGather(o_Gx, o_Sx, ogsPfloat, ogsAdd, ogs);
     if(!useDevice) o_Gx.copyTo(rhsBuffer, N*sizeof(pfloat));
 
     if (options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
       if(useDevice)
-        hypreWrapperDevice::BoomerAMGSolve(o_rhsBuffer, o_xBuffer);
+        hypreWrapperDevice::BoomerAMGSolve(o_Gx, o_xBuffer);
       else
         hypreWrapper::BoomerAMGSolve(rhsBuffer, xBuffer); 
     } else if (options.compareArgs("COARSE SOLVER", "AMGX")){
-        AMGXsolve(o_rhsBuffer.ptr(), o_xBuffer.ptr());
+        AMGXsolve(o_Gx.ptr(), o_xBuffer.ptr());
     }
 
     if(useDevice) {

@@ -68,7 +68,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   //set up the finest level
   if (Nmax > Nmin) {
     if(platform->comm.mpiRank == 0)
-      printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nmax);
+      printf("=============BUILDING pMG %d==================\n", Nmax);
 
     auto callback = [&]()
                     {
@@ -93,7 +93,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     int Nf = levelDegree[n - 1];
     elliptic_t* ellipticFine = ((MGLevel*) levels[n - 1])->elliptic;
     if(platform->comm.mpiRank == 0)
-      printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nc);
+      printf("=============BUILDING pMG %d==================\n", Nc);
 
     elliptic_t* ellipticC = ellipticBuildMultigridLevel(ellipticFine,Nc,Nf);
 
@@ -135,7 +135,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     int Nf = levelDegree[numMGLevels - 2];
 
     if(platform->comm.mpiRank == 0)
-      printf("=============BUILDING MULTIGRID COARSE LEVEL OF DEGREE %d==================\n", Nmin);
+      printf("=============BUILDING COARSE pMG %d==================\n", Nmin);
 
     ellipticCoarse = ellipticBuildMultigridLevel(elliptic,Nc,Nf);
 
@@ -152,11 +152,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     ellipticCoarse->oogsAx = ellipticCoarse->oogs;
     if(options.compareArgs("GS OVERLAP", "TRUE") && options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
       ellipticCoarse->oogsAx = oogs::setup(ellipticCoarse->ogs, 1, 0, ogsPfloat, callback, oogsMode);
-
-  } else {
-    std::cout << "Oh no ....\n";
-    ABORT(1);
-    ellipticCoarse = elliptic;
   }
 
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
@@ -243,7 +238,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
           coarseLevel->gatherLevel = true;
           coarseLevel->ogs = ellipticCoarse->ogs;
-          coarseLevel->ogs->o_invDegree =  ellipticCoarse->o_invDegree;
+          coarseLevel->o_weight = ellipticCoarse->o_invDegree; 
           coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
           coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
                                              sizeof(pfloat));
