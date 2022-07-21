@@ -826,7 +826,7 @@ void MGLevel::build(
   const dlong Nlocal_e = Nelements * Np_e;
 
   overlap = false;
-  if (extendedMesh->N >= elliptic_t::minNFDMOverlap && !serial)
+  if ((Nq_e - 1) >= elliptic_t::minNFDMOverlap && !serial)
     overlap = true;
 
   /** create the element lengths, using the most refined level **/
