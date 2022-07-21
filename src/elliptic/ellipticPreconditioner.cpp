@@ -29,46 +29,56 @@
 #include "platform.hpp"
 #include "linAlg.hpp"
 
-
 void ellipticPreconditioner(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_z)
 {
-  
-  
   mesh_t* mesh = elliptic->mesh;
   precon_t* precon = elliptic->precon;
   setupAide& options = elliptic->options;
 
   const dlong Nlocal = mesh->Np * mesh->Nelements;
 
-  elliptic->fusedCopyDfloatToPfloatKernel(Nlocal, o_r, o_z, o_rPfloat, o_zPfloat);
-
+  occa::memory &o_rPfloat = elliptic->o_rPfloat;
+  occa::memory &o_zPfloat = elliptic->o_zPfloat;
+ 
   platform->timer.tic(elliptic->name + " preconditioner", 1);
   if(options.compareArgs("PRECONDITIONER", "JACOBI")) {
+
     const dfloat one = 1.0;
-    platform->lingAlg->paxmyzMany(
+    elliptic->axmyzManyPfloatKernel(
       Nlocal,
       elliptic->Nfields,
       elliptic->Ntotal,
       one,
-      o_rPfloat,
+      o_r,
       precon->o_invDiagA,
-      o_zPfloat 
+      o_z 
       );
     platform->flopCounter->add("jacobiPrecon", static_cast<double>(Nlocal) * elliptic->Nfields);
+
   }else if (options.compareArgs("PRECONDITIONER", "MULTIGRID")) {
+
+    elliptic->fusedCopyDfloatToPfloatKernel(elliptic->Ntotal*elliptic->Nfields, o_r, o_z, o_rPfloat, o_zPfloat);
     parAlmond::Precon(precon->parAlmond, o_zPfloat, o_rPfloat);
+    platform->copyPfloatToDfloatKernel(elliptic->Ntotal*elliptic->Nfields, o_zPfloat, o_z);
+
   }else if (options.compareArgs("PRECONDITIONER", "SEMFEM")) {
+
     platform->linAlg->pfill(elliptic->Ntotal*elliptic->Nfields, 0.0, o_zPfloat);
+    platform->copyDfloatToPfloatKernel(elliptic->Ntotal*elliptic->Nfields, o_r, o_rPfloat);
     ellipticSEMFEMSolve(elliptic, o_rPfloat, o_zPfloat);
+    platform->copyPfloatToDfloatKernel(elliptic->Ntotal*elliptic->Nfields, o_zPfloat, o_z);
+
   }else if (options.compareArgs("PRECONDITIONER", "NONE")) {
-    o_zPfloat.copyFrom(o_rPfloat, elliptic->Ntotal*elliptic->Nfields*sizeof(pfloat));
+
+    o_z.copyFrom(o_r, elliptic->Ntotal*elliptic->Nfields*sizeof(dfloat));
+
   }else {
+
     if(platform->comm.mpiRank == 0) printf("ERRROR: Unknown preconditioner\n");
     MPI_Abort(platform->comm.mpiComm, 1);
+
   }
   platform->timer.toc(elliptic->name + " preconditioner");
-
-  elliptic->fusedCopyPfloatToDfloatKernel(Nlocal, o_rPfloat, o_zPfloat o_r, o_z);
 
   if(elliptic->allNeumann) // zero mean of RHS
     ellipticZeroMean(elliptic, o_z);

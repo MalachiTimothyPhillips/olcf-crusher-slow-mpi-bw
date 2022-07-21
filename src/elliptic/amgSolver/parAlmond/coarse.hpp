@@ -56,7 +56,7 @@ public:
 
   bool gatherLevel;
   ogs_t *ogs;
-  dfloat *Gx, *Sx;
+  pfloat *Gx, *Sx;
   occa::memory o_Sx, o_Gx;
 
   MPI_Comm comm;
@@ -69,8 +69,7 @@ public:
   coarseSolver(setupAide options, MPI_Comm comm);
   ~coarseSolver();
 
-  void setup(parCSR *A);
-  void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, pfloat* weight, bool nullSpace);
+  void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
 
   void syncToDevice();
 

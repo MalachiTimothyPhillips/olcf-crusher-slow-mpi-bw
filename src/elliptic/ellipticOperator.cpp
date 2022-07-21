@@ -71,20 +71,20 @@ void ellipticAx(elliptic_t* elliptic,
       elliptic->stressForm ? mesh->o_vgeo : mesh->o_ggeo;
   occa::memory & o_D = (precisionStr != dFloatStr) ? mesh->o_DPfloat : mesh->o_D;
   occa::memory & o_DT = (precisionStr != dFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
-  occa::memory & o_lambda = (precisionStr != dFloatStr) ? elliptic->o_lambdaPfloat : elliptic->o_lambda;
+  occa::memory & o_lambda = elliptic->o_lambda;
   occa::kernel &AxKernel =
       (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
 
   AxKernel(NelementsList,
-                  elliptic->Ntotal,
-                  elliptic->loffset,
-                  o_elementsList,
-                  o_geom_factors,
-                  o_D,
-                  o_DT,
-                  o_lambda,
-                  o_q,
-                  o_Aq);
+           elliptic->Ntotal,  /* field offset */
+           elliptic->loffset, /* lambda field offset */
+           o_elementsList,
+           o_geom_factors,
+           o_D,
+           o_DT,
+           o_lambda,
+           o_q,
+           o_Aq);
   double flopCount = 0.0;
 
   if (elliptic->stressForm) {

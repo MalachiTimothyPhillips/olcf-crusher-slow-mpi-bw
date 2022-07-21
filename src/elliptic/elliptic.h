@@ -74,7 +74,7 @@ struct GmresData{
 struct elliptic_t
 {
   static constexpr double targetTimeBenchmark {0.2};
-  static constexpr int NScratchFields {4};
+  static constexpr int NScratchFields {6};
   static constexpr int minNFDMOverlap{6};
   int dim;
   int elementType; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
@@ -106,9 +106,6 @@ struct elliptic_t
 
   bool allNeumann;
 
-  // HOST shadow copies
-  dfloat* invDegree;
-
   int* EToB;
 
   occa::memory o_wrk;
@@ -132,7 +129,10 @@ struct elliptic_t
   occa::memory o_res;
   occa::memory o_Ap; // A*search direction
   occa::memory o_invDegree;
-  occa::memory o_interp; // interpolate (r,s,t)F -> (r,s,t)C for variable properties
+  occa::memory o_interp;
+
+  occa::memory o_rPfloat;
+  occa::memory o_zPfloat;
 
   occa::memory o_EXYZ; // element vertices for reconstructing geofacs (trilinear hexes only)
 
@@ -141,9 +141,7 @@ struct elliptic_t
 
   occa::kernel scaledAddPfloatKernel;
   occa::kernel dotMultiplyPfloatKernel;
-  occa::kernel copyDfloatToPfloatKernel;
   occa::kernel fusedCopyDfloatToPfloatKernel;
-  occa::kernel copyPfloatToDPfloatKernel;
   occa::kernel axmyzManyPfloatKernel;
   occa::kernel adyManyPfloatKernel;
   

@@ -8,7 +8,7 @@ extern "C" void FUNC(fusedFDM)(
   const pfloat* __restrict__ S_z,
   const pfloat* __restrict__ inv_L,
 #if p_restrict
-  const dfloat* __restrict__ wts,
+  const pfloat* __restrict__ wts,
 #endif
   pfloat* __restrict__ u
   )

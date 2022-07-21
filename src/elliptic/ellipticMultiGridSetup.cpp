@@ -70,11 +70,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     if(platform->comm.mpiRank == 0)
       printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nmax);
 
-    elliptic->o_lambdaPfloat = platform->device.malloc(2 * mesh->Nelements * mesh->Np, sizeof(pfloat));
-    elliptic->copyDfloatToPfloatKernel(2 * mesh->Nelements * mesh->Np,
-      elliptic->o_lambda,
-      elliptic->o_lambdaPfloat);
-
     auto callback = [&]()
                     {
                       ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList,
@@ -92,12 +87,11 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     precon->parAlmond->numLevels++;
   }
 
-  //build a MGLevel for every degree (except degree 1)
+  //build a MGLevel for every degree (except coarsest)
   for (int n = 1; n < numMGLevels - 1; n++) {
     int Nc = levelDegree[n];
     int Nf = levelDegree[n - 1];
     elliptic_t* ellipticFine = ((MGLevel*) levels[n - 1])->elliptic;
-    //build elliptic struct for this degree
     if(platform->comm.mpiRank == 0)
       printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nc);
 
@@ -117,7 +111,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     if(options.compareArgs("GS OVERLAP", "TRUE"))
       ellipticC->oogsAx = oogs::setup(ellipticC->ogs, 1, 0, ogsPfloat, callback, oogsMode);
 
-    //add the level manually
     levels[n] = new MGLevel(elliptic,
                             meshLevels,
                             ellipticFine,
@@ -142,7 +135,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     int Nf = levelDegree[numMGLevels - 2];
 
     if(platform->comm.mpiRank == 0)
-      printf("=============BUILDING MULTIGRID LEVEL OF DEGREE %d==================\n", Nmin);
+      printf("=============BUILDING MULTIGRID COARSE LEVEL OF DEGREE %d==================\n", Nmin);
 
     ellipticCoarse = ellipticBuildMultigridLevel(elliptic,Nc,Nf);
 
@@ -159,7 +152,10 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     ellipticCoarse->oogsAx = ellipticCoarse->oogs;
     if(options.compareArgs("GS OVERLAP", "TRUE") && options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
       ellipticCoarse->oogsAx = oogs::setup(ellipticCoarse->ogs, 1, 0, ogsPfloat, callback, oogsMode);
+
   } else {
+    std::cout << "Oh no ....\n";
+    ABORT(1);
     ellipticCoarse = elliptic;
   }
 
@@ -177,7 +173,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
       precon->parAlmond->numLevels++;
     } else {
       int basisNp = ellipticCoarse->mesh->Np;
-      dfloat* basis = NULL;
 
       hlong* coarseGlobalStarts = (hlong*) calloc(platform->comm.mpiCommSize + 1, sizeof(hlong));
 
@@ -241,30 +236,14 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
     if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
+      //
     } else {
-      //tell parAlmond to gather when going to the next level
       if (options.compareArgs("DISCRETIZATION","CONTINUOUS")) {
-        if (precon->parAlmond->numLevels > numMGLevels) {
-          parAlmond::agmgLevel* nextLevel
-            = (parAlmond::agmgLevel*)precon->parAlmond->levels[numMGLevels];
-
-          nextLevel->gatherLevel = true;
-          nextLevel->ogs = ellipticCoarse->ogs;
-          nextLevel->Gx = (pfloat*) calloc(levels[numMGLevels - 1]->Ncols,sizeof(pfloat));
-          nextLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
-                                           sizeof(pfloat));
-          nextLevel->o_Gx =
-            platform->device.malloc(levels[numMGLevels - 1]->Ncols * sizeof(pfloat),
-                                                nextLevel->Gx);
-          nextLevel->o_Sx = platform->device.malloc(
-            ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(pfloat),
-            nextLevel->Sx);
-        } else {
-          //this level is the base
           parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
 
           coarseLevel->gatherLevel = true;
           coarseLevel->ogs = ellipticCoarse->ogs;
+          coarseLevel->ogs->o_invDegree =  ellipticCoarse->o_invDegree;
           coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
           coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements,
                                              sizeof(pfloat));
@@ -274,7 +253,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
           coarseLevel->o_Sx = platform->device.malloc(
             ellipticCoarse->mesh->Np * ellipticCoarse->mesh->Nelements * sizeof(pfloat),
             coarseLevel->Sx);
-        }
       }
     }
   }
@@ -305,41 +283,26 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
 void MGLevelAllocateStorage(MGLevel* level, int k, parAlmond::CycleType ctype)
 {
-  
   // extra storage for smoothing op
-  size_t Nbytes = level->Ncols * sizeof(pfloat);
+  const size_t Nbytes = level->Ncols * sizeof(pfloat);
+
   if (MGLevel::smootherResidualBytes < Nbytes) {
     if (MGLevel::o_smootherResidual.size()) {
-      free(MGLevel::smootherResidual);
       MGLevel::o_smootherResidual.free();
       MGLevel::o_smootherResidual2.free();
       MGLevel::o_smootherUpdate.free();
     }
 
-    MGLevel::smootherResidual = (pfloat*) calloc(level->Ncols,sizeof(pfloat));
-    MGLevel::o_smootherResidual = platform->device.malloc(Nbytes,MGLevel::smootherResidual);
-    MGLevel::o_smootherResidual2 = platform->device.malloc(Nbytes,MGLevel::smootherResidual);
-    MGLevel::o_smootherUpdate = platform->device.malloc(Nbytes,MGLevel::smootherResidual);
+    MGLevel::o_smootherResidual = platform->device.malloc(Nbytes);
+    MGLevel::o_smootherResidual2 = platform->device.malloc(Nbytes);
+    MGLevel::o_smootherUpdate = platform->device.malloc(Nbytes);
+
     MGLevel::smootherResidualBytes = Nbytes;
   }
 
-  if (k) level->x    = (dfloat*) calloc(level->Ncols,sizeof(dfloat));
-  if (k) level->rhs  = (dfloat*) calloc(level->Nrows,sizeof(dfloat));
-  if (k) level->o_x   = platform->device.malloc(level->Ncols * sizeof(dfloat),level->x);
-  if (k) level->o_rhs = platform->device.malloc(level->Nrows * sizeof(dfloat),level->rhs);
+  if (k) level->o_x   = platform->device.malloc(level->Ncols * sizeof(pfloat));
+  if (k) level->o_rhs = platform->device.malloc(level->Nrows * sizeof(pfloat));
 
-  level->res  = (dfloat*) calloc(level->Ncols,sizeof(dfloat));
-  level->o_res = platform->device.malloc(level->Ncols * sizeof(dfloat),level->res);
+  level->o_res = platform->device.malloc(level->Ncols * sizeof(pfloat));
 
-  //kcycle vectors
-  if (ctype == parAlmond::KCYCLE) {
-    if ((k > 0) && (k < NUMKCYCLES + 1)) {
-      level->ck = (dfloat*) calloc(level->Ncols,sizeof(dfloat));
-      level->vk = (dfloat*) calloc(level->Nrows,sizeof(dfloat));
-      level->wk = (dfloat*) calloc(level->Nrows,sizeof(dfloat));
-      level->o_ck = platform->device.malloc(level->Ncols * sizeof(dfloat),level->ck);
-      level->o_vk = platform->device.malloc(level->Nrows * sizeof(dfloat),level->vk);
-      level->o_wk = platform->device.malloc(level->Nrows * sizeof(dfloat),level->wk);
-    }
-  }
 }

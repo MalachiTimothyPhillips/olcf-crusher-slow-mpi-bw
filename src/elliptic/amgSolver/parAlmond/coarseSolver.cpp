@@ -38,6 +38,8 @@ SOFTWARE.
 #include "platform.hpp"
 #include "linAlg.hpp"
 
+static occa::kernel vectorDotStarKernel;
+
 namespace parAlmond {
 
 coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
@@ -53,7 +55,6 @@ void coarseSolver::setup(
                hlong* Ai,                    //-- Local A matrix data (globally indexed, COO storage, row sorted)
                hlong* Aj,                    //--
                dfloat* Avals,                //--
-               pfloat* weight,
                bool nullSpace)
 {
   int rank, size;
@@ -68,8 +69,10 @@ void coarseSolver::setup(
   if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
     return; // bail early as this will not get used
 
-  kernelName = "vectorDotStar2";
-  vectorDotStarKernel2 = platform->kernels.get(kernelName);
+  const std::string kernelName = "vectorDotStar";
+  vectorDotStarKernel = platform->kernels.get(kernelName);
+
+  N = (int) Nrows;
 
   o_rhsBuffer = platform->device.malloc(Nrows * sizeof(pfloat));
   rhsBuffer = (pfloat*) calloc(Nrows, sizeof(pfloat));
@@ -129,12 +132,6 @@ void coarseSolver::setup(
         settings,
         verbose);
     }
- 
-    N = (int) Nrows;
-    h_xLocal   = platform->device.mallocHost(N*sizeof(dfloat));
-    h_rhsLocal = platform->device.mallocHost(N*sizeof(dfloat));
-    xLocal   = (dfloat*) h_xLocal.ptr();
-    rhsLocal = (dfloat*) h_rhsLocal.ptr();
   }
   else if (options.compareArgs("COARSE SOLVER", "AMGX")){
     std::string configFile;
@@ -166,64 +163,6 @@ void coarseSolver::setup(
 
 void coarseSolver::syncToDevice() {}
 
-void coarseSolver::setup(parCSR *A) {
-
-  comm = A->comm;
-
-  int rank, size;
-  MPI_Comm_rank(comm,&rank);
-  MPI_Comm_size(comm,&size);
-
-  if (rank == 0 && options.compareArgs("VERBOSE","TRUE"))
-    printf("Setting up pMG coarse solver..."); fflush(stdout);
-
-  if (options.compareArgs("COARSE SOLVER", "BOOMERAMG") || options.compareArgs("COARSE SOLVER", "AMGX")) {
-    int totalNNZ = A->diag->nnz + A->offd->nnz;
-    hlong *rows;
-    hlong *cols;
-    dfloat *vals;
- 
-    if (totalNNZ) {
-      rows = (hlong *) calloc(totalNNZ,sizeof(hlong));
-      cols = (hlong *) calloc(totalNNZ,sizeof(hlong));
-      vals = (dfloat *) calloc(totalNNZ,sizeof(dfloat));
-    }
- 
-    // populate local COO (AIJ) matrix using global (row,col) indices
-    int cnt = 0;
-    for (int n = 0; n < A->Nrows; n++) {
-      for (int m = A->diag->rowStarts[n]; m < A->diag->rowStarts[n+1]; m++) {
-        rows[cnt] = n + A->globalRowStarts[rank];
-        cols[cnt] = A->diag->cols[m] + A->globalRowStarts[rank];
-        vals[cnt] = A->diag->vals[m];
-        cnt++;
-      }
-      for (int m = A->offd->rowStarts[n]; m < A->offd->rowStarts[n+1]; m++) {
-        rows[cnt] = n + A->globalRowStarts[rank];
-        cols[cnt] = A->colMap[A->offd->cols[m]];
-        vals[cnt] = A->offd->vals[m];
-        cnt++;
-      }
-    }
-
-    setup(A->Nrows, A->globalRowStarts, totalNNZ, rows, cols, vals,(int) A->nullSpace); 
- 
-    if (totalNNZ) {
-      free(rows);
-      free(cols);
-      free(vals);
-    }
- 
-    return;
-  } else {
-    if(rank == 0) printf("coarseSolver::setup: Cannot find valid AMG solver!\n"); fflush(stdout); 
-    ABORT(1);
-  }
-
-  if(rank == 0 && options.compareArgs("VERBOSE","TRUE")) 
-    printf("done.\n"); fflush(stdout);
-}
-
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   platform->timer.tic("coarseSolve", 1);
@@ -239,8 +178,10 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     platform->linAlg->pfill(N, 0.0, o_xBuffer);
     if(!useDevice) o_xBuffer.copyTo(xBuffer, N*sizeof(pfloat));
 
-    // E->L
-    vectorDotStar(ogs->N, 1.0, o_weight, o_rhs, 0.0, o_Sx);
+    // T->L
+    const pfloat one = 1.0;
+    const pfloat zero  = 0.0;
+    vectorDotStarKernel(ogs->N, one, zero, ogs->o_invDegree, o_rhs, o_Sx); 
     ogsGather(o_Gx, o_Sx, ogsPfloat, ogsAdd, ogs);
     if(!useDevice) o_Gx.copyTo(rhsBuffer, N*sizeof(pfloat));
 
@@ -259,8 +200,8 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
       o_Gx.copyFrom(xBuffer, N*sizeof(pfloat));
     }
 
-    // L->E
-    ogsScatter(o_x, o_Gx, ogsDfloat, ogsAdd, ogs);
+    // T->E
+    ogsScatter(o_x, o_Gx, ogsPfloat, ogsAdd, ogs);
   }
 
   platform->timer.toc("coarseSolve");

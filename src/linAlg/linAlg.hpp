@@ -58,6 +58,7 @@ public:
 
   // o_a[n] = alpha
   void fill(const dlong N, const dfloat alpha, occa::memory& o_a);
+  void pfill(const dlong N, const pfloat alpha, occa::memory& o_a);
 
   // o_a[n] = abs(o_a[n])
   void abs(const dlong N, occa::memory& o_a);
@@ -75,6 +76,8 @@ public:
                             const dlong xOffset = 0, const dlong yOffset = 0);
   void axpbyMany(const dlong N, const dlong Nfields, const dlong offset, const dfloat alpha, occa::memory& o_x,
                             const dfloat beta,  occa::memory& o_y);
+  void paxpbyMany(const dlong N, const dlong Nfields, const dlong offset, const pfloat alpha, occa::memory& o_x,
+                            const pfloat beta,  occa::memory& o_y);
 
   // o_z[n] = beta*o_y[n] + alpha*o_x[n]
   void axpbyz(const dlong N, const dfloat alpha, occa::memory& o_x,
@@ -87,6 +90,9 @@ public:
   // o_y[n] = alpha*o_x[n]*o_y[n]
   void axmy(const dlong N, const dfloat alpha,
             occa::memory& o_x, occa::memory& o_y);
+  void paxmy(const dlong N, const pfloat alpha,
+            occa::memory& o_x, occa::memory& o_y);
+
   // mode 1:
   // o_y[n,fld] = alpha*o_x[n,fld]*o_y[n,fld]
   // mode 0:
@@ -106,6 +112,9 @@ public:
              occa::memory& o_x, occa::memory& o_y,
              occa::memory& o_z);
   void axmyzMany(const dlong N, const dlong Nfields, const dlong offset, const dfloat alpha,
+             occa::memory& o_x, occa::memory& o_y,
+             occa::memory& o_z);
+  void paxmyzMany(const dlong N, const dlong Nfields, const dlong offset, const pfloat alpha,
              occa::memory& o_x, occa::memory& o_y,
              occa::memory& o_z);
 
@@ -188,19 +197,24 @@ public:
   void unitVector(const dlong N, const dlong fieldOffset, occa::memory &o_v);
 
   occa::kernel fillKernel;
+  occa::kernel pfillKernel;
+
   occa::kernel absKernel;
   occa::kernel addKernel;
   occa::kernel scaleKernel;
   occa::kernel scaleManyKernel;
   occa::kernel axpbyKernel;
   occa::kernel axpbyManyKernel;
+  occa::kernel paxpbyManyKernel;
   occa::kernel axpbyzKernel;
   occa::kernel axpbyzManyKernel;
   occa::kernel axmyKernel;
+  occa::kernel paxmyKernel;
   occa::kernel axmyManyKernel;
   occa::kernel axmyVectorKernel;
   occa::kernel axmyzKernel;
   occa::kernel axmyzManyKernel;
+  occa::kernel paxmyzManyKernel;
   occa::kernel axdyKernel;
   occa::kernel aydxKernel;
   occa::kernel aydxManyKernel;

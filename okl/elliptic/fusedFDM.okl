@@ -10,7 +10,7 @@
                       @restrict const pfloat *S_z,
                       @restrict const pfloat *inv_L,
 #if p_restrict
-                      @restrict const dfloat *wts,
+                      @restrict const pfloat *wts,
 #endif
                       @restrict pfloat *u)
 {

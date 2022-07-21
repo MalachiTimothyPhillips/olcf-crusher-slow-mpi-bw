@@ -70,13 +70,7 @@ void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs) {
   M->levels[0]->o_x   = o_x;
   M->levels[0]->o_rhs = o_rhs;
 
-  if       ((M->exact)&&(M->ktype==PCG)){
-    M->device_pcg(1000,1e-8);
-  } else if((M->exact)&&(M->ktype==GMRES)){
-    M->device_pgmres(1000,1e-8);
-  } else if(M->ctype==KCYCLE) {
-    M->device_kcycle(0);
-  } else if(M->ctype==VCYCLE) {
+  if(M->ctype==VCYCLE) {
     if(M->additive){
       M->additiveVcycle();
     } else {
@@ -90,13 +84,6 @@ void Report(solver_t *M) {
 }
 
 void Free(solver_t* M) {
-  Nrefs--;
-  if (Nrefs==0) {
-    freeParAlmondKernels();
-    freeScratchSpace();
-    freePinnedScratchSpace();
-  }
-
   delete M;
 }
 

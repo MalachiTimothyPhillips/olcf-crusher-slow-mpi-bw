@@ -43,17 +43,6 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_,
 
   options = options_;
 
-  if (options.compareArgs("PARALMOND CYCLE", "NONSYM")) {
-    ktype = GMRES;
-  } else {
-    ktype = PCG;
-  }
-
-  if(options.compareArgs("PARALMOND CYCLE", "EXACT"))
-    exact = true;
-  else
-    exact = false;
-
   if(options.compareArgs("PARALMOND CYCLE", "VCYCLE")) {
     ctype = VCYCLE;
     additive = false;
@@ -89,16 +78,6 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_,
     }
   } else {
     ctype = KCYCLE;
-  }
-
-  if (options.compareArgs("PARALMOND SMOOTHER", "CHEBYSHEV")) {
-    ChebyshevIterations = 2;
-    
-    stype = CHEBYSHEV;
-    options.getArgs("PARALMOND CHEBYSHEV DEGREE", ChebyshevIterations);
-
-  } else { //default to DAMPED_JACOBI
-    stype = DAMPED_JACOBI;
   }
 }
 

@@ -95,10 +95,12 @@ void ellipticSolveSetup(elliptic_t* elliptic)
   elliptic->o_Ap   = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
   elliptic->o_x0   = platform->device.malloc(elliptic->Ntotal * elliptic->Nfields * sizeof(dfloat));
 #else
-  elliptic->o_p    = elliptic->o_wrk + 0*offsetBytes;
-  elliptic->o_z    = elliptic->o_wrk + 1*offsetBytes; 
-  elliptic->o_Ap   = elliptic->o_wrk + 2*offsetBytes; 
-  elliptic->o_x0   = elliptic->o_wrk + 3*offsetBytes; 
+  elliptic->o_p       = elliptic->o_wrk + 0*offsetBytes;
+  elliptic->o_z       = elliptic->o_wrk + 1*offsetBytes; 
+  elliptic->o_Ap      = elliptic->o_wrk + 2*offsetBytes; 
+  elliptic->o_x0      = elliptic->o_wrk + 3*offsetBytes;
+  elliptic->o_rPfloat = elliptic->o_wrk + 4*offsetBytes;
+  elliptic->o_zPfloat = elliptic->o_wrk + 5*offsetBytes; 
 #endif
 
   const dlong Nblocks = (Nlocal + BLOCKSIZE - 1) / BLOCKSIZE;
@@ -175,7 +177,7 @@ void ellipticSolveSetup(elliptic_t* elliptic)
     ABORT(EXIT_FAILURE);
   }
 
-  { //setup an unmasked gs handle
+  { //setup an masked gs handle
     ogs_t *ogs = NULL;
     if (elliptic->blockSolver) ogs = mesh->ogs;
     ellipticOgs(mesh,
@@ -211,6 +213,10 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
       elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");
 
+      kernelName = "fusedCopyDfloatToPfloat";
+      elliptic->fusedCopyDfloatToPfloatKernel =
+        platform->kernels.get(kernelName);
+  
       std::string kernelNamePrefix = "";
       if(elliptic->poisson) kernelNamePrefix += "poisson-";
       kernelNamePrefix += "elliptic";

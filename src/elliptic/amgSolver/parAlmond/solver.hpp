@@ -57,8 +57,6 @@ public:
 
   ~solver_t();
 
-  void AMGSetup(parCSR *A);
-
   void Report();
 
   void kcycle(int k);

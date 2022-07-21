@@ -27,14 +27,7 @@ SOFTWARE.
 #ifndef PARALMOND_DEFINES_HPP
 #define PARALMOND_DEFINES_HPP
 
-#define NBLOCKS 128
-
-#define MAX_LEVELS 100
-#define GPU_CPU_SWITCH_SIZE 0 //host-device switch threshold
-
-#define NUMKCYCLES 3
-#define COARSENTHREASHOLD 0.2
-#define KCYCLETOL 0.2
+#define MAX_LEVELS 10
 
 namespace parAlmond {
 

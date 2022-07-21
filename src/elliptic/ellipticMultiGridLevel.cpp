@@ -36,7 +36,6 @@ void MGLevel::residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res)
 {
   if(stype != SmootherType::SCHWARZ) {
     ellipticOperator(elliptic,o_x,o_res, pfloatString);
-    // subtract r = b - A*x
     platform->linAlg->paxpbyMany(Nrows, elliptic->Nfields, elliptic->Ntotal, 1.0, o_rhs, -1.0, o_res);
   } else {
     o_res.copyFrom(o_rhs, Nrows*sizeof(pfloat));
@@ -64,6 +63,7 @@ void MGLevel::coarsen(occa::memory o_x, occa::memory o_Rx)
   }
 
   platform->flopCounter->add("MGLevel::coarsen, N=" + std::to_string(mesh->N), flopCounter);
+
 }
 
 void MGLevel::prolongate(occa::memory o_x, occa::memory o_Px)

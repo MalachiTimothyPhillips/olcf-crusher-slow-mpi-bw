@@ -138,26 +138,6 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
         fileName,
         pfloatKernelInfo,
         orderSuffix + "pfloat");
-    kernelName = "fusedCopyDfloatToPfloat";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-
-    kernelName = "copyDfloatToPfloat";
-    fileName = installDir + "/okl/core/" + kernelName + extension;
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-
-    kernelName = "copyPfloatToDfloat";
-    fileName = installDir + "/okl/core/" + kernelName + extension;
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
 
     kernelName = "scaledAdd";
     fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
@@ -210,7 +190,7 @@ void registerSchwarzKernels(const std::string &section, int N) {
 
   bool overlap = false;
   const bool serial = platform->serial;
-  if (Nq >= (elliptic_t::minNFDMOverlap + 1) && !serial)
+  if (Nq_e >= (elliptic_t::minNFDMOverlap + 1) && !serial)
     overlap = true;
 
   std::string installDir;
@@ -372,17 +352,9 @@ void registerMultiGridKernels(const std::string &section, int poissonEquation) {
         std::string installDir;
         installDir.assign(getenv("NEKRS_INSTALL_DIR"));
         const std::string oklpath = installDir + "/okl/";
-        std::string fileName = oklpath + "parAlmond/convertFP64ToFP32.okl";
-        std::string kernelName = "convertFP64ToFP32";
-        platform->kernels.add(
-            kernelName, fileName, platform->kernelInfo);
 
-        fileName = oklpath + "parAlmond/convertFP32ToFP64.okl";
-        kernelName = "convertFP32ToFP64";
-        platform->kernels.add(
-            kernelName, fileName, platform->kernelInfo);
-        fileName = oklpath + "parAlmond/vectorDotStar2.okl";
-        kernelName = "vectorDotStar2";
+        std::string fileName = oklpath + "parAlmond/vectorDotStar2.okl";
+        std::string kernelName = "vectorDotStar2";
         platform->kernels.add(
             kernelName, fileName, platform->kernelInfo);
       }

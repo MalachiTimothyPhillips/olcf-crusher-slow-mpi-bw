@@ -34,12 +34,7 @@ SOFTWARE.
 #include "nrssys.hpp"
 
 #include "defines.hpp"
-#include "utils.hpp"
-#include "kernels.hpp"
-#include "vector.hpp"
-#include "matrix.hpp"
 #include "level.hpp"
-#include "agmg.hpp"
 #include "coarse.hpp"
 #include "solver.hpp"
 
