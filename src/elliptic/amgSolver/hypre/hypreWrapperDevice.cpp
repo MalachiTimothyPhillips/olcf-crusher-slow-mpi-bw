@@ -10,7 +10,7 @@
 #include "HYPRE_parcsr_ls.h"
 #include "_hypre_utilities.h"
 
-#define BOOMERAMG_NPARAM 10
+#define BOOMERAMG_NPARAM 13
 static double boomerAMGParam[BOOMERAMG_NPARAM];
 
 class hypre_data_t;
@@ -177,7 +177,15 @@ BoomerAMGSetup(int nrows, int nz,
     HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 1);
     HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 2);
   } 
+  if (boomerAMGParam[11] > 0) {
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[11], 2);
+  }
+
+  HYPRE_BoomerAMGSetChebyOrder(data->solver, boomerAMGParam[10]);
+
   HYPRE_BoomerAMGSetCycleRelaxType(data->solver, 9, 3);
+
+  // set chebyshev variant (once worked out, that is...)
 
   HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 1);
   HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 2);

@@ -185,6 +185,9 @@ static std::vector<std::string> boomeramgKeys = {
   {"strongThreshold"},
   {"nonGalerkinTol"},
   {"aggressiveCoarseningLevels"},
+  {"degree"}, // for chebyshev
+  {"postsmoother"}, // to allow for asymmetric smoothing type
+  {"chebyshevtype"}, // to allow for setting different variants
 };
 
 static std::vector<std::string> amgxKeys = {
@@ -1850,6 +1853,20 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
       if (par->extract("boomeramg", "aggressivecoarseninglevels", aggLevels))
         options.setArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS",
                         std::to_string(aggLevels));
+      
+      int degree;
+      if (par->extract("boomeramg", "degree", degree))
+        options.setArgs("BOOMERAMG CHEBYSHEV DEGREE",
+                        std::to_string(degree));
+      int postsmoother;
+      if (par->extract("boomeramg", "postsmoother", postsmoother))
+        options.setArgs("BOOMERAMG POST SMOOTHER",
+                        std::to_string(postsmoother));
+
+      int chebyshevtype;
+      if (par->extract("boomeramg", "chebyshevtype", chebyshevtype))
+        options.setArgs("BOOMERAMG CHEBYSHEV VARIANT",
+                        std::to_string(chebyshevtype));
     }
 
     if (par->sections.count("amgx")) {

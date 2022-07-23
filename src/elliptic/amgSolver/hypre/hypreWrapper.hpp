@@ -4,7 +4,7 @@
 #include <mpi.h>
 #include "occa.hpp"
 
-#define BOOMERAMG_NPARAM 10
+#define BOOMERAMG_NPARAM 13
 
 namespace hypreWrapper
 {
