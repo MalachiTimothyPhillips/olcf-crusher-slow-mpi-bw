@@ -41,20 +41,16 @@ public:
 
   int N;
 
-  occa::memory h_xLocal;
-  occa::memory h_rhsLocal;
-  dfloat *xLocal=NULL;
-  dfloat *rhsLocal=NULL;
-
   occa::memory o_rhsBuffer;
   occa::memory o_xBuffer;
   pfloat *xBuffer;
   pfloat *rhsBuffer;
 
-  bool gatherLevel;
   ogs_t *ogs;
   pfloat *Gx, *Sx;
   occa::memory o_Sx, o_Gx;
+
+  pfloat *weight = NULL;
   occa::memory o_weight;
 
   MPI_Comm comm;

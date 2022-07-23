@@ -43,7 +43,6 @@ static occa::kernel vectorDotStarKernel;
 namespace parAlmond {
 
 coarseSolver::coarseSolver(setupAide options_, MPI_Comm comm_) {
-  gatherLevel = true;
   options = options_;
   comm = comm_;
 }

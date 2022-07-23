@@ -101,7 +101,7 @@ public:
 
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,
-          setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_,
+          setupAide options_, MPI_Comm comm_,
           bool _isCoarse = false
           );
   //build a level and connect it to the previous one
@@ -111,7 +111,6 @@ public:
           elliptic_t* ellipticCoarse,          //current level
           int Nf, int Nc,
           setupAide options_,
-          parAlmond::KrylovType ktype_,
           MPI_Comm comm_,
           bool _isCoarse = false
           );

@@ -36,10 +36,9 @@ occa::memory MGLevel::o_smootherUpdate;
 
 //build a single level
 MGLevel::MGLevel(elliptic_t* ellipticBase, int Nc,
-                 setupAide options_, parAlmond::KrylovType ktype_, MPI_Comm comm_, bool _isCoarse) :
+                 setupAide options_, MPI_Comm comm_, bool _isCoarse) :
   multigridLevel(ellipticBase->mesh->Nelements * ellipticBase->mesh->Np,
                  (ellipticBase->mesh->Nelements + ellipticBase->mesh->totalHaloPairs) * ellipticBase->mesh->Np,
-                 ktype_,
                  comm_)
 {
   isCoarse = _isCoarse;
@@ -61,14 +60,12 @@ MGLevel::MGLevel(elliptic_t* ellipticBase, //finest level
                  elliptic_t* ellipticCoarse, //current level
                  int Nf, int Nc,
                  setupAide options_,
-                 parAlmond::KrylovType ktype_,
                  MPI_Comm comm_,
                  bool _isCoarse
                  )
   :
   multigridLevel(ellipticCoarse->mesh->Nelements * ellipticCoarse->mesh->Np,
                  (ellipticCoarse->mesh->Nelements + ellipticCoarse->mesh->totalHaloPairs) * ellipticCoarse->mesh->Np,
-                 ktype_,
                  comm_)
 {
   

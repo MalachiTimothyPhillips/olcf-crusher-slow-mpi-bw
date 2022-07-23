@@ -360,11 +360,6 @@ endif()
 if(ENABLE_OPENCL) 
   message(NOTICE "OPENCL backend enabled (flags: ${OCCA_OPENCL_COMPILER_FLAGS})")
 endif()
-if(GPU_MPI)
-  message(NOTICE "GPU aware MPI support enabled")
-else(GPU_MPI)
-  message(NOTICE "GPU aware MPI support disabled!")
-endif()
 message(NOTICE "-------------------------------------------")
 
 #################################################################################

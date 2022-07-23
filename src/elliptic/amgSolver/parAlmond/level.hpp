@@ -36,12 +36,11 @@ public:
 
   occa::memory o_x, o_rhs, o_res;
 
-  KrylovType ktype;
   SmoothType stype;
 
   MPI_Comm comm;
 
-  multigridLevel(dlong N, dlong M, KrylovType Ktype, MPI_Comm comm);
+  multigridLevel(dlong N, dlong M, MPI_Comm comm);
   ~multigridLevel();
 
   virtual void Ax(occa::memory o_x, occa::memory o_Ax)=0;
