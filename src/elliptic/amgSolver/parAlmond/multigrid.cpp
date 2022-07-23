@@ -133,7 +133,6 @@ void solver_t::additiveVcycle()
   occa::memory o_rhs = levels[baseLevel]->o_rhs;
   occa::memory o_x   = levels[baseLevel]->o_x;
 
-  auto rhsBuffer = this->coarseLevel->rhsBuffer;
   auto xBuffer = this->coarseLevel->xBuffer;
   auto ogs = this->coarseLevel->ogs;
 
@@ -164,13 +163,13 @@ void solver_t::additiveVcycle()
 
         for(int i = 0; i < Nlocal; i++)
           Sx[i] *= this->coarseLevel->weight[i]; 
-        ogsGather(rhsBuffer, Sx, ogsPfloat, ogsAdd, ogs);
+        ogsGather(Gx, Sx, ogsPfloat, ogsAdd, ogs);
     
         for(int i = 0; i < N; i++) {
           xBuffer[i] = 0; 
         }
 
-        hypreWrapper::BoomerAMGSolve(rhsBuffer, xBuffer);
+        hypreWrapper::BoomerAMGSolve(Gx, xBuffer);
 
         ogsScatter(Sx, xBuffer, ogsPfloat, ogsAdd, ogs);
       }

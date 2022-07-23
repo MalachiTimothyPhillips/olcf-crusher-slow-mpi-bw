@@ -41,10 +41,8 @@ public:
 
   int N;
 
-  occa::memory o_rhsBuffer;
   occa::memory o_xBuffer;
   pfloat *xBuffer;
-  pfloat *rhsBuffer;
 
   ogs_t *ogs;
   pfloat *Gx, *Sx;

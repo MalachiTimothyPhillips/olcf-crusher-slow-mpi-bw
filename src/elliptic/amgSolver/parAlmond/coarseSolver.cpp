@@ -73,8 +73,6 @@ void coarseSolver::setup(
 
   N = (int) Nrows;
 
-  o_rhsBuffer = platform->device.malloc(Nrows * sizeof(pfloat));
-  rhsBuffer = (pfloat*) calloc(Nrows, sizeof(pfloat));
   o_xBuffer = platform->device.malloc(Nrows * sizeof(pfloat));
   xBuffer = (pfloat*) calloc(Nrows, sizeof(pfloat));
 
@@ -166,13 +164,13 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
   platform->timer.tic("coarseSolve", 1);
 
-  const bool useDevice = options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
-
   if(useSEMFEM){
 
     semfemSolver(o_rhs, o_x);
 
   } else {
+
+    const bool useDevice = options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
 
     const pfloat one = 1.0;
     const pfloat zero = 0.0;
@@ -182,25 +180,25 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
     // T->L
     vectorDotStarKernel(ogs->N, one, zero, o_weight, o_rhs, o_Sx); 
     ogsGather(o_Gx, o_Sx, ogsPfloat, ogsAdd, ogs);
-    if(!useDevice) o_Gx.copyTo(rhsBuffer, N*sizeof(pfloat));
+    if(!useDevice) o_Gx.copyTo(Gx, N*sizeof(pfloat));
 
     if (options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
       if(useDevice)
         hypreWrapperDevice::BoomerAMGSolve(o_Gx, o_xBuffer);
       else
-        hypreWrapper::BoomerAMGSolve(rhsBuffer, xBuffer); 
+        hypreWrapper::BoomerAMGSolve(Gx, xBuffer); 
     } else if (options.compareArgs("COARSE SOLVER", "AMGX")){
         AMGXsolve(o_Gx.ptr(), o_xBuffer.ptr());
     }
 
+    // T->E
     if(useDevice) {
-      o_Gx.copyFrom(o_xBuffer, N*sizeof(pfloat));
+      ogsScatter(o_x, o_xBuffer, ogsPfloat, ogsAdd, ogs);
     } else {
       o_Gx.copyFrom(xBuffer, N*sizeof(pfloat));
+      ogsScatter(o_x, o_Gx, ogsPfloat, ogsAdd, ogs);
     }
 
-    // T->E
-    ogsScatter(o_x, o_Gx, ogsPfloat, ogsAdd, ogs);
   }
 
   platform->timer.toc("coarseSolve");
