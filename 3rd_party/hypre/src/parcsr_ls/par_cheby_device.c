@@ -157,17 +157,20 @@ struct scaledAdd
  * @brief scale
  *
  * Performs
- * y = d .* x
+ * y = coef * d .* x
  * For scalars x, d, y
  */
 template <typename T>
-struct scale
+struct applySmoother
 {
    typedef thrust::tuple<T, T, T&> Tuple;
 
+   const T coef;
+   applySmoother(T _coef = 1.0) : coef(_coef) {}
+
    __host__ __device__ void operator()(Tuple t)
    {
-      thrust::get<2>(t) = thrust::get<0>(t) * thrust::get<1>(t);
+      thrust::get<2>(t) = coef * thrust::get<0>(t) * thrust::get<1>(t);
    }
 };
 
@@ -205,7 +208,7 @@ struct update
 
    const T scale0;
    const T scale1;
-   waxpyz(T _scale0, T _scale1) : scale0(_scale0), scale1(_scale1) {}
+   update(T _scale0, T _scale1) : scale0(_scale0), scale1(_scale1) {}
 
    __host__ __device__ void operator()(Tuple t)
    {
@@ -213,6 +216,26 @@ struct update
    }
 };
 
+/**
+ * @brief updateCol
+ *
+ * Performs
+ * d = scale0 * x.*r + scale1 * d
+ */
+template <typename T>
+struct updateCol
+{
+   typedef thrust::tuple<T, T, T&> Tuple;
+
+   const T scale0;
+   const T scale1;
+   updateCol(T _scale0, T _scale1) : scale0(_scale0), scale1(_scale1) {}
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<2>(t) = scale1 * thrust::get<2>(t) + scale0 * thrust::get<1>(t) * thrust::get<0>(t);
+   }
+};
 /**
  * @brief Solve using a chebyshev polynomial on the device
  *
@@ -419,6 +442,60 @@ hypre_ParCSRRelax_Cheby_SolveDevice(hypre_ParCSRMatrix *A, /* matrix to relax wi
       }
 
       // u += v;
+      HYPRE_THRUST_CALL(for_each,
+                        thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
+                        thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
+                        add<HYPRE_Real>());
+
+   }
+   else if(variant == 3)
+   {
+      const auto lambda_max = coefs[0];
+      const auto lambda_min = coefs[1];
+
+      const auto theta = 0.5 * (lambda_max + lambda_min);
+      const auto delta = 0.5 * (lambda_max - lambda_min);
+      const auto sigma = theta / delta;
+      auto rho = 1.0 / sigma;
+
+      tmp_data = hypre_VectorData(hypre_ParVectorLocalVector(tmp_vec));
+
+      // r := f - A*u
+      hypre_ParVectorCopy(f, r);
+      hypre_ParCSRMatrixMatvec(-1.0, A, u, 1.0, r);
+
+      // v := \dfrac{4}{3} \dfrac{1}{\rho(D^{-1}A)} D^{-1} r
+      HYPRE_THRUST_CALL(for_each,
+                        thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, v_data)),
+                        thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, v_data)) + num_rows,
+                        applySmoother<HYPRE_Real>(4.0 / 3.0 / lambda_max));
+      
+      for(int i = 0; i < cheby_order; ++i){
+        // u += \beta_k v
+        // since this is _not_ the optimized variant, \beta := 1.0
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
+                          add<HYPRE_Real>());
+        // r = r - Av
+        hypre_ParCSRMatrixMatvec(-1.0, A, v, 1.0, r);
+
+        // + 2 offset is due to two issues:
+        // + 1 is from https://arxiv.org/pdf/2202.08830.pdf being written in 1-based indexing
+        // + 1 is from pre-computing z_1 _outside_ of the loop
+        // v = \dfrac{(2i-3)}{(2i+1)} v + \dfrac{(8i-4)}{(2i+1)} \dfrac{1}{\rho(SA)} S r
+        const auto id = i + 2;
+        const auto vScale = (2.0 * id - 3.0) / (2.0 * id + 1.0);
+        const auto rScale = (8.0 * id - 4.0) / (2.0 * id + 1.0) / lambda_max;
+
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, v_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, v_data)) + num_rows,
+                          updateCol<HYPRE_Real>(rScale, vScale));
+
+      }
+
+      // u += \beta v;
       HYPRE_THRUST_CALL(for_each,
                         thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
                         thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
