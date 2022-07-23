@@ -79,7 +79,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       settings[10] = 0;    /* aggressive coarsening levels */
       settings[11] = 2;    /* chebyshev degree*/
       settings[12] = 19;    /* post smoother */
-      settings[13] = 1;    /* Chebyshev variant (not yet used)*/
+      settings[13] = 2;    /* Chebyshev variant (not yet used)*/
 
       if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
         settings[4]  = 16;

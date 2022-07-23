@@ -75,14 +75,16 @@ hypre_ParCSRRelax_Cheby_Setup(hypre_ParCSRMatrix *A,         /* matrix to relax 
    HYPRE_Real      *ds_data = NULL;
 
    /* u = u + p(A)r */
-   if (order > 4)
-   {
-      order = 4;
-   }
+   if(variant == 1 || variant == 0){
+     if (order > 4)
+     {
+        order = 4;
+     }
 
-   if (order < 1)
-   {
-      order = 1;
+     if (order < 1)
+     {
+        order = 1;
+     }
    }
 
    coefs = hypre_CTAlloc(HYPRE_Real, order + 1, HYPRE_MEMORY_HOST);
@@ -148,7 +150,7 @@ hypre_ParCSRRelax_Cheby_Setup(hypre_ParCSRMatrix *A,         /* matrix to relax 
       }
    }
 
-   else /* standard chebyshev */
+   else if (variant == 0) /* standard chebyshev */
    {
 
       switch ( cheby_order ) /* these are the corresponding cheby polynomials: u = u_o + s(A)r_0  - so order is
@@ -186,13 +188,24 @@ hypre_ParCSRRelax_Cheby_Setup(hypre_ParCSRMatrix *A,         /* matrix to relax 
             break;
       }
    }
+   else {
+      hypre_TFree(coefs, HYPRE_MEMORY_HOST);
+      coefs = hypre_CTAlloc(HYPRE_Real, 2, HYPRE_MEMORY_HOST);
+      coefs[0] = upper_bound;
+      coefs[1] = lower_bound;
+   }
    *coefs_ptr = coefs;
 
    if (scale)
    {
       /*grab 1/sqrt(abs(diagonal)) */
       ds_data = hypre_CTAlloc(HYPRE_Real, num_rows, hypre_ParCSRMatrixMemoryLocation(A));
-      hypre_CSRMatrixExtractDiagonal(hypre_ParCSRMatrixDiag(A), ds_data, 4);
+      if(variant == 0 || variant == 1){
+        hypre_CSRMatrixExtractDiagonal(hypre_ParCSRMatrixDiag(A), ds_data, 4);
+      } else {
+        // 1/D
+        hypre_CSRMatrixExtractDiagonal(hypre_ParCSRMatrixDiag(A), ds_data, 2);
+      }
    } /* end of scaling code */
    *ds_ptr = ds_data;
 

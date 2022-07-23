@@ -185,7 +185,7 @@ BoomerAMGSetup(int nrows, int nz,
 
   HYPRE_BoomerAMGSetCycleRelaxType(data->solver, 9, 3);
 
-  // set chebyshev variant (once worked out, that is...)
+  HYPRE_BoomerAMGSetChebyVariant(data->solver, boomerAMGParam[12]);
 
   HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 1);
   HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 2);

@@ -98,6 +98,122 @@ struct xpyz
 };
 
 /**
+ * @brief scale
+ *
+ * Performs
+ * x = d .* x
+ * For scalars x, d
+ */
+template <typename T>
+struct scaleInPlace
+{
+   typedef thrust::tuple<T, T&> Tuple;
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<1>(t) = thrust::get<0>(t) * thrust::get<1>(t);
+   }
+};
+
+/**
+ * @brief add
+ *
+ * Performs
+ * x = x + y
+ * For scalars x, d
+ */
+template <typename T>
+struct add
+{
+   typedef thrust::tuple<T, T&> Tuple;
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<1>(t) = thrust::get<0>(t) + thrust::get<1>(t);
+   }
+};
+
+/**
+ * @brief add
+ *
+ * Performs
+ * x = x + coef * d.*y
+ * For scalars x, d
+ */
+template <typename T>
+struct scaledAdd
+{
+   typedef thrust::tuple<T, T, T&> Tuple;
+   const T scale;
+   scaledAdd(T _scale) : scale(_scale) {}
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<2>(t) = thrust::get<2>(t) + scale * thrust::get<0>(t) * thrust::get<1>(t);
+   }
+};
+
+/**
+ * @brief scale
+ *
+ * Performs
+ * y = d .* x
+ * For scalars x, d, y
+ */
+template <typename T>
+struct scale
+{
+   typedef thrust::tuple<T, T, T&> Tuple;
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<2>(t) = thrust::get<0>(t) * thrust::get<1>(t);
+   }
+};
+
+/**
+ * @brief waxpyz
+ *
+ * Performs
+ * y = a * x
+ * constant a
+ */
+template <typename T>
+struct scaleConstant
+{
+   typedef thrust::tuple<T, T&> Tuple;
+
+   const T scale;
+   scaleConstant(T _scale) : scale(_scale) {}
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<1>(t) = scale * thrust::get<0>(t);
+   }
+};
+
+/**
+ * @brief update
+ *
+ * Performs
+ * d = scale0 * r + scale1 * d
+ */
+template <typename T>
+struct update
+{
+   typedef thrust::tuple<T, T&> Tuple;
+
+   const T scale0;
+   const T scale1;
+   waxpyz(T _scale0, T _scale1) : scale0(_scale0), scale1(_scale1) {}
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<1>(t) = scale1 * thrust::get<1>(t) + scale0 * thrust::get<0>(t);
+   }
+};
+
+/**
  * @brief Solve using a chebyshev polynomial on the device
  *
  * @param[in] A Matrix to relax with
@@ -143,8 +259,10 @@ hypre_ParCSRRelax_Cheby_SolveDevice(hypre_ParCSRMatrix *A, /* matrix to relax wi
 
    /* u = u + p(A)r */
 
-   if (order > 4) { order = 4; }
-   if (order < 1) { order = 1; }
+   if (variant == 0 || variant == 1){
+     if (order > 4) { order = 4; }
+     if (order < 1) { order = 1; }
+   }
 
    /* we are using the order of p(A) */
    cheby_order = order - 1;
@@ -152,92 +270,161 @@ hypre_ParCSRRelax_Cheby_SolveDevice(hypre_ParCSRMatrix *A, /* matrix to relax wi
    hypre_assert(hypre_VectorSize(hypre_ParVectorLocalVector(orig_u_vec)) >= num_rows);
    HYPRE_Real *orig_u = hypre_VectorData(hypre_ParVectorLocalVector(orig_u_vec));
 
-   if (!scale)
-   {
-      /* get residual: r = f - A*u */
-      hypre_ParVectorCopy(f, r);
-      hypre_ParCSRMatrixMatvec(-1.0, A, u, 1.0, r);
+   if(variant == 0 || variant == 1){
 
-      /* o = u; u = r .* coef */
-      HYPRE_THRUST_CALL(
-         for_each,
-         thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)),
-         thrust::make_zip_iterator(thrust::make_tuple(orig_u + num_rows, u_data + num_rows,
-                                                      r_data + num_rows)),
-         save_and_scale<HYPRE_Real>(coefs[cheby_order]));
+     if (!scale)
+     {
+        /* get residual: r = f - A*u */
+        hypre_ParVectorCopy(f, r);
+        hypre_ParCSRMatrixMatvec(-1.0, A, u, 1.0, r);
 
-      for (i = cheby_order - 1; i >= 0; i--)
-      {
-         hypre_ParCSRMatrixMatvec(1.0, A, u, 0.0, v);
-         mult = coefs[i];
+        /* o = u; u = r .* coef */
+        HYPRE_THRUST_CALL(
+           for_each,
+           thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)),
+           thrust::make_zip_iterator(thrust::make_tuple(orig_u + num_rows, u_data + num_rows,
+                                                        r_data + num_rows)),
+           save_and_scale<HYPRE_Real>(coefs[cheby_order]));
 
-         /* u = mult * r + v */
-         hypreDevice_ComplexAxpyn( r_data, num_rows, v_data, u_data, mult );
-      }
+        for (i = cheby_order - 1; i >= 0; i--)
+        {
+           hypre_ParCSRMatrixMatvec(1.0, A, u, 0.0, v);
+           mult = coefs[i];
 
-      /* u = o + u */
-      hypreDevice_ComplexAxpyn( orig_u, num_rows, u_data, u_data, 1.0);
+           /* u = mult * r + v */
+           hypreDevice_ComplexAxpyn( r_data, num_rows, v_data, u_data, mult );
+        }
+
+        /* u = o + u */
+        hypreDevice_ComplexAxpyn( orig_u, num_rows, u_data, u_data, 1.0);
+     }
+     else /* scaling! */
+     {
+
+        /*grab 1/sqrt(diagonal) */
+
+        tmp_data = hypre_VectorData(hypre_ParVectorLocalVector(tmp_vec));
+
+        /* get ds_data and get scaled residual: r = D^(-1/2)f -
+         * D^(-1/2)A*u */
+
+        hypre_ParCSRMatrixMatvec(-1.0, A, u, 0.0, tmp_vec);
+        /* r = ds .* (f + tmp) */
+
+        /* TODO: It might be possible to merge this and the next call to:
+         * r[j] = ds_data[j] * (f_data[j] + tmp_data[j]); o[j] = u[j]; u[j] = r[j] * coef */
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, f_data, tmp_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, f_data, tmp_data)) + num_rows,
+                          wxypz<HYPRE_Real>());
+
+        /* save original u, then start
+           the iteration by multiplying r by the cheby coef.*/
+
+        /* o = u;  u = r * coef */
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)) + num_rows,
+                          save_and_scale<HYPRE_Real>(coefs[cheby_order]));
+
+        /* now do the other coefficients */
+        for (i = cheby_order - 1; i >= 0; i--)
+        {
+           /* v = D^(-1/2)AD^(-1/2)u */
+           /* tmp = ds .* u */
+           HYPRE_THRUST_CALL( transform, ds_data, ds_data + num_rows, u_data, tmp_data, _1 * _2 );
+
+           hypre_ParCSRMatrixMatvec(1.0, A, tmp_vec, 0.0, v);
+
+           /* u_new = coef*r + v*/
+           mult = coefs[i];
+
+           /* u = coef * r + ds .* v */
+           HYPRE_THRUST_CALL(for_each,
+                             thrust::make_zip_iterator(thrust::make_tuple(u_data, r_data, ds_data, v_data)),
+                             thrust::make_zip_iterator(thrust::make_tuple(u_data, r_data, ds_data, v_data)) + num_rows,
+                             waxpyz<HYPRE_Real>(mult));
+        } /* end of cheby_order loop */
+
+        /* now we have to scale u_data before adding it to u_orig*/
+
+        /* u = orig_u + ds .* u */
+        HYPRE_THRUST_CALL(
+           for_each,
+           thrust::make_zip_iterator(thrust::make_tuple(u_data, orig_u, ds_data)),
+           thrust::make_zip_iterator(thrust::make_tuple(u_data + num_rows, orig_u + num_rows,
+                                                        ds_data + num_rows)),
+           xpyz<HYPRE_Real>());
+
+
+     } /* end of scaling code */
    }
-   else /* scaling! */
+   else if(variant == 2)
    {
+      const auto lambda_max = coefs[0];
+      const auto lambda_min = coefs[1];
 
-      /*grab 1/sqrt(diagonal) */
+      const auto theta = 0.5 * (lambda_max + lambda_min);
+      const auto delta = 0.5 * (lambda_max - lambda_min);
+      const auto sigma = theta / delta;
+      auto rho = 1.0 / sigma;
 
       tmp_data = hypre_VectorData(hypre_ParVectorLocalVector(tmp_vec));
 
-      /* get ds_data and get scaled residual: r = D^(-1/2)f -
-       * D^(-1/2)A*u */
+      // r := f - A*u
+      hypre_ParVectorCopy(f, r);
+      hypre_ParCSRMatrixMatvec(-1.0, A, u, 1.0, r);
 
-      hypre_ParCSRMatrixMatvec(-1.0, A, u, 0.0, tmp_vec);
-      /* r = ds .* (f + tmp) */
+      // TODO: consolidate two calls below
 
-      /* TODO: It might be possible to merge this and the next call to:
-       * r[j] = ds_data[j] * (f_data[j] + tmp_data[j]); o[j] = u[j]; u[j] = r[j] * coef */
+      // r = D^{-1} r
       HYPRE_THRUST_CALL(for_each,
-                        thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, f_data, tmp_data)),
-                        thrust::make_zip_iterator(thrust::make_tuple(r_data, ds_data, f_data, tmp_data)) + num_rows,
-                        wxypz<HYPRE_Real>());
-
-      /* save original u, then start
-         the iteration by multiplying r by the cheby coef.*/
-
-      /* o = u;  u = r * coef */
+                        thrust::make_zip_iterator(thrust::make_tuple(ds_data, r_data)),
+                        thrust::make_zip_iterator(thrust::make_tuple(ds_data, r_data)) + num_rows,
+                        scaleInPlace<HYPRE_Real>());
+      
+      // v := 1/theta r
       HYPRE_THRUST_CALL(for_each,
-                        thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)),
-                        thrust::make_zip_iterator(thrust::make_tuple(orig_u, u_data, r_data)) + num_rows,
-                        save_and_scale<HYPRE_Real>(coefs[cheby_order]));
+                        thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)),
+                        thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)) + num_rows,
+                        scaleConstant<HYPRE_Real>(1.0 / theta));
+      
+      for(int i = 0; i < cheby_order; ++i){
+        // u += v
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
+                          add<HYPRE_Real>());
+        // r = r - D^{-1} Av
+        // tmp = -Av
+        hypre_ParCSRMatrixMatvec(-1.0, A, v, 0.0, tmp_vec);
 
-      /* now do the other coefficients */
-      for (i = cheby_order - 1; i >= 0; i--)
-      {
-         /* v = D^(-1/2)AD^(-1/2)u */
-         /* tmp = ds .* u */
-         HYPRE_THRUST_CALL( transform, ds_data, ds_data + num_rows, u_data, tmp_data, _1 * _2 );
+        // TODO: consolidate
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(tmp_data, ds_data, r_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(tmp_data, ds_data, r_data)) + num_rows,
+                          scaledAdd<HYPRE_Real>(-1.0));
 
-         hypre_ParCSRMatrixMatvec(1.0, A, tmp_vec, 0.0, v);
+        const auto rhoSave = rho;
+        rho = 1.0 / (2 * sigma - rho);
 
-         /* u_new = coef*r + v*/
-         mult = coefs[i];
+        const auto vcoef = rho * rhoSave;
+        const auto rcoef = 2.0 * rho / delta;
 
-         /* u = coef * r + ds .* v */
-         HYPRE_THRUST_CALL(for_each,
-                           thrust::make_zip_iterator(thrust::make_tuple(u_data, r_data, ds_data, v_data)),
-                           thrust::make_zip_iterator(thrust::make_tuple(u_data, r_data, ds_data, v_data)) + num_rows,
-                           waxpyz<HYPRE_Real>(mult));
-      } /* end of cheby_order loop */
+        // v = rho_{k+1} rho_k * v + 2 rho_{k+1} / delta r
+        HYPRE_THRUST_CALL(for_each,
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)) + num_rows,
+                          update<HYPRE_Real>(rcoef, vcoef));
+      }
 
-      /* now we have to scale u_data before adding it to u_orig*/
+      // u += v;
+      HYPRE_THRUST_CALL(for_each,
+                        thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
+                        thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
+                        add<HYPRE_Real>());
 
-      /* u = orig_u + ds .* u */
-      HYPRE_THRUST_CALL(
-         for_each,
-         thrust::make_zip_iterator(thrust::make_tuple(u_data, orig_u, ds_data)),
-         thrust::make_zip_iterator(thrust::make_tuple(u_data + num_rows, orig_u + num_rows,
-                                                      ds_data + num_rows)),
-         xpyz<HYPRE_Real>());
-
-
-   } /* end of scaling code */
+   }
 
    return hypre_error_flag;
 }
