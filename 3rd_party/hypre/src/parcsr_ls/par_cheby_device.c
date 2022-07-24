@@ -154,6 +154,29 @@ struct scaledAdd
 };
 
 /**
+ * @brief add
+ *
+ * Performs
+ * r = r - D .* tmp
+ * v = coef0 * r + coef1 * v
+ * 
+ */
+template <typename T>
+struct updateRAndV
+{
+   typedef thrust::tuple<T, T, T&, T&> Tuple;
+   const T coef0;
+   const T coef1;
+   updateRAndV(T _coef0, T _coef1) : coef0(_coef0), coef1(_coef1) {}
+
+   __host__ __device__ void operator()(Tuple t)
+   {
+      thrust::get<2>(t) = thrust::get<2>(t) - thrust::get<0>(t) * thrust::get<1>(t);
+      thrust::get<3>(t) = coef0 * thrust::get<2>(t) + coef1 * thrust::get<3>(t);
+   }
+};
+
+/**
  * @brief scale
  *
  * Performs
@@ -418,15 +441,8 @@ hypre_ParCSRRelax_Cheby_SolveDevice(hypre_ParCSRMatrix *A, /* matrix to relax wi
                           thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)),
                           thrust::make_zip_iterator(thrust::make_tuple(v_data, u_data)) + num_rows,
                           add<HYPRE_Real>());
-        // r = r - D^{-1} Av
-        // tmp = -Av
-        hypre_ParCSRMatrixMatvec(-1.0, A, v, 0.0, tmp_vec);
-
-        // TODO: consolidate
-        HYPRE_THRUST_CALL(for_each,
-                          thrust::make_zip_iterator(thrust::make_tuple(tmp_data, ds_data, r_data)),
-                          thrust::make_zip_iterator(thrust::make_tuple(tmp_data, ds_data, r_data)) + num_rows,
-                          scaledAdd<HYPRE_Real>(-1.0));
+        // tmp = Av
+        hypre_ParCSRMatrixMatvec(1.0, A, v, 0.0, tmp_vec);
 
         const auto rhoSave = rho;
         rho = 1.0 / (2 * sigma - rho);
@@ -434,11 +450,12 @@ hypre_ParCSRRelax_Cheby_SolveDevice(hypre_ParCSRMatrix *A, /* matrix to relax wi
         const auto vcoef = rho * rhoSave;
         const auto rcoef = 2.0 * rho / delta;
 
+        // r = r - D^{-1} Av
         // v = rho_{k+1} rho_k * v + 2 rho_{k+1} / delta r
         HYPRE_THRUST_CALL(for_each,
-                          thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)),
-                          thrust::make_zip_iterator(thrust::make_tuple(r_data, v_data)) + num_rows,
-                          update<HYPRE_Real>(rcoef, vcoef));
+                          thrust::make_zip_iterator(thrust::make_tuple(ds_data, tmp_data, r_data, v_data)),
+                          thrust::make_zip_iterator(thrust::make_tuple(ds_data, tmp_data, r_data, v_data)) + num_rows,
+                          updateRAndV<HYPRE_Real>(rcoef, vcoef));
       }
 
       // u += v;
