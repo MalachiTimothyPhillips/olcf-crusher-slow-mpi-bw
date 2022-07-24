@@ -178,6 +178,13 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
     kernelName = "ellipticBlockBuildDiagonalHex3D";
     fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
     platform->kernels.add(poissonPrefix + kernelName + orderSuffix, fileName, buildDiagInfo, orderSuffix);
+    { 
+      occa::properties props = buildDiagInfo;
+      props["defines/dfloat"] = pfloatString;
+      kernelName = "ellipticBlockBuildDiagonalPfloatHex3D";
+      platform->kernels.add(poissonPrefix + kernelName + orderSuffix, fileName, props, orderSuffix);
+    } 
+
   }
 }
 

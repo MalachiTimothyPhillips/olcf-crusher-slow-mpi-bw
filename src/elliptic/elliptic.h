@@ -76,12 +76,16 @@ struct elliptic_t
   static constexpr double targetTimeBenchmark {0.2};
   static constexpr int NScratchFields {6};
   static constexpr int minNFDMOverlap{6};
-  int dim;
-  int elementType; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
-  int coeffField;        // flag for variable coefficient (solver)
-  int coeffFieldPreco;   // flag for variable coefficient (preconditioner)
-  int blockSolver, Nfields, stressForm; // flag for vector solver and number of fields
+  int dim = 1;
+  int elementType = 12; // number of edges (3=tri, 4=quad, 6=tet, 12=hex)
+  int coeffField = 1;        // flag for variable coefficient (solver)
+  int coeffFieldPreco = 1;   // flag for variable coefficient (preconditioner)
+  int blockSolver = 0;
+  int Nfields = 1;
+  int stressForm = 0;
   int poisson; 
+
+  bool mgLevel = false;
 
   std::string name;
 
@@ -167,8 +171,8 @@ struct elliptic_t
   hlong NelementsGlobal;
 
   occa::kernel ellipticBlockBuildDiagonalKernel;
+  occa::kernel ellipticBlockBuildDiagonalPfloatKernel;
   occa::memory o_lambda;
-  occa::memory o_lambdaPfloat;
   dlong loffset;
   int nLevels;
   int* levels;

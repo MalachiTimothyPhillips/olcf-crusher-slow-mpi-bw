@@ -72,6 +72,7 @@ void ellipticAx(elliptic_t* elliptic,
   occa::memory & o_D = (precisionStr != dFloatStr) ? mesh->o_DPfloat : mesh->o_D;
   occa::memory & o_DT = (precisionStr != dFloatStr) ? mesh->o_DTPfloat : mesh->o_DT;
   occa::memory & o_lambda = elliptic->o_lambda;
+
   occa::kernel &AxKernel =
       (precisionStr != dFloatStr) ? elliptic->AxPfloatKernel : elliptic->AxKernel;
 
@@ -117,27 +118,45 @@ void ellipticOperator(elliptic_t* elliptic,
   setupAide &options = elliptic->options;
   oogs_t* oogsAx = elliptic->oogsAx;
   const char* ogsDataTypeString = (!strstr(precision, dfloatString)) ? ogsPfloat : ogsDfloat;
-  ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_q, o_Aq, precision);
-  if (masked) {
-    ellipticApplyMask(elliptic,
-                      mesh->NglobalGatherElements,
-                      elliptic->NmaskedGlobal,
-                      mesh->o_globalGatherElementList,
-                      elliptic->o_maskIdsGlobal,
-                      o_Aq,
-                      precision);
-  }
-  oogs::start(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
-  ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_q, o_Aq, precision);
+  const bool overlap = (mesh->N >= 5) ? true : false;
 
-  if (masked) {
-    ellipticApplyMask(elliptic,
-                      mesh->NlocalGatherElements,
-                      elliptic->NmaskedLocal,
-                      mesh->o_localGatherElementList,
-                      elliptic->o_maskIdsLocal,
-                      o_Aq,
-                      precision);
+  if(overlap) {
+    ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_q, o_Aq, precision);
+    if (masked) {
+      ellipticApplyMask(elliptic,
+                        mesh->NglobalGatherElements,
+                        elliptic->NmaskedGlobal,
+                        mesh->o_globalGatherElementList,
+                        elliptic->o_maskIdsGlobal,
+                        o_Aq,
+                        precision);
+    }
+ 
+    oogs::start(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+    ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_q, o_Aq, precision);
+ 
+    if (masked) {
+      ellipticApplyMask(elliptic,
+                        mesh->NlocalGatherElements,
+                        elliptic->NmaskedLocal,
+                        mesh->o_localGatherElementList,
+                        elliptic->o_maskIdsLocal,
+                        o_Aq,
+                        precision);
+    }
+
+    oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
+  } else {
+    ellipticAx(elliptic, mesh->Nelements, mesh->o_elementList, o_q, o_Aq, precision);
+    if (masked) {
+      ellipticApplyMask(elliptic,
+                        mesh->Nelements,
+                        elliptic->Nmasked,
+                        mesh->o_elementList,
+                        elliptic->o_maskIds,
+                        o_Aq,
+                        precision);
+    }
+    oogs::startFinish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
   }
-  oogs::finish(o_Aq, elliptic->Nfields, elliptic->Ntotal, ogsDataTypeString, ogsAdd, oogsAx);
 }

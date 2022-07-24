@@ -49,6 +49,8 @@ elliptic_t* ellipticBuildMultigridLevel(elliptic_t* baseElliptic, int Nc, int Nf
   elliptic_t* elliptic = new elliptic_t();
   memcpy(elliptic,baseElliptic,sizeof(elliptic_t));
 
+  elliptic->mgLevel = true;
+
   mesh_t* mesh = createMeshMG(baseElliptic->mesh, Nc);
   elliptic->mesh = mesh;
 

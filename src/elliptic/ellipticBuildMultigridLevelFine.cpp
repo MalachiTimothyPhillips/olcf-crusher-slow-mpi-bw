@@ -47,6 +47,8 @@ elliptic_t* ellipticBuildMultigridLevelFine(elliptic_t* baseElliptic)
   elliptic_t* elliptic = new elliptic_t();
   memcpy(elliptic, baseElliptic, sizeof(*baseElliptic));
 
+  elliptic->mgLevel = true;
+
   mesh_t* mesh = elliptic->mesh;
   ellipticBuildPreconditionerKernels(elliptic);
 
