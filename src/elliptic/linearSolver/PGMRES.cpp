@@ -140,7 +140,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
   {
     ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
   };
-  pgmres(elliptic, o_r, o_x, tol, MAXIT, rdotr, matVecOperator);
+  return pgmres(elliptic, o_r, o_x, tol, MAXIT, rdotr, matVecOperator);
 }
 
 // Ax=r

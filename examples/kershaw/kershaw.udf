@@ -41,7 +41,8 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   if(platform->comm.mpiRank == 0) 
     std::cout << "\nrunning benchmarks\n"; 
 
-  for(std::string benchmark : {"BPS5", "BP5"}){
+  //for(std::string benchmark : {"BPS5", "BP5"}){
+  for(std::string benchmark : {"BPS5"}){
 
     MPI_Barrier(platform->comm.mpiComm);
     if(platform->comm.mpiRank == 0) 
@@ -57,7 +58,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       ellipticPreconditionerSetup(nrs->pSolver, nrs->pSolver->ogs);
     }
     if(benchmark == "BPS5"){
-      Nrep = 50;
+      Nrep = 1;
       nrs->pSolver->options.setArgs("SOLVER TOLERANCE", to_string_f(1e-8));
       nrs->pSolver->options.setArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE");
     }
