@@ -15,9 +15,9 @@
 #include "ellipticBuildSEMFEM.hpp"
 
 namespace{
- void quadrature_rule(double q_r[4][3], double q_w[4]) {
-    double a = (5.0 + 3.0 * sqrt(5.0)) / 20.0;
-    double b = (5.0 - sqrt(5.0)) / 20.0;
+ void quadrature_rule(hypreWrapper::Real q_r[4][3], hypreWrapper::Real q_w[4]) {
+    hypreWrapper::Real a = (5.0 + 3.0 * sqrt(5.0)) / 20.0;
+    hypreWrapper::Real b = (5.0 - sqrt(5.0)) / 20.0;
 
     q_r[0][0] = a;
     q_r[0][1] = b;
@@ -37,13 +37,13 @@ namespace{
     q_w[2] = 1.0 / 24.0;
     q_w[3] = 1.0 / 24.0;
 }
-long long bisection_search_index(const long long* sortedArr, long long value, long long start, long long end)
+hypreWrapper::BigInt bisection_search_index(const hypreWrapper::BigInt* sortedArr, hypreWrapper::BigInt value, hypreWrapper::BigInt start, hypreWrapper::BigInt end)
 {
-  long long fail = -1;
-  long long L = start;
-  long long R = end-1;
+  hypreWrapper::BigInt fail = -1;
+  hypreWrapper::BigInt L = start;
+  hypreWrapper::BigInt R = end-1;
   while (L <= R){
-    const long long m = (L+R)/2;
+    const hypreWrapper::BigInt m = (L+R)/2;
     if(sortedArr[m] < value){
       L = m + 1;
     } else if (sortedArr[m] > value){
@@ -55,10 +55,10 @@ long long bisection_search_index(const long long* sortedArr, long long value, lo
   return fail;
 }
 
-long long linear_search_index(const long long* unsortedArr, long long value, long long start, long long end)
+hypreWrapper::BigInt linear_search_index(const hypreWrapper::BigInt* unsortedArr, hypreWrapper::BigInt value, hypreWrapper::BigInt start, hypreWrapper::BigInt end)
 {
-  long long fail = -1;
-  for(long long idx = start; idx < end; ++idx){
+  hypreWrapper::BigInt fail = -1;
+  for(hypreWrapper::BigInt idx = start; idx < end; ++idx){
     if(unsortedArr[idx] == value){
       return idx;
     }
@@ -67,11 +67,11 @@ long long linear_search_index(const long long* unsortedArr, long long value, lon
 }
 
 /* Basis functions and derivatives in 3D */
- double phi_3D_1(double q_r[4][3], int q) { return q_r[q][0]; }
- double phi_3D_2(double q_r[4][3], int q) { return q_r[q][1]; }
- double phi_3D_3(double q_r[4][3], int q) { return q_r[q][2]; }
- double phi_3D_4(double q_r[4][3], int q) { return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2]; }
- void dphi(double deriv[3], int q)
+ hypreWrapper::Real phi_3D_1(hypreWrapper::Real q_r[4][3], int q) { return q_r[q][0]; }
+ hypreWrapper::Real phi_3D_2(hypreWrapper::Real q_r[4][3], int q) { return q_r[q][1]; }
+ hypreWrapper::Real phi_3D_3(hypreWrapper::Real q_r[4][3], int q) { return q_r[q][2]; }
+ hypreWrapper::Real phi_3D_4(hypreWrapper::Real q_r[4][3], int q) { return 1.0 - q_r[q][0] - q_r[q][1] - q_r[q][2]; }
+ void dphi(hypreWrapper::Real deriv[3], int q)
 {
   if(q==0){
     deriv[0] = 1.0;
@@ -99,25 +99,25 @@ long long linear_search_index(const long long* unsortedArr, long long value, lon
 }
 
 /* Math functions */
-long long maximum(long long a, long long b) { return a > b ? a : b; }
+hypreWrapper::BigInt maximum(hypreWrapper::BigInt a, hypreWrapper::BigInt b) { return a > b ? a : b; }
 
-double determinant(double A[3][3]) {
+hypreWrapper::Real determinant(hypreWrapper::Real A[3][3]) {
   /*
    * Computes the determinant of a matrix
    */
 
-  double d_1 = A[0][0] * (A[1][1] * A[2][2] - A[2][1] * A[1][2]);
-  double d_2 = A[0][1] * (A[1][0] * A[2][2] - A[2][0] * A[1][2]);
-  double d_3 = A[0][2] * (A[1][0] * A[2][1] - A[2][0] * A[1][1]);
+  hypreWrapper::Real d_1 = A[0][0] * (A[1][1] * A[2][2] - A[2][1] * A[1][2]);
+  hypreWrapper::Real d_2 = A[0][1] * (A[1][0] * A[2][2] - A[2][0] * A[1][2]);
+  hypreWrapper::Real d_3 = A[0][2] * (A[1][0] * A[2][1] - A[2][0] * A[1][1]);
 
   return d_1 - d_2 + d_3;
 }
 
-void inverse(double invA[3][3], double A[3][3]) {
+void inverse(hypreWrapper::Real invA[3][3], hypreWrapper::Real A[3][3]) {
   /*
    * Computes the inverse of a matrix
    */
-  double inv_det_A = 1.0 / determinant(A);
+  hypreWrapper::Real inv_det_A = 1.0 / determinant(A);
   invA[0][0] = inv_det_A * (A[1][1] * A[2][2] - A[2][1] * A[1][2]);
   invA[0][1] = inv_det_A * (A[0][2] * A[2][1] - A[2][2] * A[0][1]);
   invA[0][2] = inv_det_A * (A[0][1] * A[1][2] - A[1][1] * A[0][2]);
@@ -129,7 +129,7 @@ void inverse(double invA[3][3], double A[3][3]) {
   invA[2][2] = inv_det_A * (A[0][0] * A[1][1] - A[1][0] * A[0][1]);
 }
 
- void x_map(double x[3], double q_r[4][3], double x_t[3][4], int q) {
+ void x_map(hypreWrapper::Real x[3], hypreWrapper::Real q_r[4][3], hypreWrapper::Real x_t[3][4], int q) {
   const int n_dim = 3;
   int i, d;
 
@@ -141,10 +141,10 @@ void inverse(double invA[3][3], double A[3][3]) {
   }
 }
 
- void J_xr_map(double J_xr[3][3], double q_r[4][3], double x_t[3][4]){
+ void J_xr_map(hypreWrapper::Real J_xr[3][3], hypreWrapper::Real q_r[4][3], hypreWrapper::Real x_t[3][4]){
   const int n_dim = 3;
   int i, j, k;
-  double deriv[3];
+  hypreWrapper::Real deriv[3];
 
   for (i = 0; i < n_dim; i++) {
     for (j = 0; j < n_dim; j++) {
@@ -159,7 +159,8 @@ void inverse(double invA[3][3], double A[3][3]) {
   }
 }
 
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, size_t& bytesRemaining, size_t& byteOffset, size_t& bytesAllocated, bool& allocated);
+template<typename T>
+occa::memory scratchOrAllocateMemory(int nWords, T* src, size_t& bytesRemaining, size_t& byteOffset, size_t& bytesAllocated, bool& allocated);
 static occa::kernel computeStiffnessMatrixKernel;
 static occa::memory o_stiffness;
 static occa::memory o_x;
@@ -176,28 +177,28 @@ void fem_assembly_host();
 void matrix_distribution();
 void fem_assembly();
 void mesh_connectivity(int[8][3], int[8][4]);
-long long maximum(long long, long long);
+hypreWrapper::BigInt maximum(hypreWrapper::BigInt, hypreWrapper::BigInt);
 
 static constexpr int n_dim = 3;
 static int n_x, n_y, n_z, n_elem;
 static int n_xyz, n_xyze;
-static long long *glo_num;
-static double *pmask;
+static hypreWrapper::BigInt *glo_num;
+static dfloat *pmask;
 static int num_loc_dofs;
-static long long *dof_map;
-static long long row_start;
-static long long row_end;
+static hypreWrapper::BigInt *dof_map;
+static hypreWrapper::BigInt row_start;
+static hypreWrapper::BigInt row_end;
 static hypreWrapper::IJMatrix *A_bc;
 
 struct COOGraph
 {
-  int nrows;
-  long long nnz;
-  long long * rows;
-  long long * rowOffsets;
-  int * ncols;
-  long long * cols;
-  float* vals;
+  hypreWrapper::Int nrows;
+  hypreWrapper::BigInt nnz;
+  hypreWrapper::BigInt * rows;
+  hypreWrapper::BigInt * rowOffsets;
+  hypreWrapper::Int * ncols;
+  hypreWrapper::BigInt * cols;
+  hypreWrapper::Real* vals;
 };
 
 static COOGraph coo_graph;
@@ -210,11 +211,9 @@ struct gs_data {
 };
 static struct gs_data *gsh;
 
-
-/* Interface definition */
 SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
                           occa::memory _o_x, occa::memory _o_y, occa::memory _o_z,
-                          double *pmask_, MPI_Comm mpiComm,
+                          dfloat *pmask_, MPI_Comm mpiComm,
                           long long int *gatherGlobalNodes
                           )
 {
@@ -253,19 +252,9 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
 
     const int numRows = row_end - row_start + 1;
 
-    {
-      long long numRowsGlobal64;
-      long long numRows64 = numRows;
-      comm_allreduce(&comm, gs_long_long, gs_add, &numRows64, 1, &numRowsGlobal64);
-      if(numRowsGlobal64 > std::numeric_limits<int>::max()) { 
-        if(comm.id == 0) printf("Number of global rows requires BigInt support!");
-        ABORT(EXIT_FAILURE);  
-      }
-    }
-
     hypreWrapper::BigInt *ownedRows = (hypreWrapper::BigInt*) calloc(numRows, sizeof(hypreWrapper::BigInt));
     int ctr = 0;
-    for(long long row = row_start; row <= row_end; ++row)
+    for(hypreWrapper::BigInt row = row_start; row <= row_end; ++row)
       ownedRows[ctr++] = row;
   
     hypreWrapper::Int *ncols = (hypreWrapper::Int*) calloc(numRows, sizeof(hypreWrapper::Int));
@@ -288,16 +277,16 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
       &hAj[0],
       &hAv[0]);
 
-    long long *Ai = (long long*) calloc(nnz, sizeof(long long));
-    long long *Aj = (long long*) calloc(nnz, sizeof(long long));
-    double    *Av = (double*) calloc(nnz, sizeof(double));
+    hypreWrapper::BigInt *Ai = (hypreWrapper::BigInt*) calloc(nnz, sizeof(hypreWrapper::BigInt));
+    hypreWrapper::BigInt *Aj = (hypreWrapper::BigInt*) calloc(nnz, sizeof(hypreWrapper::BigInt));
+    hypreWrapper::Real    *Av = (hypreWrapper::Real*) calloc(nnz, sizeof(hypreWrapper::Real));
     for(int n = 0; n < nnz; ++n) {
        Aj[n] = hAj[n];
        Av[n] = hAv[n];
     } 
     ctr = 0;
     for(int i = 0; i < numRows; ++i){
-      long long row = ownedRows[i];
+      hypreWrapper::BigInt row = ownedRows[i];
       for(int col = 0; col < ncols[i]; ++col)
         Ai[ctr++] = row;
     }
@@ -334,16 +323,16 @@ void matrix_distribution() {
 
   int idx;
   buffer my_buffer;
-  long long idx_start = n_xyze;
-  long long scan_out[2], scan_buf[2];
+  hypreWrapper::BigInt idx_start = n_xyze;
+  hypreWrapper::BigInt scan_out[2], scan_buf[2];
   comm_scan(scan_out, &comm, gs_long_long, gs_add, &idx_start, 1, scan_buf);
   idx_start = scan_out[0];
 
-  glo_num = (long long*) malloc(n_xyze * sizeof(long long));
+  glo_num = (hypreWrapper::BigInt*) malloc(n_xyze * sizeof(hypreWrapper::BigInt));
 
   for (idx = 0; idx < n_xyze; idx++) {
     if (pmask[idx] > 0.0)
-      glo_num[idx] = idx_start + (long long)idx;
+      glo_num[idx] = idx_start + (hypreWrapper::BigInt)idx;
     else
       glo_num[idx] = -1;
   }
@@ -351,8 +340,8 @@ void matrix_distribution() {
   gs(glo_num, gs_long_long, gs_min, 0, gsh, 0);
 
   /* Rank ids */
-  long long maximum_value_local = 0;
-  long long maximum_value = 0;
+  hypreWrapper::BigInt maximum_value_local = 0;
+  hypreWrapper::BigInt maximum_value = 0;
 
   for (idx = 0; idx < n_xyze; idx++) {
     maximum_value_local = (glo_num[idx] > maximum_value_local)
@@ -362,10 +351,10 @@ void matrix_distribution() {
 
   comm_allreduce(&comm, gs_long_long, gs_max, &maximum_value_local, 1,
                  &maximum_value);
-  const long long nstar = maximum_value / comm.np + 1;
+  const hypreWrapper::BigInt nstar = maximum_value / comm.np + 1;
 
   struct ranking_tuple {
-    long long rank;
+    hypreWrapper::BigInt rank;
     unsigned int proc;
     unsigned int idx;
   };
@@ -392,8 +381,8 @@ void matrix_distribution() {
   sarray_sort(ranking_tuple, ranking_transfer.ptr, ranking_transfer.n, rank, 1,
               &my_buffer);
 
-  long long current_rank = ranking_tuple_array[0].rank;
-  long long current_count = 0;
+  hypreWrapper::BigInt current_rank = ranking_tuple_array[0].rank;
+  hypreWrapper::BigInt current_count = 0;
   ranking_tuple_array[0].rank = current_count;
 
   for (idx = 1; idx < ranking_transfer.n; idx++) {
@@ -411,7 +400,7 @@ void matrix_distribution() {
 
   current_count += 1;
 
-  long long rank_start;
+  hypreWrapper::BigInt rank_start;
   comm_scan(scan_out, &comm, gs_long_long, gs_add, &current_count, 1, scan_buf);
   rank_start = scan_out[0];
 
@@ -447,8 +436,8 @@ void construct_coo_graph() {
   int E_y = n_y - 1;
   int E_z = n_z - 1;
 
-  std::unordered_map<long long, std::unordered_set<long long>> graph;
-  std::unordered_map<int, std::unordered_set<int>> rowIdxToColIdxMap;
+  std::unordered_map<hypreWrapper::BigInt, std::unordered_set<hypreWrapper::BigInt>> graph;
+  std::unordered_map<hypreWrapper::Int, std::unordered_set<hypreWrapper::Int>> rowIdxToColIdxMap;
   const int nvert = 8;
   for (int s_z = 0; s_z < E_z; s_z++) {
     for (int s_y = 0; s_y < E_y; s_y++) {
@@ -486,31 +475,31 @@ void construct_coo_graph() {
       {
         if(pmask[e * n_xyz + row_lookup] > 0.0 && pmask[e * n_xyz + col_lookup] > 0.0)
         {
-          long long row = glo_num[e*n_xyz + row_lookup];
-          long long col = glo_num[e*n_xyz + col_lookup];
+          hypreWrapper::BigInt row = glo_num[e*n_xyz + row_lookup];
+          hypreWrapper::BigInt col = glo_num[e*n_xyz + col_lookup];
           graph[row].emplace(col);
         }
       }
     }
   }
   const int nrows = graph.size();
-  long long * rows = (long long*) malloc(nrows * sizeof(long long));
-  long long * rowOffsets = (long long*) malloc((nrows+1) * sizeof(long long));
-  int * ncols = (int*) malloc(nrows * sizeof(int));
-  long long nnz = 0;
-  long long ctr = 0;
+  hypreWrapper::BigInt * rows = (hypreWrapper::BigInt*) malloc(nrows * sizeof(hypreWrapper::BigInt));
+  hypreWrapper::BigInt * rowOffsets = (hypreWrapper::BigInt*) malloc((nrows+1) * sizeof(hypreWrapper::BigInt));
+  hypreWrapper::Int * ncols = (hypreWrapper::Int*) malloc(nrows * sizeof(hypreWrapper::Int));
+  hypreWrapper::BigInt nnz = 0;
+  hypreWrapper::BigInt ctr = 0;
 
   for(auto&& row_and_colset : graph){
     rows[ctr++] = row_and_colset.first;
     nnz += row_and_colset.second.size();
   }
-  long long * cols = (long long*) malloc(nnz * sizeof(long long));
-  float* vals = (float*) calloc(nnz,sizeof(float));
+  hypreWrapper::BigInt * cols = (hypreWrapper::BigInt*) malloc(nnz * sizeof(hypreWrapper::BigInt));
+  hypreWrapper::Real* vals = (hypreWrapper::Real*) calloc(nnz,sizeof(hypreWrapper::Real));
   std::sort(rows, rows + nrows);
-  long long entryCtr = 0;
+  hypreWrapper::BigInt entryCtr = 0;
   rowOffsets[0] = 0;
   for(auto localrow = 0; localrow < nrows; ++localrow){
-    const long long row = rows[localrow];
+    const hypreWrapper::BigInt row = rows[localrow];
     const auto& colset = graph[row];
     const auto size = colset.size();
     ncols[localrow] = size;
@@ -531,27 +520,27 @@ void construct_coo_graph() {
 
 void fem_assembly_host() {
 
-  const int nrows = coo_graph.nrows;
-  long long * rows = coo_graph.rows;
-  long long * rowOffsets = coo_graph.rowOffsets;
-  int * ncols = coo_graph.ncols;
-  long long nnz = coo_graph.nnz;
-  long long * cols = coo_graph.cols;
-  float* vals = coo_graph.vals;
+  const hypreWrapper::Int nrows = coo_graph.nrows;
+  hypreWrapper::BigInt * rows = coo_graph.rows;
+  hypreWrapper::BigInt * rowOffsets = coo_graph.rowOffsets;
+  hypreWrapper::Int * ncols = coo_graph.ncols;
+  hypreWrapper::BigInt nnz = coo_graph.nnz;
+  hypreWrapper::BigInt * cols = coo_graph.cols;
+  hypreWrapper::Real* vals = coo_graph.vals;
 
-  double q_r[4][3];
-  double q_w[4];
+  hypreWrapper::Real q_r[4][3];
+  hypreWrapper::Real q_w[4];
   int v_coord[8][3];
   int t_map[8][4];
   quadrature_rule(q_r, q_w);
   mesh_connectivity(v_coord, t_map);
 
-  double* x = (double*) malloc(n_xyze * sizeof(double));
-  double* y = (double*) malloc(n_xyze * sizeof(double));
-  double* z = (double*) malloc(n_xyze * sizeof(double));
-  o_x.copyTo(x, n_xyze * sizeof(double));
-  o_y.copyTo(y, n_xyze * sizeof(double));
-  o_z.copyTo(z, n_xyze * sizeof(double));
+  dfloat* x = (dfloat*) malloc(n_xyze * sizeof(dfloat));
+  dfloat* y = (dfloat*) malloc(n_xyze * sizeof(dfloat));
+  dfloat* z = (dfloat*) malloc(n_xyze * sizeof(dfloat));
+  o_x.copyTo(x, n_xyze * sizeof(dfloat));
+  o_y.copyTo(y, n_xyze * sizeof(dfloat));
+  o_z.copyTo(z, n_xyze * sizeof(dfloat));
 
   const int n_quad = 4;
   const int num_fem = 8;
@@ -562,11 +551,11 @@ void fem_assembly_host() {
     for (int s_z = 0; s_z < n_x-1; s_z++) {
       for (int s_y = 0; s_y < n_x-1; s_y++) {
         for (int s_x = 0; s_x < n_x-1; s_x++) {
-          double A_loc[4][4];
-          double J_xr[3][3];
-          double J_rx[3][3];
-          double x_t[3][4];
-          double q_x[3];
+          hypreWrapper::Real A_loc[4][4];
+          hypreWrapper::Real J_xr[3][3];
+          hypreWrapper::Real J_rx[3][3];
+          hypreWrapper::Real x_t[3][4];
+          hypreWrapper::Real q_x[3];
           /* Get indices */
           int s[n_dim];
 
@@ -603,23 +592,23 @@ void fem_assembly_host() {
             /* Build local stiffness matrices by applying quadrature rules */
             J_xr_map(J_xr, q_r, x_t);
             inverse(J_rx, J_xr);
-            const double det_J_xr = determinant(J_xr);
+            const hypreWrapper::Real det_J_xr = determinant(J_xr);
             for (int q = 0; q < n_quad; q++) {
               /* From r to x */
               x_map(q_x, q_r, x_t, q);
 
               /* Integrand */
               for (int i = 0; i < n_dim + 1; i++) {
-                double deriv_i[3];
+                hypreWrapper::Real deriv_i[3];
                 dphi(deriv_i, i);
                 for (int j = 0; j < n_dim + 1; j++) {
-                  double deriv_j[3];
+                  hypreWrapper::Real deriv_j[3];
                   dphi(deriv_j, j);
                   int alpha, beta;
-                  double func = 0.0;
+                  hypreWrapper::Real func = 0.0;
 
                   for (alpha = 0; alpha < n_dim; alpha++) {
-                    double a = 0.0, b = 0.0;
+                    hypreWrapper::Real a = 0.0, b = 0.0;
 
                     for (beta = 0; beta < n_dim; beta++) {
                       a += deriv_i[beta] * J_rx[beta][alpha];
@@ -638,13 +627,13 @@ void fem_assembly_host() {
               for (int j = 0; j < n_dim + 1; j++) {
                 if ((pmask[idx[t_map[t][i]] + e * n_x * n_x * n_x] > 0.0) &&
                     (pmask[idx[t_map[t][j]] + e * n_x * n_x * n_x] > 0.0)) {
-                  long long row = glo_num[idx[t_map[t][i]] + e * n_x * n_x * n_x];
-                  long long col = glo_num[idx[t_map[t][j]] + e * n_x * n_x * n_x];
-                  long long local_row_id = bisection_search_index(rows, row, 0, nrows);
-                  long long start = rowOffsets[local_row_id];
-                  long long end = rowOffsets[local_row_id+1];
+                  hypreWrapper::BigInt row = glo_num[idx[t_map[t][i]] + e * n_x * n_x * n_x];
+                  hypreWrapper::BigInt col = glo_num[idx[t_map[t][j]] + e * n_x * n_x * n_x];
+                  hypreWrapper::BigInt local_row_id = bisection_search_index(rows, row, 0, nrows);
+                  hypreWrapper::BigInt start = rowOffsets[local_row_id];
+                  hypreWrapper::BigInt end = rowOffsets[local_row_id+1];
 
-                  long long id = linear_search_index(cols, col, start, end);
+                  hypreWrapper::BigInt id = linear_search_index(cols, col, start, end);
                   vals[id] += A_loc[i][j];
                 }
               }
@@ -674,13 +663,13 @@ void fem_assembly_host() {
 }
 void fem_assembly_device() {
 
-  const int nrows = coo_graph.nrows;
-  long long * rows = coo_graph.rows;
-  long long * rowOffsets = coo_graph.rowOffsets;
-  int * ncols = coo_graph.ncols;
-  long long nnz = coo_graph.nnz;
-  long long * cols = coo_graph.cols;
-  float* vals = coo_graph.vals;
+  const hypreWrapper::Int nrows = coo_graph.nrows;
+  hypreWrapper::BigInt * rows = coo_graph.rows;
+  hypreWrapper::BigInt * rowOffsets = coo_graph.rowOffsets;
+  hypreWrapper::Int * ncols = coo_graph.ncols;
+  hypreWrapper::BigInt nnz = coo_graph.nnz;
+  hypreWrapper::BigInt * cols = coo_graph.cols;
+  hypreWrapper::Real* vals = coo_graph.vals;
 
   struct AllocationTracker{
     bool o_maskAlloc;
@@ -696,7 +685,6 @@ void fem_assembly_device() {
   size_t bytesAllocated = 0;
   occa::memory o_mask = scratchOrAllocateMemory(
     n_xyze,
-    sizeof(double),
     pmask,
     bytesRemaining,
     byteOffset,
@@ -705,7 +693,6 @@ void fem_assembly_device() {
   );
   occa::memory o_glo_num = scratchOrAllocateMemory(
     n_xyze,
-    sizeof(long long),
     glo_num,
     bytesRemaining,
     byteOffset,
@@ -714,7 +701,6 @@ void fem_assembly_device() {
   );
   occa::memory o_rows = scratchOrAllocateMemory(
     nrows,
-    sizeof(long long),
     rows,
     bytesRemaining,
     byteOffset,
@@ -723,7 +709,6 @@ void fem_assembly_device() {
   );
   occa::memory o_rowOffsets = scratchOrAllocateMemory(
     nrows+1,
-    sizeof(long long),
     rowOffsets,
     bytesRemaining,
     byteOffset,
@@ -732,7 +717,6 @@ void fem_assembly_device() {
   );
   occa::memory o_cols = scratchOrAllocateMemory(
     nnz,
-    sizeof(long long),
     cols,
     bytesRemaining,
     byteOffset,
@@ -741,7 +725,6 @@ void fem_assembly_device() {
   );
   occa::memory o_vals = scratchOrAllocateMemory(
     nnz,
-    sizeof(float),
     vals,
     bytesRemaining,
     byteOffset,
@@ -762,7 +745,7 @@ void fem_assembly_device() {
     o_cols,
     o_vals
   );
-  o_vals.copyTo(vals, nnz * sizeof(float));
+  o_vals.copyTo(vals, nnz * sizeof(hypreWrapper::Real));
 
   if(allocations.o_maskAlloc) o_mask.free();
   if(allocations.o_glo_numAlloc) o_glo_num.free();
@@ -786,18 +769,12 @@ void fem_assembly_device() {
 }
 
 void fem_assembly() {
-  /*
-   * Assembles the low-order FEM matrices from the spectral element mesh
-   *
-   * Returns A_fem and B_fem
-   */
 
-  /* Variables */
-  double tStart = MPI_Wtime();
+  hypreWrapper::Real tStart = MPI_Wtime();
   if(comm.id == 0) printf("building matrix ... ");
   int i, j, k, e, d, t, q;
   int idx;
-  long long row;
+  hypreWrapper::BigInt row;
 
   row_start = 0;
   row_end = 0;
@@ -806,14 +783,14 @@ void fem_assembly() {
     if (glo_num[idx] >= 0)
       row_end = maximum(row_end, glo_num[idx]);
 
-  long long scan_out[2], scan_buf[2];
+  hypreWrapper::BigInt scan_out[2], scan_buf[2];
   comm_scan(scan_out, &comm, gs_long_long, gs_max, &row_end, 1, scan_buf);
   if (comm.id > 0)
     row_start = scan_out[0] + 1;
 
   num_loc_dofs = row_end - row_start + 1;
 
-  dof_map = (long long *) malloc(num_loc_dofs * sizeof(long long));
+  dof_map = (dlong *) malloc(num_loc_dofs * sizeof(dlong));
 
   for (idx = 0; idx < n_xyze; idx++) {
     if ((row_start <= glo_num[idx]) && (glo_num[idx] <= row_end)) {
@@ -913,19 +890,20 @@ void mesh_connectivity(int v_coord[8][3], int t_map[8][4]) {
   (t_map)[7][3] = 5;
 }
 
-occa::memory scratchOrAllocateMemory(int nWords, int sizeT, void* src, size_t& bytesRemaining, size_t& byteOffset, size_t& bytesAllocated, bool& allocated)
+template<typename T>
+occa::memory scratchOrAllocateMemory(int nWords, T* src, size_t& bytesRemaining, size_t& byteOffset, size_t& bytesAllocated, bool& allocated)
 {
   occa::memory o_mem;
-  if(nWords * sizeT < bytesRemaining){
+  if(nWords * sizeof(T) < bytesRemaining){
     o_mem = platform->o_mempool.o_ptr.slice(byteOffset);
-    o_mem.copyFrom(src, nWords * sizeT);
-    bytesRemaining -= nWords * sizeT;
-    byteOffset += nWords * sizeT;
+    o_mem.copyFrom(src, nWords * sizeof(T));
+    bytesRemaining -= nWords * sizeof(T);
+    byteOffset += nWords * sizeof(T);
     allocated = false;
   } else {
-    o_mem = platform->device.malloc(nWords * sizeT, src);
+    o_mem = platform->device.malloc(nWords * sizeof(T), src);
     allocated = true;
-    bytesAllocated += nWords * sizeT;
+    bytesAllocated += nWords * sizeof(T);
   }
   return o_mem;
 }

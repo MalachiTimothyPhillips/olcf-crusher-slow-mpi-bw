@@ -31,7 +31,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
   if(platform->comm.mpiRank == 0)  printf("setup SEMFEM preconditioner ... \n"); fflush(stdout);
 
   mesh_t* mesh = elliptic->mesh;
-  double* mask = (double*) malloc(mesh->Np*mesh->Nelements*sizeof(double));
+  dfloat* mask = (dfloat*) malloc(mesh->Np*mesh->Nelements*sizeof(dfloat));
   for(int i = 0; i < mesh->Np*mesh->Nelements; ++i) mask[i] = 1.0;
   if(elliptic->Nmasked > 0){
     dlong* maskIds = (dlong*) calloc(elliptic->Nmasked, sizeof(dlong));
@@ -51,10 +51,10 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
     mesh->globalIds
   );
 
-  const dlong numRows = data->rowEnd - data->rowStart + 1;
+  const auto numRows = data->rowEnd - data->rowStart + 1;
   numRowsSEMFEM = numRows;
 
-  o_dofMap = platform->device.malloc(numRows * sizeof(long long), data->dofMap);
+  o_dofMap = platform->device.malloc(numRows * sizeof(dlong), data->dofMap);
 
   o_SEMFEMBuffer1 = platform->device.malloc(numRows * sizeof(pfloat));
   o_SEMFEMBuffer2 = platform->device.malloc(numRows * sizeof(pfloat));
