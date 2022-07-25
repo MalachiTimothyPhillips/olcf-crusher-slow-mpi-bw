@@ -80,7 +80,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       settings[11] = 2;    /* chebyshev degree             */
       settings[12] = 19;   /* post smoother                */
       settings[13] = 2;    /* Chebyshev variant            */
-      settings[14] = 0.1;  /* lmin fraction                */
+      settings[14] = 0.3;  /* lmin fraction                */
 
       if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
         settings[4]  = 16;

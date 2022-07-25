@@ -348,6 +348,8 @@ BoomerAMGReInitialize(const double * param)
   HYPRE_IJMatrixGetObject(data->A,(void**) &par_A);
   HYPRE_BoomerAMGSetup(data->solver,par_A,par_b,par_x);
 
+  HYPRE_ClearAllErrors(); // dangerous, but whatever...
+
   return 0;
 }
 

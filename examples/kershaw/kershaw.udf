@@ -173,7 +173,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     settings[11] = 2;    /* chebyshev degree             */
     settings[12] = 19;   /* post smoother                */
     settings[13] = 2;    /* Chebyshev variant            */
-    settings[14] = 0.1;  /* lmin fraction                */
+    settings[14] = 0.3;  /* lmin fraction                */
 
     if(nrs->pSolver->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
       settings[4]  = 16;
