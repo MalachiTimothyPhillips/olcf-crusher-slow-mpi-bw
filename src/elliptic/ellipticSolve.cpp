@@ -30,6 +30,16 @@
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 {
+  auto matVecOperator = [&](occa::memory& o_x, occa::memory & o_Ax)
+  {
+    ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+  };
+  ellipticSolve(elliptic, o_r, o_x, matVecOperator);
+}
+
+void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
+  std::function<void(occa::memory & o_x, occa::memory & o_Ax)> matVecOperator)
+{
   setupAide& options = elliptic->options;
   if(elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "JACOBI"))
     ellipticUpdateJacobi(elliptic, elliptic->precon->o_invDiagA);
@@ -76,6 +86,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
     if(platform->comm.mpiRank == 0) printf("%s x0 norm: %.15e\n", elliptic->name.c_str(), rhsNorm);
   }
 
+#if 0
   // compute initial residual r = rhs - Ax0
   ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_x, elliptic->o_Ap, dfloatString);
   ellipticAx(elliptic, mesh->NlocalGatherElements, mesh->o_localGatherElementList, o_x, elliptic->o_Ap, dfloatString);
@@ -91,6 +102,21 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
   if(elliptic->allNeumann) ellipticZeroMean(elliptic, o_r);
   ellipticApplyMask(elliptic, o_r, dfloatString);
   oogs::startFinish(o_r, elliptic->Nfields, elliptic->Ntotal, ogsDfloat, ogsAdd, elliptic->oogs);
+#else
+  // r = rhs - Ax0
+  matVecOperator(o_x, elliptic->o_Ap);
+  platform->linAlg->axpbyMany(
+    mesh->Nlocal,
+    elliptic->Nfields,
+    elliptic->Ntotal,
+    -1.0,
+    elliptic->o_Ap,
+    1.0,
+    o_r
+  );
+  if(elliptic->allNeumann) ellipticZeroMean(elliptic, o_r);
+  ellipticApplyMask(elliptic, o_r, dfloatString);
+#endif
 
   elliptic->o_x0.copyFrom(o_x, elliptic->Nfields * elliptic->Ntotal * sizeof(dfloat));
   platform->linAlg->fill(elliptic->Ntotal * elliptic->Nfields, 0.0, o_x);
@@ -141,7 +167,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
     if(options.compareArgs("KRYLOV SOLVER", "PCG"))
       elliptic->Niter = pcg (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
     else if(options.compareArgs("KRYLOV SOLVER", "PGMRES"))
-      elliptic->Niter = pgmres (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
+      elliptic->Niter = pgmres (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm, matVecOperator);
     else{
       if(platform->comm.mpiRank == 0) 
         printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER").c_str());

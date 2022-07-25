@@ -80,6 +80,8 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
     o_xPfloat = platform->device.malloc(mesh->Nlocal * sizeof(pfloat));
     o_AxPfloat = platform->device.malloc(mesh->Nlocal * sizeof(pfloat));
+    std::vector<pfloat> zeros(mesh->Nlocal);
+    std::fill(zeros.begin(), zeros.end(), 0.0);
 
     for (int i = 0; i < Nrep; i++) { 
       platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
@@ -100,30 +102,13 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
         // Note: should static assert on HYPRE_REAL and pfloat being the same types
 
         // inputs into ellipticSEMFEMMAtVec must be HYPRE_Real (pfloat), however
+        o_AxPfloat.copyFrom(zeros.data(), mesh->Nlocal * sizeof(pfloat));
         platform->copyDfloatToPfloatKernel(mesh->Nlocal, o_x, o_xPfloat);
         ellipticSEMFEMMatVec(nrs->pSolver, o_xPfloat, o_AxPfloat);
         platform->copyPfloatToDfloatKernel(mesh->Nlocal, o_AxPfloat, o_Ax);
 
       };
-      int maxIter = 999;
-      dfloat tol = 1e-6;
-
-      // x0 = 0
-      // r0 = b - Ax0
-      //    = b
-      dfloat rdotr = 
-        platform->linAlg->weightedNorm2Many(
-          mesh->Nlocal,
-          nrs->pSolver->Nfields,
-          nrs->pSolver->Ntotal /* offset */,
-          nrs->pSolver->o_invDegree,
-          platform->o_mempool.slice0,
-          platform->comm.mpiComm
-        )
-        * sqrt(nrs->pSolver->resNormFactor); 
-      
-      pgmres(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P,
-        tol, maxIter, rdotr, matVecOperator);
+      ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P, matVecOperator);
 #endif
       platform->timer.toc("pressureSolve");
 

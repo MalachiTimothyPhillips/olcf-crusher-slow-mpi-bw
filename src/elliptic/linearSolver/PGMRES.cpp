@@ -215,6 +215,10 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       // z := M^{-1} V(:,i)
       ellipticPreconditioner(elliptic, o_V.at(i), o_Mv);
 
+      // M^{-1} = I
+      // z := V(:, i)
+      //o_Mv.copyFrom(o_V.at(i), mesh->Nlocal * sizeof(dfloat));
+
       // w := A z
       //ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
       matVecOperator(o_Mv, o_w);
@@ -322,7 +326,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 
     // nRestartVectors GMRES
     // compute A*x
-    ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+    //ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+    matVecOperator(o_x, o_Ax);
 
     elliptic->fusedResidualAndNormKernel(
       Nblock,

@@ -195,6 +195,7 @@ void ellipticSEMFEMSolve(elliptic_t*, occa::memory&, occa::memory&);
 void ellipticSEMFEMMatVec(elliptic_t*, occa::memory&, occa::memory&);
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x);
+void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x, std::function<void(occa::memory & o_x, occa::memory & o_Ax)> matVec);
 
 void ellipticSolveSetup(elliptic_t* elliptic);
 
