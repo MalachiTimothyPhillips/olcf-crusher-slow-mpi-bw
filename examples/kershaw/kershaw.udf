@@ -1,9 +1,13 @@
 #include <math.h>
 #include <numeric>
 #include "udf.hpp"
+#include <type_traits>
+//#include <hypreWrapper.hpp>
 
 /* UDF Functions */                                                      
 static dfloat P_EPS;
+static occa::memory o_xPfloat;
+static occa::memory o_AxPfloat;
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
@@ -74,6 +78,9 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     std::vector<double> smootherTime; 
     std::vector<double> crsTime;
 
+    o_xPfloat = platform->device.malloc(mesh->Nlocal * sizeof(pfloat));
+    o_AxPfloat = platform->device.malloc(mesh->Nlocal * sizeof(pfloat));
+
     for (int i = 0; i < Nrep; i++) { 
       platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
       platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
@@ -87,7 +94,16 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       // use GMRES to solve A_f (x) = RHS
       auto matVecOperator = [&](occa::memory & o_x, occa::memory & o_Ax)
       {
-        ellipticSEMFEMMatVec(nrs->pSolver, o_x, o_Ax);
+        // o_x := dfloat
+        // o_Ax := dfloat
+
+        // Note: should static assert on HYPRE_REAL and pfloat being the same types
+
+        // inputs into ellipticSEMFEMMAtVec must be HYPRE_Real (pfloat), however
+        platform->copyDfloatToPfloatKernel(mesh->Nlocal, o_x, o_xPfloat);
+        ellipticSEMFEMMatVec(nrs->pSolver, o_xPfloat, o_AxPfloat);
+        platform->copyPfloatToDfloatKernel(mesh->Nlocal, o_AxPfloat, o_Ax);
+
       };
       int maxIter = 999;
       dfloat tol = 1e-6;

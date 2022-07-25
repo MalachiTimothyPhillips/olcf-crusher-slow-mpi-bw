@@ -315,12 +315,19 @@ BoomerAMGMatVec(const occa::memory& o_x, const occa::memory& o_Ax)
   HYPRE_IJVectorAssemble(data->x);
 #endif
 
+#if 1
+  HYPRE_IJVectorUpdateValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_Ax.ptr(), 1);
+#else
+  HYPRE_IJVectorSetValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_Ax.ptr());
+  HYPRE_IJVectorAssemble(data->b);
+#endif
+
   HYPRE_ParVector par_x;
-  HYPRE_ParVector par_Ax;
+  HYPRE_ParVector par_b;
   HYPRE_ParCSRMatrix par_A;
 
   HYPRE_IJVectorGetObject(data->x,(void **) &par_x);
-  HYPRE_IJVectorGetObject(data->b,(void **) &par_Ax);
+  HYPRE_IJVectorGetObject(data->b,(void **) &par_b);
   HYPRE_IJMatrixGetObject(data->A,(void **) &par_A);
 
 #if 0
@@ -329,7 +336,7 @@ BoomerAMGMatVec(const occa::memory& o_x, const occa::memory& o_Ax)
 #endif
 
   // y = 1.0 * Ax + 0.0 * y
-  const int retVal = HYPRE_ParCSRMatrixMatvec(1.0, par_A, par_x, 0.0, par_Ax);
+  const int retVal = HYPRE_ParCSRMatrixMatvec(1.0, par_A, par_x, 0.0, par_b);
   if(retVal > 0) { 
     int rank;
     MPI_Comm_rank(data->comm,&rank);

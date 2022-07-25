@@ -190,6 +190,8 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic);
 
 void ellipticSEMFEMSetup(elliptic_t*);
 void ellipticSEMFEMSolve(elliptic_t*, occa::memory&, occa::memory&);
+
+// Note: input/output is the same type as HYPRE_Real, so need to convert as needed.
 void ellipticSEMFEMMatVec(elliptic_t*, occa::memory&, occa::memory&);
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x);
