@@ -591,8 +591,7 @@ void parseCoarseSolver(const int rank, setupAide &options, inipp::Ini *par, std:
       options.setArgs(parSectionName + "COARSE SOLVER", "SMOOTHER");
       options.removeArgs(parSectionName + "COARSE SOLVER PRECISION");
       options.removeArgs(parSectionName + "COARSE SOLVER LOCATION");
-      options.setArgs(parSectionName + " MULTIGRID COARSE SOLVE", "FALSE");
-      options.setArgs("PARALMOND SMOOTH COARSEST", "TRUE");
+      options.setArgs(parSectionName + "MULTIGRID COARSE SOLVE", "FALSE");
     } 
     else if(entry.find("cpu") != std::string::npos)
     {
@@ -833,7 +832,6 @@ void parsePreconditioner(const int rank, setupAide &options,
     options.setArgs(parSection + " PARALMOND CYCLE", key);
     options.setArgs(parSection + " PRECONDITIONER", "MULTIGRID");
     options.setArgs(parSection + " MULTIGRID COARSE SOLVE", "TRUE");
-    options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   } else if(p_preconditioner.find("semfem") != std::string::npos || 
             p_preconditioner.find("femsem") != std::string::npos) {
     options.setArgs(parSection + " PRECONDITIONER", "SEMFEM");
@@ -1231,7 +1229,6 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");
   options.setArgs("PRESSURE RESIDUAL PROJECTION START", "5");
 
-  options.setArgs("PARALMOND SMOOTH COARSEST", "FALSE");
   options.setArgs("ENABLE FLOATCOMMHALF GS SUPPORT", "FALSE");
   options.setArgs("MOVING MESH", "FALSE");
   options.setArgs("GS OVERLAP", "TRUE");

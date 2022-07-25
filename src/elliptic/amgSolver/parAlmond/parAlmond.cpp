@@ -49,7 +49,7 @@ void AMGSetup(solver_t *MM,
   MPI_Comm_rank(M->comm, &rank);
   MPI_Comm_size(M->comm, &size);
 
-  if(M->options.compareArgs("PARALMOND SMOOTH COARSEST", "FALSE")) {
+  if(M->options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
     hlong TotalRows = globalRowStarts[M->size];
     dlong numLocalRows = (dlong) (globalRowStarts[M->rank+1] - globalRowStarts[M->rank]);
  

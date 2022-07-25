@@ -106,8 +106,13 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       smtypeDown = SecondarySmootherType::SCHWARZ;
       stype = SmootherType::CHEBYSHEV;
 
-      if (!options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations))
-        ChebyshevIterations = 2;   //default to degree 2
+      if(isCoarse) {
+        ChebyshevIterations = 10;
+        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations);
+      } else {
+        ChebyshevIterations = 2;
+        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations);
+      }
 
       //estimate the max eigenvalue of S*A
       dfloat rho = this->maxEigSmoothAx();

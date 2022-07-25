@@ -65,7 +65,7 @@ void coarseSolver::setup(
   const int useFP32 = options.compareArgs("COARSE SOLVER PRECISION", "FP32");
 
 
-  if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
+  if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE"))
     return; // bail early as this will not get used
 
   const std::string kernelName = "vectorDotStar";

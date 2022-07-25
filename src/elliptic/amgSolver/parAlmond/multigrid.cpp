@@ -41,7 +41,7 @@ void solver_t::device_vcycle(int k){
   occa::memory o_res = level->o_res;
 
   if(k==baseLevel) {
-    if(options.compareArgs("PARALMOND SMOOTH COARSEST", "TRUE"))
+    if(options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE"))
       level->smooth(o_rhs,o_x,true);
     else
       coarseLevel->solve(o_rhs, o_x);

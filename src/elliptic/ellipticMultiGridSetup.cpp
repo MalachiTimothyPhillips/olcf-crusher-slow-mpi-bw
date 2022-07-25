@@ -168,7 +168,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
       hlong* coarseGlobalStarts = (hlong*) calloc(platform->comm.mpiCommSize + 1, sizeof(hlong));
 
-      if(options.compareArgs("PARALMOND SMOOTH COARSEST", "FALSE")) {
+      if(options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
         if(options.compareArgs("GALERKIN COARSE OPERATOR","TRUE"))
           ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,&coarseA,&nnzCoarseA,
                                                &coarseogs,coarseGlobalStarts);
@@ -232,7 +232,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
       //
     } else {
       if (options.compareArgs("DISCRETIZATION","CONTINUOUS") && 
-          options.compareArgs("PARALMOND SMOOTH COARSEST", "FALSE")) {
+          options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
           parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
 
           coarseLevel->ogs = ellipticCoarse->ogs;
