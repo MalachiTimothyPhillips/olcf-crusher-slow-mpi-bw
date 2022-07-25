@@ -25,6 +25,10 @@ struct hypre_data_t {
   HYPRE_BigInt ilower;
   occa::device device;
   int nRows;
+
+  int null_space;
+  int verbose;
+  
 };
 static hypre_data_t *data;
 
@@ -72,6 +76,10 @@ BoomerAMGSetup(int nrows, int nz,
   MPI_Scan(MPI_IN_PLACE, &data->ilower, 1, MPI_LONG_LONG, MPI_SUM, ce);
   data->ilower -= data->nRows;
   data->iupper = (data->ilower + data->nRows) - 1; 
+
+  // hold for later, in case of re-initialization
+  data->null_space = null_space;
+  data->verbose = verbose;
 
   HYPRE_Init();
 
@@ -249,17 +257,8 @@ BoomerAMGSetup(int nrows, int nz,
 int __attribute__((visibility("default")))
 BoomerAMGReInitialize(const double * param)
 {
-  MPI_Comm comm;
-  MPI_Comm_dup(ce, &comm);
-
-  int rank;
-  MPI_Comm_rank(comm,&rank);
-
-  if(sizeof(HYPRE_Real) != ((useFP32) ? sizeof(float) : sizeof(double))) {
-    if(rank == 0) printf("hypreWrapperDevice: HYPRE floating point precision does not match!\n");
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  } 
-
+  const int verbose = data->verbose;
+  const int null_space = data->null_space;
   if ((int) param[0]) {
     for (int i = 0; i < BOOMERAMG_NPARAM; i++)
       boomerAMGParam[i] = param[i+1]; 
