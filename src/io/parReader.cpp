@@ -188,6 +188,7 @@ static std::vector<std::string> boomeramgKeys = {
   {"degree"}, // for chebyshev
   {"postsmoother"}, // to allow for asymmetric smoothing type
   {"chebyshevtype"}, // to allow for setting different variants
+  {"mineigenvalueboundfactor"},
 };
 
 static std::vector<std::string> amgxKeys = {
@@ -1867,6 +1868,11 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
       if (par->extract("boomeramg", "chebyshevtype", chebyshevtype))
         options.setArgs("BOOMERAMG CHEBYSHEV VARIANT",
                         std::to_string(chebyshevtype));
+
+      double minEigenvalueBoundFactor;
+      if (par->extract("boomeramg", "VARIANT", minEigenvalueBoundFactor))
+        options.setArgs("BOOMERAMG CHEBYSHEV MIN EIGENVALUE MULTIPLIER",
+                        to_string_f(minEigenvalueBoundFactor));
     }
 
     if (par->sections.count("amgx")) {

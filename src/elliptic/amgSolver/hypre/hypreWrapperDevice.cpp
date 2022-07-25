@@ -171,7 +171,7 @@ BoomerAMGSetup(int nrows, int nz,
   HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetKeepTranspose(data->solver, 1);
 
-  //HYPRE_BoomerAMGSetChebyFraction(data->solver, 0.2); 
+  HYPRE_BoomerAMGSetChebyFraction(data->solver, boomerAMGParam[13]); 
 
   if (boomerAMGParam[5] > 0) {
     HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 1);
@@ -233,6 +233,112 @@ BoomerAMGSetup(int nrows, int nz,
   HYPRE_IJVectorSetObjectType(data->x,HYPRE_PARCSR);
   HYPRE_IJVectorInitialize(data->x);
   HYPRE_IJVectorAssemble(data->x);
+
+  // Perform AMG setup
+  HYPRE_ParVector par_b;
+  HYPRE_ParVector par_x;
+  HYPRE_ParCSRMatrix par_A;
+  HYPRE_IJVectorGetObject(data->b,(void**) &par_b);
+  HYPRE_IJVectorGetObject(data->x,(void**) &par_x);
+  HYPRE_IJMatrixGetObject(data->A,(void**) &par_A);
+  HYPRE_BoomerAMGSetup(data->solver,par_A,par_b,par_x);
+
+  return 0;
+}
+
+int __attribute__((visibility("default")))
+BoomerAMGReInitialize(const double * param)
+{
+  MPI_Comm comm;
+  MPI_Comm_dup(ce, &comm);
+
+  int rank;
+  MPI_Comm_rank(comm,&rank);
+
+  if(sizeof(HYPRE_Real) != ((useFP32) ? sizeof(float) : sizeof(double))) {
+    if(rank == 0) printf("hypreWrapperDevice: HYPRE floating point precision does not match!\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  } 
+
+  if ((int) param[0]) {
+    for (int i = 0; i < BOOMERAMG_NPARAM; i++)
+      boomerAMGParam[i] = param[i+1]; 
+  } else {
+    boomerAMGParam[0]  = 8;    /* coarsening */
+    boomerAMGParam[1]  = 6;    /* interpolation */
+    boomerAMGParam[2]  = 1;    /* number of cycles */
+    boomerAMGParam[3]  = 8;    /* smoother for crs level */
+    boomerAMGParam[4]  = 3;    /* sweeps */
+    boomerAMGParam[5]  = 8;    /* smoother */
+    boomerAMGParam[6]  = 1;    /* sweeps   */
+    boomerAMGParam[7]  = 0.25; /* threshold */
+    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
+    boomerAMGParam[9]  = 0;    /* agressive coarsening */
+  }
+
+  // Clear old solver object
+  HYPRE_BoomerAMGDestroy(data->solver);
+
+  // Setup solver
+  HYPRE_BoomerAMGCreate(&data->solver);
+
+  HYPRE_BoomerAMGSetCoarsenType(data->solver,boomerAMGParam[0]);
+  HYPRE_BoomerAMGSetInterpType(data->solver,boomerAMGParam[1]);
+
+  HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
+  HYPRE_BoomerAMGSetKeepTranspose(data->solver, 1);
+
+  HYPRE_BoomerAMGSetChebyFraction(data->solver, boomerAMGParam[13]); 
+
+  if (boomerAMGParam[5] > 0) {
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 1);
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 2);
+  } 
+  if (boomerAMGParam[11] > 0) {
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[11], 2);
+  }
+
+  HYPRE_BoomerAMGSetChebyOrder(data->solver, boomerAMGParam[10]);
+
+  HYPRE_BoomerAMGSetCycleRelaxType(data->solver, 9, 3);
+
+  HYPRE_BoomerAMGSetChebyVariant(data->solver, boomerAMGParam[12]);
+
+  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 1);
+  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 2);
+  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, 1, 3);
+
+  if (null_space) {
+    HYPRE_BoomerAMGSetMinCoarseSize(data->solver, 2);
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[3], 3);
+    HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[4], 3);
+  }
+
+  HYPRE_BoomerAMGSetStrongThreshold(data->solver,boomerAMGParam[7]);
+
+// NonGalerkin not supported yet
+#if 0
+  if (boomerAMGParam[8] > 1e-3) {
+    HYPRE_BoomerAMGSetNonGalerkinTol(data->solver,boomerAMGParam[8]);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.0 , 0);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.01, 1);
+    HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.05, 2);
+  }
+#endif
+  
+  if(boomerAMGParam[9] > 0) {
+    HYPRE_BoomerAMGSetAggNumLevels(data->solver, boomerAMGParam[9]); 
+    HYPRE_BoomerAMGSetAggInterpType(data->solver, 5);
+    //HYPRE_BoomerAMGSetNumPaths(data->solver, 10);
+  }
+
+  HYPRE_BoomerAMGSetMaxIter(data->solver, boomerAMGParam[2]);
+  HYPRE_BoomerAMGSetTol(data->solver,0);
+
+  if(verbose)
+    HYPRE_BoomerAMGSetPrintLevel(data->solver,3);
+  else
+    HYPRE_BoomerAMGSetPrintLevel(data->solver,0);
 
   // Perform AMG setup
   HYPRE_ParVector par_b;

@@ -80,6 +80,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       settings[11] = 2;    /* chebyshev degree             */
       settings[12] = 19;   /* post smoother                */
       settings[13] = 2;    /* Chebyshev variant            */
+      settings[14] = 0.1;  /* lmin fraction                */
 
       if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
         settings[4]  = 16;
@@ -98,6 +99,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
       platform->options.getArgs("BOOMERAMG CHEBYSHEV DEGREE" , settings[11]);
       platform->options.getArgs("BOOMERAMG POST SMOOTHER" , settings[12]);
       platform->options.getArgs("BOOMERAMG CHEBYSHEV VARIANT" , settings[13]);
+      platform->options.getArgs("BOOMERAMG CHEBYSHEV MIN EIGENVALUE MULTIPLIER" , settings[14]);
 
       if(platform->device.mode() != "Serial" && useDevice) {
         setupRetVal = hypreWrapperDevice::BoomerAMGSetup(

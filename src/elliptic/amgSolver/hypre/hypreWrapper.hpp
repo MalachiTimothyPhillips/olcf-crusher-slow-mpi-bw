@@ -4,7 +4,7 @@
 #include <mpi.h>
 #include "occa.hpp"
 
-#define BOOMERAMG_NPARAM 13
+#define BOOMERAMG_NPARAM 14
 
 namespace hypreWrapper
 {
@@ -107,6 +107,8 @@ int BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x);
 
 // compute forward product y=A*x
 int BoomerAMGMatVec(const occa::memory& o_x, const occa::memory& o_Ax);
+
+int BoomerAMGReInitialize(const double * param);
 
 void Free();
 
