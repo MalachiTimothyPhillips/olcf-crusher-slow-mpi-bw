@@ -3,11 +3,74 @@
 #include "udf.hpp"
 #include <type_traits>
 #include "hypreWrapper.hpp"
+#include <functional>
+#include <cmath>
+#include <utility>
+#include <iostream>
 
 /* UDF Functions */                                                      
 static dfloat P_EPS;
 static occa::memory o_xPfloat;
 static occa::memory o_AxPfloat;
+
+template<typename T>
+struct bound_t{
+  T lower;
+  T upper;
+};
+
+template<typename Callable, typename T>
+auto goldenSectionSearch(Callable objective, T a, T b, int maxIter, T tol)
+{
+
+  const auto invphi = (std::sqrt(5.0) - 1.0) / 2.0;
+  const auto invphi2 = (3.0 - std::sqrt(5.0)) / 2.0;
+  const auto tmpA = a;
+  const auto tmpB = b;
+
+  a = std::min(tmpA, tmpB);
+  b = std::max(tmpA, tmpB);
+  auto h = b - a;
+  if (h <= tol){
+    return bound_t<T>{a,b};
+  }
+
+  const auto n = std::max(
+      static_cast<int>(ceil(std::log(tol / h) / std::log(invphi))),
+      maxIter
+  );
+
+  auto c = a + invphi2 * h;
+  auto d = a + invphi * h;
+  auto yc = objective(c);
+  auto yd = objective(d);
+
+  for(int iter = 0; iter < n-1; ++iter){
+    if (yc < yd){
+      b = d;
+      d = c;
+      yd = yc;
+      h = invphi * h;
+      c = a + invphi2 * h;
+      yc = objective(c);
+    } else {
+      a = c;
+      c = d;
+      yc = yd;
+      h = invphi * h;
+      d = a + invphi * h;
+      yd = objective(d);
+    }
+  }
+
+  if (yc < yd){
+    return bound_t<T>{a, d};
+  }
+  else {
+    return bound_t<T>{c, b};
+  }
+  
+}
 
 void UDF_LoadKernels(occa::properties& kernelInfo)
 {
@@ -33,6 +96,132 @@ void UDF_Setup(nrs_t *nrs)
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
   mesh_t* mesh = nrs->meshV;
+
+  if(platform->comm.mpiRank == 0){
+    std::cout << "Performing optimization problem for computing lambda_min\n";
+  }
+
+  // generate parallel consistent (deterministic) "random" x
+  for(int elem = 0; elem < mesh->Nelements; elem++){
+    const long long int globalElement = nek::lglel(elem);
+    for(int qp = 0; qp < mesh->Np; ++qp){
+      const long long int globalIndex = mesh->Np * globalElement + qp;
+      const int localIndex = mesh->Np * elem + qp;
+      const auto alpha = 0.01;
+      const auto beta = 0.01;
+      const auto gi = static_cast<double>(globalIndex);
+      platform->mempool.slice0[localIndex] = 10. * std::sin(alpha * gi * std::max(mesh->r[qp], 0.01));
+    }
+  }
+
+  platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
+
+  // make unit norm
+  const dfloat xNorm = 
+    platform->linAlg->weightedNorm2Many(
+      mesh->Nlocal,
+      nrs->pSolver->Nfields,
+      nrs->pSolver->Ntotal,
+      nrs->pSolver->o_invDegree,
+      platform->o_mempool.slice0,
+      platform->comm.mpiComm
+    )
+    * sqrt(nrs->pSolver->resNormFactor); 
+
+  platform->linAlg->scale(mesh->Nlocal, 1.0 / xNorm, platform->o_mempool.slice0);
+
+
+  ellipticOperator(nrs->pSolver, platform->o_mempool.slice0, platform->o_mempool.slice1, dfloatString);
+  // RHS = A*x
+  platform->o_mempool.slice1.copyTo(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
+  auto o_rhs = platform->o_mempool.slice1;
+
+  auto matVecOperator = [&](occa::memory & o_x, occa::memory & o_Ax)
+  {
+    // o_x := dfloat
+    // o_Ax := dfloat
+
+    static_assert(std::is_same<hypreWrapper::Real, pfloat>::value, "Expected HYPRE_Real to be of type pfloat!\n");
+
+    // inputs into ellipticSEMFEMMAtVec must be HYPRE_Real (pfloat), however
+    o_AxPfloat.copyFrom(zeros.data(), mesh->Nlocal * sizeof(pfloat));
+    platform->copyDfloatToPfloatKernel(mesh->Nlocal, o_x, o_xPfloat);
+    ellipticSEMFEMMatVec(nrs->pSolver, o_xPfloat, o_AxPfloat);
+    platform->copyPfloatToDfloatKernel(mesh->Nlocal, o_AxPfloat, o_Ax);
+
+  };
+
+  auto objectiveFunction = [&](auto minBoundFactor){
+
+    double settings[15];
+    settings[0]  = 1;    /* custom settings              */
+    settings[1]  = 8;    /* coarsening                   */
+    settings[2]  = 6;    /* interpolation                */
+    settings[3]  = 1;    /* number of cycles             */
+    settings[4]  = 18;   /* smoother for crs level       */
+    settings[5]  = 3;    /* number of coarse sweeps      */
+    settings[6]  = 18;   /* smoother                     */
+    settings[7]  = 1;    /* number of sweeps             */
+    settings[8]  = 0.25; /* strong threshold             */
+    settings[9]  = 0.05; /* non galerkin tol             */
+    settings[10] = 0;    /* aggressive coarsening levels */
+    settings[11] = 2;    /* chebyshev degree             */
+    settings[12] = 19;   /* post smoother                */
+    settings[13] = 2;    /* Chebyshev variant            */
+    settings[14] = 0.1;  /* lmin fraction                */
+
+    if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
+      settings[4]  = 16;
+      settings[6]  = 16;
+    }  
+
+    platform->options.getArgs("BOOMERAMG COARSEN TYPE", settings[1]);
+    platform->options.getArgs("BOOMERAMG INTERPOLATION TYPE", settings[2]);
+    platform->options.getArgs("BOOMERAMG COARSE SMOOTHER TYPE", settings[4]);
+    platform->options.getArgs("BOOMERAMG SMOOTHER TYPE", settings[6]);
+    platform->options.getArgs("BOOMERAMG SMOOTHER SWEEPS", settings[7]);
+    platform->options.getArgs("BOOMERAMG ITERATIONS", settings[3]);
+    platform->options.getArgs("BOOMERAMG STRONG THRESHOLD", settings[8]);
+    platform->options.getArgs("BOOMERAMG NONGALERKIN TOLERANCE" , settings[9]);
+    platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
+    platform->options.getArgs("BOOMERAMG CHEBYSHEV DEGREE" , settings[11]);
+    platform->options.getArgs("BOOMERAMG POST SMOOTHER" , settings[12]);
+    platform->options.getArgs("BOOMERAMG CHEBYSHEV VARIANT" , settings[13]);
+
+    settings[14] = minBoundFactor;
+
+    hypreWrapperDevice::BoomerAMGReInitialize(settings);
+
+    // set initial condition, rhs
+    platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
+    platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
+
+    ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
+
+    // estimate convergence rate
+    const auto Niter = nrs->pSolver->Niter;
+    const auto r0 = nrs->pSolver->res00Norm;
+    const auto rN = nrs->pSolver->resNorm;
+    const auto rho = std::exp(1.0 / Niter * std::log(rN/r0));
+
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Statistics for lmin mult = " << minBoundFactor << "\n";
+      std::cout << "\tNiter = " << Niter << "\n";
+      std::cout << "\tr0 = " << r0 << "\n";
+      std::cout << "\trN = " << rN << "\n";
+      std::cout << "\trho = " << rho << "\n";
+    }
+
+    return rho;
+
+  };
+
+  // optimization problem
+  auto bound = goldenSectionSearch(objectiveFunction, 0.01, 0.4, 15, 1e-6);
+  const auto lMinOpt = 0.5 * (bound.lower + bound.upper);
+
+  // re-run at new point, also force re-initialization
+  objectiveFunction(lMinOpt);
 
   for (int i = 0; i < mesh->Nlocal; i++) {
     const dfloat lambda = 0; 
@@ -94,20 +283,6 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       // experiment:
       // see how quickly HYPRE V-cycle preconditions A_f
       // use GMRES to solve A_f (x) = RHS
-      auto matVecOperator = [&](occa::memory & o_x, occa::memory & o_Ax)
-      {
-        // o_x := dfloat
-        // o_Ax := dfloat
-
-        static_assert(std::is_same<hypreWrapper::Real, pfloat>::value, "Expected HYPRE_Real to be of type pfloat!\n");
-
-        // inputs into ellipticSEMFEMMAtVec must be HYPRE_Real (pfloat), however
-        o_AxPfloat.copyFrom(zeros.data(), mesh->Nlocal * sizeof(pfloat));
-        platform->copyDfloatToPfloatKernel(mesh->Nlocal, o_x, o_xPfloat);
-        ellipticSEMFEMMatVec(nrs->pSolver, o_xPfloat, o_AxPfloat);
-        platform->copyPfloatToDfloatKernel(mesh->Nlocal, o_AxPfloat, o_Ax);
-
-      };
       ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P, matVecOperator);
 #endif
       platform->timer.toc("pressureSolve");
