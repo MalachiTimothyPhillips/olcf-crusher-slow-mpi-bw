@@ -2,7 +2,7 @@
 #include <numeric>
 #include "udf.hpp"
 #include <type_traits>
-//#include <hypreWrapper.hpp>
+#include "hypreWrapper.hpp"
 
 /* UDF Functions */                                                      
 static dfloat P_EPS;
@@ -99,7 +99,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
         // o_x := dfloat
         // o_Ax := dfloat
 
-        // Note: should static assert on HYPRE_REAL and pfloat being the same types
+        static_assert(std::is_same<hypreWrapper::Real, pfloat>::value, "Expected HYPRE_Real to be of type pfloat!\n");
 
         // inputs into ellipticSEMFEMMAtVec must be HYPRE_Real (pfloat), however
         o_AxPfloat.copyFrom(zeros.data(), mesh->Nlocal * sizeof(pfloat));

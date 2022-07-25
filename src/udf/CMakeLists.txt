@@ -27,11 +27,13 @@ set(INCLUDE_DIRS
   ${NEKRS_INSTALL_DIR}/include/navierStokes
   ${NEKRS_INSTALL_DIR}/include/elliptic
   ${NEKRS_INSTALL_DIR}/include/elliptic/parAlmond
+  ${NEKRS_INSTALL_DIR}/include/elliptic/amgSolver/hypre
   ${NEKRS_INSTALL_DIR}/include/nekInterface
   ${NEKRS_INSTALL_DIR}/include/cds
   ${NEKRS_INSTALL_DIR}/include/linAlg
   ${NEKRS_INSTALL_DIR}/include/postProcessing
   ${NEKRS_INSTALL_DIR}/occa/include
+
 )
 
 add_library(UDF SHARED udf.cpp)
