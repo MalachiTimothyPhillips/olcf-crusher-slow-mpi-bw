@@ -196,9 +196,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
   const int Np_e = Nq_e * Nq_e * Nq_e;
 
   const bool serial = platform->serial;
-  bool overlap = false;
-  if ((Nq_e - 1) >= elliptic_t::minNFDMOverlap && !serial)
-    overlap = true;
 
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));
@@ -214,7 +211,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
     bool useRAS = platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER", "RAS");
     const std::string suffix =
         std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
-    properties["defines/p_overlap"] = (int)overlap;
     if(useRAS){
       properties["defines/p_restrict"] = 1;
     }
@@ -234,7 +230,6 @@ void registerSchwarzKernels(const std::string &section, int N) {
                                   Nq_e,
                                   sizeof(pfloat),
                                   useRAS,
-                                  static_cast<int>(overlap),
                                   verbosity,
                                   elliptic_t::targetTimeBenchmark,
                                   false,

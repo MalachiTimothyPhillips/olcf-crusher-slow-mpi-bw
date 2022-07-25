@@ -815,8 +815,6 @@ void MGLevel::build(
     return;
   }
 
-  const bool serial = (platform->device.mode() == "Serial" || platform->device.mode() == "OpenMP");
-
   hlong* maskedGlobalIdsExt;
   maskedGlobalIdsExt = (hlong*) calloc(Nelements*(Nq+2)*(Nq+2)*(Nq+2),sizeof(hlong));
   mesh_t* extendedMesh = create_extended_mesh(elliptic, maskedGlobalIdsExt);
@@ -826,7 +824,8 @@ void MGLevel::build(
   const dlong Nlocal_e = Nelements * Np_e;
 
   overlap = false;
-  if ((Nq_e - 1) >= elliptic_t::minNFDMOverlap && !serial)
+  if (Nlocal_e * sizeof(pfloat) > elliptic_t::minFDMBytesOverlap && 
+      platform->comm.mpiCommSize)
     overlap = true;
 
   /** create the element lengths, using the most refined level **/
@@ -935,7 +934,7 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
 
   if(options.compareArgs("MULTIGRID SMOOTHER","RAS")) {
     if(!overlap){
-      fusedFDMKernel(Nelements,
+      fusedFDMKernel(Nelements, mesh->o_elementList,
                      o_Su,o_Sx,o_Sy,o_Sz,o_invL,elliptic->o_invDegree,o_work1);
     } else {
       if(mesh->NglobalGatherElements)
@@ -952,7 +951,7 @@ void MGLevel::smoothSchwarz(occa::memory& o_u, occa::memory& o_Su, bool xIsZero)
     oogs::finish(o_Su, 1, 0, ogsDataTypeString, ogsAdd, (oogs_t*) ogs);
   } else {
     if(!overlap){
-      fusedFDMKernel(Nelements,
+      fusedFDMKernel(Nelements, mesh->o_elementList,
                      o_work2,o_Sx,o_Sy,o_Sz,o_invL,o_work1);
     } else {
       if(mesh->NglobalGatherElements)

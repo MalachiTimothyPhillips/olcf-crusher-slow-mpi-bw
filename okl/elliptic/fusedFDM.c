@@ -2,6 +2,7 @@
 
 extern "C" void FUNC(fusedFDM)(
   const dlong& Nelements,
+  const dlong *elementList,
   pfloat* __restrict__ Su,
   const pfloat* __restrict__ S_x,
   const pfloat* __restrict__ S_y,

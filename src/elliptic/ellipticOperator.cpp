@@ -104,7 +104,7 @@ void ellipticAx(elliptic_t* elliptic,
   const double factor = std::is_same<pfloat, float>::value && (precisionStr != dFloatStr) ? 0.5 : 1.0;
 
   platform->flopCounter->add(elliptic->name + " Ax, N=" + std::to_string(mesh->N) + ", " +
-                                 std::string(precision),
+                             std::string(precision),
                              factor * flopCount);
 }
 
@@ -117,8 +117,13 @@ void ellipticOperator(elliptic_t* elliptic,
   mesh_t* mesh = elliptic->mesh;
   setupAide &options = elliptic->options;
   oogs_t* oogsAx = elliptic->oogsAx;
+
   const char* ogsDataTypeString = (!strstr(precision, dfloatString)) ? ogsPfloat : ogsDfloat;
-  const bool overlap = (mesh->N >= 5) ? true : false;
+
+  const size_t wordSize = (strstr(precision, dfloatString)) ? 8 : 4;
+  const bool overlap = (wordSize * elliptic->Nfields * mesh->Nlocal > (2<<18) && 
+                        platform->comm.mpiCommSize > 1)
+                        ? true : false;
 
   if(overlap) {
     ellipticAx(elliptic, mesh->NglobalGatherElements, mesh->o_globalGatherElementList, o_q, o_Aq, precision);
