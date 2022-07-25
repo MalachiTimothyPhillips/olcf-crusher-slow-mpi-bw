@@ -542,19 +542,15 @@ hypre_BoomerAMGCycle( void              *amg_vdata,
                                            num_sweep);
                   }
                }
-               else if (relax_type == 16)
+               else if (relax_type == 16 || relax_type == 19)
                {
                   /* scaled Chebyshev */
                   HYPRE_Int scale = hypre_ParAMGDataChebyScale(amg_data);
                   HYPRE_Int variant = hypre_ParAMGDataChebyVariant(amg_data);
                   hypre_ParCSRRelax_Cheby_Solve(A_array[level], Aux_F,
                                                 hypre_VectorData(ds[level]), coefs[level],
-                                                cheby_order, scale,
+                                                relax_type == 19 ? 1 : cheby_order, scale,
                                                 variant, Aux_U, Vtemp, Ztemp, Ptemp, Rtemp );
-               }
-               else if (relax_type == 19)
-               {
-                  // no-op
                }
                else if (relax_type == 17)
                {
