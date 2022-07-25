@@ -140,7 +140,6 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
   struct gs_data *hgs = (gs_data *)ogs->haloGshSym;
   const void *execdata = hgs->r.data;
   const struct pw_data *pwd = (pw_data *)execdata;
-  const struct comm *comm = &hgs->comm;
 
   if (!gs->earlyPrepostRecv) {
     unsigned char *buf = (unsigned char *)gs->o_bufRecv.ptr();
@@ -152,7 +151,7 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     const uint *p, *pe, *size = c->size;
     for (p = c->p, pe = p + c->n; p != pe; ++p) {
       const int len = *(size++) * unit_size;
-      MPI_Irecv((void *)buf, len, MPI_UNSIGNED_CHAR, *p, *p, comm->c, req++);
+      MPI_Irecv((void *)buf, len, MPI_UNSIGNED_CHAR, *p, *p, gs->comm, req++);
       buf += len;
     }
   }
@@ -169,7 +168,7 @@ static void pairwiseExchange(int unit_size, oogs_t *gs)
     const uint *p, *pe, *size = c->size;
     for (p = c->p, pe = p + c->n; p != pe; ++p) {
       const int len = *(size++) * unit_size;
-      MPI_Isend((void *)buf, len, MPI_UNSIGNED_CHAR, *p, comm->id, comm->c, req++);
+      MPI_Isend((void *)buf, len, MPI_UNSIGNED_CHAR, *p, gs->rank, gs->comm, req++);
       buf += len;
     }
     MPI_Waitall(pwd->comm[send].n + pwd->comm[recv].n, pwd->req, MPI_STATUSES_IGNORE);
@@ -440,13 +439,15 @@ oogs_t *oogs::setup(ogs_t *ogs,
         gs->modeExchange = modeExchange;
 
         if (gs->modeExchange == OOGS_EX_NBC && gs->mode == OOGS_DEVICEMPI)
-          continue; // not supported by many MPI implementations
+          continue; // not supported yet by all MPI implementations
 
 #ifdef ENABLE_EARLY_PREPOST
-        int nPass = 2;
+        const int nPass = 2;
 #else
-        int nPass = 1;
+        const int nPass = 1;
 #endif
+
+        MPI_Barrier(gs->comm);
         for (int pass = 0; pass < nPass; pass++) {
           gs->earlyPrepostRecv = pass;
 
@@ -480,6 +481,7 @@ oogs_t *oogs::setup(ogs_t *ogs,
           if (gs->rank == 0)
             printf("%.2es ", elapsedTest);
           fflush(stdout);
+
           if (elapsedTest < elapsedMin) {
             if (gs->mode != OOGS_LOCAL) {
               elapsedMin = elapsedTest;
@@ -519,8 +521,8 @@ oogs_t *oogs::setup(ogs_t *ogs,
     const size_t unit_size = nVec * Nbytes;
     reallocBuffers(unit_size, gs);
 
-    device.finish();
     for (int test = 0; test < Ntests; ++test) {
+      device.finish();
       MPI_Barrier(gs->comm);
       const double tStart = MPI_Wtime();
       if (gs->modeExchange == OOGS_EX_NBC)
@@ -537,7 +539,11 @@ oogs_t *oogs::setup(ogs_t *ogs,
     MPI_Allreduce(MPI_IN_PLACE, &nBytesExchange, 1, MPI_DOUBLE, MPI_SUM, gs->comm);
     nBytesExchange *= unit_size / size;
 
-    MPI_Allreduce(MPI_IN_PLACE, &elapsedMinMPI, 1, MPI_DOUBLE, MPI_MAX, gs->comm);
+    double tmin, tmax, tavg;
+    MPI_Allreduce(&elapsedMinMPI, &tmin, 1, MPI_DOUBLE, MPI_MIN, gs->comm);
+    MPI_Allreduce(&elapsedMinMPI, &tmax, 1, MPI_DOUBLE, MPI_MAX, gs->comm);
+    MPI_Allreduce(&elapsedMinMPI, &tavg, 1, MPI_DOUBLE, MPI_SUM, gs->comm);
+    tavg /= size;
 
     const std::string gsModeExchangeStr = (gs->modeExchange == OOGS_EX_NBC) ? "nbc" : "pw";
     const std::string gsEarlyPrepostRecvStr = (gs->earlyPrepostRecv) ? "+early" : "";
@@ -559,10 +565,10 @@ oogs_t *oogs::setup(ogs_t *ogs,
                gsModeExchangeStr.c_str(),
                gsEarlyPrepostRecvStr.c_str(),
                gsModeStr.c_str());
-        if (elapsedMinMPI > MPI_Wtick())
-          printf("(MPI: %.2es / bi-bw: %.1fGB/s/rank)\n",
-                 elapsedMinMPI,
-                 nBytesExchange / elapsedMinMPI / 1e9);
+        if (tavg > MPI_Wtick())
+          printf("(MPI min/max/avg: %.2es %.2es %.2es / avg bi-bw: %.1fGB/s/rank)\n",
+                 tmin, tmax, tavg,
+                 nBytesExchange / tavg / 1e9);
         else
           printf("\n");
       }
