@@ -105,6 +105,9 @@ int BoomerAMGSetup(int nrows, int nz,
 
 int BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x);
 
+// compute forward product y=A*x
+int BoomerAMGMatVec(const occa::memory& o_x, const occa::memory& o_Ax);
+
 void Free();
 
 } // namespace

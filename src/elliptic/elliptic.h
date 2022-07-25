@@ -190,6 +190,7 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic);
 
 void ellipticSEMFEMSetup(elliptic_t*);
 void ellipticSEMFEMSolve(elliptic_t*, occa::memory&, occa::memory&);
+void ellipticSEMFEMMatVec(elliptic_t*, occa::memory&, occa::memory&);
 
 void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x);
 
@@ -216,6 +217,10 @@ int pcg(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
 void initializeGmresData(elliptic_t*);
 int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         const dfloat tol, const int MAXIT, dfloat &res);
+
+// interface with custom mat-vec
+int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
+        const dfloat tol, const int MAXIT, dfloat &res, std::function<void(occa::memory& o_x, occa::memory& o_Ax)> matVecOperator);
 
 void ellipticOperator(elliptic_t* elliptic,
                       occa::memory &o_q,

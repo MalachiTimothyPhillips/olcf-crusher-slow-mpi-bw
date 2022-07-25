@@ -303,6 +303,46 @@ Free()
   free(data);
 }
 
+int __attribute__((visibility("default")))
+BoomerAMGMatVec(const occa::memory& o_x, const occa::memory& o_Ax)
+{
+  data->device.finish(); // input buffers ready
+
+#if 1
+  HYPRE_IJVectorUpdateValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr(), 1);
+#else
+  HYPRE_IJVectorSetValues(data->x,data->nRows,NULL,(HYPRE_Real*) o_x.ptr());
+  HYPRE_IJVectorAssemble(data->x);
+#endif
+
+  HYPRE_ParVector par_x;
+  HYPRE_ParVector par_Ax;
+  HYPRE_ParCSRMatrix par_A;
+
+  HYPRE_IJVectorGetObject(data->x,(void **) &par_x);
+  HYPRE_IJVectorGetObject(data->b,(void **) &par_Ax);
+  HYPRE_IJMatrixGetObject(data->A,(void **) &par_A);
+
+#if 0
+  HYPRE_IJVectorPrint(data->b, "b.dat");
+  HYPRE_IJVectorPrint(data->x, "x.dat");
+#endif
+
+  // y = 1.0 * Ax + 0.0 * y
+  const int retVal = HYPRE_ParCSRMatrixMatvec(1.0, par_A, par_x, 0.0, par_Ax);
+  if(retVal > 0) { 
+    int rank;
+    MPI_Comm_rank(data->comm,&rank);
+    if(rank == 0) printf("HYPRE_BoomerAMGMatVec failed with retVal=%d!\n", retVal);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+
+  // sync copy (blocks host until buffer is ready) 
+  HYPRE_IJVectorGetValues(data->b,data->nRows,NULL,(HYPRE_Real*) o_Ax.ptr());
+
+  return 0; 
+}
+
 } // namespace
 
 #else
@@ -324,6 +364,15 @@ BoomerAMGSetup(int nrows, int nz,
 
 int __attribute__((visibility("default"))) 
 BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
+{
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD,&rank);  
+  if(rank == 0) printf("ERROR: Recompile with HYPRE GPU support!\n");
+  return 1;
+}
+
+int __attribute__((visibility("default"))) 
+BoomerAMGMatVec(const occa::memory& o_b, const occa::memory& o_Ax)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD,&rank);  

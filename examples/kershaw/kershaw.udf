@@ -78,7 +78,22 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
 
       platform->timer.tic("pressureSolve", 1);
+#if 0
       ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
+#else
+      // experiment:
+      // see how quickly HYPRE V-cycle preconditions A_f
+      // use GMRES to solve A_f (x) = RHS
+      auto matVecOperator = [&](occa::memory & o_x, occa::memory & o_Ax)
+      {
+        ellipticSEMFEMMatVec(nrs->pSolver, o_x, o_Ax);
+      };
+      int maxIter = 999;
+      dfloat tol = 1e-6;
+      dfloat rdotr = std::numeric_limits<dfloat>::max();
+      pgmres(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P,
+        tol, maxIter, rdotr, matVecOperator)
+#endif
       platform->timer.toc("pressureSolve");
 
       eTime.push_back(platform->timer.query("pressureSolve", "DEVICE:MAX"));

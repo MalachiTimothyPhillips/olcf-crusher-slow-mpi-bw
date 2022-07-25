@@ -221,3 +221,67 @@ void ellipticSEMFEMSolve(elliptic_t* elliptic, occa::memory& o_r, occa::memory& 
 
   oogs::startFinish(o_z, 1, 0, ogsPfloat, ogsAdd, elliptic->oogs);
 }
+
+void ellipticSEMFEMMatVec(elliptic_t* elliptic, occa::memory& o_x, occa::memory& o_Ax)
+{
+  mesh_t* mesh = elliptic->mesh;
+
+  const bool useDevice = elliptic->options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
+
+  occa::memory& o_bufx = o_SEMFEMBuffer1;
+  occa::memory& o_bufAx = o_SEMFEMBuffer2;
+
+  // E->T
+  gatherKernel(
+    numRowsSEMFEM,
+    o_dofMap,
+    o_x,
+    o_bufx
+  );
+
+  if(elliptic->options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
+
+    if(!useDevice)
+    {
+      o_bufx.copyTo(SEMFEMBuffer1_h_d, numRowsSEMFEM * sizeof(pfloat));
+#if 0
+      hypreWrapper::BoomerAMGMatVec(SEMFEMBuffer1_h_d, SEMFEMBuffer2_h_d);
+#else
+      if(platform->comm.mpiRank == 0)
+        printf("BoomerAMGMatVec not implemented for host HYPRE!\n");
+      ABORT(1);
+#endif
+      o_bufAx.copyFrom(SEMFEMBuffer2_h_d, numRowsSEMFEM * sizeof(pfloat));
+
+    } else {
+      hypreWrapperDevice::BoomerAMGMatVec(o_bufx, o_bufAx);
+    }
+
+  } else if(elliptic->options.compareArgs("COARSE SOLVER", "AMGX") && useDevice){
+
+#if 0
+    AMGXMatVec(o_bufr.ptr(), o_bufz.ptr());
+#else
+    if(platform->comm.mpiRank == 0)
+      printf("AMGXMatVec not implemented for AMGX!\n");
+    ABORT(1);
+#endif
+
+  } else {
+
+    if(platform->comm.mpiRank == 0)
+      printf("Trying to call an unknown SEMFEM solver!\n");
+    ABORT(1);
+
+  }
+
+  // T->E
+  scatterKernel(
+    numRowsSEMFEM,
+    o_dofMap,
+    o_bufAx,
+    o_Ax
+  );
+
+  oogs::startFinish(o_Ax, 1, 0, ogsPfloat, ogsAdd, elliptic->oogs);
+}

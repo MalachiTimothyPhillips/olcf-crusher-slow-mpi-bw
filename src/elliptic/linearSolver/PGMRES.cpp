@@ -133,9 +133,18 @@ void gmresUpdate(elliptic_t* elliptic,
 }
 }
 
-// Ax=r
 int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
         const dfloat tol, const int MAXIT, dfloat &rdotr)
+{
+  auto matVecOperator = [&](occa::memory& o_x, occa::memory & o_Ax)
+  {
+    ellipticOperator(elliptic, o_x, o_Ax, dfloatString);
+  };
+}
+
+// Ax=r
+int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
+        const dfloat tol, const int MAXIT, dfloat &rdotr, std::function<void(occa::memory & o_x, occa::memory& o_Ax)> matVecOperator)
 {
 
   mesh_t* mesh = elliptic->mesh;
@@ -206,7 +215,8 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       ellipticPreconditioner(elliptic, o_V.at(i), o_Mv);
 
       // w := A z
-      ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
+      //ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
+      matVecOperator(o_Mv, o_w);
 
       linAlg.weightedInnerProdMulti(
         mesh->Nlocal,
