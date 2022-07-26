@@ -62,7 +62,7 @@ solver_t::solver_t(occa::device device_, MPI_Comm comm_,
           MPI_Query_thread(&provided);
           if(provided != MPI_THREAD_MULTIPLE) {
             overlapCrsGridSolve = false;
-            if(rank ==0 && size > 1) printf("MPI_THREAD_MULTIPLE not supported!\n");
+            if(rank ==0 && size > 1) printf("disable overlapping coarse solve as MPI_THREAD_MULTIPLE is not supported!\n");
           }
           if(size == 1) overlapCrsGridSolve = true;
         }

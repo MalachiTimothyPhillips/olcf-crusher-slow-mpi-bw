@@ -913,7 +913,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
 
     int pCoeffField = 0;
     if (platform->options.compareArgs("LOWMACH", "TRUE"))
-      pCoeffField = 1;
+      pCoeffField = 1; // rho varies in space
 
     nrs->pSolver->coeffField = pCoeffField;
     nrs->pSolver->coeffFieldPreco = pCoeffField;

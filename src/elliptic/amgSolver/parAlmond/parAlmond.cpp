@@ -35,36 +35,34 @@ solver_t *Init(occa::device device, MPI_Comm comm, setupAide options) {
 }
 
 void AMGSetup(solver_t *MM,
-               hlong* globalRowStarts,       //global partition
-               dlong nnz,                    //--
-               hlong* Ai,                    //-- Local A matrix data (globally indexed, COO storage, row sorted)
-               hlong* Aj,                    //--
-               dfloat* Avals,                //--
-               bool nullSpace,
-               dfloat nullSpacePenalty){
-
+              hlong* globalRowStarts,       //global partition
+              dlong nnz,                    //--
+              hlong* Ai,                    //-- Local A matrix data (globally indexed, COO storage, row sorted)
+              hlong* Aj,                    //--
+              dfloat* Avals,                //--
+              bool nullSpace)
+{
   solver_t *M = (solver_t *) MM;
 
   int rank, size;
   MPI_Comm_rank(M->comm, &rank);
   MPI_Comm_size(M->comm, &size);
 
-  if(M->options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
-    hlong TotalRows = globalRowStarts[M->size];
-    dlong numLocalRows = (dlong) (globalRowStarts[M->rank+1] - globalRowStarts[M->rank]);
- 
-    MPI_Barrier(M->comm);
-    double startTime = MPI_Wtime();
-    if(rank==0) printf("Setting up coarse solver ...");fflush(stdout);
- 
-    M->coarseLevel = new coarseSolver(M->options, M->comm);
-    M->coarseLevel->setup(numLocalRows, globalRowStarts, nnz, Ai, Aj, Avals, nullSpace);
-    MPI_Barrier(M->comm);
-    if(rank==0) printf("done (%gs)\n", MPI_Wtime()-startTime);
-  }
+  MPI_Barrier(M->comm);
+  double startTime = MPI_Wtime();
+  if(rank==0) printf("Setting up coarse solver ...");fflush(stdout);
+
+  hlong TotalRows = globalRowStarts[M->size];
+  dlong numLocalRows = (dlong) (globalRowStarts[M->rank+1] - globalRowStarts[M->rank]);
+
+  M->coarseLevel = new coarseSolver(M->options, M->comm);
+  M->coarseLevel->setup(numLocalRows, globalRowStarts, nnz, Ai, Aj, Avals, nullSpace);
+  MPI_Barrier(M->comm);
 
   M->baseLevel = M->numLevels;
   M->numLevels++;
+
+  if(rank==0) printf("done (%gs)\n", MPI_Wtime()-startTime);
 }
 
 void Precon(solver_t *M, occa::memory o_x, occa::memory o_rhs) {

@@ -120,12 +120,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     precon->parAlmond->numLevels++;
   }
 
-  /* build degree 1 problem and pass to AMG */
-  nonZero_t* coarseA;
-  dlong nnzCoarseA;
-  ogs_t* coarseogs;
-
-  //set up the base level
+  //set up the coarse level
   elliptic_t* ellipticCoarse;
   if (Nmax > Nmin) {
     int Nc = levelDegree[numMGLevels - 1];
@@ -154,11 +149,9 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
     if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
       ellipticSEMFEMSetup(ellipticCoarse);
-      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(precon->parAlmond->options, platform->comm.mpiComm);
-      precon->parAlmond->coarseLevel->useSEMFEM = true;
+      precon->parAlmond->coarseLevel = new parAlmond::coarseSolver(options, platform->comm.mpiComm);
       precon->parAlmond->coarseLevel->semfemSolver = [ellipticCoarse](occa::memory o_rhs, occa::memory o_x)
       {
-        platform->linAlg->fill(ellipticCoarse->mesh->Nlocal, 0.0, o_x);
         ellipticSEMFEMSolve(ellipticCoarse, o_rhs, o_x);
       };
       precon->parAlmond->baseLevel = precon->parAlmond->numLevels;
@@ -168,14 +161,16 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
       hlong* coarseGlobalStarts = (hlong*) calloc(platform->comm.mpiCommSize + 1, sizeof(hlong));
 
-      if(options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
-        if(options.compareArgs("GALERKIN COARSE OPERATOR","TRUE"))
-          ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,&coarseA,&nnzCoarseA,
-                                               &coarseogs,coarseGlobalStarts);
-        else
-          ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
-                                  coarseGlobalStarts);
-      }
+      nonZero_t* coarseA;
+      dlong nnzCoarseA;
+      ogs_t* coarseogs;
+
+      if(options.compareArgs("GALERKIN COARSE OPERATOR","TRUE"))
+        ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,&coarseA,&nnzCoarseA,
+                                             &coarseogs,coarseGlobalStarts);
+      else
+        ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
+                                coarseGlobalStarts);
 
       hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
       hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
@@ -188,15 +183,13 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
       }
       free(coarseA);
 
-      // build amg starting at level N=1
       parAlmond::AMGSetup(precon->parAlmond,
                           coarseGlobalStarts,
                           nnzCoarseA,
                           Rows,
                           Cols,
                           Vals,
-                          elliptic->allNeumann,
-                          0.0);
+                          elliptic->allNeumann);
 
       free(Rows);
       free(Cols);
@@ -207,8 +200,6 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
     precon->parAlmond->numLevels++;
   }
 
-  //overwrite the finest AMG level with the degree 1 matrix free level
-  // delete levels[numMGLevels-1];
   if (Nmax > Nmin) {
     int Nc = levelDegree[numMGLevels - 1];
     int Nf = levelDegree[numMGLevels - 2];
@@ -228,31 +219,21 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
                          precon->parAlmond->ctype);
 
   if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE")){
-    if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
-      //
-    } else {
-      if (options.compareArgs("DISCRETIZATION","CONTINUOUS") && 
-          options.compareArgs("MULTIGRID COARSE SOLVE", "FALSE")) {
-          parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
-
-          coarseLevel->ogs = ellipticCoarse->ogs;
-          coarseLevel->weight = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
-          ellipticCoarse->o_invDegree.copyTo(coarseLevel->weight, ellipticCoarse->mesh->Nlocal * sizeof(pfloat)); 
-          coarseLevel->o_weight = ellipticCoarse->o_invDegree; 
-          coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
-          coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
-          coarseLevel->o_Gx =
-            platform->device.malloc(coarseLevel->ogs->Ngather * sizeof(pfloat),
-                                    coarseLevel->Gx);
-          coarseLevel->o_Sx = platform->device.malloc(ellipticCoarse->mesh->Nlocal * sizeof(pfloat),
-                                                      coarseLevel->Sx);
-      }
+    if(options.compareArgs("MULTIGRID SEMFEM", "FALSE")){
+      parAlmond::coarseSolver* coarseLevel = precon->parAlmond->coarseLevel;
+      coarseLevel->ogs = ellipticCoarse->ogs;
+      coarseLevel->o_weight = ellipticCoarse->o_invDegree; 
+      coarseLevel->weight = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
+      coarseLevel->o_weight.copyTo(coarseLevel->weight, ellipticCoarse->mesh->Nlocal * sizeof(pfloat)); 
+      coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
+      coarseLevel->o_Gx = platform->device.malloc(coarseLevel->ogs->Ngather * sizeof(pfloat));
+      coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
+      coarseLevel->o_Sx = platform->device.malloc(ellipticCoarse->mesh->Nlocal * sizeof(pfloat));
     }
   }
 
   for (int n = 1; n < mesh->N + 1; n++)
     delete meshLevels[n];
-  //  for (int n=1;n<mesh->N+1;n++) delete[] meshLevels[n];
   free(meshLevels);
 
   if (platform->comm.mpiRank == 0) {

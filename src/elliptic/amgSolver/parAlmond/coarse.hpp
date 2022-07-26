@@ -55,7 +55,6 @@ public:
   occa::device device;
 
   setupAide options;
-  bool useSEMFEM = false;
   std::function<void(occa::memory,occa::memory)> semfemSolver = nullptr;
 
   coarseSolver(setupAide options, MPI_Comm comm);

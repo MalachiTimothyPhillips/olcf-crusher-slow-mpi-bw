@@ -64,10 +64,6 @@ void coarseSolver::setup(
   const bool useDevice = options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
   const int useFP32 = options.compareArgs("COARSE SOLVER PRECISION", "FP32");
 
-
-  if(options.compareArgs("MULTIGRID COARSE SOLVE", "TRUE"))
-    return; // bail early as this will not get used
-
   const std::string kernelName = "vectorDotStar";
   vectorDotStarKernel = platform->kernels.get(kernelName);
 
@@ -160,11 +156,11 @@ void coarseSolver::setup(
 
 void coarseSolver::syncToDevice() {}
 
-void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
-
+void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) 
+{
   platform->timer.tic("coarseSolve", 1);
 
-  if(useSEMFEM){
+  if(options.compareArgs("MULTIGRID SEMFEM", "TRUE")){
 
     semfemSolver(o_rhs, o_x);
 
@@ -172,12 +168,12 @@ void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) {
 
     const bool useDevice = options.compareArgs("COARSE SOLVER LOCATION", "DEVICE");
 
-    const pfloat one = 1.0;
     const pfloat zero = 0.0;
     platform->linAlg->pfill(N, zero, o_xBuffer);
     if(!useDevice) o_xBuffer.copyTo(xBuffer, N*sizeof(pfloat));
 
     // T->L
+    const pfloat one = 1.0;
     vectorDotStarKernel(ogs->N, one, zero, o_weight, o_rhs, o_Sx); 
     ogsGather(o_Gx, o_Sx, ogsPfloat, ogsAdd, ogs);
     if(!useDevice) o_Gx.copyTo(Gx, N*sizeof(pfloat));

@@ -165,7 +165,7 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
   if(verbose)
     HYPRE_BoomerAMGSetPrintLevel(solver,3);
   else
-    HYPRE_BoomerAMGSetPrintLevel(solver,0);
+    HYPRE_BoomerAMGSetPrintLevel(solver,1);
 
   // Create and initialize rhs and solution vectors
   HYPRE_IJVectorCreate(comm,ilower,iupper,&data->b);

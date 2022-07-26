@@ -49,8 +49,7 @@ void AMGSetup(solver_t* M,
              hlong* Ai,
              hlong* Aj,
              dfloat* Avals,
-             bool nullSpace,
-             dfloat nullSpacePenalty);
+             bool nullSpace);
 
 void Precon(solver_t* M, occa::memory o_x, occa::memory o_rhs);
 

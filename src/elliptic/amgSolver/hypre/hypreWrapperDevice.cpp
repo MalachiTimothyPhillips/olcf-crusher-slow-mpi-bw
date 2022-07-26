@@ -213,7 +213,7 @@ BoomerAMGSetup(int nrows, int nz,
   if(verbose)
     HYPRE_BoomerAMGSetPrintLevel(data->solver,3);
   else
-    HYPRE_BoomerAMGSetPrintLevel(data->solver,0);
+    HYPRE_BoomerAMGSetPrintLevel(data->solver,1);
 
   // Create and initialize rhs and solution vectors
   HYPRE_IJVectorCreate(comm,data->ilower,data->iupper,&data->b);

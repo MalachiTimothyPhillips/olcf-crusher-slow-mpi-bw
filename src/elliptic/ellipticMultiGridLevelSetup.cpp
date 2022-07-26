@@ -107,7 +107,7 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       stype = SmootherType::CHEBYSHEV;
 
       if(isCoarse) {
-        ChebyshevIterations = 10;
+        ChebyshevIterations = 8;
         options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations);
       } else {
         ChebyshevIterations = 2;
