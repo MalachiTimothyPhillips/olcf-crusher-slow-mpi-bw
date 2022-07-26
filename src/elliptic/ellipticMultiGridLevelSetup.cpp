@@ -173,6 +173,12 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
     betas = optimalCoeffs(ChebyshevIterations);
     stype = SmootherType::OPT_CHEBYSHEV;
   }
+  if(options.compareArgs("MULTIGRID SMOOTHER", "FOURTHKIND")){
+    // nominally, same as above, but beta_i = 1 for all i
+    betas = optimalCoeffs(ChebyshevIterations);
+    std::fill(betas.begin(), betas.end(), 1.0);
+    stype = SmootherType::OPT_CHEBYSHEV;
+  }
 }
 
 void MGLevel::Report()

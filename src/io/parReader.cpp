@@ -646,6 +646,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     {"jac"},
     {"degree"},
     {"optimal"},
+    {"fourthkind"},
     {"mineigenvalueboundfactor"},
     {"maxeigenvalueboundfactor"},
     {"numpresmoothing"},
@@ -769,6 +770,10 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
       if(p_smoother.find("optimal") != std::string::npos){
           options.setArgs(parSection + " MULTIGRID SMOOTHER",
                           "OPTIMAL+" + options.getArgs(parSection + " MULTIGRID SMOOTHER"));
+      }
+      if(p_smoother.find("fourthkind") != std::string::npos){
+          options.setArgs(parSection + " MULTIGRID SMOOTHER",
+                          "FOURTHKIND+" + options.getArgs(parSection + " MULTIGRID SMOOTHER"));
       }
 
       if(!surrogateSmootherSet){
