@@ -45,13 +45,11 @@ int parallelCompareRowColumn(const void* a, const void* b)
 void ellipticBuildContinuousHex3D (elliptic_t* elliptic,
                                    nonZero_t** A,
                                    dlong* nnz,
-                                   ogs_t** ogs,
                                    hlong* globalStarts);
 
 void ellipticBuildContinuous(elliptic_t* elliptic,
                              nonZero_t** A,
                              dlong* nnz,
-                             ogs_t** ogs,
                              hlong* globalStarts)
 {
   mesh_t *mesh = elliptic->mesh;
@@ -62,7 +60,7 @@ void ellipticBuildContinuous(elliptic_t* elliptic,
 
   switch(elliptic->elementType) {
   case HEXAHEDRA:
-    ellipticBuildContinuousHex3D(elliptic, A, nnz, ogs, globalStarts);
+    ellipticBuildContinuousHex3D(elliptic, A, nnz, globalStarts);
     break;
   }
 
@@ -73,7 +71,6 @@ void ellipticBuildContinuous(elliptic_t* elliptic,
 void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
                                   nonZero_t** A,
                                   dlong* nnz,
-                                  ogs_t** ogs,
                                   hlong* globalStarts)
 {
   
@@ -213,8 +210,7 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
                 }
 
                 // pack non-zero
-                dfloat nonZeroThreshold = 1e-7;
-                if (fabs(val) >= nonZeroThreshold) {
+                if (fabs(val) > 5*std::numeric_limits<pfloat>::epsilon()) {
                   sendNonZeros[cnt].val = val;
                   sendNonZeros[cnt].row = globalNumbering[e * mesh->Np + idn];
                   sendNonZeros[cnt].col = globalNumbering[e * mesh->Np + idm];

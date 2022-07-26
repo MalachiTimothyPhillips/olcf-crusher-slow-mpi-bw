@@ -430,6 +430,7 @@ dfloat MGLevel::maxEigSmoothAx()
   o_AVx.free();
   o_AVxPfloat.free();
   o_VxPfloat.free();
+  o_invDegree.free();
 
   for(int i = 0; i <= k; i++) o_V[i].free();
   delete[] o_V;

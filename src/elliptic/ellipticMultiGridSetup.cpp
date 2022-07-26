@@ -163,14 +163,13 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
 
       nonZero_t* coarseA;
       dlong nnzCoarseA;
-      ogs_t* coarseogs;
 
       if(options.compareArgs("GALERKIN COARSE OPERATOR","TRUE"))
-        ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,&coarseA,&nnzCoarseA,
-                                             &coarseogs,coarseGlobalStarts);
+        ellipticBuildContinuousGalerkinHex3D(ellipticCoarse,elliptic,
+                                             &coarseA,&nnzCoarseA,coarseGlobalStarts);
       else
-        ellipticBuildContinuous(ellipticCoarse, &coarseA, &nnzCoarseA,&coarseogs,
-                                coarseGlobalStarts);
+        ellipticBuildContinuous(ellipticCoarse, 
+                                &coarseA, &nnzCoarseA,coarseGlobalStarts);
 
       hlong* Rows = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
       hlong* Cols = (hlong*) calloc(nnzCoarseA, sizeof(hlong));
@@ -191,6 +190,7 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
                           Vals,
                           elliptic->allNeumann);
 
+      free(coarseGlobalStarts);
       free(Rows);
       free(Cols);
       free(Vals);

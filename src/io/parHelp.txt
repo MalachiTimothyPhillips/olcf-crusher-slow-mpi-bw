@@ -83,7 +83,7 @@ initialGuess                previous [D]
 
 preconditioner              Jacobi [D]
                             multigrid [D for PRESSURE]                 polynomial multigrid + coarse grid correction
-                            semfem
+                            SEMFEM
 
 coarseGridDiscretization    FEM [D]                                    linear finite elment discretization
                               +Galerkin                                coarse grid matrix by Galerkin projection 
