@@ -337,7 +337,7 @@ BoomerAMGReInitialize(const double * param)
   if(verbose)
     HYPRE_BoomerAMGSetPrintLevel(data->solver,3);
   else
-    HYPRE_BoomerAMGSetPrintLevel(data->solver,0);
+    HYPRE_BoomerAMGSetPrintLevel(data->solver,1);
 
   // Perform AMG setup
   HYPRE_ParVector par_b;
