@@ -7,11 +7,18 @@
 #include <cmath>
 #include <utility>
 #include <iostream>
+#include <fstream>
 
 /* UDF Functions */                                                      
 static dfloat P_EPS;
 static occa::memory o_xPfloat;
 static occa::memory o_AxPfloat;
+
+std::ifstream::pos_type filesize(const char* filename)
+{
+  std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+  return in.tellg(); 
+}
 
 template<typename T>
 struct bound_t{
@@ -123,7 +130,17 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       (3*M_PI*M_PI+lambda)*sin(M_PI*mesh->x[i])*sin(M_PI*mesh->y[i])*sin(M_PI*mesh->z[i]);
   }
 
-  auto runConfiguration = [&](auto chebyDegree){
+  const char * filename = "results.csv";
+  const bool writeHeader = (filesize(filename) == 0);
+  std::ofstream csvFile;
+  csvFile.open(filename, std::ios_base::app);
+
+  if(writeHeader){
+    std::ostringstream output;
+    csvFile << "eps, variant, degree, applyPostSmoothing, aggCoarsening, Nrep, tMinSolve, tAvgSolve, tMaxSolve, tPreco, iterations, r0, rN, rho, throughput, actualThroughput\n";
+  }
+
+  auto runConfiguration = [&](auto chebyDegree, auto chebyVariant, auto applyPostSmoothing, auto aggCoarsening){
 
     platform->linAlg->fillKernel(mesh->Nlocal, 1.0, nrs->o_ellipticCoeff);
     platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
@@ -164,6 +181,13 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     platform->options.getArgs("BOOMERAMG CHEBYSHEV VARIANT" , settings[13]);
 
     settings[11] = chebyDegree;
+    if(applyPostSmoothing){
+      settings[12] = settings[6];
+    } else {
+      settings[12] = 19; // no post smoothing
+    }
+    settings[13] = chebyVariant;
+    settings[10] = aggCoarsening;
 
     hypreWrapperDevice::BoomerAMGReInitialize(settings);
 
@@ -209,10 +233,10 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       platform->timer.reset("pressure preconditioner smoother");
       platform->timer.reset("coarseSolve");
      
-      if(platform->comm.mpiRank == 0) {
-        printf(".");
-        fflush(stdout); 
-      }
+      //if(platform->comm.mpiRank == 0) {
+      //  printf(".");
+      //  fflush(stdout); 
+      //}
     }
     if(platform->comm.mpiRank == 0) printf("\n"); 
 
@@ -233,6 +257,8 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     const auto rho = std::exp(1.0 / Niter * std::log(rN/r0));
 
     if(platform->comm.mpiRank == 0) {
+      printf("Results with chebyDegree = %d, chebyVariant = %d, applyPostSmoothing = %d, aggCoarsening = %d\n",
+        chebyDegree, chebyVariant, (int)applyPostSmoothing, aggCoarsening);
       printf("repetitions: %d\n", Nrep);
       printf("solve time: min: %gs  avg: %gs  max: %gs\n", solveTime, solveTimeAvg, solveTimeMax);
       if(precoTime.at(minEntry) > 0) printf("  preconditioner %gs\n", precoTime.at(minEntry));
@@ -247,6 +273,25 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
       if(!nrs->pSolver->options.compareArgs("PRECONDITIONER", "SEMFEM")){
         printf("FLOPS/s: %g \n", flopsPerSecond);
       }
+
+      // output results to file
+      //csvFile << "eps, variant, degree, applyPostSmoothing, aggCoarsening, Nrep, tMinSolve, tAvgSolve, tMaxSolve, tPreco, iterations, r0, rN, rho, throughput, actualThroughput\n";
+      csvFile << P_EPS << ", ";
+      csvFile << chebyVariant << ", ";
+      csvFile << chebyDegree << ", ";
+      csvFile << std::boolalpha << applyPostSmoothing << ", ";
+      csvFile << aggCoarsening << ", ";
+      csvFile << Nrep << ", ";
+      csvFile << solveTime << ", ";
+      csvFile << solveTimeAvg << ", ";
+      csvFile << solveTimeMax << ", ";
+      csvFile << precoTime.at(minEntry) << ", ";
+      csvFile << nrs->pSolver->Niter << ", ";
+      csvFile << r0 << ", ";
+      csvFile << rN << ", ";
+      csvFile << rho << ", ";
+      csvFile << (double) nrs->pSolver->Niter * throughput << ", ";
+      csvFile << throughput << "\n";
     }
 
     return rho;
@@ -256,8 +301,10 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
   for(auto chebyVariant : {2,3,4}){
     for(auto chebyDegree : {1,2,3,4,5}){
       for(auto applyPostSmoothing : {true, false}){
-        auto actualChebyDegree = applyPostSmoothing ? chebyDegree : 2 * chebyDegree;
-        runConfiguration(actualChebyDegree);
+        for(auto aggCoarsening : {0,1,2}){
+          auto actualChebyDegree = applyPostSmoothing ? chebyDegree : 2 * chebyDegree;
+          runConfiguration(actualChebyDegree, chebyVariant, applyPostSmoothing, aggCoarsening);
+        }
       }
     }
   }
