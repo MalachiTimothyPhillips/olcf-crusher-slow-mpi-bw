@@ -184,9 +184,9 @@ SolutionProjection::SolutionProjection(elliptic_t &elliptic,
 
   platform_t* platform = platform_t::getInstance();
 
-  o_alpha = platform->device.malloc(maxNumVecsProjection, sizeof(dfloat));
-  o_xbar = platform->device.malloc((Nfields, sizeof(dfloat)) * fieldOffset);
-  o_xx = platform->device.malloc((Nfields * maxNumVecsProjection, sizeof(dfloat)) * fieldOffset);
+  o_alpha = platform->device.malloc(maxNumVecsProjection * sizeof(dfloat));
+  o_xbar = platform->device.malloc((Nfields * sizeof(dfloat)) * fieldOffset);
+  o_xx = platform->device.malloc((Nfields * maxNumVecsProjection * sizeof(dfloat)) * fieldOffset);
   o_bb = platform->device.malloc(
     (type == ProjectionType::CLASSIC) ? Nfields * fieldOffset * maxNumVecsProjection :
     Nfields * fieldOffset
