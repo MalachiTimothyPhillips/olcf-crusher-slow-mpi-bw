@@ -119,7 +119,7 @@ int __attribute__((visibility("default"))) BoomerAMGSetup(int nrows,
 
   HYPRE_IJMatrixAssemble(A_ij);
 
-#if 0
+#if 1
   HYPRE_IJMatrixPrint(A_ij, "matrix.dat");
 #endif
 

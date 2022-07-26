@@ -205,7 +205,7 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
 
         o_q.copyFrom(q);
         platform->copyDfloatToPfloatKernel(meshf->Nlocal, o_q, o_qPfloat);
-        ellipticOperator(ellipticFine, o_qPfloat, o_AqPfloat, pfloatString, false);
+        ellipticAx(ellipticFine, meshf->Nelements, meshf->o_elementList, o_qPfloat, o_AqPfloat, pfloatString);
         platform->copyPfloatToDfloatKernel(meshf->Nlocal, o_AqPfloat, o_Aq);
         o_Aq.copyTo(Aq);
 

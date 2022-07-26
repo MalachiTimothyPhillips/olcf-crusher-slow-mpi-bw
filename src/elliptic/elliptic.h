@@ -235,13 +235,12 @@ void ellipticAx(elliptic_t* elliptic,
                 const char* precision);
 
 void ellipticBuildContinuous(elliptic_t* elliptic, nonZero_t** A,
-                             dlong* nnz, ogs_t** ogs, hlong* globalStarts);
+                             dlong* nnz, hlong* globalStarts);
 
 void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
                                           elliptic_t* ellipticFine,
                                           nonZero_t** A,
                                           dlong* nnz,
-                                          ogs_t** ogs,
                                           hlong* globalStarts);
 
 void ellipticMultiGridUpdateLambda(elliptic_t* elliptic);
