@@ -195,7 +195,11 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
     platform->o_mempool.slice0.copyFrom(platform->mempool.slice0, mesh->Nlocal * sizeof(dfloat));
 
+#if 0
     ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P, matVecOperator);
+#else
+    ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
+#endif
 
     platform->timer.reset("pressureSolve");
     platform->timer.reset("pressure preconditioner");
@@ -208,7 +212,7 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
     std::vector<double> smootherTime; 
     std::vector<double> crsTime;
 
-    const auto Nrep = 1;
+    const auto Nrep = 50;
 
     for (int i = 0; i < Nrep; i++) { 
       platform->linAlg->fillKernel(mesh->Nlocal, 0.0, nrs->o_P);
@@ -216,10 +220,17 @@ void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 
       platform->timer.tic("pressureSolve", 1);
 
+#if 0
       // experiment:
       // see how quickly HYPRE V-cycle preconditions A_f
       // use GMRES to solve A_f (x) = RHS
       ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P, matVecOperator);
+#else
+      // experiment:
+      // see how quickly solve converges with $A_f^{-1}$ SEMFEM preconditioning,
+      // where $A_f^{-1}$ is approximated using a single HYPRE AMG V-cycle
+      ellipticSolve(nrs->pSolver, platform->o_mempool.slice0, nrs->o_P);
+#endif
 
       platform->timer.toc("pressureSolve");
 
