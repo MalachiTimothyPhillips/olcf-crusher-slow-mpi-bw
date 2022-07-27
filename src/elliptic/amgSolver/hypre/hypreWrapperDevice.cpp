@@ -380,7 +380,7 @@ BoomerAMGSolve(const occa::memory& o_b, const occa::memory& o_x)
   HYPRE_IJVectorGetObject(data->b,(void **) &par_b);
   HYPRE_IJMatrixGetObject(data->A,(void **) &par_A);
 
-#if 1
+#if 0
   HYPRE_IJVectorPrint(data->b, "b.dat");
   HYPRE_IJVectorPrint(data->x, "x.dat");
   HYPRE_IJMatrixPrint(data->A, "matrix.dat");

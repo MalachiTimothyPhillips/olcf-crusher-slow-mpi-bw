@@ -46,7 +46,7 @@ if(ENABLE_CUDA)
                   -DHYPRE_ENABLE_MIXEDINT=ON
                   -DHYPRE_ENABLE_SINGLE=ON
                   -DHYPRE_WITH_CUDA=ON
-                  -DHYPRE_WITH_GPU_AWARE_MPI=ON
+                  -DHYPRE_WITH_GPU_AWARE_MPI=OFF
                   -DHYPRE_ENABLE_CUSPARSE=ON
                   -DHYPRE_BUILD_TYPE=RelWithDebInfo
                   -DHYPRE_INSTALL_PREFIX=${HYPRE_INSTALL_DIR}
