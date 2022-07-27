@@ -70,7 +70,8 @@ void coarseSolver::setup(
   N = (int) Nrows;
 
   o_xBuffer = platform->device.malloc(Nrows * sizeof(pfloat));
-  xBuffer = (pfloat*) calloc(Nrows, sizeof(pfloat));
+  h_xBuffer = platform->device.mallocHost(Nrows * sizeof(pfloat));
+  xBuffer = (pfloat*) h_xBuffer.ptr(); 
 
   if (options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
  
@@ -153,8 +154,6 @@ void coarseSolver::setup(
     ABORT(EXIT_FAILURE);
   }
 }
-
-void coarseSolver::syncToDevice() {}
 
 void coarseSolver::solve(occa::memory o_rhs, occa::memory o_x) 
 {

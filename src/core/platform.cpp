@@ -98,6 +98,7 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
     kernelInfo["compiler_flags"] += "--prec-sqrt=false ";
     kernelInfo["compiler_flags"] += "--use_fast_math ";
     kernelInfo["compiler_flags"] += "--fmad=true ";
+    kernelInfo["compiler_flags"] += " -lineinfo ";
     //kernelInfo["compiler_flags"] += "-Xptxas -dlcm=ca";
   }
 
@@ -109,7 +110,7 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
       kernelInfo["compiler_flags"] += " -cl-unsafe-math-optimizations ";
       kernelInfo["compiler_flags"] += " -cl-fast-relaxed-math ";
     }
-    kernelInfo["defines/" "hlong"]="long";
+    kernelInfo["defines/" "hlong"] = "long";
   }
 
   if(device.mode() == "HIP" && !getenv("OCCA_HIP_COMPILER_FLAGS")) {

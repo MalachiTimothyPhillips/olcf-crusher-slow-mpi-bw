@@ -225,9 +225,11 @@ void ellipticMultiGridSetup(elliptic_t* elliptic_, precon_t* precon)
       coarseLevel->o_weight = ellipticCoarse->o_invDegree; 
       coarseLevel->weight = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
       coarseLevel->o_weight.copyTo(coarseLevel->weight, ellipticCoarse->mesh->Nlocal * sizeof(pfloat)); 
-      coarseLevel->Gx = (pfloat*) calloc(coarseLevel->ogs->Ngather,sizeof(pfloat));
+      coarseLevel->h_Gx = platform->device.mallocHost(coarseLevel->ogs->Ngather * sizeof(pfloat));
+      coarseLevel->Gx = (pfloat*) coarseLevel->h_Gx.ptr();
       coarseLevel->o_Gx = platform->device.malloc(coarseLevel->ogs->Ngather * sizeof(pfloat));
-      coarseLevel->Sx = (pfloat*) calloc(ellipticCoarse->mesh->Nlocal, sizeof(pfloat));
+      coarseLevel->h_Sx = platform->device.mallocHost(ellipticCoarse->mesh->Nlocal * sizeof(pfloat));
+      coarseLevel->Sx = (pfloat*) coarseLevel->h_Sx.ptr();
       coarseLevel->o_Sx = platform->device.malloc(ellipticCoarse->mesh->Nlocal * sizeof(pfloat));
     }
   }

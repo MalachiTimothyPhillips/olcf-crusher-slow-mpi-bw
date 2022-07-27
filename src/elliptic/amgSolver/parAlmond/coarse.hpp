@@ -34,18 +34,15 @@ namespace parAlmond {
 class coarseSolver {
 
 public:
-  int coarseTotal;
-  int coarseOffset;
-  int *coarseOffsets=NULL;
-  int *coarseCounts=NULL;
-
   int N;
 
+  occa::memory h_xBuffer;
   occa::memory o_xBuffer;
   pfloat *xBuffer;
 
   ogs_t *ogs;
   pfloat *Gx, *Sx;
+  occa::memory h_Sx, h_Gx;
   occa::memory o_Sx, o_Gx;
 
   pfloat *weight = NULL;
@@ -61,8 +58,6 @@ public:
   ~coarseSolver();
 
   void setup(dlong Nrows, hlong* globalRowStarts, dlong nnz, hlong* Ai, hlong* Aj, dfloat* Avals, bool nullSpace);
-
-  void syncToDevice();
 
   void solve(occa::memory o_rhs, occa::memory o_x);
 };
