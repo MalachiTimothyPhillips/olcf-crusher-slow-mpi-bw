@@ -129,6 +129,9 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
     free(maskIds);
   }
 
+  double dropTol = 0.0;
+  platform->options.getArgs("AMG DROP TOLERANCE", dropTol);
+
   dlong cnt = 0;
   for (dlong e = 0; e < mesh->Nelements; e++)
     for (int nz = 0; nz < mesh->Nq; nz++)
@@ -210,7 +213,7 @@ void ellipticBuildContinuousHex3D(elliptic_t* elliptic,
                 }
 
                 // pack non-zero
-                if (fabs(val) > 5*std::numeric_limits<pfloat>::epsilon()) {
+                if (fabs(val) > dropTol) {
                   sendNonZeros[cnt].val = val;
                   sendNonZeros[cnt].row = globalNumbering[e * mesh->Np + idn];
                   sendNonZeros[cnt].col = globalNumbering[e * mesh->Np + idm];

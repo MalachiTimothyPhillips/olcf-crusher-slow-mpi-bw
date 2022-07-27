@@ -308,7 +308,8 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     free(ncols);
     hypreWrapper::IJMatrixDestroy(&A_bc);
 
-    const auto dropTol = 5. * std::numeric_limits<pfloat>::epsilon();
+    double dropTol = 0.0;
+    platform->options.getArgs("AMG DROP TOLERANCE", dropTol);
 
     int nnzTol = 0;
     for(int n = 0; n < nnz; ++n){

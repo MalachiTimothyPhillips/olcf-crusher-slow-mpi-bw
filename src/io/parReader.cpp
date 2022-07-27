@@ -1237,6 +1237,9 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
 
   // coeff fields
   options.setArgs("VELOCITY COEFF FIELD", "TRUE");
+
+  const auto dropTol = 5.0 * std::numeric_limits<pfloat>::epsilon();
+  options.setArgs("AMG DROP TOLERANCE", to_string_f(dropTol));
 }
 
 void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &options) {

@@ -192,6 +192,9 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
 
   for(int jj = 0; jj < mesh->Np; jj++)
     ellipticGenerateCoarseBasisHex3D(b,jj,ellipticFine);
+  
+  double dropTol = 0.0;
+  platform->options.getArgs("AMG DROP TOLERANCE", dropTol);
 
   dlong cnt = 0;
   for (int nz = 0; nz < mesh->Nq; nz++)
@@ -224,7 +227,7 @@ void ellipticBuildContinuousGalerkinHex3D(elliptic_t* elliptic,
                   val += Aq[e * meshf->Np + mmm] * b[mmm + idm * meshf->Np];
 
                 // pack non-zero
-                if (fabs(val) > 5*std::numeric_limits<pfloat>::epsilon()) {
+                if (fabs(val) > dropTol) {
                   sendNonZeros[cnt].val = val;
                   sendNonZeros[cnt].row = globalNumbering[e * mesh->Np + idm];
                   sendNonZeros[cnt].col = globalNumbering[e * mesh->Np + idn];
