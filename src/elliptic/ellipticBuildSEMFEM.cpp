@@ -308,11 +308,55 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     free(ncols);
     hypreWrapper::IJMatrixDestroy(&A_bc);
 
+#if 1
+    const auto dropTol = 10. * std::numeric_limits<double>::epsilon();
+#else
+    // do not drop zeros
+    const auto dropTol = 0.0;
+#endif
+
+    int nnzTol = 0;
+    for(int n = 0; n < nnz; ++n){
+      if(std::abs(Av[n]) > dropTol){
+        nnzTol++;
+      }
+    }
+
+    long long *AiTol = (long long*) calloc(nnzTol, sizeof(long long));
+    long long *AjTol = (long long*) calloc(nnzTol, sizeof(long long));
+    double    *AvTol = (double*) calloc(nnzTol, sizeof(double));
+
+    int idx = 0;
+    for(int n = 0; n < nnz; ++n){
+      if(std::abs(Av[n]) > dropTol){
+        AiTol[idx] = Ai[n];
+        AjTol[idx] = Aj[n];
+        AvTol[idx] = Av[n];
+        idx++;
+      }
+    }
+
+    // compare nnz
+    long long globNNZ = nnz;
+    long long globNNZTol = nnzTol;
+    std::array<long long,2> nnzArr {globNNZ, globNNZTol};
+    MPI_Allreduce(MPI_IN_PLACE, nnzArr.data(), 2, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+    if(platform->comm.mpiRank == 0){
+      std::cout << "Using dropTol = " << dropTol << ", nnz was dropped from ";
+      std::cout << nnzArr[0] << " nnz to " << nnzArr[1] << " nnz.\n";
+      std::cout << "This saves " << nnzArr[0] - nnzArr[1] << " words, a";
+      std::cout << nnzArr[0] / nnzArr[1] * 100 << "% reduction in the size.\n";
+    }
+
+    free(Ai);
+    free(Aj);
+    free(Av);
+
     data = (SEMFEMData*) malloc(sizeof(SEMFEMData));
-    data->Ai = Ai;
-    data->Aj = Aj;
-    data->Av = Av;
-    data->nnz = nnz;
+    data->Ai = AiTol;
+    data->Aj = AjTol;
+    data->Av = AvTol;
+    data->nnz = nnzTol;
     data->rowStart = row_start;
     data->rowEnd = row_end;
     data->dofMap = dof_map;
