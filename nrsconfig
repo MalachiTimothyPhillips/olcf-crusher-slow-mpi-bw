@@ -2,7 +2,7 @@
 set -e -a
 
 #########################################################################
-: ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs-hypre-gpu}
+: ${NEKRS_INSTALL_DIR:=${HOME}/.local/nekrs-hypre-gpu-mpi-not-device-aware-dump-mat}
 
 : ${NEKRS_CC:="cc"}
 : ${NEKRS_CXX:="CC"}

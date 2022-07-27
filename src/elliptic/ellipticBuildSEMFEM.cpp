@@ -239,7 +239,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
                    /* mode */ 0);
   }
 
-#if 0
+#if 1
   constructOnHost = !platform->device.deviceAtomic;
 #else
   constructOnHost = true;
@@ -313,7 +313,8 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     hypreWrapper::IJMatrixDestroy(&A_bc);
 
 #if 1
-    const auto dropTol = 10. * std::numeric_limits<double>::epsilon();
+    //const auto dropTol = 10. * std::numeric_limits<double>::epsilon();
+    const auto dropTol = 5. * std::numeric_limits<pfloat>::epsilon();
 #else
     // do not drop zeros
     const auto dropTol = 0.0;
@@ -349,7 +350,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
       std::cout << "Using dropTol = " << dropTol << ", nnz was dropped from ";
       std::cout << nnzArr[0] << " nnz to " << nnzArr[1] << " nnz.\n";
       std::cout << "This saves " << nnzArr[0] - nnzArr[1] << " words, a ";
-      std::cout << nnzArr[0] / nnzArr[1] * 100 << "% reduction in the size.\n";
+      std::cout << (double) nnzArr[0] / (double) nnzArr[1] * 100.0 << "% reduction in the size.\n";
     }
 
     free(Ai);
