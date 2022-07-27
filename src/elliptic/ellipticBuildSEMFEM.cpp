@@ -344,7 +344,7 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     if(platform->comm.mpiRank == 0){
       std::cout << "Using dropTol = " << dropTol << ", nnz was dropped from ";
       std::cout << nnzArr[0] << " nnz to " << nnzArr[1] << " nnz.\n";
-      std::cout << "This saves " << nnzArr[0] - nnzArr[1] << " words, a";
+      std::cout << "This saves " << nnzArr[0] - nnzArr[1] << " words, a ";
       std::cout << nnzArr[0] / nnzArr[1] * 100 << "% reduction in the size.\n";
     }
 
