@@ -239,7 +239,11 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
                    /* mode */ 0);
   }
 
+#if 0
   constructOnHost = !platform->device.deviceAtomic;
+#else
+  constructOnHost = true;
+#endif
 
   if(!constructOnHost) load();
 
