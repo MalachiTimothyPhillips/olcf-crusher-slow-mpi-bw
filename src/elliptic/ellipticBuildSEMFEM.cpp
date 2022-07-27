@@ -308,11 +308,38 @@ SEMFEMData* ellipticBuildSEMFEM(const int N_, const int n_elem_,
     free(ncols);
     hypreWrapper::IJMatrixDestroy(&A_bc);
 
+    const auto dropTol = 5. * std::numeric_limits<pfloat>::epsilon();
+
+    int nnzTol = 0;
+    for(int n = 0; n < nnz; ++n){
+      if(std::abs(Av[n]) > dropTol){
+        nnzTol++;
+      }
+    }
+
+    long long *AiTol = (long long*) calloc(nnzTol, sizeof(long long));
+    long long *AjTol = (long long*) calloc(nnzTol, sizeof(long long));
+    double    *AvTol = (double*) calloc(nnzTol, sizeof(double));
+
+    int idx = 0;
+    for(int n = 0; n < nnz; ++n){
+      if(std::abs(Av[n]) > dropTol){
+        AiTol[idx] = Ai[n];
+        AjTol[idx] = Aj[n];
+        AvTol[idx] = Av[n];
+        idx++;
+      }
+    }
+
+    free(Ai);
+    free(Aj);
+    free(Av);
+
     data = (SEMFEMData*) malloc(sizeof(SEMFEMData));
-    data->Ai = Ai;
-    data->Aj = Aj;
-    data->Av = Av;
-    data->nnz = nnz;
+    data->Ai = AiTol;
+    data->Aj = AjTol;
+    data->Av = AvTol;
+    data->nnz = nnzTol;
     data->rowStart = row_start;
     data->rowEnd = row_end;
     data->dofMap = dof_map;
