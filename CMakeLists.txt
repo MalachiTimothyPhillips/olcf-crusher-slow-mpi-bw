@@ -325,11 +325,20 @@ configure_file(
   @ONLY)
 
 install(
-  TARGETS nekrs-lib nekrs-bin axhelm-bin advsub-bin fdm-bin nekrs-hypre nekrs-hypre-device 
+  TARGETS nekrs-lib nekrs-hypre nekrs-bin axhelm-bin advsub-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
+
+if(ENABLE_CUDA)
+  install(
+    TARGETS nekrs-hypre-device 
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+  )
+endif()
 
 # Trailing slash prevents parent directory from being copied
 install(DIRECTORY scripts/ DESTINATION bin
