@@ -56,14 +56,14 @@ void ellipticUpdateJacobi(elliptic_t *elliptic, occa::memory &o_invDiagA)
                                                elliptic->o_lambda,
                                                o_invDiagA /* pfloat */);
 
-  //TODO: Update for dlfoat vs pfloat
   flopCount += 12 * mesh->Nq + 12;
   flopCount += (elliptic->poisson) ? 0.0 : 2.0;
   flopCount *= static_cast<double>(mesh->Nlocal) * elliptic->Nfields;
+  if(elliptic->mgLevel) flopCount *= 0.5;
 
   oogs::startFinish(o_invDiagA, elliptic->Nfields, elliptic->Ntotal, ogsPfloat, ogsAdd, elliptic->oogs);
 
   const pfloat one = 1.0;
-  elliptic->adyManyPfloatKernel(Nlocal, elliptic->Nfields, elliptic->Ntotal, one, o_invDiagA);
+  platform->linAlg->padyMany(Nlocal, elliptic->Nfields, elliptic->Ntotal, one, o_invDiagA);
   platform->flopCounter->add(elliptic->name + " ellipticUpdateJacobi", flopCount);
 }

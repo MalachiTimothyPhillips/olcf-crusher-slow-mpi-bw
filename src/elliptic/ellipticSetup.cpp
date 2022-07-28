@@ -228,7 +228,6 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       kernelName = "ellipticBlockBuildDiagonal" + suffix;
       elliptic->ellipticBlockBuildDiagonalKernel = platform->kernels.get(sectionIdentifier + kernelName);
       elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
-      elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");
 
       kernelName = "fusedCopyDfloatToPfloat";
       elliptic->fusedCopyDfloatToPfloatKernel =

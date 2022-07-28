@@ -143,12 +143,9 @@ struct elliptic_t
   occa::kernel AxKernel;
   occa::kernel AxPfloatKernel;
 
-  occa::kernel scaledAddPfloatKernel;
-  occa::kernel dotMultiplyPfloatKernel;
   occa::kernel fusedCopyDfloatToPfloatKernel;
-  occa::kernel axmyzManyPfloatKernel;
-  occa::kernel adyManyPfloatKernel;
-  
+  occa::kernel axmyzManyPfloatKernel; 
+ 
   // special kernels for single Chebyshev iteration
   occa::kernel updateSmoothedSolutionVecKernel;
   occa::kernel updateChebyshevSolutionVecKernel;

@@ -81,6 +81,7 @@ void linAlg_t::setup()
     scaleKernel = kernels.get("scale");
     scaleManyKernel = kernels.get("scaleMany");
     axpbyKernel = kernels.get("axpby");
+    paxpbyKernel = kernels.get("paxpby");
     axpbyManyKernel = kernels.get("axpbyMany");
     paxpbyManyKernel = kernels.get("paxpbyMany");
     axpbyzKernel = kernels.get("axpbyz");
@@ -90,10 +91,12 @@ void linAlg_t::setup()
     axmyManyKernel = kernels.get("axmyMany");
     axmyVectorKernel = kernels.get("axmyVector");
     axmyzKernel = kernels.get("axmyz");
+    paxmyzKernel = kernels.get("paxmyz");
     axmyzManyKernel = kernels.get("axmyzMany");
     paxmyzManyKernel = kernels.get("paxmyzMany");
     adyKernel = kernels.get("ady");
     adyManyKernel = kernels.get("adyMany");
+    padyManyKernel = kernels.get("padyMany");
     axdyKernel = kernels.get("axdy");
     aydxKernel = kernels.get("aydx");
     aydxManyKernel = kernels.get("aydxMany");
@@ -128,6 +131,7 @@ linAlg_t::~linAlg_t()
   scaleKernel.free();
   scaleManyKernel.free();
   axpbyKernel.free();
+  paxpbyKernel.free();
   axpbyManyKernel.free();
   paxpbyManyKernel.free();
   axpbyzKernel.free();
@@ -137,12 +141,14 @@ linAlg_t::~linAlg_t()
   axmyManyKernel.free();
   axmyVectorKernel.free();
   axmyzKernel.free();
+  paxmyzKernel.free();
   axmyzManyKernel.free();
   axdyKernel.free();
   aydxKernel.free();
   aydxManyKernel.free();
   adyKernel.free();
   adyManyKernel.free();
+  padyManyKernel.free();
   axdyzKernel.free();
   sumKernel.free();
   minKernel.free();
@@ -204,6 +210,20 @@ void linAlg_t::axpby(const dlong N,
   axpbyKernel(N, xOffset, yOffset, alpha, o_x, beta, o_y);
   platform->flopCounter->add("axpby", 3 * static_cast<double>(N));
 }
+
+// o_y[n] = beta*o_y[n] + alpha*o_x[n]
+void linAlg_t::paxpby(const dlong N,
+                      const pfloat alpha,
+                      occa::memory &o_x,
+                      const pfloat beta,
+                      occa::memory &o_y,
+                      const dlong xOffset,
+                      const dlong yOffset)
+{
+  paxpbyKernel(N, xOffset, yOffset, alpha, o_x, beta, o_y);
+  platform->flopCounter->add("axpby", 0.5 * 3 * static_cast<double>(N));
+}
+
 void linAlg_t::axpbyMany(const dlong N,
                          const dlong Nfields,
                          const dlong offset,
@@ -225,7 +245,7 @@ void linAlg_t::paxpbyMany(const dlong N,
                          occa::memory &o_y)
 {
   paxpbyManyKernel(N, Nfields, offset, alpha, o_x, beta, o_y);
-  platform->flopCounter->add("axpbyMany", 3 * static_cast<double>(N) * Nfields);
+  platform->flopCounter->add("axpbyMany", 0.5 * 3 * static_cast<double>(N) * Nfields);
 }
 
 // o_z[n] = beta*o_y[n] + alpha*o_x[n]
@@ -291,6 +311,14 @@ void linAlg_t::axmyz(const dlong N,
 {
   axmyzKernel(N, alpha, o_x, o_y, o_z);
 }
+void linAlg_t::paxmyz(const dlong N,
+                      const pfloat alpha,
+                      occa::memory &o_x,
+                      occa::memory &o_y,
+                      occa::memory &o_z)
+{
+  paxmyzKernel(N, alpha, o_x, o_y, o_z);
+}
 void linAlg_t::axmyzMany(const dlong N,
                          const dlong Nfields,
                          const dlong offset,
@@ -342,6 +370,16 @@ void linAlg_t::adyMany(const dlong N,
 {
   adyManyKernel(N, Nfields, offset, alpha, o_y);
 }
+void linAlg_t::padyMany(const dlong N,
+                        const dlong Nfields,
+                        const dlong offset,
+                        const pfloat alpha,
+                        occa::memory &o_y)
+{
+  padyManyKernel(N, Nfields, offset, alpha, o_y);
+}
+
+
 
 // o_z[n] = alpha*o_x[n]/o_y[n]
 void linAlg_t::axdyz(const dlong N,

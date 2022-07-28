@@ -47,14 +47,6 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
     mesh->maskPfloatKernel =
       platform->kernels.get(kernelName + orderSuffix + "pfloat");
 
-    kernelName = "scaledAdd";
-    elliptic->scaledAddPfloatKernel =
-      platform->kernels.get(kernelName + orderSuffix);
-
-    kernelName = "dotMultiply";
-    elliptic->dotMultiplyPfloatKernel =
-      platform->kernels.get(kernelName + orderSuffix);
-
     kernelName = "updateSmoothedSolutionVec";
     elliptic->updateSmoothedSolutionVecKernel =
       platform->kernels.get(kernelName + orderSuffix);
@@ -76,6 +68,6 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
     elliptic->ellipticBlockBuildDiagonalPfloatKernel =
         platform->kernels.get(poissonPrefix + kernelName + orderSuffix);
 
-    elliptic->adyManyPfloatKernel = platform->kernels.get("adyManyPfloat");
+    elliptic->axmyzManyPfloatKernel = platform->kernels.get("axmyzManyPfloat");
   }
 }

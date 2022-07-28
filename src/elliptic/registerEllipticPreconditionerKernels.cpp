@@ -87,19 +87,12 @@ void registerJacobiKernels(const std::string &section, int poissonEquation) {
   std::string installDir;
   installDir.assign(getenv("NEKRS_INSTALL_DIR"));
   const std::string oklpath = installDir + "/okl/";
-  occa::properties pfloatProps = platform->kernelInfo;
-  pfloatProps["defines/dfloat"] = pfloatString;
 
   // This kernel is needed as it used for mixed-precision Jacobi preconditioning 
   std::string kernelName = "axmyzManyPfloat";
   std::string fileName = oklpath + "elliptic/" + kernelName + extension;
   platform->kernels.add(
     kernelName, fileName, platform->kernelInfo);
-
-  kernelName = "adyManyPfloat";
-  fileName = oklpath + "linAlg/adyMany.okl";
-  platform->kernels.add(
-    kernelName, fileName, pfloatProps);
 }
 
 void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, int poissonEquation) {
@@ -139,19 +132,6 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
         pfloatKernelInfo,
         orderSuffix + "pfloat");
 
-    kernelName = "scaledAdd";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-    kernelName = "dotMultiply";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-
     kernelName = "updateSmoothedSolutionVec";
     fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
     platform->kernels.add(kernelName + orderSuffix,
@@ -184,7 +164,6 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
       kernelName = "ellipticBlockBuildDiagonalPfloatHex3D";
       platform->kernels.add(poissonPrefix + kernelName + orderSuffix, fileName, props, orderSuffix);
     } 
-
   }
 }
 
