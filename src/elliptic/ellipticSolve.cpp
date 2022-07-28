@@ -149,6 +149,7 @@ void ellipticSolve(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x)
 
     if(elliptic->Niter == maxIter && platform->comm.mpiRank == 0)
       printf("iteration limit of %s reached!\n", name.c_str());
+
   }else{
     if(platform->comm.mpiRank == 0) printf("NONBLOCKING Krylov solvers currently not supported!");
     ABORT(EXIT_FAILURE);

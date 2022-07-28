@@ -14,7 +14,7 @@ namespace{
 struct CallParameters{
   int Nelements;
   int Nq_e;
-  int wordSize;
+  size_t wordSize;
   bool useRAS;
   std::string suffix;
 };
@@ -41,7 +41,7 @@ std::map<CallParameters, occa::kernel> cachedResults;
 template <typename T>
 occa::kernel benchmarkFDM(int Nelements,
                           int Nq_e,
-                          int wordSize,
+                          size_t wordSize,
                           bool useRAS,
                           int verbosity,
                           T NtestsOrTargetTime,
@@ -285,7 +285,7 @@ occa::kernel benchmarkFDM(int Nelements,
 
 template occa::kernel benchmarkFDM<int>(int Nelements,
                                         int Nq_e,
-                                        int wordSize,
+                                        size_t wordSize,
                                         bool useRAS,
                                         int verbosity,
                                         int Ntests,
@@ -294,7 +294,7 @@ template occa::kernel benchmarkFDM<int>(int Nelements,
 
 template occa::kernel benchmarkFDM<double>(int Nelements,
                                            int Nq_e,
-                                           int wordSize,
+                                           size_t wordSize,
                                            bool useRAS,
                                            int verbosity,
                                            double targetTime,
