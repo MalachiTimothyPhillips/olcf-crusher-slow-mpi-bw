@@ -281,7 +281,11 @@ if(ENABLE_AMGX AND ENABLE_CUDA)
   target_include_directories(nekrs-lib PUBLIC 3rd_party/AMGX/base/include 3rd_party/AMGX/core/include)
 endif()
 
-target_link_libraries(nekrs-lib PRIVATE nekrs-hypre nekrs-hypre-device)
+
+target_link_libraries(nekrs-lib PRIVATE nekrs-hypre)
+if(ENABLE_CUDA)
+  target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-device)
+endif()
 
 add_executable(nekrs-bin src/main.cpp)
 target_include_directories(nekrs-bin PRIVATE src/lib)
