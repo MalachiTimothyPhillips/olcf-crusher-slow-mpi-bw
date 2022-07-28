@@ -115,7 +115,7 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
 
   if(device.mode() == "HIP" && !getenv("OCCA_HIP_COMPILER_FLAGS")) {
     warpSize = 64; // can be arch specific
-    kernelInfo["compiler_flags"] += " -O3 ";
+    kernelInfo["compiler_flags"] += " -O3 -g ";
     kernelInfo["compiler_flags"] += " -ffp-contract=fast ";
     kernelInfo["compiler_flags"] += " -funsafe-math-optimizations ";
     kernelInfo["compiler_flags"] += " -ffast-math ";
@@ -123,6 +123,10 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
 
   serial = device.mode() == "Serial" ||
            device.mode() == "OpenMP";
+
+  if(serial && !getenv("OCCA_CXXFLAGS")) {
+    kernelInfo["compiler_flags"] += " -O3 -g -march=native -mtune=native ";
+  }
   
   const std::string extension = serial ? ".c" : ".okl";
   
