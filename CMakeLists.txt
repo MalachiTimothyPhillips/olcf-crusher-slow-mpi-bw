@@ -39,13 +39,12 @@ set(OCCA_CUDA_COMPILER_FLAGS "-O3 --fmad=true" CACHE STRING "CUDA flags for OCCA
 set(OCCA_HIP_COMPILER_FLAGS "-O3 -ffp-contract=fast" CACHE STRING "HIP flags for OCCA JIT compile")
 set(OCCA_OPENCL_COMPILER_FLAGS "-cl-std=CL2.0 -cl-mad-enable -cl-no-signed-zeros" CACHE STRING "OPENCL flags for OCCA JIT compile")
 
-set(OCCA_CUDA_ENABLED ON CACHE BOOL "Enable OCCA CUDA support")
-set(OCCA_HIP_ENABLED ON CACHE BOOL "Enable OCCA HIP support")
-set(OCCA_OPENCL_ENABLED OFF CACHE BOOL "Enable OCCA OpenCL support")
+set(ENABLE_CUDA ON CACHE BOOL "Enable OCCA CUDA support")
+set(ENABLE_HIP ON CACHE BOOL "Enable OCCA HIP support")
+set(ENABLE_CUDA OFF CACHE BOOL "Enable OCCA OpenCL support")
 set(ENABLE_METAL OFF CACHE BOOL "Enable OCCA Metal support")
 
 set(ENABLE_AMGX OFF CACHE BOOL "Enable NVIDIA AMGX support")
-set(ENABLE_HYPRE_GPU ON CACHE BOOL "Enable HYPRE GPU support")
 
 set(GPU_MPI "1" CACHE STRING "Enable GPU aware MPI")
 
@@ -148,6 +147,9 @@ endif()
 ###############################################################################
 # Build HYPRE
 ###############################################################################
+if(ENABLE_CUDA)
+  set(ENABLE_HYPRE_GPU ON CACHE BOOL "Enable HYPRE GPU support")
+endif()
 include(config/hypre.cmake)
 
 ###############################################################################
@@ -283,9 +285,7 @@ endif()
 
 
 target_link_libraries(nekrs-lib PRIVATE nekrs-hypre)
-if(ENABLE_CUDA)
-  target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-device)
-endif()
+target_link_libraries(nekrs-lib PRIVATE nekrs-hypre-device)
 
 add_executable(nekrs-bin src/main.cpp)
 target_include_directories(nekrs-bin PRIVATE src/lib)
@@ -325,20 +325,11 @@ configure_file(
   @ONLY)
 
 install(
-  TARGETS nekrs-lib nekrs-hypre nekrs-bin axhelm-bin advsub-bin fdm-bin
+  TARGETS nekrs-lib nekrs-hypre nekrs-hypre-device nekrs-bin axhelm-bin advsub-bin fdm-bin
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
 )
-
-if(ENABLE_CUDA)
-  install(
-    TARGETS nekrs-hypre-device 
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-  )
-endif()
 
 # Trailing slash prevents parent directory from being copied
 install(DIRECTORY scripts/ DESTINATION bin
