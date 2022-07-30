@@ -29,14 +29,14 @@ SOFTWARE.
 
 #include "nrssys.hpp"
 
-//#define ENABLE_TIMER
-
 class linAlg_t {
 private:
   occa::properties kernelInfo;
   MPI_Comm comm;
   int blocksize;
   bool serial;
+
+  int timer;
 
   //scratch space for reductions
   dfloat* scratch;
@@ -51,6 +51,9 @@ private:
   static linAlg_t* singleton;
 public:
   static linAlg_t* getInstance();
+
+  void enableTimer();
+  void disableTimer();
 
   /*********************/
   /* vector operations */
@@ -188,9 +191,15 @@ public:
   // o_w.o_x.o_y
   dfloat weightedInnerProd(const dlong N, occa::memory& o_w, occa::memory& o_x,
                             occa::memory& o_y, MPI_Comm _comm);
-  void weightedInnerProdMulti(const dlong N, const dlong NVec, const dlong Nfields, const dlong fieldOffset, occa::memory& o_w, occa::memory& o_x,
-                            occa::memory& o_y, MPI_Comm _comm,
-                            dfloat* result, const dlong offset = 0);
+  void weightedInnerProdMulti(const dlong N, const dlong NVec, const dlong Nfields, 
+                              const dlong fieldOffset, occa::memory& o_w, occa::memory& o_x,
+                              occa::memory& o_y, MPI_Comm _comm,
+                              dfloat* result, const dlong offset = 0);
+  void weightedInnerProdMulti(const dlong N, const dlong NVec, const dlong Nfields, 
+                              const dlong fieldOffset, occa::memory& o_w, occa::memory& o_x,
+                              occa::memory& o_y, MPI_Comm _comm,
+                              occa::memory& o_result, const dlong offset = 0);
+
   dfloat weightedInnerProdMany(const dlong N,
                                const dlong Nfields, const dlong fieldOffset, occa::memory& o_w, occa::memory& o_x,
                             occa::memory& o_y, MPI_Comm _comm);
@@ -250,6 +259,7 @@ public:
   occa::kernel weightedInnerProdKernel;
   occa::kernel weightedInnerProdManyKernel;
   occa::kernel weightedInnerProdMultiKernel;
+  occa::kernel weightedInnerProdMultiDeviceKernel;
   occa::kernel crossProductKernel;
   occa::kernel unitVectorKernel;
 };

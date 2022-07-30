@@ -56,6 +56,7 @@ void registerLinAlgKernels()
       {"weightedInnerProd", true},
       {"weightedInnerProdMany", true},
       {"weightedInnerProdMulti", false},
+      {"weightedInnerProdMultiDevice", false},
       {"crossProduct", false},
       {"unitVector", false},
   };
