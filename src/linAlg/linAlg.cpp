@@ -32,8 +32,6 @@ linAlg_t *linAlg_t::singleton = nullptr;
 
 void linAlg_t::runTimers()
 {
-   if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return;
-
    int nelgt, nelgv;
    const std::string meshFile = platform->options.getArgs("MESH FILE");
    re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
@@ -51,6 +49,16 @@ void linAlg_t::runTimers()
    const auto Nrep = 10;
 
    {
+     // warm-up
+     weightedInnerProdMany(
+       Nlocal,
+       fields,
+       1,
+       o_weight,
+       o_r,
+       o_z,
+       MPI_COMM_NULL);
+
      platform->device.finish();
      MPI_Barrier(platform->comm.mpiComm);
      const auto tStart = MPI_Wtime();
@@ -62,9 +70,9 @@ void linAlg_t::runTimers()
           o_weight,
           o_r,
           o_z,
-          MPI_COMM_NULL);
+          platform->comm.mpiComm);
      }
-     platform->device.finish();
+     //platform->device.finish();
      const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
      if(platform->comm.mpiRank == 0) 
        printf("wdotp: %.3es  ", elapsed);
@@ -82,7 +90,7 @@ void linAlg_t::runTimers()
           o_weight,
           o_r,
           o_z,
-          platform->comm.mpiComm);
+          MPI_COMM_NULL);
      }
      platform->device.finish();
      const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
