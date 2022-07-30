@@ -72,13 +72,13 @@ void linAlg_t::runTimers()
           o_z,
           platform->comm.mpiComm);
      }
-     //platform->device.finish();
+     platform->device.finish();
      const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
      if(platform->comm.mpiRank == 0) 
        printf("wdotp: %.3es  ", elapsed);
    }
 
-   {
+   if(platform->comm.mpiCommSize > 1) {
      platform->device.finish();
      MPI_Barrier(platform->comm.mpiComm);
      const auto tStart = MPI_Wtime();
@@ -96,6 +96,9 @@ void linAlg_t::runTimers()
      const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
      if(platform->comm.mpiRank == 0) 
        printf("(local: %.3es)\n", elapsed);
+   } else {
+     if(platform->comm.mpiRank == 0)
+       printf("\n");
    }
 
    if(platform->comm.mpiRank == 0) 
