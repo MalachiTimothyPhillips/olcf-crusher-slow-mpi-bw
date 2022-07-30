@@ -48,7 +48,7 @@ void SolutionProjection::updateProjectionSpace()
 
   double flopCount = 0.0;
 
-#if 0
+#if USE_WEIGHTED_INNER_PROD_MULTI_DEVICE 
   platform->linAlg->weightedInnerProdMulti(
     Nlocal,
     numVecsProjection,
@@ -125,7 +125,7 @@ void SolutionProjection::computePreProjection(occa::memory& o_r)
   dfloat mone = -1.0;
   if(numVecsProjection <= 0) return;
 
-#if 0
+#if USE_WEIGHTED_INNER_PROD_MULTI_DEVICE 
    platform->linAlg->weightedInnerProdMulti(
     Nlocal,
     numVecsProjection,

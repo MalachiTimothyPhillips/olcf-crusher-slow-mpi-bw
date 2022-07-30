@@ -29,6 +29,8 @@ SOFTWARE.
 
 #include "nrssys.hpp"
 
+#define USE_WEIGHTED_INNER_PROD_MULTI_DEVICE 0
+
 class linAlg_t {
 private:
   occa::properties kernelInfo;

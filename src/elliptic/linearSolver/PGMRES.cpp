@@ -208,7 +208,7 @@ int pgmres(elliptic_t* elliptic, occa::memory &o_r, occa::memory &o_x,
       // w := A z
       ellipticOperator(elliptic, o_Mv, o_w, dfloatString);
 
-#if 0
+#if USE_WEIGHTED_INNER_PROD_MULTI_DEVICE 
       linAlg.weightedInnerProdMulti(
         mesh->Nlocal,
         (i+1),
