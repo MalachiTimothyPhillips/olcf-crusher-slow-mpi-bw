@@ -26,8 +26,77 @@ SOFTWARE.
 
 #include "linAlg.hpp"
 #include "platform.hpp"
+#include "re2Reader.hpp"
 
 linAlg_t *linAlg_t::singleton = nullptr;
+
+void linAlg_t::runTimers()
+{
+   if(platform->options.compareArgs("BUILD ONLY", "TRUE")) return;
+
+   int nelgt, nelgv;
+   const std::string meshFile = platform->options.getArgs("MESH FILE");
+   re2::nelg(meshFile, nelgt, nelgv, platform->comm.mpiComm);
+   const int nel = nelgv/platform->comm.mpiCommSize;
+ 
+   int N;
+   platform->options.getArgs("POLYNOMIAL DEGREE", N);
+
+   const auto fields = 1;
+   const auto Nlocal = nel * (N+1)*(N+1)*(N+1);
+   auto o_weight = platform->device.malloc(Nlocal*sizeof(dfloat));
+   auto o_r = platform->device.malloc(Nlocal*sizeof(dfloat));
+   auto o_z = platform->device.malloc(Nlocal*sizeof(dfloat));
+
+   const auto Nrep = 10;
+
+   {
+     platform->device.finish();
+     MPI_Barrier(platform->comm.mpiComm);
+     const auto tStart = MPI_Wtime();
+     for(int i = 0; i < Nrep; i++) {
+        weightedInnerProdMany(
+          Nlocal,
+          fields,
+          1,
+          o_weight,
+          o_r,
+          o_z,
+          MPI_COMM_NULL);
+     }
+     platform->device.finish();
+     const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
+     if(platform->comm.mpiRank == 0) 
+       printf("wdotp: %.3es  ", elapsed);
+   }
+
+   {
+     platform->device.finish();
+     MPI_Barrier(platform->comm.mpiComm);
+     const auto tStart = MPI_Wtime();
+     for(int i = 0; i < Nrep; i++) {
+        weightedInnerProdMany(
+          Nlocal,
+          fields,
+          1,
+          o_weight,
+          o_r,
+          o_z,
+          platform->comm.mpiComm);
+     }
+     platform->device.finish();
+     const auto elapsed = (MPI_Wtime() - tStart)/Nrep;
+     if(platform->comm.mpiRank == 0) 
+       printf("(local: %.3es)\n", elapsed);
+   }
+
+   if(platform->comm.mpiRank == 0) 
+     std::cout << std::endl;
+
+   o_weight.free();
+   o_r.free();
+   o_z.free();
+}
 
 linAlg_t *linAlg_t::getInstance()
 {
@@ -41,8 +110,15 @@ linAlg_t::linAlg_t()
   serial = platform->serial;
   comm = platform->comm.mpiComm;
   timer = 0;
-  platform->options.getArgs("ENABLE LINALG TIMER", timer);
+
+  if(platform->comm.mpiRank == 0)
+    std::cout << "initializing linAlg ...\n";
+
   setup();
+  runTimers();
+
+  if(platform->options.compareArgs("ENABLE LINALG TIMER", "TRUE"))
+    timer = 1;
 }
 void linAlg_t::enableTimer()
 {
@@ -68,7 +144,6 @@ void linAlg_t::reallocScratch(const size_t Nbytes)
 }
 void linAlg_t::setup()
 {
-
   auto &kernels = platform->kernels;
   int rank;
   MPI_Comm_rank(comm, &rank);

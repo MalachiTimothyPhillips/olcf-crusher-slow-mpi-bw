@@ -38,7 +38,7 @@ private:
   int blocksize;
   bool serial;
 
-  int timer;
+  int timer = 0;
 
   //scratch space for reductions
   dfloat* scratch;
@@ -47,6 +47,8 @@ private:
 
   void setup();
   void reallocScratch(const size_t Nbytes);
+
+  void runTimers();
 
   ~linAlg_t();
   linAlg_t();

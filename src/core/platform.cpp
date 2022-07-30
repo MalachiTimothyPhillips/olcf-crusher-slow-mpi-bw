@@ -81,14 +81,9 @@ platform_t::platform_t(setupAide& _options, MPI_Comm _commg, MPI_Comm _comm)
   srand48((long int) comm.mpiRank);
   oogs::gpu_mpi(std::stoi(getenv("NEKRS_GPU_MPI")));
 
-  {
-    int enableSync = 1;
-    options.getArgs("ENABLE TIMER SYNC", enableSync);
-    if(enableSync)
-      timer.enableSync();
-    else
-      timer.disableSync();
-  }
+  timer.enableSync();
+  if(options.compareArgs("ENABLE TIMER SYNC", "FALSE"))
+    timer.disableSync();  
 
   flopCounter = std::make_unique<flopCounter_t>();
 
