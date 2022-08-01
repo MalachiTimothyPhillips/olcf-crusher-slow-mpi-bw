@@ -4,8 +4,6 @@
 #include <mpi.h>
 #include "occa.hpp"
 
-#define BOOMERAMG_NPARAM 10
-
 namespace hypreWrapper
 {
 

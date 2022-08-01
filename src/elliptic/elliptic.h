@@ -41,6 +41,7 @@
 #include "timer.hpp"
 #include <functional>
 #include "ellipticApplyMask.hpp"
+#include <vector>
 
 #define ELLIPTIC_ENABLE_TIMER
 
@@ -263,4 +264,8 @@ void ellipticOgs(mesh_t *mesh,
                  dlong &NmaskedGlobal,
                  occa::memory &o_maskIdsGlobal,
                  ogs_t **ogs);
+
+std::vector<double>
+boomerAMGSettingsFromOptions(setupAide& options);
+
 #endif

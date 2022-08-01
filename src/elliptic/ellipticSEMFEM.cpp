@@ -4,6 +4,7 @@
 #include "elliptic.h"
 #include "ellipticBuildSEMFEM.hpp"
 #include "hypreWrapper.hpp"
+#include "hypreParamIndex.hpp"
 #include "amgx.h"
 
 namespace{
@@ -65,33 +66,13 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
 
   int setupRetVal = 0;
   if(elliptic->options.compareArgs("COARSE SOLVER", "BOOMERAMG")){
-      double settings[BOOMERAMG_NPARAM+1];
-      settings[0]  = 1;    /* custom settings              */
-      settings[1]  = 8;    /* coarsening                   */
-      settings[2]  = 6;    /* interpolation                */
-      settings[3]  = 1;    /* number of cycles             */
-      settings[4]  = 18;   /* smoother for crs level       */
-      settings[5]  = 3;    /* number of coarse sweeps      */
-      settings[6]  = 18;   /* smoother                     */
-      settings[7]  = 1;    /* number of sweeps             */
-      settings[8]  = 0.25; /* strong threshold             */
-      settings[9]  = 0.05; /* non galerkin tol             */
-      settings[10] = 0;    /* aggressive coarsening levels */
+      auto settings = boomerAMGSettingsFromOptions(elliptic->options);
 
+      using namespace hypreParamIndex;
       if(elliptic->options.compareArgs("MULTIGRID SEMFEM", "TRUE")) {
-        settings[4]  = 16;
-        settings[6]  = 16;
-      }  
-
-      platform->options.getArgs("BOOMERAMG COARSEN TYPE", settings[1]);
-      platform->options.getArgs("BOOMERAMG INTERPOLATION TYPE", settings[2]);
-      platform->options.getArgs("BOOMERAMG COARSE SMOOTHER TYPE", settings[4]);
-      platform->options.getArgs("BOOMERAMG SMOOTHER TYPE", settings[6]);
-      platform->options.getArgs("BOOMERAMG SMOOTHER SWEEPS", settings[7]);
-      platform->options.getArgs("BOOMERAMG ITERATIONS", settings[3]);
-      platform->options.getArgs("BOOMERAMG STRONG THRESHOLD", settings[8]);
-      platform->options.getArgs("BOOMERAMG NONGALERKIN TOLERANCE" , settings[9]);
-      platform->options.getArgs("BOOMERAMG AGGRESSIVE COARSENING LEVELS" , settings[10]);
+        settings[CRS_SMOOTHER]  = 16;
+        settings[SMOOTHER]  = 16;
+      }
 
       if(platform->device.mode() != "Serial" && useDevice) {
         setupRetVal = hypreWrapperDevice::BoomerAMGSetup(
@@ -104,7 +85,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
                         platform->comm.mpiComm,
                         platform->device.occaDevice(),
                         useFP32,
-                        settings,
+                        settings.data(),
                         verbose);
       } else {
         setupRetVal = hypreWrapper::BoomerAMGSetup(
@@ -117,7 +98,7 @@ void ellipticSEMFEMSetup(elliptic_t* elliptic)
           platform->comm.mpiComm,
           1, /* Nthreads */
           useFP32,
-          settings,
+          settings.data(),
           verbose 
         );
       }

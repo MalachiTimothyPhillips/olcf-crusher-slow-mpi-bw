@@ -9,8 +9,10 @@
 #include "HYPRE.h"
 #include "HYPRE_parcsr_ls.h"
 #include "_hypre_utilities.h"
+#include "hypreParamIndex.hpp"
 
-#define BOOMERAMG_NPARAM 10
+using namespace hypreParamIndex;
+
 static double boomerAMGParam[BOOMERAMG_NPARAM];
 
 class hypre_data_t;
@@ -50,18 +52,22 @@ BoomerAMGSetup(int nrows, int nz,
 
   if ((int) param[0]) {
     for (int i = 0; i < BOOMERAMG_NPARAM; i++)
-      boomerAMGParam[i] = param[i+1]; 
+      boomerAMGParam[i] = param[i]; 
   } else {
-    boomerAMGParam[0]  = 8;    /* coarsening */
-    boomerAMGParam[1]  = 6;    /* interpolation */
-    boomerAMGParam[2]  = 1;    /* number of cycles */
-    boomerAMGParam[3]  = 8;    /* smoother for crs level */
-    boomerAMGParam[4]  = 3;    /* sweeps */
-    boomerAMGParam[5]  = 8;    /* smoother */
-    boomerAMGParam[6]  = 1;    /* sweeps   */
-    boomerAMGParam[7]  = 0.25; /* threshold */
-    boomerAMGParam[8]  = 0.0;  /* non galerkin tolerance */
-    boomerAMGParam[9]  = 0;    /* agressive coarsening */
+    boomerAMGParam[CUSTOM                   ]  = 0;    /* custom */
+    boomerAMGParam[COARSENING               ]  = 8;    /* coarsening */
+    boomerAMGParam[INTERPOLATION            ]  = 6;    /* interpolation */
+    boomerAMGParam[NUM_CYCLES               ]  = 1;    /* number of cycles */
+    boomerAMGParam[CRS_SMOOTHER             ]  = 8;    /* smoother for crs level */
+    boomerAMGParam[NUM_CRS_SWEEPS           ]  = 3;    /* sweeps */
+    boomerAMGParam[SMOOTHER                 ]  = 8;    /* smoother */
+    boomerAMGParam[NUM_SWEEPS               ]  = 1;    /* sweeps   */
+    boomerAMGParam[STRONG_THRESHOLD         ]  = 0.25; /* threshold */
+    boomerAMGParam[NON_GALERKIN_TOL         ]  = 0.0;  /* non galerkin tolerance */
+    boomerAMGParam[NUM_AGG_COARSENING_LEVELS]  = 0;    /* agressive coarsening */
+    boomerAMGParam[CHEBY_DEGREE             ]  = 2;    /* Chebyshev order */
+    boomerAMGParam[CHEBY_VARIANT            ]  = 2;    /* Chebysehv variant */
+    boomerAMGParam[POST_SMOOTHER            ]  = 16;   /* Post smoother */
   }
 
   data = new hypre_data_t();
@@ -165,49 +171,60 @@ BoomerAMGSetup(int nrows, int nz,
   // Setup solver
   HYPRE_BoomerAMGCreate(&data->solver);
 
-  HYPRE_BoomerAMGSetCoarsenType(data->solver,boomerAMGParam[0]);
-  HYPRE_BoomerAMGSetInterpType(data->solver,boomerAMGParam[1]);
+  HYPRE_BoomerAMGSetCoarsenType(data->solver,boomerAMGParam[COARSENING]);
+  HYPRE_BoomerAMGSetInterpType(data->solver,boomerAMGParam[INTERPOLATION]);
 
   HYPRE_BoomerAMGSetModuleRAP2(data->solver, 1);
   HYPRE_BoomerAMGSetKeepTranspose(data->solver, 1);
 
   //HYPRE_BoomerAMGSetChebyFraction(data->solver, 0.2); 
 
-  if (boomerAMGParam[5] > 0) {
-    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 1);
-    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[5], 2);
+  if (boomerAMGParam[SMOOTHER] > 0) {
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[SMOOTHER], 1);
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[SMOOTHER], 2);
   } 
   HYPRE_BoomerAMGSetCycleRelaxType(data->solver, 9, 3);
 
-  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 1);
-  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[6], 2);
+  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[NUM_SWEEPS], 1);
+  HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[NUM_SWEEPS], 2);
   HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, 1, 3);
 
   if (null_space) {
     HYPRE_BoomerAMGSetMinCoarseSize(data->solver, 2);
-    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[3], 3);
-    HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[4], 3);
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[CRS_SMOOTHER], 3);
+    HYPRE_BoomerAMGSetCycleNumSweeps(data->solver, boomerAMGParam[NUM_CRS_SWEEPS], 3);
   }
 
-  HYPRE_BoomerAMGSetStrongThreshold(data->solver,boomerAMGParam[7]);
+  HYPRE_BoomerAMGSetStrongThreshold(data->solver,boomerAMGParam[STRONG_THRESHOLD]);
 
 // NonGalerkin not supported yet
 #if 0
-  if (boomerAMGParam[8] > 1e-3) {
-    HYPRE_BoomerAMGSetNonGalerkinTol(data->solver,boomerAMGParam[8]);
+  if (boomerAMGParam[NON_GALERKIN_TOL] > 1e-3) {
+    HYPRE_BoomerAMGSetNonGalerkinTol(data->solver,boomerAMGParam[NON_GALERKIN_TOL]);
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.0 , 0);
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.01, 1);
     HYPRE_BoomerAMGSetLevelNonGalerkinTol(data->solver,0.05, 2);
   }
 #endif
   
-  if(boomerAMGParam[9] > 0) {
-    HYPRE_BoomerAMGSetAggNumLevels(data->solver, boomerAMGParam[9]); 
+  if(boomerAMGParam[NUM_AGG_COARSENING_LEVELS] > 0) {
+    HYPRE_BoomerAMGSetAggNumLevels(data->solver, boomerAMGParam[NUM_AGG_COARSENING_LEVELS]); 
     HYPRE_BoomerAMGSetAggInterpType(data->solver, 5);
     //HYPRE_BoomerAMGSetNumPaths(data->solver, 10);
   }
 
-  HYPRE_BoomerAMGSetMaxIter(data->solver, boomerAMGParam[2]);
+  // set Chebyshev order and variant, if applicable
+  if (boomerAMGParam[SMOOTHER] == 16){
+    HYPRE_BoomerAMGSetChebyVariant(data->solver, boomerAMGParam[CHEBY_VARIANT]);
+    HYPRE_BoomerAMGSetChebyOrder(data->solver, boomerAMGParam[CHEBY_DEGREE]);
+  }
+
+  // set (potentially different) post smoother
+  if (boomerAMGParam[POST_SMOOTHER] > 0){
+    HYPRE_BoomerAMGSetCycleRelaxType(data->solver, boomerAMGParam[POST_SMOOTHER], 2);
+  }
+
+  HYPRE_BoomerAMGSetMaxIter(data->solver, boomerAMGParam[NUM_CYCLES]);
   HYPRE_BoomerAMGSetTol(data->solver,0);
 
   if(verbose)
