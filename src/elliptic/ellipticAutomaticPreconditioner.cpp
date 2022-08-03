@@ -11,20 +11,23 @@
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
     : elliptic(m_elliptic), activeTuner(true), sampleCounter(0)
 {
-  platform->timer.tic("autoPreconditioner", 1);
+
   elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
   elliptic.options.getArgs("AUTO PRECONDITIONER TRIAL FREQUENCY", trialFrequency);
   elliptic.options.getArgs("AUTO PRECONDITIONER MAX CHEBY ORDER", maxChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER MIN CHEBY ORDER", minChebyOrder);
   elliptic.options.getArgs("AUTO PRECONDITIONER NUM SAMPLES", NSamples);
 
-  minChebyOrder = 1;
-  maxChebyOrder = 3;
-
   std::set<ChebyshevSmootherType> allSmoothers = {
       ChebyshevSmootherType::JACOBI,
       ChebyshevSmootherType::ASM,
       ChebyshevSmootherType::RAS,
+  };
+
+  std::set<SmootherType> allChebyshevSmoothers = {
+      SmootherType::CHEBYSHEV,
+      SmootherType::OPT_CHEBYSHEV,
+      SmootherType::FOURTH_CHEBYSHEV,
   };
 
   std::vector<std::set<unsigned>> schedules;
@@ -36,15 +39,20 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
     schedules.push_back(levels);
   }
 
-  defaultSolver = {ChebyshevSmootherType::ASM, 2, schedules[0]};
+  defaultSolver = {SmootherType::CHEBYSHEV, ChebyshevSmootherType::ASM, 2, schedules[0]};
 
   for (auto &&schedule : schedules) {
-    for (auto &&smoother : allSmoothers) {
-      for (unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder) {
-        allSolvers.insert({smoother, chebyOrder, schedule});
-        solverToTime[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
-        solverTimePerIter[{smoother, chebyOrder, schedule}] = std::vector<double>(NSamples, -1.0);
-        solverToIterations[{smoother, chebyOrder, schedule}] = std::vector<unsigned int>(NSamples, 0);
+    for (auto &&chebyshevSmoother : allChebyshevSmoothers) {
+      for (auto &&smoother : allSmoothers) {
+        for (unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder) {
+          allSolvers.insert({chebyshevSmoother, smoother, chebyOrder, schedule});
+          solverToTime[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
+              std::vector<double>(NSamples, -1.0);
+          solverTimePerIter[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
+              std::vector<double>(NSamples, -1.0);
+          solverToIterations[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
+              std::vector<unsigned int>(NSamples, 0);
+        }
       }
     }
   }
@@ -55,25 +63,16 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
     const auto degree = level->degree;
     multigridLevels[degree] = level;
   }
-
-  platform->timer.toc("autoPreconditioner");
 }
 
 bool automaticPreconditioner_t::apply(int tstep)
 {
-  // bool evaluatePreconditioner = true;
-  // evaluatePreconditioner &= activeTuner;
-  // evaluatePreconditioner &= tstep >= autoStart;
-  // if(evaluatePreconditioner){
-  //   evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
-  // }
-
-  // kludge
-  const std::vector<int> evaluationSteps = {250, 500, 1000};
-  // const std::vector<int> evaluationSteps = {10,20,50};
-  bool evaluatePreconditioner = std::any_of(evaluationSteps.begin(),
-                                            evaluationSteps.end(),
-                                            [=](int evaluationStep) { return evaluationStep == tstep; });
+  bool evaluatePreconditioner = true;
+  evaluatePreconditioner &= activeTuner;
+  evaluatePreconditioner &= tstep >= autoStart;
+  if (evaluatePreconditioner) {
+    evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
+  }
 
   if (evaluatePreconditioner) {
     evaluatePreconditioner = selectSolver();
@@ -145,22 +144,18 @@ solverDescription_t automaticPreconditioner_t::determineFastestSolver()
   dfloat minSolveTime = std::numeric_limits<dfloat>::max();
   solverDescription_t minSolver;
 
-  // minimize (T/iter) * sum(iters)
+  // minimize min solve time
   for (auto &&solver : visitedSolvers) {
     const auto &times = solverTimePerIter[solver];
     const auto &iters = solverToIterations[solver];
-    dfloat minTimePerIter = std::numeric_limits<dfloat>::max();
-    dfloat sumIters = 0.0;
-    for (int i = 0; i < NSamples; ++i) {
-      minTimePerIter = minTimePerIter < times.at(i) ? minTimePerIter : times.at(i);
-      sumIters += iters[i];
+    dfloat solveTime = std::numeric_limits<dfloat>::max();
+    for (auto &&tSolve : times) {
+      solveTime = solveTime < tSolve ? solveTime : tSolve;
     }
 
-    // avg time per solve, based on min time per iter of method
-    const dfloat solverTime = sumIters * minTimePerIter / static_cast<double>(NSamples);
-    solverToEval[solver] = solverTime;
-    if (solverTime < minSolveTime) {
-      minSolveTime = solverTime;
+    solverToEval[solver] = solveTime;
+    if (solveTime < minSolveTime) {
+      minSolveTime = solveTime;
       minSolver = solver;
     }
   }
@@ -180,10 +175,12 @@ void automaticPreconditioner_t::reinitializePreconditioner()
   for (auto &&orderAndLevelPair : multigridLevels) {
     auto level = orderAndLevelPair.second;
 
+    level->stype = currentSolver.chebyshevSmoother;
+    level->chebyshevSmoother = currentSolver.smoother;
     level->ChebyshevIterations = currentSolver.chebyOrder;
+
     if (currentSolver.smoother == ChebyshevSmootherType::ASM ||
         currentSolver.smoother == ChebyshevSmootherType::RAS) {
-      level->chebyshevSmoother = currentSolver.smoother;
       if (currentSolver.smoother == ChebyshevSmootherType::ASM) {
         elliptic.options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
         const dfloat rho = level->lambdaMax[0];
@@ -198,7 +195,6 @@ void automaticPreconditioner_t::reinitializePreconditioner()
       }
     }
     else {
-      level->chebyshevSmoother = ChebyshevSmootherType::JACOBI;
       elliptic.options.setArgs("MULTIGRID SMOOTHER", "DAMPEDJACOBI,CHEBYSHEV");
       const dfloat rho = level->lambdaMax[2];
       level->lambda1 = maxMultiplier * rho;
