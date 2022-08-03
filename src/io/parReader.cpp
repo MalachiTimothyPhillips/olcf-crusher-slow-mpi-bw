@@ -831,8 +831,8 @@ void parsePreconditioner(const int rank, setupAide &options,
       // auto preconditioner params
       {"auto"},
       {"maxtrials"},
-      {"minDegree"},
-      {"maxDegree"},
+      {"mindegree"},
+      {"maxdegree"},
       {"start"},
       {"frequency"},
   };

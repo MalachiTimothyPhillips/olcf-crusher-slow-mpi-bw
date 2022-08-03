@@ -947,6 +947,17 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("MULTIGRID NUMBER POST SMOOTHINGS",
                           options.getArgs("PRESSURE MULTIGRID NUMBER POST SMOOTHINGS"));
 
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER", options.getArgs("PRESSURE AUTO PRECONDITIONER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER MAX CHEBY ORDER",
+                          options.getArgs("PRESSURE AUTO PRECONDITIONER MAX CHEBY ORDER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER MIN CHEBY ORDER",
+                          options.getArgs("PRESSURE AUTO PRECONDITIONER MIN CHEBY ORDER"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER NUM SAMPLES",
+                          options.getArgs("PRESSURE AUTO PRECONDITIONER NUM SAMPLES"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER START", options.getArgs("PRESSURE AUTO PRECONDITIONER START"));
+    nrs->pOptions.setArgs("AUTO PRECONDITIONER TRIAL FREQUENCY",
+                          options.getArgs("PRESSURE AUTO PRECONDITIONER TRIAL FREQUENCY"));
+
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";
     nrs->pSolver->blockSolver = 0;
