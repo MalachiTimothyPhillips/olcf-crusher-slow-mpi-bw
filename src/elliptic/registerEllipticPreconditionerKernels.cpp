@@ -223,14 +223,9 @@ void registerSchwarzKernels(const std::string &section, int N) {
     occa::properties properties = platform->kernelInfo;
     properties["defines/p_Nq"] = Nq;
     properties["defines/p_Nq_e"] = Nq_e;
-    properties["defines/p_restrict"] = 0;
-    bool useRAS = platform->options.compareArgs(optionsPrefix + "MULTIGRID SMOOTHER", "RAS");
     const std::string suffix =
         std::string("_") + std::to_string(Nq_e - 1) + std::string("pfloat");
     properties["defines/p_overlap"] = (int)overlap;
-    if(useRAS){
-      properties["defines/p_restrict"] = 1;
-    }
 
     fileName = oklpath + "preFDM" + extension;
     platform->kernels.add(
@@ -243,16 +238,21 @@ void registerSchwarzKernels(const std::string &section, int N) {
 
     bool verbose = platform->options.compareArgs("VERBOSE", "TRUE");
     const int verbosity = verbose ? 2 : 1;
-    auto fdmKernel = benchmarkFDM(NelemBenchmark,
-                                  Nq_e,
-                                  sizeof(pfloat),
-                                  useRAS,
-                                  static_cast<int>(overlap),
-                                  verbosity,
-                                  elliptic_t::targetBenchmark,
-                                  false,
-                                  suffix);
-    platform->kernels.add("fusedFDM" + suffix, fdmKernel);
+
+    // need to register both ASM/RAS kernels in conjunction with the auto-tuner
+    for (auto useRAS : {true, false}) {
+      auto fdmKernel = benchmarkFDM(NelemBenchmark,
+                                    Nq_e,
+                                    sizeof(pfloat),
+                                    useRAS,
+                                    static_cast<int>(overlap),
+                                    verbosity,
+                                    elliptic_t::targetBenchmark,
+                                    false,
+                                    suffix);
+      const std::string kernelName = useRAS ? "fusedRAS" : "fusedASM";
+      platform->kernels.add(kernelName + suffix, fdmKernel);
+    }
 
     fileName = oklpath + "postFDM" + extension;
     platform->kernels.add(
