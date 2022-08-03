@@ -28,6 +28,7 @@
 #include <string>
 #include "platform.hpp"
 #include "linAlg.hpp"
+#include "ellipticAutomaticPreconditioner.h"
 
 void ellipticSolveSetup(elliptic_t* elliptic)
 {
@@ -265,6 +266,10 @@ void ellipticSolveSetup(elliptic_t* elliptic)
       type = SolutionProjection::ProjectionType::CLASSIC;
 
     elliptic->solutionProjection = new SolutionProjection(*elliptic, type, nVecsProject, nStepsStart);
+  }
+
+  if(options.compareArgs("AUTO PRECONDITIONER", "TRUE")){
+    elliptic->autoPreconditioner = new automaticPreconditioner_t(*elliptic);
   }
 
   MPI_Barrier(platform->comm.mpiComm);

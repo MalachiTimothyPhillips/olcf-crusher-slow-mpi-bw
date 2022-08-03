@@ -351,42 +351,53 @@ void registerMultiGridKernels(const std::string &section, int poissonEquation) {
 
   registerFineLevelKernels(section, N, poissonEquation);
 
-  std::vector<int> levels = determineMGLevels(section);
+  auto registerLevelKernels = [&](const std::vector<int>& levels){
 
-  if (levels.empty())
-    return;
+    if (levels.empty())
+      return;
 
-  for (unsigned levelIndex = 1U; levelIndex < levels.size(); ++levelIndex) {
-    const int levelFine = levels[levelIndex - 1];
-    const int levelCoarse = levels[levelIndex];
-    registerMultigridLevelKernels(section, levelFine, levelCoarse, poissonEquation);
-  }
-  const int coarseLevel = levels.back();
-  if (platform->options.compareArgs(
-          optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
+    for (unsigned levelIndex = 1U; levelIndex < levels.size(); ++levelIndex) {
+      const int levelFine = levels[levelIndex - 1];
+      const int levelCoarse = levels[levelIndex];
+      registerMultigridLevelKernels(section, levelFine, levelCoarse, poissonEquation);
+    }
+    const int coarseLevel = levels.back();
     if (platform->options.compareArgs(
-            optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE")) {
-      registerSEMFEMKernels(section, coarseLevel, poissonEquation);
-    } else {
-      {
-        std::string installDir;
-        installDir.assign(getenv("NEKRS_INSTALL_DIR"));
-        const std::string oklpath = installDir + "/okl/";
-        std::string fileName = oklpath + "parAlmond/convertFP64ToFP32.okl";
-        std::string kernelName = "convertFP64ToFP32";
-        platform->kernels.add(
-            kernelName, fileName, platform->kernelInfo);
+            optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
+      if (platform->options.compareArgs(
+              optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE")) {
+        registerSEMFEMKernels(section, coarseLevel, poissonEquation);
+      } else {
+        {
+          std::string installDir;
+          installDir.assign(getenv("NEKRS_INSTALL_DIR"));
+          const std::string oklpath = installDir + "/okl/";
+          std::string fileName = oklpath + "parAlmond/convertFP64ToFP32.okl";
+          std::string kernelName = "convertFP64ToFP32";
+          platform->kernels.add(
+              kernelName, fileName, platform->kernelInfo);
 
-        fileName = oklpath + "parAlmond/convertFP32ToFP64.okl";
-        kernelName = "convertFP32ToFP64";
-        platform->kernels.add(
-            kernelName, fileName, platform->kernelInfo);
-        fileName = oklpath + "parAlmond/vectorDotStar2.okl";
-        kernelName = "vectorDotStar2";
-        platform->kernels.add(
-            kernelName, fileName, platform->kernelInfo);
+          fileName = oklpath + "parAlmond/convertFP32ToFP64.okl";
+          kernelName = "convertFP32ToFP64";
+          platform->kernels.add(
+              kernelName, fileName, platform->kernelInfo);
+          fileName = oklpath + "parAlmond/vectorDotStar2.okl";
+          kernelName = "vectorDotStar2";
+          platform->kernels.add(
+              kernelName, fileName, platform->kernelInfo);
+        }
       }
     }
+  }
+
+  if(platform->options.compareArgs(optionsPrefix + "PRECONDITIONER AUTO", "TRUE")){
+    for(int pass = 0; pass < 2; ++pass){
+      std::vector<int> levels = determineMGLevels(section);
+      registerLevelKernels(levels);
+    }
+  } else {
+    std::vector<int> levels = determineMGLevels(section);
+    registerLevelKernels(levels);
   }
 }
 void registerSEMFEMKernels(const std::string &section, int N, int poissonEquation) {

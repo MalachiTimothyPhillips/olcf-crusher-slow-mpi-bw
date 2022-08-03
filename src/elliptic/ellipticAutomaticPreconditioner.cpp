@@ -74,6 +74,16 @@ bool automaticPreconditioner_t::apply(int tstep)
     evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
   }
 
+#if 1
+  if(platform->comm.mpiRank == 0){
+    std::cout << "tstep = " << tstep;
+    std::cout << ", autoStart = " << autoStart;
+    std::cout << ", activeTuner = " << std::boolalpha << activeTuner;
+    std::cout << ", trialFrequency = " << trialFrequency;
+    std::cout << ", evaluatePreconditioner = " << std::boolalpha << evaluatePreconditioner << "\n";
+  }
+#endif
+
   if (evaluatePreconditioner) {
     evaluatePreconditioner = selectSolver();
     if (evaluatePreconditioner) {
@@ -218,7 +228,7 @@ void automaticPreconditioner_t::reinitializePreconditioner()
     const auto Nf = orders[levelIndex - 1];
     const auto Nc = orders[levelIndex];
     const std::string kernelSuffix =
-        std::string("_") + std::to_string(Nf) + std::string("_") + std::to_string(Nc);
+        std::string("_Nf_") + std::to_string(Nf) + std::string("_Nc_") + std::to_string(Nc);
     auto *level = this->multigridLevels[Nc];
     auto *fineLevel = this->multigridLevels[Nf];
     level->NpF = (Nf + 1) * (Nf + 1) * (Nf + 1);
