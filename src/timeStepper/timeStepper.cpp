@@ -742,12 +742,8 @@ void fluidSolve(nrs_t *nrs, dfloat time, occa::memory o_P, occa::memory o_U, int
   nrs->setEllipticCoeffPressureKernel(
       mesh->Nlocal, nrs->fieldOffset, nrs->o_rho, nrs->o_ellipticCoeff);
 
-  bool evaluatesPreconditioner = true;
-
   occa::memory o_Pnew;
-  while (evaluatesPreconditioner) {
-    o_Pnew = tombo::pressureSolve(nrs, time, stage, tstep, evaluatesPreconditioner);
-  }
+  o_Pnew = tombo::pressureSolve(nrs, time, stage, tstep);
   o_P.copyFrom(o_Pnew, nrs->fieldOffset * sizeof(dfloat));
 
   platform->timer.toc("pressureSolve");

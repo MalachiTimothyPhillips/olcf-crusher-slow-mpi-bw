@@ -105,6 +105,9 @@ public:
   bool apply(int tstep);
   void measure(bool evaluatePreconditioner);
 
+  void saveState(occa::memory & o_r, occa::memory & o_x);
+  void restoreState(occa::memory & o_r, occa::memory & o_x);
+
 private:
   void evaluateCurrentSolver();
   bool selectSolver();
@@ -133,5 +136,8 @@ private:
   std::map<solverDescription_t, double> solverStartTime;
   std::map<solverDescription_t, double> solverToEval;
   std::map<solverDescription_t, std::vector<unsigned int>> solverToIterations;
+
+  // for storing rhs, x information
+  occa::memory o_rSave, o_xSave;
 };
 #endif

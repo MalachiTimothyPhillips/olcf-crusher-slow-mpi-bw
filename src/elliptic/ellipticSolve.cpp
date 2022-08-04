@@ -30,7 +30,7 @@
 #include "linAlg.hpp"
 #include "ellipticAutomaticPreconditioner.h"
 
-bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep)
+void ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep)
 {
   setupAide& options = elliptic->options;
   if(elliptic->coeffFieldPreco && options.compareArgs("PRECONDITIONER", "JACOBI"))
@@ -50,11 +50,6 @@ bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
   options.getArgs("MAXIMUM ITERATIONS", maxIter);
   const int verbose = options.compareArgs("VERBOSE", "TRUE");
   elliptic->resNormFactor = 1 / mesh->volume;
-
-  const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
-  if (useAutoPreconditioner) {
-    autoTunePreconditioner = elliptic->autoPreconditioner->apply(tstep);
-  }
 
   if(verbose) {
     const dfloat rhsNorm = 
@@ -106,7 +101,7 @@ bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
   const bool useProjection = options.compareArgs("INITIAL GUESS", "PROJECTION") ||
                              options.compareArgs("INITIAL GUESS", "PROJECTION-ACONJ");
 
-  if (useProjection && !autoTunePreconditioner) {
+  if (useProjection) {
 
     platform->timer.tic(name + " proj pre",1);
     elliptic->res00Norm = 
@@ -142,27 +137,53 @@ bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
     ABORT(EXIT_FAILURE);
   }
 
+
   dfloat tol = 1e-6;
   options.getArgs("SOLVER TOLERANCE", tol);
   if(options.compareArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE")) 
     tol *= elliptic->res0Norm;
 
-  if(!options.compareArgs("KRYLOV SOLVER", "NONBLOCKING")) {
-    elliptic->resNorm = elliptic->res0Norm;
-    if(options.compareArgs("KRYLOV SOLVER", "PCG"))
-      elliptic->Niter = pcg (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
-    else if(options.compareArgs("KRYLOV SOLVER", "PGMRES"))
-      elliptic->Niter = pgmres (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
-    else{
-      if(platform->comm.mpiRank == 0) printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER").c_str());
+  int solvePass = 0;
+  while(autoTunePreconditioner || (solvePass == 0)){
+    const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
+    if (useAutoPreconditioner) {
+      autoTunePreconditioner = elliptic->autoPreconditioner->apply(tstep);
+
+      // save o_r, o_x states only _if_ auto tuning is present and this is the first solve
+      if(autoTunePreconditioner && (solvePass == 0)){
+
+        elliptic->autoPreconditioner->saveState(o_r, o_x);
+
+      } else if (autoTunePreconditioner){ // otherwise, if solvePass > 0, o_r and o_x must be restored
+
+        elliptic->autoPreconditioner->restoreState(o_r, o_x);
+
+      }
+
+    }
+
+    if(!options.compareArgs("KRYLOV SOLVER", "NONBLOCKING")) {
+      elliptic->resNorm = elliptic->res0Norm;
+      if(options.compareArgs("KRYLOV SOLVER", "PCG"))
+        elliptic->Niter = pcg (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
+      else if(options.compareArgs("KRYLOV SOLVER", "PGMRES"))
+        elliptic->Niter = pgmres (elliptic, o_r, o_x, tol, maxIter, elliptic->resNorm);
+      else{
+        if(platform->comm.mpiRank == 0) printf("Linear solver %s is not supported!\n", options.getArgs("KRYLOV SOLVER").c_str());
+        ABORT(EXIT_FAILURE);
+      }
+    }else{
+      if(platform->comm.mpiRank == 0) printf("NONBLOCKING Krylov solvers currently not supported!");
       ABORT(EXIT_FAILURE);
     }
-  }else{
-    if(platform->comm.mpiRank == 0) printf("NONBLOCKING Krylov solvers currently not supported!");
-    ABORT(EXIT_FAILURE);
+
+    solvePass++;
+    if (useAutoPreconditioner) {
+      elliptic->autoPreconditioner->measure(autoTunePreconditioner);
+    }
   }
 
-  if (useProjection && !autoTunePreconditioner) {
+  if (useProjection) {
     platform->timer.tic(name + " proj post",1);
     elliptic->solutionProjection->post(o_x);
     platform->timer.toc(name + " proj post");
@@ -183,10 +204,4 @@ bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
 
   if(elliptic->allNeumann)
     ellipticZeroMean(elliptic, o_x);
-
-  if (useAutoPreconditioner) {
-    elliptic->autoPreconditioner->measure(autoTunePreconditioner);
-  }
-
-  return autoTunePreconditioner;
 }

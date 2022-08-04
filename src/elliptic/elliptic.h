@@ -198,7 +198,7 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic);
 void ellipticSEMFEMSetup(elliptic_t*);
 void ellipticSEMFEMSolve(elliptic_t*, occa::memory&, occa::memory&);
 
-bool ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep);
+void ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, int tstep);
 
 void ellipticSolveSetup(elliptic_t* elliptic);
 

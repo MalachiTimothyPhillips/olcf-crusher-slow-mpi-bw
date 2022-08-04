@@ -67,6 +67,22 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
     const auto degree = level->degree;
     multigridLevels[degree] = level;
   }
+
+  o_rSave = platform->device.malloc(elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
+  o_xSave = platform->device.malloc(elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
+
+}
+
+void automaticPreconditioner_t::saveState(occa::memory & o_r, occa::memory & o_x)
+{
+  o_rSave.copyFrom(o_r, elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
+  o_xSave.copyFrom(o_x, elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
+}
+
+void automaticPreconditioner_t::restoreState(occa::memory & o_r, occa::memory & o_x)
+{
+  o_rSave.copyTo(o_r, elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
+  o_xSave.copyTo(o_x, elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
 }
 
 bool automaticPreconditioner_t::apply(int tstep)

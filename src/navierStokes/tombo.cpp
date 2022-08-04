@@ -5,7 +5,7 @@
 
 namespace tombo
 {
-occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage, int tstep, bool &evaluatesPreconditioner)
+occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage, int tstep)
 {
   platform->timer.tic("pressure rhs", 1);
   double flopCount = 0.0;
@@ -119,8 +119,7 @@ occa::memory pressureSolve(nrs_t *nrs, dfloat time, int stage, int tstep, bool &
   platform->timer.toc("pressure rhs");
 
   platform->o_mempool.slice1.copyFrom(nrs->o_P, mesh->Nlocal * sizeof(dfloat));
-  evaluatesPreconditioner =
-      ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1, tstep);
+  ellipticSolve(nrs->pSolver, platform->o_mempool.slice3, platform->o_mempool.slice1, tstep);
 
   platform->flopCounter->add("pressure RHS", flopCount);
 
