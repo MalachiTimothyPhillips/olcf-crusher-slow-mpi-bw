@@ -20,13 +20,13 @@ struct solverDescription_t {
     std::ostringstream ss;
 
     if (chebyshevSmoother == SmootherType::CHEBYSHEV) {
-      ss << "1st Kind Cheby+";
+      ss << "1st Cheby+";
     }
     else if (chebyshevSmoother == SmootherType::FOURTH_CHEBYSHEV) {
-      ss << "4th Kind Cheby+";
+      ss << "4th Cheby+";
     }
     else if (chebyshevSmoother == SmootherType::OPT_CHEBYSHEV) {
-      ss << "Opt. 4th Kind Cheby+";
+      ss << "Opt. 4th Cheby+";
     }
 
     if (smoother == ChebyshevSmootherType::ASM) {
@@ -38,7 +38,7 @@ struct solverDescription_t {
     else if (smoother == ChebyshevSmootherType::JACOBI) {
       ss << "Jacobi";
     }
-    ss << "+Degree=" << chebyOrder;
+    ss << "(" << chebyOrder << "),";
     ss << ",(";
     for (auto &&i = schedule.rbegin(); i != schedule.rend(); ++i) {
       ss << *i;
@@ -48,18 +48,25 @@ struct solverDescription_t {
         ss << ",";
     }
     ss << ")";
+    if(usePostSmoothing){
+      ss << ",P.S.";
+    } else {
+      ss << ",N.P.S.";
+    }
     return ss.str();
   }
 
-  solverDescription_t(SmootherType mChebyshevSmoother,
+  solverDescription_t(bool mUsePostSmoothing,
+                      SmootherType mChebyshevSmoother,
                       ChebyshevSmootherType mSmoother,
                       unsigned mChebyOrder,
                       std::set<unsigned> mSchedule)
-      : chebyshevSmoother(mChebyshevSmoother), smoother(mSmoother), chebyOrder(mChebyOrder),
+      : usePostSmoothing(mUsePostSmoothing), chebyshevSmoother(mChebyshevSmoother), smoother(mSmoother), chebyOrder(mChebyOrder),
         schedule(mSchedule)
   {
   }
 
+  bool usePostSmoothing;
   SmootherType chebyshevSmoother;
   ChebyshevSmootherType smoother;
   unsigned chebyOrder;
@@ -71,13 +78,13 @@ struct solverDescription_t {
 
   inline bool operator==(const solverDescription_t &other) const
   {
-    return std::tie(chebyshevSmoother, smoother, chebyOrder, schedule) ==
-           std::tie(other.chebyshevSmoother, other.smoother, other.chebyOrder, other.schedule);
+    return std::tie(usePostSmoothing, chebyshevSmoother, smoother, chebyOrder, schedule) ==
+           std::tie(other.usePostSmoothing, other.chebyshevSmoother, other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator<(const solverDescription_t &other) const
   {
-    return std::tie(chebyshevSmoother, smoother, chebyOrder, schedule) <
-           std::tie(other.chebyshevSmoother, other.smoother, other.chebyOrder, other.schedule);
+    return std::tie(usePostSmoothing, chebyshevSmoother, smoother, chebyOrder, schedule) <
+           std::tie(other.usePostSmoothing, other.chebyshevSmoother, other.smoother, other.chebyOrder, other.schedule);
   }
   inline bool operator>(const solverDescription_t &other) const { return *this < other; }
   inline bool operator<=(const solverDescription_t &other) const { return !(*this > other); }

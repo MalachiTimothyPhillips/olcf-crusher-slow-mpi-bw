@@ -39,19 +39,23 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
     schedules.push_back(levels);
   }
 
-  defaultSolver = {SmootherType::CHEBYSHEV, ChebyshevSmootherType::ASM, 2, schedules[0]};
+  std::vector<bool> usePostSmooth = {true, false};
+
+  defaultSolver = {true, SmootherType::CHEBYSHEV, ChebyshevSmootherType::ASM, 2, schedules[0]};
 
   for (auto &&schedule : schedules) {
-    for (auto &&chebyshevSmoother : allChebyshevSmoothers) {
-      for (auto &&smoother : allSmoothers) {
-        for (unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder) {
-          allSolvers.insert({chebyshevSmoother, smoother, chebyOrder, schedule});
-          solverToTime[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
-              std::vector<double>(NSamples, -1.0);
-          solverTimePerIter[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
-              std::vector<double>(NSamples, -1.0);
-          solverToIterations[{chebyshevSmoother, smoother, chebyOrder, schedule}] =
-              std::vector<unsigned int>(NSamples, 0);
+    for(auto && postSmooth : usePostSmooth){
+      for (auto &&chebyshevSmoother : allChebyshevSmoothers) {
+        for (auto &&smoother : allSmoothers) {
+          for (unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder) {
+            allSolvers.insert({postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule});
+            solverToTime[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
+                std::vector<double>(NSamples, -1.0);
+            solverTimePerIter[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
+                std::vector<double>(NSamples, -1.0);
+            solverToIterations[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
+                std::vector<unsigned int>(NSamples, 0);
+          }
         }
       }
     }
@@ -181,13 +185,19 @@ void automaticPreconditioner_t::reinitializePreconditioner()
   dfloat maxMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
 
+  const int nPostSmooth = currentSolver.postSmooth ? 1 : 0;
+  elliptic.precon->parAlmond->options.setArgs("MULTIGRID NUMBER POST SMOOTHINGS", nPostSmoothing);
+
   // reset eigenvalue multipliers for all levels
   for (auto &&orderAndLevelPair : multigridLevels) {
     auto level = orderAndLevelPair.second;
 
     level->stype = currentSolver.chebyshevSmoother;
     level->chebyshevSmoother = currentSolver.smoother;
-    level->ChebyshevIterations = currentSolver.chebyOrder;
+
+    // when omitting post smoothing, can apply higher-order smoother at the same cost/iteration
+    level->ChebyshevIterations = currentSolver.postSmooth ? currentSolver.chebyOrder
+                                                          : 2 * currentSolver.chebyOrder + 1;
 
     // re-initialize betas_opt, betas_fourth due to change in Chebyshev order
     level->betas_opt = optimalCoeffs(level->ChebyshevIterations);
