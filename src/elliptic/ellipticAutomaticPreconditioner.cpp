@@ -74,7 +74,7 @@ bool automaticPreconditioner_t::apply(int tstep)
     evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
   }
 
-#if 1
+#if 0
   if(platform->comm.mpiRank == 0){
     std::cout << "tstep = " << tstep;
     std::cout << ", autoStart = " << autoStart;
@@ -137,7 +137,7 @@ bool automaticPreconditioner_t::selectSolver()
     }
     else {
       sampleCounter++;
-      return false; // <-
+      return true; // <-
     }
   }
   else {
@@ -247,34 +247,84 @@ void automaticPreconditioner_t::reinitializePreconditioner()
 
 std::string automaticPreconditioner_t::to_string() const
 {
-  std::ostringstream ss;
-  ss << "===================================================================\n";
-  ss << "| " << std::internal << std::setw(36) << "Preconditioner"
-     << " ";
-  ss << "| " << std::internal << std::setw(5) << "Niter"
-     << " ";
-  ss << "| " << std::internal << std::setw(17) << "Time"
-     << " |\n";
-  ss << "===================================================================\n";
-  for (auto &&solver : visitedSolvers) {
-    ss << "| " << std::internal << std::setw(36) << solver.to_string() << " ";
-    // ss << "| " << std::internal << std::setw(5) << solverToIterations.at(solver) << " ";
-    ss << "| (" << solverToIterations.at(solver)[0] << ", ";
-    ss << solverToIterations.at(solver)[1] << ", ";
-    ss << solverToIterations.at(solver)[2] << ") ";
+
+  auto findLengthCol = [&](auto& solverToColFunc, std::string colHeader){
+    auto maxColLength = colHeader.length();
+    for(auto&& solver : visitedSolvers){
+      maxColLength = std::max(maxColLength, solverToColFunc(solver).length());
+    }
+    return maxColLength;
+  };
+
+  const std::string solverDescriptionHeader = "Preconditioner";
+  const std::string iterationHeader = "Iterations";
+  const std::string timeHeader = "Time (min/max/avg) (s)";
+
+  auto solverDescriptionWriter = [&](auto& solver){
+    return solver.to_string();
+  };
+
+  auto iterationWriter = [&](auto& solver){
+    std::ostringstream iterationsText;
+    iterationsText << "(";
+    bool first = true;
+    for(auto&& iter : solverToIterations.at(solver)){
+      if(!first) iterationsText << ", ";
+      iterationsText << iter;
+      first = false;
+    }
+    iterationsText << ")";
+    return iterationsText.str();
+  };
+
+  auto timeWriter = [&](auto& solver){
+    dfloat avgTime = 0.0;
     dfloat minTime = std::numeric_limits<dfloat>::max();
     dfloat maxTime = -1.0 * std::numeric_limits<dfloat>::max();
+    int n = 1;
     auto &times = solverToTime.at(solver);
-    for (int i = 0; i < NSamples; ++i) {
-      minTime = minTime < times.at(i) ? minTime : times.at(i);
-      maxTime = maxTime > times.at(i) ? maxTime : times.at(i);
+    for (auto&& tSolve : times){
+      minTime = std::min(minTime, tSolve);
+      maxTime = std::max(maxTime, tSolve);
+      // on-line algorithm for computing arithmetic mean
+      avgTime += (tSolve - avgTime)/n;
+      n++;
     }
-    // ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific << minTime <<
-    // "/";
-    ss << "| " << std::internal << std::setw(7) << std::setprecision(2) << std::scientific
-       << solverToEval.at(solver) << " |\n";
-  }
-  ss << "===================================================================\n";
+    std::ostringstream timeText;
+    timeText << std::setprecision(2) << minTime << "/" << maxTime << "/" << avgTime;
+    return timeText.str();
+  };
 
-  return ss.str();
+  std::vector<long unsigned int> colLengths = {
+    findLengthCol(solverDescriptionWriter, solverDescriptionHeader),
+    findLengthCol(iterationWriter, iterationHeader),
+    findLengthCol(timeWriter, timeHeader),
+  };
+
+  auto printEntry = [&](auto& solver){
+    std::ostringstream entry;
+    entry << "| " << std::left << std::setw(colLengths[0]) << solverDescriptionWriter(solver) << " ";
+    entry << "| " << std::left << std::setw(colLengths[1]) << iterationWriter(solver) << " ";
+    entry << "| " << std::left << std::setw(colLengths[2]) << timeWriter(solver) << " |";
+    return entry.str();
+  };
+
+  // find length of line
+  const auto lineLength = printEntry(*visitedSolvers.begin()).length();
+  const std::string hline(lineLength, '=');
+
+  std::ostringstream tableOutput;
+  tableOutput << hline << "\n";
+  tableOutput << "| " << std::left << std::setw(colLengths[0]) << solverDescriptionHeader << " ";
+  tableOutput << "| " << std::left << std::setw(colLengths[1]) << iterationHeader << " ";
+  tableOutput << "| " << std::left << std::setw(colLengths[2]) << timeHeader << " |\n";
+  tableOutput << hline << "\n";
+
+  for(auto&& entry : visitedSolvers){
+    tableOutput << printEntry(entry) << "\n";
+  }
+
+  tableOutput << hline << "\n";
+
+  return tableOutput.str();
 }

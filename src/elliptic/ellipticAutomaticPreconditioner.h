@@ -20,13 +20,13 @@ struct solverDescription_t {
     std::ostringstream ss;
 
     if (chebyshevSmoother == SmootherType::CHEBYSHEV) {
-      ss << "1st Kind Chebyshev     +";
+      ss << "1st Kind Cheby+";
     }
     else if (chebyshevSmoother == SmootherType::FOURTH_CHEBYSHEV) {
-      ss << "4th Kind Chebyshev     +";
+      ss << "4th Kind Cheby+";
     }
     else if (chebyshevSmoother == SmootherType::OPT_CHEBYSHEV) {
-      ss << "Opt. 4th Kind Chebyshev+";
+      ss << "Opt. 4th Kind Cheby+";
     }
 
     if (smoother == ChebyshevSmootherType::ASM) {
