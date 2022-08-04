@@ -835,6 +835,7 @@ void parsePreconditioner(const int rank, setupAide &options,
       {"maxdegree"},
       {"start"},
       {"frequency"},
+      {"ntrials"},
   };
 
   std::string parSection =
@@ -873,9 +874,6 @@ void parsePreconditioner(const int rank, setupAide &options,
     options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(maxChebyOrder));
     options.setArgs(parSection + " AUTO PRECONDITIONER MIN CHEBY ORDER", std::to_string(minChebyOrder));
     options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES", std::to_string(Nsamples));
-
-    // set up initial preconditioner
-    p_preconditioner = "pmg+coarse";
 
     std::vector<std::string> list;
     list = serializeString(p_preconditioner, '+');
@@ -941,6 +939,10 @@ void parsePreconditioner(const int rank, setupAide &options,
         options.setArgs(parSection + " AUTO PRECONDITIONER NUM SAMPLES", std::to_string(value));
       }
     }
+
+    // set up initial preconditioner
+    p_preconditioner = "pmg+coarse";
+
   }
 
   if (p_preconditioner == "none") {

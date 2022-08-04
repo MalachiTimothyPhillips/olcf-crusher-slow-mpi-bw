@@ -31,44 +31,6 @@ std::vector<int> determineMGLevels(std::string section, int version)
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
   std::string p_mglevels;
-  if (platform->options.getArgs(optionsPrefix + "MULTIGRID COARSENING", p_mglevels)) {
-    const std::vector<std::string> mgLevelList = serializeString(p_mglevels, ',');
-    for (auto &&s : mgLevelList) {
-      levels.push_back(std::stoi(s));
-    }
-
-    bool invalid = false;
-    invalid |= (levels[0] != N); // top level order must match
-    for (unsigned i = 0U; i < levels.size(); ++i) {
-      invalid |= (levels[i] < 0); // each level must be positive
-      if (i > 0)
-        invalid |= (levels[i] >= levels[i - 1]); // each successive level must be smaller
-    }
-
-    if (invalid) {
-      if (platform->comm.mpiRank == 0)
-        printf("ERROR: Invalid multigrid coarsening!\n");
-      ABORT(EXIT_FAILURE);
-      ;
-    }
-    if (levels.back() > 1) {
-      if (platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
-        // if the coarse level has p > 1 and requires solving the coarsest level,
-        // rather than just smoothing, SEMFEM must be used for the discretization
-        const auto usesSEMFEM =
-            platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE");
-
-        if (!usesSEMFEM) {
-          if (platform->comm.mpiRank == 0) {
-            printf("Error! FEM coarse discretization only supports p=1 for the coarsest level!\n");
-          }
-          ABORT(1);
-        }
-      }
-    }
-
-    return levels;
-  }
   // 1 : use more aggressive coarsening strategy
   if (version == 1) {
     std::map<int, std::vector<int>> mg_level_lookup = {
@@ -114,6 +76,44 @@ std::vector<int> determineMGLevels(std::string section, int version)
     return mg_level_lookup.at(N);
 
     return mg_level_lookup.at(N);
+  }
+  if (platform->options.getArgs(optionsPrefix + "MULTIGRID COARSENING", p_mglevels)) {
+    const std::vector<std::string> mgLevelList = serializeString(p_mglevels, ',');
+    for (auto &&s : mgLevelList) {
+      levels.push_back(std::stoi(s));
+    }
+
+    bool invalid = false;
+    invalid |= (levels[0] != N); // top level order must match
+    for (unsigned i = 0U; i < levels.size(); ++i) {
+      invalid |= (levels[i] < 0); // each level must be positive
+      if (i > 0)
+        invalid |= (levels[i] >= levels[i - 1]); // each successive level must be smaller
+    }
+
+    if (invalid) {
+      if (platform->comm.mpiRank == 0)
+        printf("ERROR: Invalid multigrid coarsening!\n");
+      ABORT(EXIT_FAILURE);
+      ;
+    }
+    if (levels.back() > 1) {
+      if (platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SOLVE", "TRUE")) {
+        // if the coarse level has p > 1 and requires solving the coarsest level,
+        // rather than just smoothing, SEMFEM must be used for the discretization
+        const auto usesSEMFEM =
+            platform->options.compareArgs(optionsPrefix + "MULTIGRID COARSE SEMFEM", "TRUE");
+
+        if (!usesSEMFEM) {
+          if (platform->comm.mpiRank == 0) {
+            printf("Error! FEM coarse discretization only supports p=1 for the coarsest level!\n");
+          }
+          ABORT(1);
+        }
+      }
+    }
+
+    return levels;
   }
   if (platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER", "ASM") ||
       platform->options.compareArgs(optionsPrefix + "MULTIGRID DOWNWARD SMOOTHER", "RAS")) {

@@ -189,6 +189,10 @@ void automaticPreconditioner_t::reinitializePreconditioner()
     level->chebyshevSmoother = currentSolver.smoother;
     level->ChebyshevIterations = currentSolver.chebyOrder;
 
+    // re-initialize betas_opt, betas_fourth due to change in Chebyshev order
+    level->betas_opt = optimalCoeffs(level->ChebyshevIterations);
+    level->betas_fourth = std::vector<pfloat>(level->betas_opt.size(), 1.0);
+
     if (currentSolver.smoother == ChebyshevSmootherType::ASM ||
         currentSolver.smoother == ChebyshevSmootherType::RAS) {
       if (currentSolver.smoother == ChebyshevSmootherType::ASM) {
