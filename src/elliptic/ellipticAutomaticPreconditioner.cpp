@@ -185,8 +185,8 @@ void automaticPreconditioner_t::reinitializePreconditioner()
   dfloat maxMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
 
-  const int nPostSmooth = currentSolver.postSmooth ? 1 : 0;
-  elliptic.precon->parAlmond->options.setArgs("MULTIGRID NUMBER POST SMOOTHINGS", nPostSmoothing);
+  const int nPostSmoothing = currentSolver.usePostSmoothing ? 1 : 0;
+  elliptic.precon->parAlmond->options.setArgs("MULTIGRID NUMBER POST SMOOTHINGS", std::to_string(nPostSmoothing));
 
   // reset eigenvalue multipliers for all levels
   for (auto &&orderAndLevelPair : multigridLevels) {
@@ -196,8 +196,8 @@ void automaticPreconditioner_t::reinitializePreconditioner()
     level->chebyshevSmoother = currentSolver.smoother;
 
     // when omitting post smoothing, can apply higher-order smoother at the same cost/iteration
-    level->ChebyshevIterations = currentSolver.postSmooth ? currentSolver.chebyOrder
-                                                          : 2 * currentSolver.chebyOrder + 1;
+    level->ChebyshevIterations = currentSolver.usePostSmoothing ? currentSolver.chebyOrder
+                                                                : 2 * currentSolver.chebyOrder + 1;
 
     // re-initialize betas_opt, betas_fourth due to change in Chebyshev order
     level->betas_opt = optimalCoeffs(level->ChebyshevIterations);

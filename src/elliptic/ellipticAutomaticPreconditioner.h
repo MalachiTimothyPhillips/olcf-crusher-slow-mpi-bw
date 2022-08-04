@@ -38,7 +38,9 @@ struct solverDescription_t {
     else if (smoother == ChebyshevSmootherType::JACOBI) {
       ss << "Jacobi";
     }
-    ss << "(" << chebyOrder << "),";
+
+    const auto actualChebOrder = usePostSmoothing ? chebyOrder : 2 * chebyOrder + 1;
+    ss << "(" << actualChebOrder << ")";
     ss << ",(";
     for (auto &&i = schedule.rbegin(); i != schedule.rend(); ++i) {
       ss << *i;

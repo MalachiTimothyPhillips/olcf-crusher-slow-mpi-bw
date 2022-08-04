@@ -830,12 +830,11 @@ void parsePreconditioner(const int rank, setupAide &options,
       {"coarse"},
       // auto preconditioner params
       {"auto"},
-      {"maxtrials"},
       {"mindegree"},
       {"maxdegree"},
       {"start"},
       {"frequency"},
-      {"ntrials"},
+      {"nsamples"},
   };
 
   std::string parSection =
@@ -917,16 +916,6 @@ void parsePreconditioner(const int rank, setupAide &options,
         }
         const int value = std::stoi(params[1]);
         options.setArgs(parSection + " AUTO PRECONDITIONER MAX CHEBY ORDER", std::to_string(value));
-      }
-      if (s.find("maxtrials") != std::string::npos) {
-        std::vector<std::string> params = serializeString(s, '=');
-        if (params.size() != 2) {
-          std::ostringstream error;
-          error << "Error: could not parse maxTrials " << s << "!\n";
-          append_error(error.str());
-        }
-        const int value = std::stoi(params[1]);
-        options.setArgs(parSection + " AUTO PRECONDITIONER MAX TRIALS", std::to_string(value));
       }
       if (s.find("nsamples") != std::string::npos) {
         std::vector<std::string> params = serializeString(s, '=');
