@@ -138,6 +138,21 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
     if (platform->comm.mpiRank == 0){
       std::cout << this->to_string() << std::endl;
       std::cout << "Fastest solver : " << fastestSolver.to_string() << "\n";
+      std::cout << "tFastestSolver = " << tFastestSolver << "\n";
+      std::cout << "min/max/avg (s) ";
+      dfloat avgTime = 0.0;
+      dfloat minTime = std::numeric_limits<dfloat>::max();
+      dfloat maxTime = -1.0 * std::numeric_limits<dfloat>::max();
+      int n = 1;
+      auto &times = solverToTime.at(fastestSolver);
+      for (auto&& tSolve : times){
+        minTime = std::min(minTime, tSolve);
+        maxTime = std::max(maxTime, tSolve);
+        // on-line algorithm for computing arithmetic mean
+        avgTime += (tSolve - avgTime)/n;
+        n++;
+      }
+      std::cout << std::setprecision(2) << minTime << "/" << maxTime << "/" << avgTime;
       fflush(stdout);
     }
 

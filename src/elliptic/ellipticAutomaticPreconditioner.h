@@ -116,7 +116,6 @@ private:
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
   int NSamples;
-  ChebyshevSmootherType fastestSmoother;
 
   std::map<int, MGLevel *> multigridLevels;
 
