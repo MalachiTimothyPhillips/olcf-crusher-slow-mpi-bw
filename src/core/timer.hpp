@@ -12,6 +12,7 @@ timer_t(MPI_Comm comm,occa::device device,int ifsync = 0);
 void init(MPI_Comm comm,occa::device device,int ifsync = 0);
 void reset();
 void reset(const std::string tag);
+void resetState(const std::string tag, int restoreCalls, double hRestoreTime, double dRestoreTime);
 void finalize();
 
 void tic(const std::string tag);

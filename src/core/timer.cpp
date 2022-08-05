@@ -156,6 +156,19 @@ void timer_t::toc(const std::string tag)
   it->second.count++;
 }
 
+void timer_t::resetState(const std::string tag, int restoreCalls, double hRestoreTime, double dRestoreTime)
+{
+  auto it = m_.find(tag);
+  if(it == m_.end()) {
+    printf("Error in resetState: Invalid tag name %s\n",tag.c_str()); 
+    MPI_Abort(comm_,1);
+  }
+
+  it->second.hostElapsed  = hRestoreTime;
+  it->second.deviceElapsed = dRestoreTime;
+  it->second.count = restoreCalls;
+}
+
 double timer_t::hostElapsed(const std::string tag)
 {
   auto it = m_.find(tag);

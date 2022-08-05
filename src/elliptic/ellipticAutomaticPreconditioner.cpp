@@ -86,6 +86,18 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
   if(tuneStep(tstep)){
     platform->timer.tic("autoPreconditioner", 1);
 
+    const auto hPreco = platform->timer.hostElapsed(elliptic.name + " preconditioner");
+    const auto dPreco = platform->timer.deviceElapsed(elliptic.name + " preconditioner");
+    const auto cPreco = platform->timer.count(elliptic.name + " preconditioner");
+
+    const auto hSmoother = platform->timer.hostElapsed(elliptic.name + " preconditioner smoother");
+    const auto dSmoother = platform->timer.deviceElapsed(elliptic.name + " preconditioner smoother");
+    const auto cSmoother = platform->timer.count(elliptic.name + " preconditioner smoother");
+
+    const auto hCoarseGrid = platform->timer.hostElapsed("coarseSolve");
+    const auto dCoarseGrid = platform->timer.deviceElapsed("coarseSolve");
+    const auto cCoarseGrid = platform->timer.count("coarseSolve");
+
     this->saveState(o_r, o_x);
 
     // loop over every solver configuration, determining the one that minimizes
@@ -129,11 +141,14 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
       fflush(stdout);
     }
 
+    // adjust timers for preconditioner, pMG smoother, and coarse grid
+    platform->timer.resetState(elliptic.name + " preconditioner", cPreco, hPreco, dPreco);
+    platform->timer.resetState(elliptic.name + " preconditioner smoother", cSmoother, hSmoother, dSmoother);
+    platform->timer.resetState("coarseSolve", cCoarseGrid, hCoarseGrid, dCoarseGrid);
+
     // do final solve with fastest preconditioner
     this->restoreState(o_r, o_x);
     solverFunc(o_r, o_x);
-
-    // TODO: re-adjust timers for # of preconditioner calls, e.g.
 
     platform->timer.toc("autoPreconditioner");
   } else {
