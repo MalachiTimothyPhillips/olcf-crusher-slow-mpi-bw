@@ -102,7 +102,7 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
 
     // loop over every solver configuration, determining the one that minimizes
     // the time to solution
-    solverDescription_t fastestSolver;
+    solverDescription_t fastestSolver = *allSolvers.begin();
     double tFastestSolver = std::numeric_limits<double>::max();
     for(auto&& solver : allSolvers){
       reinitializePreconditioner(solver);
@@ -129,6 +129,13 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
       }
 
       if(tMinSolve < tFastestSolver){
+#if 0
+        if(platform->comm.mpiRank == 0){
+          std::cout << "Found solver = " << solver.to_string() << " to be fastest than previous fastest solver, ";
+          std::cout << fastestSolver.to_string() << "\n";
+          std::cout << "tMin = " << tMinSolve << ", tMinPrev = " << tFastestSolver << "\n";
+        }
+#endif
         tFastestSolver = tMinSolve;
         fastestSolver = solver;
       }
@@ -152,7 +159,7 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
         avgTime += (tSolve - avgTime)/n;
         n++;
       }
-      std::cout << std::setprecision(2) << minTime << "/" << maxTime << "/" << avgTime;
+      std::cout << std::setprecision(2) << minTime << "/" << maxTime << "/" << avgTime << "\n";
       fflush(stdout);
     }
 

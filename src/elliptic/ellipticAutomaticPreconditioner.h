@@ -14,8 +14,6 @@ class MGLevel;
 
 struct solverDescription_t {
 
-  solverDescription_t() {}
-
   std::string to_string() const
   {
     std::ostringstream ss;
