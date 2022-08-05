@@ -148,9 +148,10 @@ void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory 
 
     // do final solve with fastest preconditioner
     this->restoreState(o_r, o_x);
-    solverFunc(o_r, o_x);
 
     platform->timer.toc("autoPreconditioner");
+
+    solverFunc(o_r, o_x);
   } else {
     // solve the step without any tuning
     solverFunc(o_r, o_x);
