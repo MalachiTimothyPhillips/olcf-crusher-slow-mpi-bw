@@ -7,6 +7,7 @@
 #include <iostream>
 #include <array>
 #include <ellipticMultiGrid.h>
+#include <functional>
 class elliptic_t;
 
 class MGLevel;
@@ -95,46 +96,32 @@ struct solverDescription_t {
 };
 
 class automaticPreconditioner_t {
-  static constexpr int NSmoothers{3};
-
 public:
   automaticPreconditioner_t(elliptic_t &m_elliptic);
 
   std::string to_string() const;
 
-  bool apply(int tstep);
-  void measure(bool evaluatePreconditioner);
+  void tune(int tstep, std::function<void(occa::memory & o_r, occa::memory & o_x)> solverFunc, occa::memory & o_r, occa::memory & o_x);
 
+private:
   void saveState(occa::memory & o_r, occa::memory & o_x);
   void restoreState(occa::memory & o_r, occa::memory & o_x);
 
-private:
-  void evaluateCurrentSolver();
-  bool selectSolver();
-  void reinitializePreconditioner();
-  solverDescription_t determineFastestSolver();
+  bool tuneStep(int tstep) const;
+  void reinitializePreconditioner(solverDescription_t solver);
+
   elliptic_t &elliptic;
-  bool activeTuner;
   unsigned long trialFrequency;
   unsigned long autoStart;
   unsigned int minChebyOrder;
   unsigned int maxChebyOrder;
-  unsigned int sampleCounter;
   int NSamples;
   ChebyshevSmootherType fastestSmoother;
 
   std::map<int, MGLevel *> multigridLevels;
 
-  solverDescription_t defaultSolver;
-  solverDescription_t currentSolver;
   std::set<solverDescription_t> allSolvers;
-  std::set<solverDescription_t> visitedSolvers;
-  std::vector<solverDescription_t> remainingSolvers;
-  std::set<ChebyshevSmootherType> visitedSmoothers;
   std::map<solverDescription_t, std::vector<double>> solverToTime;
-  std::map<solverDescription_t, std::vector<double>> solverTimePerIter;
-  std::map<solverDescription_t, double> solverStartTime;
-  std::map<solverDescription_t, double> solverToEval;
   std::map<solverDescription_t, std::vector<unsigned int>> solverToIterations;
 
   // for storing rhs, x information

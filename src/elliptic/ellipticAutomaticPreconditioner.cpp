@@ -9,7 +9,7 @@
 #include <nrs.hpp>
 
 automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
-    : elliptic(m_elliptic), activeTuner(true), sampleCounter(0)
+    : elliptic(m_elliptic)
 {
 
   elliptic.options.getArgs("AUTO PRECONDITIONER START", autoStart);
@@ -41,8 +41,6 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
 
   std::vector<bool> usePostSmooth = {true, false};
 
-  defaultSolver = {true, SmootherType::CHEBYSHEV, ChebyshevSmootherType::ASM, 2, schedules[0]};
-
   for (auto &&schedule : schedules) {
     for(auto && postSmooth : usePostSmooth){
       for (auto &&chebyshevSmoother : allChebyshevSmoothers) {
@@ -50,8 +48,6 @@ automaticPreconditioner_t::automaticPreconditioner_t(elliptic_t &m_elliptic)
           for (unsigned chebyOrder = minChebyOrder; chebyOrder <= maxChebyOrder; ++chebyOrder) {
             allSolvers.insert({postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule});
             solverToTime[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
-                std::vector<double>(NSamples, -1.0);
-            solverTimePerIter[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
                 std::vector<double>(NSamples, -1.0);
             solverToIterations[{postSmooth, chebyshevSmoother, smoother, chebyOrder, schedule}] =
                 std::vector<unsigned int>(NSamples, 0);
@@ -85,115 +81,78 @@ void automaticPreconditioner_t::restoreState(occa::memory & o_r, occa::memory & 
   o_xSave.copyTo(o_x, elliptic.Nfields * elliptic.Ntotal * sizeof(dfloat));
 }
 
-bool automaticPreconditioner_t::apply(int tstep)
+void automaticPreconditioner_t::tune(int tstep, std::function<void(occa::memory & o_r, occa::memory & o_x)> solverFunc, occa::memory & o_r, occa::memory & o_x)
+{
+  if(tuneStep(tstep)){
+    platform->timer.tic("autoPreconditioner", 1);
+
+    this->saveState(o_r, o_x);
+
+    // loop over every solver configuration, determining the one that minimizes
+    // the time to solution
+    solverDescription_t fastestSolver;
+    double tFastestSolver = std::numeric_limits<double>::max();
+    for(auto&& solver : allSolvers){
+      reinitializePreconditioner(solver);
+
+      double tMinSolve = std::numeric_limits<double>::max();
+
+      for(int sample = 0; sample < NSamples; ++sample){
+
+        this->restoreState(o_r, o_x);
+
+        platform->device.finish();
+        MPI_Barrier(platform->comm.mpiComm);
+        const double start = MPI_Wtime();
+
+        solverFunc(o_r, o_x);
+
+        platform->device.finish();
+        double elapsed = MPI_Wtime() - start;
+        MPI_Allreduce(MPI_IN_PLACE, &elapsed, 1, MPI_DOUBLE, MPI_MAX, platform->comm.mpiComm);
+
+        tMinSolve = std::min(tMinSolve, elapsed);
+        solverToTime[solver][sample] = elapsed;
+        solverToIterations[solver][sample] = elliptic.Niter;
+      }
+
+      if(tMinSolve < tFastestSolver){
+        tFastestSolver = tMinSolve;
+        fastestSolver = solver;
+      }
+    }
+
+    reinitializePreconditioner(fastestSolver);
+    if (platform->comm.mpiRank == 0){
+      std::cout << this->to_string() << std::endl;
+      std::cout << "Fastest solver : " << fastestSolver.to_string() << "\n";
+      fflush(stdout);
+    }
+
+    // do final solve with fastest preconditioner
+    this->restoreState(o_r, o_x);
+    solverFunc(o_r, o_x);
+
+    // TODO: re-adjust timers for # of preconditioner calls, e.g.
+
+    platform->timer.toc("autoPreconditioner");
+  } else {
+    // solve the step without any tuning
+    solverFunc(o_r, o_x);
+  }
+}
+
+bool automaticPreconditioner_t::tuneStep(int tstep) const
 {
   bool evaluatePreconditioner = true;
-  evaluatePreconditioner &= activeTuner;
   evaluatePreconditioner &= tstep >= autoStart;
   if (evaluatePreconditioner) {
     evaluatePreconditioner &= (tstep - autoStart) % trialFrequency == 0;
   }
-
-#if 0
-  if(platform->comm.mpiRank == 0){
-    std::cout << "tstep = " << tstep;
-    std::cout << ", autoStart = " << autoStart;
-    std::cout << ", activeTuner = " << std::boolalpha << activeTuner;
-    std::cout << ", trialFrequency = " << trialFrequency;
-    std::cout << ", evaluatePreconditioner = " << std::boolalpha << evaluatePreconditioner << "\n";
-  }
-#endif
-
-  if (evaluatePreconditioner) {
-    evaluatePreconditioner = selectSolver();
-    if (evaluatePreconditioner) {
-      const dfloat currentSolverTime = platform->timer.query("autoPreconditioner", "DEVICE:MAX");
-      solverStartTime[currentSolver] = currentSolverTime;
-      platform->timer.tic("autoPreconditioner", 1);
-    }
-  }
-  return evaluatePreconditioner;
+  return evaluatePreconditioner; 
 }
 
-void automaticPreconditioner_t::measure(bool evaluatePreconditioner)
-{
-  if (evaluatePreconditioner) {
-    platform->timer.toc("autoPreconditioner");
-    const dfloat currentSolverTime = platform->timer.query("autoPreconditioner", "DEVICE:MAX");
-    const dfloat lastRecordedTime = solverStartTime[currentSolver];
-    const dfloat elapsed = currentSolverTime - lastRecordedTime;
-    solverToTime[currentSolver][sampleCounter] = elapsed;
-    solverToIterations[currentSolver][sampleCounter] = elliptic.Niter;
-    solverTimePerIter[currentSolver][sampleCounter] = elapsed / elliptic.Niter;
-  }
-}
-
-bool automaticPreconditioner_t::selectSolver()
-{
-  std::vector<solverDescription_t> remainingSolvers;
-  std::set_difference(allSolvers.begin(),
-                      allSolvers.end(),
-                      visitedSolvers.begin(),
-                      visitedSolvers.end(),
-                      std::inserter(remainingSolvers, remainingSolvers.begin()));
-  if (remainingSolvers.empty()) {
-    if (sampleCounter == (NSamples - 1)) {
-      currentSolver = determineFastestSolver();
-      if (platform->comm.mpiRank == 0 && sampleCounter == (NSamples - 1)) {
-        std::cout << this->to_string() << std::endl;
-        std::cout << "Fastest solver : " << currentSolver.to_string() << "\n";
-        fflush(stdout);
-      }
-    }
-    else {
-      currentSolver = defaultSolver;
-    }
-    reinitializePreconditioner();
-    visitedSolvers.clear();
-
-    if (sampleCounter == (NSamples - 1)) {
-      sampleCounter = 0;
-      return false;
-    }
-    else {
-      sampleCounter++;
-      return true; // <-
-    }
-  }
-  else {
-
-    currentSolver = remainingSolvers.back();
-    visitedSolvers.insert(currentSolver);
-    reinitializePreconditioner();
-  }
-  return true;
-}
-
-solverDescription_t automaticPreconditioner_t::determineFastestSolver()
-{
-  dfloat minSolveTime = std::numeric_limits<dfloat>::max();
-  solverDescription_t minSolver;
-
-  // minimize min solve time
-  for (auto &&solver : visitedSolvers) {
-    const auto &times = solverTimePerIter[solver];
-    const auto &iters = solverToIterations[solver];
-    dfloat solveTime = std::numeric_limits<dfloat>::max();
-    for (auto &&tSolve : times) {
-      solveTime = solveTime < tSolve ? solveTime : tSolve;
-    }
-
-    solverToEval[solver] = solveTime;
-    if (solveTime < minSolveTime) {
-      minSolveTime = solveTime;
-      minSolver = solver;
-    }
-  }
-
-  return minSolver;
-}
-
-void automaticPreconditioner_t::reinitializePreconditioner()
+void automaticPreconditioner_t::reinitializePreconditioner(solverDescription_t solver)
 {
   dfloat minMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", minMultiplier);
@@ -201,33 +160,33 @@ void automaticPreconditioner_t::reinitializePreconditioner()
   dfloat maxMultiplier;
   elliptic.options.getArgs("MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", maxMultiplier);
 
-  const int nPostSmoothing = currentSolver.usePostSmoothing ? 1 : 0;
+  const int nPostSmoothing = solver.usePostSmoothing ? 1 : 0;
   elliptic.precon->parAlmond->options.setArgs("MULTIGRID NUMBER POST SMOOTHINGS", std::to_string(nPostSmoothing));
 
   // reset eigenvalue multipliers for all levels
   for (auto &&orderAndLevelPair : multigridLevels) {
     auto level = orderAndLevelPair.second;
 
-    level->stype = currentSolver.chebyshevSmoother;
-    level->chebyshevSmoother = currentSolver.smoother;
+    level->stype = solver.chebyshevSmoother;
+    level->chebyshevSmoother = solver.smoother;
 
     // when omitting post smoothing, can apply higher-order smoother at the same cost/iteration
-    level->ChebyshevIterations = currentSolver.usePostSmoothing ? currentSolver.chebyOrder
-                                                                : 2 * currentSolver.chebyOrder + 1;
+    level->ChebyshevIterations = solver.usePostSmoothing ? solver.chebyOrder
+                                                                : 2 * solver.chebyOrder + 1;
 
     // re-initialize betas_opt, betas_fourth due to change in Chebyshev order
     level->betas_opt = optimalCoeffs(level->ChebyshevIterations);
     level->betas_fourth = std::vector<pfloat>(level->betas_opt.size(), 1.0);
 
-    if (currentSolver.smoother == ChebyshevSmootherType::ASM ||
-        currentSolver.smoother == ChebyshevSmootherType::RAS) {
-      if (currentSolver.smoother == ChebyshevSmootherType::ASM) {
+    if (solver.smoother == ChebyshevSmootherType::ASM ||
+        solver.smoother == ChebyshevSmootherType::RAS) {
+      if (solver.smoother == ChebyshevSmootherType::ASM) {
         elliptic.options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
         const dfloat rho = level->lambdaMax[0];
         level->lambda1 = maxMultiplier * rho;
         level->lambda0 = minMultiplier * rho;
       }
-      if (currentSolver.smoother == ChebyshevSmootherType::RAS) {
+      if (solver.smoother == ChebyshevSmootherType::RAS) {
         elliptic.options.setArgs("MULTIGRID SMOOTHER", "CHEBYSHEV+RAS");
         const dfloat rho = level->lambdaMax[1];
         level->lambda1 = maxMultiplier * rho;
@@ -242,10 +201,10 @@ void automaticPreconditioner_t::reinitializePreconditioner()
     }
   }
 
-  elliptic.precon->parAlmond->baseLevel = currentSolver.schedule.size() - 1;
+  elliptic.precon->parAlmond->baseLevel = solver.schedule.size() - 1;
   unsigned ctr = 0;
   std::vector<int> orders;
-  for (auto &&it = currentSolver.schedule.rbegin(); it != currentSolver.schedule.rend(); ++it) {
+  for (auto &&it = solver.schedule.rbegin(); it != solver.schedule.rend(); ++it) {
     elliptic.precon->parAlmond->levels[ctr] = this->multigridLevels[*it];
     orders.push_back(*it);
     ctr++;
@@ -276,7 +235,7 @@ std::string automaticPreconditioner_t::to_string() const
 
   auto findLengthCol = [&](auto& solverToColFunc, std::string colHeader){
     auto maxColLength = colHeader.length();
-    for(auto&& solver : visitedSolvers){
+    for(auto&& solver : allSolvers){
       maxColLength = std::max(maxColLength, solverToColFunc(solver).length());
     }
     return maxColLength;
@@ -336,7 +295,7 @@ std::string automaticPreconditioner_t::to_string() const
   };
 
   // find length of line
-  const auto lineLength = printEntry(*visitedSolvers.begin()).length();
+  const auto lineLength = printEntry(*allSolvers.begin()).length();
   const std::string hline(lineLength, '=');
 
   std::ostringstream tableOutput;
@@ -346,7 +305,7 @@ std::string automaticPreconditioner_t::to_string() const
   tableOutput << "| " << std::left << std::setw(colLengths[2]) << timeHeader << " |\n";
   tableOutput << hline << "\n";
 
-  for(auto&& entry : visitedSolvers){
+  for(auto&& entry : allSolvers){
     tableOutput << printEntry(entry) << "\n";
   }
 

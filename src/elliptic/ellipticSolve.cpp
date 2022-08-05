@@ -143,25 +143,7 @@ void ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
   if(options.compareArgs("LINEAR SOLVER STOPPING CRITERION", "RELATIVE")) 
     tol *= elliptic->res0Norm;
 
-  int solvePass = 0;
-  while(autoTunePreconditioner || (solvePass == 0)){
-    const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
-    if (useAutoPreconditioner) {
-      autoTunePreconditioner = elliptic->autoPreconditioner->apply(tstep);
-
-      // save o_r, o_x states only _if_ auto tuning is present and this is the first solve
-      if(autoTunePreconditioner && (solvePass == 0)){
-
-        elliptic->autoPreconditioner->saveState(o_r, o_x);
-
-      } else if (autoTunePreconditioner){ // otherwise, if solvePass > 0, o_r and o_x must be restored
-
-        elliptic->autoPreconditioner->restoreState(o_r, o_x);
-
-      }
-
-    }
-
+  auto solve = [&](occa::memory& o_r, occa::memory o_x){
     if(!options.compareArgs("KRYLOV SOLVER", "NONBLOCKING")) {
       elliptic->resNorm = elliptic->res0Norm;
       if(options.compareArgs("KRYLOV SOLVER", "PCG"))
@@ -176,11 +158,13 @@ void ellipticSolve(elliptic_t *elliptic, occa::memory &o_r, occa::memory &o_x, i
       if(platform->comm.mpiRank == 0) printf("NONBLOCKING Krylov solvers currently not supported!");
       ABORT(EXIT_FAILURE);
     }
+  };
 
-    solvePass++;
-    if (useAutoPreconditioner) {
-      elliptic->autoPreconditioner->measure(autoTunePreconditioner);
-    }
+  const bool useAutoPreconditioner = options.compareArgs("AUTO PRECONDITIONER", "TRUE");
+  if(useAutoPreconditioner){
+    elliptic->autoPreconditioner->tune(tstep, solve, o_r, o_x);
+  } else {
+    solve(o_r, o_x);
   }
 
   if (useProjection) {

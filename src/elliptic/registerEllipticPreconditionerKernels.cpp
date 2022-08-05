@@ -391,14 +391,8 @@ void registerMultiGridKernels(const std::string &section, int poissonEquation) {
   };
 
   if(platform->options.compareArgs(optionsPrefix + "AUTO PRECONDITIONER", "TRUE")){
-    std::cout << "Using preconditioner = auto\n";
     for(int pass = 1; pass <= 2; ++pass){
       std::vector<int> levels = determineMGLevels(section, pass);
-      std::cout << "On pass = " << pass << ", using levels =";
-      for(auto&& l : levels){
-        std::cout << " " << l;
-      }
-      std::cout << "\n";
       registerLevelKernels(levels);
     }
   } else {
