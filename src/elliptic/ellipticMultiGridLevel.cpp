@@ -85,7 +85,7 @@ void MGLevel::smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero)
 
   if (stype == SmootherType::CHEBYSHEV)
     this->smoothChebyshev(o_rhs, o_x, x_is_zero);
-  if (stype == SmootherType::CHEBYSHEV)
+  else if (stype == SmootherType::OPT_FOURTH_CHEBYSHEV || stype == SmootherType::FOURTH_CHEBYSHEV)
     this->smoothFourthKindChebyshev(o_rhs, o_x, x_is_zero);
   else if (stype == SmootherType::SCHWARZ)
     this->smoothSchwarz(o_rhs, o_x, x_is_zero);
