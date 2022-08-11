@@ -147,7 +147,7 @@ public:
   void smoother(occa::memory o_x, occa::memory o_Sx, bool xIsZero);
 
   void smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
-  void smoothOptChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
+  void smoothFourthKindChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothSchwarz (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
 

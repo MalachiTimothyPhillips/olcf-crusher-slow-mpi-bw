@@ -322,7 +322,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
 }
 
-void MGLevel::smoothOptChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
+void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
 {
   pfloat one = 1., mone = -1., zero = 0.0;
 
