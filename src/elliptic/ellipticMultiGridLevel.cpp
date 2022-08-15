@@ -208,7 +208,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   platform->flopCounter->add("MGLevel::smoothChebyshev, N=" + std::to_string(mesh->N), factor * flopCount);
 }
 
-void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
+void MGLevel::smoothFourthKindChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
   const auto ChebyshevDegree = xIsZero ? DownLegChebyshevDegree : UpLegChebyshevDegree;
   auto &betas = xIsZero ? DownLegBetas : UpLegBetas;
@@ -234,7 +234,7 @@ void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, b
   }
   else {
     this->Ax(o_x,o_res);
-    platform->linAlg->paxpby(Nrows, one, o_b, mone, o_res);
+    platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
     flopCount += Nrows;
   }
 
@@ -250,7 +250,7 @@ void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, b
 
     // x_k+1 = x_k + \beta_k d_k
     // r_k+1 = r_k - Ad_k
-    elliptic->updateFourthKindChebyshevKernel(Nrows, this->betas[k - 1], o_Ad, o_d, o_res, o_x);
+    elliptic->updateFourthKindChebyshevKernel(Nrows, betas[k - 1], o_Ad, o_d, o_res, o_x);
 
     this->smoother(o_res, o_Ad, xIsZero);
 
@@ -261,7 +261,7 @@ void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, b
   }
 
   //x_k+1 = x_k + \beta_k d_k
-  elliptic->scaledAddPfloatKernel(Nrows, this->betas.back(), o_d, one, o_x);
+  platform->linAlg->paxpby(Nrows, betas.back(), o_d, one, o_x);
   flopCount += 2 * Nrows;
   ellipticApplyMask(elliptic, o_x, pfloatString);
   const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;

@@ -50,7 +50,7 @@ std::vector<pfloat> optimalCoeffs(int ChebyshevDegree);
 class MGLevel : public parAlmond::multigridLevel
 {
 public:
-  static constexpr int Narnoldi {10};
+  static constexpr hlong Narnoldi {10};
 
   elliptic_t* elliptic;
   mesh_t* mesh;
