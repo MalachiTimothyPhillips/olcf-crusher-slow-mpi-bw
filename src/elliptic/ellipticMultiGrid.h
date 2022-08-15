@@ -129,20 +129,20 @@ public:
           );
 
   void Ax(dfloat* /*x*/, dfloat* /*Ax*/) {}
-  void Ax(occa::memory o_x, occa::memory o_Ax);
+  void Ax(occa::memory o_x, occa::memory o_Ax) final;
 
   void residual(dfloat* /*rhs*/, dfloat* /*x*/, dfloat* /*res*/) {}
-  void residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res);
+  void residual(occa::memory o_rhs, occa::memory o_x, occa::memory o_res) final;
 
   void coarsen(dfloat* /*x*/, dfloat* /*Cx*/) {}
-  void coarsen(occa::memory o_x, occa::memory o_Cx);
+  void coarsen(occa::memory o_x, occa::memory o_Cx) final;
 
   void prolongate(dfloat* /*x*/, dfloat* /*Px*/) {}
-  void prolongate(occa::memory o_x, occa::memory o_Px);
+  void prolongate(occa::memory o_x, occa::memory o_Px) final;
 
   //smoother ops
   void smooth(dfloat* /*rhs*/, dfloat* /*x*/, bool /*x_is_zero*/) {}
-  void smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero);
+  void smooth(occa::memory o_rhs, occa::memory o_x, bool x_is_zero) final;
 
   void smoother(occa::memory o_x, occa::memory o_Sx, bool xIsZero);
 
@@ -153,15 +153,16 @@ public:
 
   void smootherJacobi    (occa::memory &o_r, occa::memory &o_Sr);
 
-  void Report();
+  void Report() final;
 
   void setupSmoother(elliptic_t* base);
   dfloat maxEigSmoothAx();
 
   void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
+
 private:
-  void smoothChebyshevOneIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
   void smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
+  void smoothChebyshevThreeIteration(occa::memory &o_r, occa::memory &o_x, bool xIsZero);
 };
 
 void MGLevelAllocateStorage(MGLevel* level, int k, parAlmond::CycleType ctype);

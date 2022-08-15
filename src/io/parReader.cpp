@@ -1255,7 +1255,7 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE MULTIGRID SMOOTHER", "CHEBYSHEV+ASM");
   options.setArgs("PRESSURE MULTIGRID DOWNWARD SMOOTHER", "ASM");
   options.setArgs("PRESSURE MULTIGRID UPWARD SMOOTHER", "ASM");
-  options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "2");
+  options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "3");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", "0.1");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", "1.1");
   options.setArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS", "1");
