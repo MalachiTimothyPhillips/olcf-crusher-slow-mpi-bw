@@ -13,6 +13,7 @@
 #include "bcMap.hpp"
 #include "nrs.hpp"
 #include <algorithm>
+#include "parseMultigridSchedule.hpp"
 
 #include "amgx.h"
 
@@ -133,6 +134,7 @@ static std::vector<std::string> commonKeys = {
     {"initialGuess"},
     {"preconditioner"},
     {"pMultigridCoarsening"},
+    {"pMGSchedule"},
     {"smootherType"},
     {"coarseSolver"},
     {"semfemSolver"},
@@ -636,17 +638,15 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
   par->extract(parScope, "preconditioner", p_preconditioner);
 
   const std::vector<std::string> validValues = {
-    {"asm"},
-    {"ras"},
-    {"cheby"},
-    {"jac"},
-    {"degree"},
-    {"optimal"},
-    {"fourthkind"},
-    {"mineigenvalueboundfactor"},
-    {"maxeigenvalueboundfactor"},
-    {"numpresmoothing"},
-    {"numpostsmoothing"},
+      {"asm"},
+      {"ras"},
+      {"cheby"},
+      {"jac"},
+      {"degree"},
+      {"optimal"},
+      {"fourthkind"},
+      {"mineigenvalueboundfactor"},
+      {"maxeigenvalueboundfactor"},
   };
 
   {
@@ -672,28 +672,7 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
             append_error(error.str());
           }
           const int value = std::stoi(params[1]);
-          options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE",
-                          std::to_string(value));
-        } else if (s.find("numpresmoothing") != std::string::npos) {
-          std::vector<std::string> params = serializeString(s, '=');
-          if (params.size() != 2) {
-            std::ostringstream error;
-            error << "Error: could not parse numpresmoothing " << s<< "!\n";
-            append_error(error.str());
-          }
-          const int value = std::stoi(params[1]);
-          options.setArgs(parSection + " MULTIGRID NUMBER PRE SMOOTHINGS",
-                          to_string_f(value));
-        } else if (s.find("numpostsmoothing") != std::string::npos) {
-          std::vector<std::string> params = serializeString(s, '=');
-          if (params.size() != 2) {
-            std::ostringstream error;
-            error << "Error: could not parse numpostsmoothing " << s<< "!\n";
-            append_error(error.str());
-          }
-          const int value = std::stoi(params[1]);
-          options.setArgs(parSection + " MULTIGRID NUMBER POST SMOOTHINGS",
-                          to_string_f(value));
+          options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE", std::to_string(value));
         } else if (s.find("mineigenvalueboundfactor") != std::string::npos) {
           std::vector<std::string> params = serializeString(s, '=');
           if (params.size() != 2) {
@@ -1258,8 +1237,6 @@ void setDefaultSettings(setupAide &options, std::string casename, int rank) {
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV DEGREE", "3");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR", "0.1");
   options.setArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR", "1.1");
-  options.setArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS", "1");
-  options.setArgs("PRESSURE MULTIGRID NUMBER POST SMOOTHINGS", "1");
 
   options.setArgs("PRESSURE INITIAL GUESS", "PROJECTION-ACONJ");
   options.setArgs("PRESSURE RESIDUAL PROJECTION VECTORS", "10");
@@ -1802,6 +1779,17 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
       std::string p_mglevels;
       if (par->extract("pressure", "pmultigridcoarsening", p_mglevels))
         options.setArgs("PRESSURE MULTIGRID COARSENING", p_mglevels);
+
+      std::string p_mgschedule;
+      if (par->extract("pressure", "pmgschedule", p_mgschedule)) {
+        options.setArgs("PRESSURE MULTIGRID SCHEDULE", p_mgschedule);
+
+        // validate multigrid schedule
+        auto scheduleMapAndErrors = parseMultigridSchedule(p_mgschedule);
+        if (!scheduleMapAndErrors.second.empty()) {
+          append_error(scheduleMapAndErrors.second);
+        }
+      }
     }
 
     std::string p_solver;

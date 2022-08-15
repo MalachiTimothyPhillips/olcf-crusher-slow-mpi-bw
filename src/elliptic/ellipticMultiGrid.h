@@ -70,7 +70,9 @@ public:
 
   dfloat lambda1, lambda0;
   dfloat maxEig;
-  int ChebyshevDegree;
+
+  int DownLegChebyshevDegree;
+  int UpLegChebyshevDegree;
 
   static size_t smootherResidualBytes;
   static pfloat* smootherResidual;
@@ -109,7 +111,8 @@ public:
 
   bool isCoarse;
 
-  std::vector<pfloat> betas;
+  std::vector<pfloat> UpLegBetas;
+  std::vector<pfloat> DownLegBetas;
 
   //build a single level
   MGLevel(elliptic_t* ellipticBase, int Nc,

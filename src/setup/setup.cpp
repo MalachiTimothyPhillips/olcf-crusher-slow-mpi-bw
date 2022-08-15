@@ -678,6 +678,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                           options.getArgs("VELOCITY RESIDUAL PROJECTION VECTORS"));
     nrs->vOptions.setArgs("RESIDUAL PROJECTION START", options.getArgs("VELOCITY RESIDUAL PROJECTION START"));
     nrs->vOptions.setArgs("MULTIGRID COARSENING", options.getArgs("VELOCITY MULTIGRID COARSENING"));
+    nrs->vOptions.setArgs("MULTIGRID SCHEDULE", options.getArgs("VELOCITY MULTIGRID SCHEDULE"));
     nrs->vOptions.setArgs("MULTIGRID SMOOTHER", options.getArgs("VELOCITY MULTIGRID SMOOTHER"));
     nrs->vOptions.setArgs("MULTIGRID CHEBYSHEV DEGREE",
                           options.getArgs("VELOCITY MULTIGRID CHEBYSHEV DEGREE"));
@@ -704,6 +705,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->mOptions.setArgs("RESIDUAL PROJECTION VECTORS", options.getArgs("MESH RESIDUAL PROJECTION VECTORS"));
     nrs->mOptions.setArgs("RESIDUAL PROJECTION START", options.getArgs("MESH RESIDUAL PROJECTION START"));
     nrs->mOptions.setArgs("MULTIGRID COARSENING", options.getArgs("MESH MULTIGRID COARSENING"));
+    nrs->mOptions.setArgs("MULTIGRID SCHEDULE", options.getArgs("MESH MULTIGRID SCHEDULE"));
     nrs->mOptions.setArgs("MULTIGRID SMOOTHER", options.getArgs("MESH MULTIGRID SMOOTHER"));
     nrs->mOptions.setArgs("MULTIGRID CHEBYSHEV DEGREE", options.getArgs("MESH MULTIGRID CHEBYSHEV DEGREE"));
     nrs->mOptions.setArgs("PARALMOND CYCLE", options.getArgs("MESH PARALMOND CYCLE"));
@@ -877,6 +879,7 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
     nrs->pOptions.setArgs("COARSE SOLVER LOCATION", options.getArgs("PRESSURE COARSE SOLVER LOCATION"));
     nrs->pOptions.setArgs("GALERKIN COARSE OPERATOR", options.getArgs("PRESSURE GALERKIN COARSE OPERATOR"));
     nrs->pOptions.setArgs("MULTIGRID COARSENING", options.getArgs("PRESSURE MULTIGRID COARSENING"));
+    nrs->pOptions.setArgs("MULTIGRID SCHEDULE", options.getArgs("PRESSURE MULTIGRID SCHEDULE"));
     nrs->pOptions.setArgs("MULTIGRID SMOOTHER", options.getArgs("PRESSURE MULTIGRID SMOOTHER"));
     nrs->pOptions.setArgs("MULTIGRID COARSE SOLVE", options.getArgs("PRESSURE MULTIGRID COARSE SOLVE"));
     nrs->pOptions.setArgs("MULTIGRID SEMFEM", options.getArgs("PRESSURE MULTIGRID SEMFEM"));
@@ -902,10 +905,6 @@ void nrsSetup(MPI_Comm comm, setupAide &options, nrs_t *nrs)
                           options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR"));
     nrs->pOptions.setArgs("MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR",
                           options.getArgs("PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR"));
-    nrs->pOptions.setArgs("MULTIGRID NUMBER PRE SMOOTHINGS",
-                          options.getArgs("PRESSURE MULTIGRID NUMBER PRE SMOOTHINGS"));
-    nrs->pOptions.setArgs("MULTIGRID NUMBER POST SMOOTHINGS",
-                          options.getArgs("PRESSURE MULTIGRID NUMBER POST SMOOTHINGS"));
 
     nrs->pSolver = new elliptic_t();
     nrs->pSolver->name = "pressure";

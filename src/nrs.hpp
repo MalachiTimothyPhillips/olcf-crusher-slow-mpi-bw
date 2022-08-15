@@ -180,14 +180,14 @@ struct nrs_t {
 };
 
 // std::to_string might be not accurate enough
-static std::string to_string_f(double a)
+std::string to_string_f(double a)
 {
   std::stringstream s;
   s << std::scientific << a;
   return s.str();
 }
 
-static std::vector<std::string> serializeString(const std::string sin, char dlim)
+std::vector<std::string> serializeString(const std::string sin, char dlim)
 {
   std::vector<std::string> slist;
   std::string s(sin);

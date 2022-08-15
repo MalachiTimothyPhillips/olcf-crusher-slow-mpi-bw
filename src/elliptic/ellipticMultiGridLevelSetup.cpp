@@ -27,6 +27,7 @@
 #include "elliptic.h"
 #include "platform.hpp"
 #include "linAlg.hpp"
+#include "parseMultigridSchedule.hpp"
 
 size_t MGLevel::smootherResidualBytes;
 pfloat* MGLevel::smootherResidual;
@@ -107,11 +108,15 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       stype = SmootherType::CHEBYSHEV;
 
       if(isCoarse) {
-        ChebyshevDegree = 8;
-        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree);
+        UpLegChebyshevDegree = 8;
+        DownLegChebyshevDegree = 8;
+        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", UpLegChebyshevDegree);
+        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", DownLegChebyshevDegree);
       } else {
-        ChebyshevDegree = 2;
-        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree);
+        UpLegChebyshevDegree = 2;
+        DownLegChebyshevDegree = 2;
+        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", UpLegChebyshevDegree);
+        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", DownLegChebyshevDegree);
       }
 
       //estimate the max eigenvalue of S*A
@@ -140,8 +145,10 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
     if (options.compareArgs("MULTIGRID SMOOTHER","CHEBYSHEV")) {
       stype = SmootherType::CHEBYSHEV;
 
-      if (!options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree))
-        ChebyshevDegree = 3;
+      UpLegChebyshevDegree = 3;
+      DownLegChebyshevDegree = 3;
+      options.getArgs("MULTIGRID CHEBYSHEV DEGREE", UpLegChebyshevDegree);
+      options.getArgs("MULTIGRID CHEBYSHEV DEGREE", DownLegChebyshevDegree);
 
       //estimate the max eigenvalue of S*A
       dfloat rho = this->maxEigSmoothAx();
@@ -152,14 +159,22 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
     }
   }
 
+  std::string schedule;
+  if (options.getArgs("MULTIGRID SCHEDULE", schedule)) {
+    auto scheduleAndError = parseMultigridSchedule(schedule);
+    UpLegChebyshevDegree = scheduleAndError.first[{degree, true}];
+    DownLegChebyshevDegree = scheduleAndError.first[{degree, false}];
+  }
+
   if(options.compareArgs("MULTIGRID SMOOTHER", "OPTIMAL")){
-    betas = optimalCoeffs(ChebyshevDegree);
+    UpLegBetas = optimalCoeffs(UpLegChebyshevDegree);
+    DownLegBetas = optimalCoeffs(DownLegChebyshevDegree);
     stype = SmootherType::OPT_FOURTH_CHEBYSHEV;
   }
   if(options.compareArgs("MULTIGRID SMOOTHER", "FOURTHKIND")){
     // nominally, same as above, but beta_i = 1 for all i
-    betas = optimalCoeffs(ChebyshevDegree);
-    std::fill(betas.begin(), betas.end(), 1.0);
+    UpLegBetas = std::vector<pfloat>(UpLegChebyshevDegree, 1.0);
+    DownLegBetas = std::vector<pfloat>(DownLegChebyshevDegree, 1.0);
     stype = SmootherType::FOURTH_CHEBYSHEV;
   }
 }

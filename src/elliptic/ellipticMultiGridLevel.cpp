@@ -143,6 +143,8 @@ void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
+  const auto ChebyshevDegree = xIsZero ? DownLegChebyshevDegree : UpLegChebyshevDegree;
+
   // p_0(0) = I -> no-op smoothing
   if (ChebyshevDegree == 0)
     return;
@@ -208,6 +210,9 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 
 void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
 {
+  const auto ChebyshevDegree = xIsZero ? DownLegChebyshevDegree : UpLegChebyshevDegree;
+  auto &betas = xIsZero ? DownLegBetas : UpLegBetas;
+
   // p_0(0) = I -> no-op smoothing
   if (ChebyshevDegree == 0)
     return;
