@@ -107,11 +107,11 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
       stype = SmootherType::CHEBYSHEV;
 
       if(isCoarse) {
-        ChebyshevIterations = 8;
-        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations);
+        ChebyshevDegree = 8;
+        options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree);
       } else {
-        ChebyshevIterations = 2;
-        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations);
+        ChebyshevDegree = 2;
+        options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree);
       }
 
       //estimate the max eigenvalue of S*A
@@ -140,8 +140,8 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
     if (options.compareArgs("MULTIGRID SMOOTHER","CHEBYSHEV")) {
       stype = SmootherType::CHEBYSHEV;
 
-      if (!options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevIterations))
-        ChebyshevIterations = 2; //default to degree 2
+      if (!options.getArgs("MULTIGRID CHEBYSHEV DEGREE", ChebyshevDegree))
+        ChebyshevDegree = 3;
 
       //estimate the max eigenvalue of S*A
       dfloat rho = this->maxEigSmoothAx();
@@ -153,12 +153,12 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
   }
 
   if(options.compareArgs("MULTIGRID SMOOTHER", "OPTIMAL")){
-    betas = optimalCoeffs(ChebyshevIterations);
+    betas = optimalCoeffs(ChebyshevDegree);
     stype = SmootherType::OPT_FOURTH_CHEBYSHEV;
   }
   if(options.compareArgs("MULTIGRID SMOOTHER", "FOURTHKIND")){
     // nominally, same as above, but beta_i = 1 for all i
-    betas = optimalCoeffs(ChebyshevIterations);
+    betas = optimalCoeffs(ChebyshevDegree);
     std::fill(betas.begin(), betas.end(), 1.0);
     stype = SmootherType::FOURTH_CHEBYSHEV;
   }

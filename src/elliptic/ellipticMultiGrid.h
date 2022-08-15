@@ -45,8 +45,7 @@ enum class SecondarySmootherType
   SCHWARZ,
 };
 
-std::vector<pfloat>
-optimalCoeffs(int ChebyshevIterations);
+std::vector<pfloat> optimalCoeffs(int ChebyshevDegree);
 
 class MGLevel : public parAlmond::multigridLevel
 {
@@ -71,7 +70,7 @@ public:
 
   dfloat lambda1, lambda0;
   dfloat maxEig;
-  int ChebyshevIterations;
+  int ChebyshevDegree;
 
   static size_t smootherResidualBytes;
   static pfloat* smootherResidual;

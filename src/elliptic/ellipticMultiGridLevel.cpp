@@ -249,14 +249,14 @@ void MGLevel::smoothChebyshevThreeIteration(occa::memory &o_r, occa::memory &o_x
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
   // p_0(0) = I -> no-op smoothing
-  if (ChebyshevIterations == 0)
+  if (ChebyshevDegree == 0)
     return;
 
-  if (ChebyshevIterations == 2) {
+  if (ChebyshevDegree == 2) {
     smoothChebyshevTwoIteration(o_r,o_x,xIsZero);
     return;
   }
-  if (ChebyshevIterations == 3) {
+  if (ChebyshevDegree == 3) {
     smoothChebyshevThreeIteration(o_r, o_x, xIsZero);
     return;
   }
@@ -294,7 +294,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
     flopCount += Nrows;
   }
 
-  for (int k = 0; k < (ChebyshevIterations - 1); k++) {
+  for (int k = 0; k < (ChebyshevDegree - 1); k++) {
     //x_k+1 = x_k + d_k
     if (xIsZero && (k == 0)) {
       platform->linAlg->paxpby(Nrows, one, o_d, zero, o_x);
@@ -330,7 +330,7 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, bool xIsZero)
 {
   // p_0(0) = I -> no-op smoothing
-  if (ChebyshevIterations == 0)
+  if (ChebyshevDegree == 0)
     return;
 
   pfloat one = 1., mone = -1., zero = 0.0;
@@ -365,7 +365,7 @@ void MGLevel::smoothFourthKindChebyshev (occa::memory &o_b, occa::memory &o_x, b
     flopCount += Nrows;
   }
 
-  for (int k = 0; k < (ChebyshevIterations - 1); k++) {
+  for (int k = 0; k < (ChebyshevDegree - 1); k++) {
     //x_k+1 = x_k + \beta_k d_k
     if (xIsZero && (k == 0)) {
       elliptic->scaledAddPfloatKernel(Nrows, this->betas.at(k), o_z, zero, o_x);
