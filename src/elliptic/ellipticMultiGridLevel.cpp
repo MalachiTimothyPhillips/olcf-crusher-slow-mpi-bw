@@ -140,111 +140,6 @@ void MGLevel::smoothJacobi (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
   const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
   platform->flopCounter->add("MGLevel::smoothJacobi, N=" + std::to_string(mesh->N), factor * flopCount);
 }
-void MGLevel::smoothChebyshevTwoIteration(occa::memory &o_r, occa::memory &o_x, bool xIsZero)
-{
-  const pfloat theta = 0.5 * (lambda1 + lambda0);
-  const pfloat delta = 0.5 * (lambda1 - lambda0);
-  const pfloat invTheta = 1.0 / theta;
-  const pfloat sigma = theta / delta;
-  pfloat rho_n = 1. / sigma;
-  pfloat rho_np1;
-
-  pfloat one = 1., mone = -1., zero = 0.0;
-
-  occa::memory o_res = o_smootherResidual;
-  occa::memory o_Ad  = o_smootherResidual2;
-  occa::memory o_d   = o_smootherUpdate;
-
-  double flopCount = 0.0;
-
-  if(xIsZero) { //skip the Ax if x is zero
-    //res = Sr
-    this->smoother(o_r, o_res, xIsZero);
-    elliptic->updateSmoothedSolutionVecKernel(Nrows, invTheta, o_res, one, o_d, zero, o_x);
-    flopCount += 4 * Nrows;
-  } else {
-    //res = S(r-Ax)
-    this->Ax(o_x,o_res);
-    platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
-    this->smoother(o_res, o_res, xIsZero);
-    elliptic->updateSmoothedSolutionVecKernel(Nrows, invTheta, o_res, one, o_d, one, o_x);
-
-    flopCount += 7 * Nrows;
-  }
-
-  //r_k+1 = r_k - SAd_k
-  this->Ax(o_d,o_Ad);
-  this->smoother(o_Ad, o_Ad, xIsZero);
-  rho_np1 = 1.0 / (2. * sigma - rho_n);
-  pfloat rhoDivDelta = 2.0 * rho_np1 / delta;
-  elliptic->updateChebyshevSolutionVecKernel(Nrows, rhoDivDelta, rho_np1, rho_n, o_Ad, o_res, o_d, o_x);
-  ellipticApplyMask(elliptic, o_x, pfloatString);
-
-  flopCount += 6 * Nrows;
-
-  auto mesh = elliptic->mesh;
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothChebyshevOneIteration, N=" + std::to_string(mesh->N),
-                             factor * flopCount);
-}
-void MGLevel::smoothChebyshevThreeIteration(occa::memory &o_r, occa::memory &o_x, bool xIsZero)
-{
-  const pfloat theta = 0.5 * (lambda1 + lambda0);
-  const pfloat delta = 0.5 * (lambda1 - lambda0);
-  const pfloat invTheta = 1.0 / theta;
-  const pfloat sigma = theta / delta;
-  pfloat rho_n = 1. / sigma;
-  pfloat rho_np1;
-
-  pfloat one = 1., mone = -1., zero = 0.0;
-
-  occa::memory o_res = o_smootherResidual;
-  occa::memory o_Ad  = o_smootherResidual2;
-  occa::memory o_d   = o_smootherUpdate;
-
-  double flopCount = 0.0;
-
-  if(xIsZero) { //skip the Ax if x is zero
-    //res = Sr
-    this->smoother(o_r, o_res, xIsZero);
-
-    elliptic->updateSmoothedSolutionVecKernel(Nrows, invTheta, o_res, one, o_d, zero, o_x);
-    flopCount += 4 * Nrows;
-  } else {
-    //res = S(r-Ax)
-    this->Ax(o_x,o_res);
-    platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
-    this->smoother(o_res, o_res, xIsZero);
-
-    elliptic->updateSmoothedSolutionVecKernel(Nrows, invTheta, o_res, one, o_d, one, o_x);
-    flopCount += 7 * Nrows;
-  }
-
-
-  //r_k+1 = r_k - SAd_k
-  this->Ax(o_d,o_Ad);
-  this->smoother(o_Ad, o_Ad, xIsZero);
-  rho_np1 = 1.0 / (2. * sigma - rho_n);
-  pfloat rhoDivDelta = 2.0 * rho_np1 / delta;
-
-  elliptic->updateIntermediateSolutionVecKernel(Nrows, rhoDivDelta, rho_n, rho_np1, o_Ad, o_res, o_d, o_x);
-  flopCount += 6 * Nrows;
-
-  rho_n = rho_np1;
-  //r_k+1 = r_k - SAd_k
-  this->Ax(o_d,o_Ad);
-  this->smoother(o_Ad, o_Ad, xIsZero);
-  rho_np1 = 1.0 / (2. * sigma - rho_n);
-  rhoDivDelta = 2.0 * rho_np1 / delta;
-
-  elliptic->updateIntermediateSolutionVecKernel(Nrows, rhoDivDelta, rho_n, rho_np1, o_Ad, o_res, o_d, o_x);
-  flopCount += 6 * Nrows;
-
-  ellipticApplyMask(elliptic, o_x, pfloatString);
-  const double factor = std::is_same<pfloat, float>::value ? 0.5 : 1.0;
-  platform->flopCounter->add("MGLevel::smoothChebyshevTwoIteration, N=" + std::to_string(mesh->N),
-                             factor * flopCount);
-}
 
 void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZero)
 {
@@ -252,14 +147,6 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
   if (ChebyshevDegree == 0)
     return;
 
-  if (ChebyshevDegree == 2) {
-    smoothChebyshevTwoIteration(o_r,o_x,xIsZero);
-    return;
-  }
-  if (ChebyshevDegree == 3) {
-    smoothChebyshevThreeIteration(o_r, o_x, xIsZero);
-    return;
-  }
   const pfloat theta = 0.5 * (lambda1 + lambda0);
   const pfloat delta = 0.5 * (lambda1 - lambda0);
   const pfloat invTheta = 1.0 / theta;
@@ -275,49 +162,41 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
 
   double flopCount = 0.0;
 
-  if(xIsZero) { //skip the Ax if x is zero
-    //res = Sr
-    this->smoother(o_r, o_res, xIsZero);
-
-    //d = invTheta*res
-    platform->linAlg->paxpby(Nrows, invTheta, o_res, zero, o_d);
-    flopCount += Nrows;
-  } else {
-    //res = S(r-Ax)
-    this->Ax(o_x,o_res);
-    platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
-    this->smoother(o_res, o_res, xIsZero);
-    flopCount += 2 * Nrows;
-
-    //d = invTheta*res
-    platform->linAlg->paxpby(Nrows, invTheta, o_res, zero, o_d);
-    flopCount += Nrows;
+  if (xIsZero) {
+    platform->linAlg->pfill(Nrows, zero, o_x);
   }
 
-  for (int k = 0; k < (ChebyshevDegree - 1); k++) {
-    //x_k+1 = x_k + d_k
-    if (xIsZero && (k == 0)) {
-      platform->linAlg->paxpby(Nrows, one, o_d, zero, o_x);
-    }
-    else {
-      platform->linAlg->paxpby(Nrows, one, o_d, one, o_x);
-      flopCount += 1 * Nrows;
-    }
+  // res = S(r-Ax)
+  if (!xIsZero) {
+    this->Ax(o_x,o_res);
+    platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
+    flopCount += 2 * Nrows;
+  }
+  this->smoother(o_res, o_res, xIsZero);
 
-    //r_k+1 = r_k - SAd_k
+  // d = invTheta*res
+  platform->linAlg->paxpby(Nrows, invTheta, o_res, zero, o_d);
+  flopCount += Nrows;
+
+  for (int k = 1; k < ChebyshevDegree; k++) {
+
+    // SAd_k
     this->Ax(o_d,o_Ad);
     this->smoother(o_Ad, o_Ad, xIsZero);
-    platform->linAlg->paxpby(Nrows, mone, o_Ad, one, o_res);
-    flopCount += Nrows;
 
-    rho_np1 = 1.0 / (2. * sigma - rho_n);
-    pfloat rhoDivDelta = 2.0 * rho_np1 / delta;
+    // x_k+1 = x_k + d_k
+    // r_k+1 = r_k - SAd_k
+    // d_k+1 = (rho_k+1*rho_k)*d_k  + (2*rho_k+1/delta)*r_k+1
 
-    //d_k+1 = rho_k+1*rho_k*d_k  + 2*rho_k+1*r_k+1/delta
-    platform->linAlg->paxpby(Nrows, rhoDivDelta, o_res, rho_np1 * rho_n, o_d);
-    flopCount += 4 * Nrows;
+    const pfloat rhoSave = rho_n;
+    rho_n = 1.0 / (2.0 * sigma - rho_n);
 
-    rho_n = rho_np1;
+    const pfloat rCoeff = 2.0 * rho_n / delta;
+    const pfloat dCoeff = rho_n * rhoSave;
+
+    elliptic->updateChebyshevKernel(Nrows, dCoeff, rCoeff, o_Ad, o_d, o_res, o_x);
+
+    flopCount += 5 * Nrows;
   }
   //x_k+1 = x_k + d_k
   platform->linAlg->paxpby(Nrows, one, o_d, one, o_x);

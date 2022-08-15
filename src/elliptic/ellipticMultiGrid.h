@@ -157,11 +157,7 @@ public:
   void setupSmoother(elliptic_t* base);
   dfloat maxEigSmoothAx();
 
-  void buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc);
-
-private:
-  void smoothChebyshevTwoIteration (occa::memory &o_r, occa::memory &o_x, bool xIsZero);
-  void smoothChebyshevThreeIteration(occa::memory &o_r, occa::memory &o_x, bool xIsZero);
+  void buildCoarsenerQuadHex(mesh_t **meshLevels, int Nf, int Nc);
 };
 
 void MGLevelAllocateStorage(MGLevel* level, int k, parAlmond::CycleType ctype);

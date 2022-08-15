@@ -132,20 +132,7 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
         pfloatKernelInfo,
         orderSuffix + "pfloat");
 
-    kernelName = "updateSmoothedSolutionVec";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-    kernelName = "updateChebyshevSolutionVec";
-    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
-    platform->kernels.add(kernelName + orderSuffix,
-        fileName,
-        kernelInfo,
-        orderSuffix);
-
-    kernelName = "updateIntermediateSolutionVec";
+    kernelName = "updateChebyshev";
     fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
     platform->kernels.add(kernelName + orderSuffix,
         fileName,
