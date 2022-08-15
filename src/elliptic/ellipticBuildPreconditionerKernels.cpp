@@ -50,6 +50,9 @@ void ellipticBuildPreconditionerKernels(elliptic_t* elliptic)
     kernelName = "updateChebyshev";
     elliptic->updateChebyshevKernel = platform->kernels.get(kernelName + orderSuffix);
 
+    kernelName = "updateFourthKindChebyshev";
+    elliptic->updateFourthKindChebyshevKernel = platform->kernels.get(kernelName + orderSuffix);
+
     kernelName = "ellipticBlockBuildDiagonalHex3D";
     const std::string poissonPrefix = elliptic->poisson ? "poisson-" : "";
     elliptic->ellipticBlockBuildDiagonalKernel =

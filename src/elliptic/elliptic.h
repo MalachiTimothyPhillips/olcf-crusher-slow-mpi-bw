@@ -149,6 +149,9 @@ struct elliptic_t
   // update for 1st Kind Chebyshev iteration
   occa::kernel updateChebyshevKernel;
 
+  // fourth kind Chebyshev iteration
+  occa::kernel updateFourthKindChebyshevKernel;
+
   occa::kernel updatePGMRESSolutionKernel;
   occa::kernel fusedResidualAndNormKernel;
 

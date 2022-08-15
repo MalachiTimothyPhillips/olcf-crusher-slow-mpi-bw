@@ -139,6 +139,10 @@ void registerCommonMGPreconditionerKernels(int N, occa::properties kernelInfo, i
         kernelInfo,
         orderSuffix);
 
+    kernelName = "updateFourthKindChebyshev";
+    fileName = installDir + "/okl/elliptic/" + kernelName + ".okl";
+    platform->kernels.add(kernelName + orderSuffix, fileName, kernelInfo, orderSuffix);
+
     occa::properties buildDiagInfo = kernelInfo;
     if(poissonEquation) buildDiagInfo["defines/p_poisson"] = 1;
     const std::string poissonPrefix = poissonEquation ? "poisson-" : "";
