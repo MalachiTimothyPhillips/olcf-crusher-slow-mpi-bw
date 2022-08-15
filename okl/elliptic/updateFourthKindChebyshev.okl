@@ -2,7 +2,7 @@
 // compute:
 // x_k+1 = x_k + \beta d_k
 // r_k+1 = r_k - Ad_k
-@kernel void updateChebyshev(const dlong N,
+@kernel void updateFourthKindChebyshev(const dlong N,
                       const pfloat beta,
                       @restrict const pfloat * Ad,
                       @restrict const pfloat * d,
