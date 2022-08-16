@@ -512,11 +512,6 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
   platform->linAlg->fillKernel(cds->fieldOffsetSum, 0.0, cds->o_FS);
   makeq(nrs, time);
 
-  // TODO: how to overlap without requiring an allocation?
-  if(userLocalPointSource){
-    userLocalPointSource(nrs, cds->o_S, cds->o_FS);
-  }
-
   auto applyOgsOperation = [&](auto ogsFunc)
   {
     dlong startId, endId;
@@ -530,6 +525,14 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
   };
 
   applyOgsOperation(oogs::start);
+
+  // TODO: how to overlap without requiring an allocation?
+  if (userLocalPointSource) {
+    // userLocalPointSource(nrs, cds->o_S, cds->o_FS);
+    auto o_ptSource = cds->o_FS + cds->fieldOffsetSum * sizeof(dfloat);
+    userLocalPointSource(nrs, cds->o_S, o_ptSource);
+  }
+
   applyOgsOperation(oogs::finish);
 
   // weight by invLM
@@ -550,6 +553,9 @@ void cvodeSolver_t::defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, oc
     platform->linAlg->axmy(mesh->Nlocal, 1.0, mesh->o_invLMM, o_FS_i);
 
   }
+
+  // TODO: add contribution from user local point source
+  // o_FS += o_ptSource;
 
   if(platform->options.compareArgs("LOWMACH", "TRUE")){
     lowMach::cvodeArguments_t args{this->coeffBDF, this->g0, this->dtCvode[0]};
