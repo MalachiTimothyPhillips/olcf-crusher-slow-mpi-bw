@@ -159,9 +159,9 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
     }
   }
 
-  std::string schedule;
-  if (options.getArgs("MULTIGRID SCHEDULE", schedule)) {
-    auto scheduleAndError = parseMultigridSchedule(schedule);
+  std::string schedule = options.getArgs("MULTIGRID SCHEDULE");
+  if (!schedule.empty()) {
+    auto scheduleAndError = parseMultigridSchedule(schedule, options);
     UpLegChebyshevDegree = scheduleAndError.first[{degree, true}];
     DownLegChebyshevDegree = scheduleAndError.first[{degree, false}];
   }
@@ -221,9 +221,10 @@ void MGLevel::Report()
     }
   }
 
-  if(platform->comm.mpiRank == 0){
-    if (options.getArgs("MULTIGRID SCHEDULE", schedule)) {
-      auto scheduleAndError = parseMultigridSchedule(schedule);
+  if(platform->comm.mpiRank == 0 && isCoarse){
+    std::string pmgschedule = options.getArgs("MULTIGRID SCHEDULE");
+    if(!pmgschedule.empty()){
+      auto scheduleAndError = parseMultigridSchedule(pmgschedule, options);
       auto schedule = scheduleAndError.first;
       std::cout << "Using schedule:\n";
       std::cout << "\tDown Leg:\n";

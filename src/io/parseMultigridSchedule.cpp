@@ -5,11 +5,13 @@
 #include <limits>
 
 std::pair<std::map<std::pair<int, bool>, int>, std::string>
-parseMultigridSchedule(const std::string &schedule)
+parseMultigridSchedule(const std::string &schedule, setupAide& options)
 {
   std::string errorString;
   std::map<std::pair<int, bool>, int> scheduleMap;
   auto entries = serializeString(schedule, ',');
+
+  std::vector<int> levels;
 
   const auto INVALID = -std::numeric_limits<int>::max();
   int prevOrder = std::numeric_limits<int>::max();
@@ -17,29 +19,35 @@ parseMultigridSchedule(const std::string &schedule)
   bool downLeg = true;
 
   for (auto &&entry : entries) {
+    //std::cout << "entry = " << entry << "\n";
     auto tokens = serializeString(entry, '+');
 
     int order = INVALID;
     int degree = INVALID;
     for (auto &&token : tokens) {
+      //std::cout << "token = " << token << "\n";
       if (token.find("p") != std::string::npos) {
-        order = std::stoi(serializeString(entry, '=').at(1));
+        order = std::stoi(serializeString(token, '=').at(1));
         minOrder = std::min(minOrder, order);
 
         if (order > prevOrder) {
           downLeg = false;
         }
+
+        if(downLeg) levels.push_back(order);
+        
         prevOrder = order;
       }
       else if (token.find("degree") != std::string::npos) {
-        degree = std::stoi(serializeString(entry, '=').at(1));
+        degree = std::stoi(serializeString(token, '=').at(1));
+        //std::cout << "degree = " << degree << "\n";
       }
       else {
         errorString += "ERROR: Unknown token '" + token + "' in schedule '" + schedule + "'!\n";
       }
     }
 
-    if (order == -std::numeric_limits<int>::max()) {
+    if (order == INVALID) {
       errorString += "ERROR: Order not specified in " + entry + "\n";
     }
 
@@ -50,11 +58,16 @@ parseMultigridSchedule(const std::string &schedule)
   std::set<int> downLegOrders;
   std::set<int> upLegOrders;
   for (auto &&entry : scheduleMap) {
+    const auto order = entry.first.first;
     if (entry.first.second) {
-      downLegOrders.insert(entry.first.first);
+      if(order > minOrder){
+        downLegOrders.insert(order);
+      }
     }
     else {
-      upLegOrders.insert(entry.first.first);
+      if(order > minOrder){
+        upLegOrders.insert(order);
+      }
     }
   }
 
@@ -69,6 +82,31 @@ parseMultigridSchedule(const std::string &schedule)
     }
     if (entry.second == INVALID) {
       errorString += "ERROR: Degree not specified for order " + std::to_string(entry.first.first) + "!\n";
+    }
+  }
+
+  // all levels are positive
+  for(auto&& level : levels){
+    if(level < 1){
+      errorString += "ERROR: encountered level = " + std::to_string(level) + " < 1!\n";
+    }
+  }
+
+  // top level order must match order of simulation
+  int N;
+  options.getArgs("POLYNOMIAL DEGREE", N);
+  if(N != levels.front()){
+    errorString += "ERROR: Top degree " + std::to_string(levels.front())
+      + " does not match polynomial degree " + std::to_string(N) + "!\n";
+  }
+
+  // each successive level must be smaller
+  for (unsigned i = 0U; i < levels.size(); ++i) {
+    if (i > 0){
+      if(levels[i] >= levels[i - 1]){
+        errorString += "ERROR: order[i] = " + std::to_string(levels[i]) + " >= order[i-1] = " + std::to_string(levels[i-1]) + "!\n";
+        errorString += "\tEach level in the downward leg of the V-cycle must have order less than the previous level!\n";
+      }
     }
   }
 

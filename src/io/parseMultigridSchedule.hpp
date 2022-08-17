@@ -5,7 +5,9 @@
 #include <vector>
 #include <map>
 
+class setupAide;
+
 std::pair<std::map<std::pair<int, bool>, int>, std::string>
-parseMultigridSchedule(const std::string &schedule);
+parseMultigridSchedule(const std::string &schedule, setupAide& options);
 
 #endif

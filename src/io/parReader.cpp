@@ -1782,10 +1782,11 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
 
       std::string p_mgschedule;
       if (par->extract("pressure", "pmgschedule", p_mgschedule)) {
+        std::cout << "p_mgschedule = " << p_mgschedule << "\n";
         options.setArgs("PRESSURE MULTIGRID SCHEDULE", p_mgschedule);
 
         // validate multigrid schedule
-        auto scheduleMapAndErrors = parseMultigridSchedule(p_mgschedule);
+        auto scheduleMapAndErrors = parseMultigridSchedule(p_mgschedule, options);
         if (!scheduleMapAndErrors.second.empty()) {
           append_error(scheduleMapAndErrors.second);
         }
