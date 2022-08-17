@@ -94,6 +94,20 @@ void append_value_error(Printable message)
 namespace
 {
 
+static std::string parseValueForKey(std::string token, std::string key){
+  if (token.find(key) != std::string::npos) {
+    std::vector<std::string> params = serializeString(token, '=');
+    if (params.size() != 2) {
+      std::ostringstream error;
+      error << "Error: could not parse " << key << " " << token << "!\n";
+      append_error(error.str());
+    }
+    return params[1];
+  }
+
+  return "";
+}
+
 static bool enforceLowerCase = false;
 
 static std::vector<std::string> nothing = {};
@@ -397,25 +411,17 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini *par)
     for(std::string s : list)
     {
       checkValidity(rank, validValues, s);
-      if(s.find("meanvelocity") == 0){
-        if(flowRateSet) issueError = true;
-        flowRateSet = true;
+
+      const auto meanVelocityStr = parseValueForKey(s, "meanvelocity");
+      if(!meanVelocityStr.empty()){
+        options.setArgs("FLOW RATE", meanVelocityStr);
         options.setArgs("CONSTANT FLOW RATE TYPE", "BULK");
-        std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        const dfloat value = std::stod(items[1]);
-        options.setArgs("FLOW RATE", to_string_f(value));
       }
 
-      if(s.find("meanvolumetricflow") == 0)
-      {
-        if(flowRateSet) issueError = true;
-        flowRateSet = true;
+      const auto meanVolumetricFlowStr = parseValueForKey(s, "meanvolumetricflow");
+      if(!meanVolumetricFlowStr.empty()){
+        options.setArgs("FLOW RATE", meanVolumetricFlowStr);
         options.setArgs("CONSTANT FLOW RATE TYPE", "VOLUMETRIC");
-        std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        const dfloat value = std::stod(items[1]);
-        options.setArgs("FLOW RATE", to_string_f(value));
       }
 
       if(s.find("bid") == 0)
@@ -433,6 +439,7 @@ void parseConstFlowRate(const int rank, setupAide& options, inipp::Ini *par)
 
         append_error("Specifying a constant flow direction with a pair of BIDs is currently not supported.\n");
       }
+
       if(s.find("direction") == 0)
       {
         if(flowDirectionSet) issueError = true;
@@ -664,36 +671,22 @@ void parseSmoother(const int rank, setupAide &options, inipp::Ini *par,
     if (p_smoother.find("cheb") != std::string::npos) {
       bool surrogateSmootherSet = false;
       for (std::string s : list) {
-        if(s.find("degree") != std::string::npos){
-          std::vector<std::string> params = serializeString(s, '=');
-          if (params.size() != 2) {
-            std::ostringstream error;
-            error << "Error: could not parse degree " << s<< "!\n";
-            append_error(error.str());
-          }
-          const int value = std::stoi(params[1]);
-          options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE", std::to_string(value));
-        } else if (s.find("mineigenvalueboundfactor") != std::string::npos) {
-          std::vector<std::string> params = serializeString(s, '=');
-          if (params.size() != 2) {
-            std::ostringstream error;
-            error << "Error: could not parse minEigenvalueBoundFactor " << s<< "!\n";
-            append_error(error.str());
-          }
-          const double value = std::stod(params[1]);
+
+        const auto degreeStr = parseValueForKey(s, "degree");
+        if(!degreeStr.empty())
+          options.setArgs(parSection + " MULTIGRID CHEBYSHEV DEGREE", degreeStr);
+
+        const auto minEigBoundStr = parseValueForKey(s, "mineigenvalueboundfactor");
+        if(!minEigBoundStr.empty())
           options.setArgs(parSection + " MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR",
-                          to_string_f(value));
-        } else if (s.find("maxeigenvalueboundfactor") != std::string::npos) {
-          std::vector<std::string> params = serializeString(s, '=');
-          if (params.size() != 2) {
-            std::ostringstream error;
-            error << "Error: could not parse maxEigenvalueBoundFactor " << s<< "!\n";
-            append_error(error.str());
-          }
-          const double value = std::stod(params[1]);
+                          minEigBoundStr);
+
+        const auto maxEigBoundStr = parseValueForKey(s, "maxeigenvalueboundfactor");
+        if(!maxEigBoundStr.empty())
           options.setArgs(parSection + " MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR",
-                          to_string_f(value));
-        } else if (s.find("jac") != std::string::npos) {
+                          maxEigBoundStr);
+
+        if (s.find("jac") != std::string::npos) {
           surrogateSmootherSet = true;
           options.setArgs(parSection + " MULTIGRID SMOOTHER",
                           "DAMPEDJACOBI,CHEBYSHEV");
@@ -920,18 +913,15 @@ void parseInitialGuess(const int rank, setupAide &options,
 
     for (std::string s : list) {
       checkValidity(rank, validValues, s);
-      if (s.find("nvector") != std::string::npos) {
-        const std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        const int value = std::stoi(items[1]);
-        options.setArgs(parSectionName + "RESIDUAL PROJECTION VECTORS", std::to_string(value));
-      }
-      if (s.find("start") != std::string::npos) {
-        const std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        const int value = std::stoi(items[1]);
-        options.setArgs(parSectionName + "RESIDUAL PROJECTION START", std::to_string(value));
-      }
+
+      const auto nVectorStr = parseValueForKey(s, "nvector");
+      if(!nVectorStr.empty())
+        options.setArgs(parSectionName + "RESIDUAL PROJECTION VECTORS", nVectorStr);
+
+      const auto startStr = parseValueForKey(s, "start");
+      if(!startStr.empty())
+        options.setArgs(parSectionName + "RESIDUAL PROJECTION START", startStr);
+
     }
     return;
   }
@@ -1041,54 +1031,51 @@ void parseRegularization(const int rank, setupAide &options, inipp::Ini *par, st
 
     // common parameters
     for (std::string s : list) {
-      if (s.find("nmodes") != std::string::npos) {
-        std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        double value = std::stod(items[1]);
+
+      const auto nmodeStr = parseValueForKey(s, "nmodes");
+      if(!nmodeStr.empty()){
+        double value = std::stod(nmodeStr);
         value = round(value);
         options.setArgs(parPrefix + "HPFRT MODES", to_string_f(value));
       }
-      if (s.find("cutoffratio") != std::string::npos) {
-        std::vector<std::string> items = serializeString(s, '=');
-        assert(items.size() == 2);
-        double filterCutoffRatio = std::stod(items[1]);
+
+      const auto cutoffRatioStr = parseValueForKey(s, "cutoffratio");
+      if(!cutoffRatioStr.empty()){
+        double filterCutoffRatio = std::stod(cutoffRatioStr);
         double NFilterModes = round((N + 1) * (1 - filterCutoffRatio));
         options.setArgs(parPrefix + "HPFRT MODES", to_string_f(NFilterModes));
       }
+
     }
 
     if (usesAVM) {
       for (std::string s : list) {
-        if (s.find("vismaxcoeff") != std::string::npos) {
-          std::vector<std::string> items = serializeString(s, '=');
-          assert(items.size() == 2);
-          const dfloat value = std::stod(items[1]);
-          options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", to_string_f(value));
+        const auto vismaxcoeffStr = parseValueForKey(s, "vismaxcoeff");
+        if (!vismaxcoeffStr.empty()) {
+          options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", vismaxcoeffStr);
         }
-        if(s.find("scalingcoeff") != std::string::npos)
-        {
-          std::vector<std::string> items = serializeString(s, '=');
-          assert(items.size() == 2);
-          const dfloat value = std::stod(items[1]);
+
+        const auto scalingcoeffStr = parseValueForKey(s, "scalingcoeff");
+        if(!scalingcoeffStr.empty()){
           if(regularization.find("highestmodaldecay") != std::string::npos)
           {
             // in this context, the scaling coefficient can only be vismax
-            options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", to_string_f(value));
+            options.setArgs(parPrefix + "REGULARIZATION VISMAX COEFF", scalingcoeffStr);
           } else {
-            options.setArgs(parPrefix + "REGULARIZATION SCALING COEFF", to_string_f(value));
+            options.setArgs(parPrefix + "REGULARIZATION SCALING COEFF", scalingcoeffStr);
           }
         }
+
         if(s.find("c0") != std::string::npos)
         {
           options.setArgs(parPrefix + "REGULARIZATION AVM C0", "TRUE");
         }
-        if(s.find("rampconstant") != std::string::npos)
+
+        const auto rampConstantStr = parseValueForKey(s, "rampconstant");
+        if(!rampConstantStr.empty())
         {
-          std::vector<std::string> items = serializeString(s, '=');
-          assert(items.size() == 2);
-          const dfloat rampConstant = std::stod(items[1]);
           options.setArgs(parPrefix + "REGULARIZATION RAMP CONSTANT",
-                          to_string_f(rampConstant));
+                          rampConstantStr);
         }
       }
     }
@@ -1096,12 +1083,12 @@ void parseRegularization(const int rank, setupAide &options, inipp::Ini *par, st
     if (usesHPFRT) {
       bool setsStrength = false;
       for (std::string s : list) {
-        if (s.find("scalingcoeff") != std::string::npos) {
+
+        const auto scalingCoeffStr = parseValueForKey(s, "scalingcoeff");
+        if (!scalingCoeffStr.empty()) {
           setsStrength = true;
-          std::vector<std::string> items = serializeString(s, '=');
-          assert(items.size() == 2);
           int err = 0;
-          double weight = te_interp(items[1].c_str(), &err);
+          double weight = te_interp(scalingCoeffStr.c_str(), &err);
           if (err)
             append_error("Invalid expression for scalingCoeff");
           options.setArgs(parPrefix + "HPFRT STRENGTH", to_string_f(weight));
@@ -1478,34 +1465,26 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
       for(std::string entry : entries)
       {
         checkValidity(rank, validValues, entry);
-        if(entry.find("max") != std::string::npos)
-        {
-          std::vector<std::string> maxAndValue = serializeString(entry, '=');
-          assert(maxAndValue.size() == 2);
-          const double maxDT = std::stod(maxAndValue[1]);
-          options.setArgs("MAX DT", to_string_f(maxDT));
-        }
-        if(entry.find("initial") != std::string::npos)
-        {
-          std::vector<std::string> initialDtAndValue = serializeString(entry, '=');
-          assert(initialDtAndValue.size() == 2);
-          const double initialDt = std::stod(initialDtAndValue[1]);
-          options.setArgs("DT", to_string_f(initialDt));
-          userSuppliesInitialDt = true;
-        }
-        if(entry.find("targetcfl") != std::string::npos)
-        {
-          std::vector<std::string> cflAndValue = serializeString(entry, '=');
-          assert(cflAndValue.size() == 2);
-          const double targetCFL = std::stod(cflAndValue[1]);
-          options.setArgs("TARGET CFL", to_string_f(targetCFL));
 
+        const auto maxStr = parseValueForKey(entry, "max");
+        if(!maxStr.empty())
+          options.setArgs("MAX DT", maxStr);
+
+        const auto initialStr = parseValueForKey(entry, "initial");
+        if(!initialStr.empty())
+          options.setArgs("DT", initialStr);
+
+        const auto cflStr = parseValueForKey(entry, "targetcfl");
+        if(!cflStr.empty()){
+          options.setArgs("TARGET CFL", cflStr);
+          const double targetCFL = std::stod(cflStr);
           int nSteps = std::ceil(targetCFL / 2.0);
           if (targetCFL <= 0.51) nSteps = 0;
           options.setArgs("SUBCYCLING STEPS", std::to_string(nSteps));
 
           userSuppliesTargetCFL = true;
         }
+
       }
 
       // if targetCFL is not set, try to infer from subcyclingSteps
@@ -1816,18 +1795,9 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
         std::string n = "15";
         for(std::string s : list)
         {
-          if(s.find("nvector") != std::string::npos)
-          {
-            std::vector<std::string> nVecList = serializeString(s,'=');
-            if(nVecList.size() == 2)
-            {
-              int nVec = std::stoi(nVecList[1]);
-              n = std::to_string(nVec);
-            } else {
-              std::ostringstream error;
-              error << "Could not parse string \"" << s << "\" while parsing PRESSURE:solver.\n";
-              append_error(error.str());
-            }
+          const auto nvectorStr = parseValueForKey(s, "nvector");
+          if(!nvectorStr.empty()){
+            n = nvectorStr;
           }
         }
         options.setArgs("PRESSURE PGMRES RESTART", n);
