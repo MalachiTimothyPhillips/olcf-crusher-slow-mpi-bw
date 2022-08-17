@@ -173,6 +173,8 @@ void MGLevel::smoothChebyshev (occa::memory &o_r, occa::memory &o_x, bool xIsZer
     this->Ax(o_x,o_res);
     platform->linAlg->paxpby(Nrows, one, o_r, mone, o_res);
     flopCount += 2 * Nrows;
+  } else {
+    o_res.copyFrom(o_r, Nrows*sizeof(pfloat));
   }
   this->smoother(o_res, o_res, xIsZero);
 
