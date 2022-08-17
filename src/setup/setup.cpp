@@ -32,30 +32,18 @@ std::vector<int> determineMGLevels(std::string section)
   int N;
   platform->options.getArgs("POLYNOMIAL DEGREE", N);
 
-  std::cout << "options = \n";
-  std::cout << platform->options << "\n";
-
   std::string p_mgschedule = platform->options.getArgs(optionsPrefix + "MULTIGRID SCHEDULE");
   if(!p_mgschedule.empty()){
-    std::cout << "p_mgschedule = " << p_mgschedule << "\n";
     auto scheduleMapAndErrorString = parseMultigridSchedule(p_mgschedule, platform->options);
     for(auto && entry : scheduleMapAndErrorString.first){
       const bool isDownLeg = entry.first.second;
       const auto order = entry.first.first;
-      std::cout << "order = " << order << ", isDownLeg = " << std::boolalpha << isDownLeg << "\n";
       if(isDownLeg){
         levels.push_back(order);
       }
     }
 
-    std::cout << "Levels = ";
-    for(auto&& l : levels) std::cout << l << ", ";
-    std::cout << "\n";
-
     std::sort(levels.rbegin(), levels.rend());
-    std::cout << "Levels = ";
-    for(auto&& l : levels) std::cout << l << ", ";
-    std::cout << "\n";
     return levels;
   }
 

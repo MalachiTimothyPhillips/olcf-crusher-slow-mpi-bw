@@ -19,13 +19,11 @@ parseMultigridSchedule(const std::string &schedule, setupAide& options)
   bool downLeg = true;
 
   for (auto &&entry : entries) {
-    //std::cout << "entry = " << entry << "\n";
     auto tokens = serializeString(entry, '+');
 
     int order = INVALID;
     int degree = INVALID;
     for (auto &&token : tokens) {
-      //std::cout << "token = " << token << "\n";
       if (token.find("p") != std::string::npos) {
         order = std::stoi(serializeString(token, '=').at(1));
         minOrder = std::min(minOrder, order);
@@ -40,7 +38,9 @@ parseMultigridSchedule(const std::string &schedule, setupAide& options)
       }
       else if (token.find("degree") != std::string::npos) {
         degree = std::stoi(serializeString(token, '=').at(1));
-        //std::cout << "degree = " << degree << "\n";
+      }
+      else if (token.find("sweeps") != std::string::npos) {
+        errorString += "ERROR: setting number of sweeps is currently not supported!\n";
       }
       else {
         errorString += "ERROR: Unknown token '" + token + "' in schedule '" + schedule + "'!\n";
