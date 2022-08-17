@@ -220,6 +220,30 @@ void MGLevel::Report()
       printf("     |            |     Degree %2d   |\n", degree);
     }
   }
+
+  if(platform->comm.mpiRank == 0){
+    if (options.getArgs("MULTIGRID SCHEDULE", schedule)) {
+      auto scheduleAndError = parseMultigridSchedule(schedule);
+      auto schedule = scheduleAndError.first;
+      std::cout << "Using schedule:\n";
+      std::cout << "\tDown Leg:\n";
+      for(auto entry : schedule){
+        auto pmgOrderAndLeg = entry.first;
+        auto smootherOrder = entry.second;
+        if(pmgOrderAndLeg.second){
+          std::cout << "\tp=" << pmgOrderAndLeg.first << ", order = " << smootherOrder << "\n";
+        }
+      }
+      std::cout << "\tUp Leg:\n";
+      for(auto entry : schedule){
+        auto pmgOrderAndLeg = entry.first;
+        auto smootherOrder = entry.second;
+        if(!pmgOrderAndLeg.second){
+          std::cout << "\tp=" << pmgOrderAndLeg.first << ", order = " << smootherOrder << "\n";
+        }
+      }
+    }
+  }
 }
 
 void MGLevel::buildCoarsenerQuadHex(mesh_t** meshLevels, int Nf, int Nc)
