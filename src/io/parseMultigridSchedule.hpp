@@ -8,6 +8,6 @@
 class setupAide;
 
 std::pair<std::map<std::pair<int, bool>, int>, std::string>
-parseMultigridSchedule(const std::string &schedule, setupAide& options);
+parseMultigridSchedule(const std::string &schedule, setupAide& options, int defaultOrder);
 
 #endif

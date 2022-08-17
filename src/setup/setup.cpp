@@ -34,7 +34,10 @@ std::vector<int> determineMGLevels(std::string section)
 
   std::string p_mgschedule = platform->options.getArgs(optionsPrefix + "MULTIGRID SCHEDULE");
   if(!p_mgschedule.empty()){
-    auto scheduleMapAndErrorString = parseMultigridSchedule(p_mgschedule, platform->options);
+
+    // note: default order is not required here.
+    // We just need the levels, not the degree.
+    auto scheduleMapAndErrorString = parseMultigridSchedule(p_mgschedule, platform->options, 3);
     for(auto && entry : scheduleMapAndErrorString.first){
       const bool isDownLeg = entry.first.second;
       const auto order = entry.first.first;

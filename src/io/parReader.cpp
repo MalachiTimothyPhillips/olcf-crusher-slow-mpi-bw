@@ -1786,7 +1786,8 @@ void parRead(void *ppar, std::string setupFile, MPI_Comm comm, setupAide &option
         options.setArgs("PRESSURE MULTIGRID SCHEDULE", p_mgschedule);
 
         // validate multigrid schedule
-        auto scheduleMapAndErrors = parseMultigridSchedule(p_mgschedule, options);
+        // note: default order here is not actually required
+        auto scheduleMapAndErrors = parseMultigridSchedule(p_mgschedule, options, 3);
         if (!scheduleMapAndErrors.second.empty()) {
           append_error(scheduleMapAndErrors.second);
         }

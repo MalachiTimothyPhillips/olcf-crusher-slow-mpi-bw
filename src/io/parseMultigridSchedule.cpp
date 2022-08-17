@@ -5,7 +5,7 @@
 #include <limits>
 
 std::pair<std::map<std::pair<int, bool>, int>, std::string>
-parseMultigridSchedule(const std::string &schedule, setupAide& options)
+parseMultigridSchedule(const std::string &schedule, setupAide& options, int defaultDegree)
 {
   std::string errorString;
   std::map<std::pair<int, bool>, int> scheduleMap;
@@ -49,6 +49,10 @@ parseMultigridSchedule(const std::string &schedule, setupAide& options)
 
     if (order == INVALID) {
       errorString += "ERROR: Order not specified in " + entry + "\n";
+    }
+
+    if (degree == INVALID){
+      degree = defaultDegree;
     }
 
     scheduleMap[{order, downLeg}] = degree;

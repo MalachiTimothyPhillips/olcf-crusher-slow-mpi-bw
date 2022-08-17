@@ -113,8 +113,8 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
         options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", UpLegChebyshevDegree);
         options.getArgs("COARSE MULTIGRID CHEBYSHEV DEGREE", DownLegChebyshevDegree);
       } else {
-        UpLegChebyshevDegree = 2;
-        DownLegChebyshevDegree = 2;
+        UpLegChebyshevDegree = 3;
+        DownLegChebyshevDegree = 3;
         options.getArgs("MULTIGRID CHEBYSHEV DEGREE", UpLegChebyshevDegree);
         options.getArgs("MULTIGRID CHEBYSHEV DEGREE", DownLegChebyshevDegree);
       }
@@ -161,7 +161,7 @@ void MGLevel::setupSmoother(elliptic_t* ellipticBase)
 
   std::string schedule = options.getArgs("MULTIGRID SCHEDULE");
   if (!schedule.empty()) {
-    auto scheduleAndError = parseMultigridSchedule(schedule, options);
+    auto scheduleAndError = parseMultigridSchedule(schedule, options, DownLegChebyshevDegree);
     UpLegChebyshevDegree = scheduleAndError.first[{degree, true}];
     DownLegChebyshevDegree = scheduleAndError.first[{degree, false}];
   }
@@ -224,23 +224,35 @@ void MGLevel::Report()
   if(platform->comm.mpiRank == 0 && isCoarse){
     std::string pmgschedule = options.getArgs("MULTIGRID SCHEDULE");
     if(!pmgschedule.empty()){
-      auto scheduleAndError = parseMultigridSchedule(pmgschedule, options);
+      int defaultDegree = 3;
+      options.getArgs("MULTIGRID CHEBYSHEV DEGREE", defaultDegree);
+      auto scheduleAndError = parseMultigridSchedule(pmgschedule, options, defaultDegree);
       auto schedule = scheduleAndError.first;
-      std::cout << "Using schedule:\n";
-      std::cout << "\tDown Leg:\n";
-      for(auto entry : schedule){
-        auto pmgOrderAndLeg = entry.first;
-        auto smootherOrder = entry.second;
-        if(pmgOrderAndLeg.second){
-          std::cout << "\tp=" << pmgOrderAndLeg.first << ", order = " << smootherOrder << "\n";
+      std::vector<int> downLevels;
+      for(auto && entry : schedule){
+        const bool isDownLeg = entry.first.second;
+        const auto order = entry.first.first;
+        if(isDownLeg){
+          downLevels.push_back(order);
         }
       }
-      std::cout << "\tUp Leg:\n";
-      for(auto entry : schedule){
-        auto pmgOrderAndLeg = entry.first;
-        auto smootherOrder = entry.second;
-        if(!pmgOrderAndLeg.second){
-          std::cout << "\tp=" << pmgOrderAndLeg.first << ", order = " << smootherOrder << "\n";
+
+      std::sort(downLevels.rbegin(), downLevels.rend());
+
+      std::vector<int> upLevels = downLevels;
+      std::reverse(upLevels.begin(), upLevels.end());
+
+      std::cout << "Using orders:\n";
+      for(auto isDown : {true, false}){
+        auto & levels = isDown ? downLevels : upLevels;
+        bool first = true;
+        for(auto level : levels){
+          if(first && !isDown) {
+            first = false;
+            continue; // skip
+          }
+          const auto smootherOrder = schedule[{level, isDown}];
+          std::cout << "\tp=" << level << ", order = " << smootherOrder << "\n";
         }
       }
     }
