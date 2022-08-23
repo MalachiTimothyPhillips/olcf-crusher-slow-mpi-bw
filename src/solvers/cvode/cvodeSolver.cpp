@@ -343,8 +343,10 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   double dt0;
   platform->options.getArgs("DT", dt0);
 
-  double hmax = 3 * dt0;
+  double hmax = 3;
   platform->options.getArgs("CVODE HMAX", hmax);
+
+  hmax *= dt0;
   retval = CVodeSetMaxStep(this->cvodeMem, hmax);
 
   int maxOrder = 3;

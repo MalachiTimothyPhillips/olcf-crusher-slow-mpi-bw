@@ -28,10 +28,7 @@ void ciSetup(MPI_Comm comm, setupAide &options)
     options.setArgs("CVODE MAX TIMESTEPPER ORDER", "3");
     options.setArgs("CVODE EPS LIN", "0.05");
 
-    double dt0;
-    options.getArgs("DT", dt0);
-
-    const auto hmax = 3 * dt0;
+    const auto hmax = 1;
     options.setArgs("CVODE HMAX", to_string_f(hmax));
 
     const auto maxSteps = 10000;

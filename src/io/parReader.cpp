@@ -176,15 +176,17 @@ static std::vector<std::string> scalarKeys = {
 };
 
 static std::vector<std::string> cvodeKeys = {
-  {"reltol"},
-  {"abstol"},
-  {"nvectorsgmr"},
+    {"reltol"},
+    {"abstol"},
+    {"nvectorsgmr"},
+    {"hmax"},
+    {"epslin"},
+    {"sigscale"},
+#if 0
   {"maxsteps"},
-  {"hmax"},
-  {"epslin"},
   {"maxorder"},
   {"integrator"},
-  {"sigscale"},
+#endif
 };
 
 static std::vector<std::string> boomeramgKeys = {
@@ -485,12 +487,13 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   // relTol = 1e-4
   // absTol = 1e-14
   // nvectorsGMR = 10
-  // maxSteps = 10000
-  // hmax = 3 * dt
+  // hmax = 3 # scaled by initial dt
   // epsLin = 0.1
-  // maxOrder = 3
-  // integrator = adams # or BDF
   // sigScale = 1.0
+
+  // #maxSteps = 10000
+  // #maxOrder = 3
+  // #integrator = adams # or BDF
 
   double dt0 = 0.0;
   options.getArgs("DT", dt0);
@@ -500,7 +503,7 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   double absTol = 1e-14;
   int nvectorsGMR = 10;
   int maxSteps = 10000;
-  double hmax = 3 * dt0;
+  double hmax = 3;
   double epsLin = 0.1;
   int maxOrder = 3;
   double sigScale = 1.0;
@@ -518,24 +521,30 @@ void parseCvodeSolver(const int rank, setupAide &options, inipp::Ini *par)
   par->extract(parScope, "nvectorsgmr", nvectorsGMR);
   options.setArgs("CVODE GMR VECTORS", std::to_string(nvectorsGMR));
 
-  par->extract(parScope, "maxsteps", maxSteps);
-  options.setArgs("CVODE MAX STEPS", std::to_string(maxSteps));
-
   par->extract(parScope, "hmax", hmax);
   options.setArgs("CVODE HMAX", std::to_string(hmax));
 
   par->extract(parScope, "epslin", epsLin);
   options.setArgs("CVODE EPS LIN", std::to_string(epsLin));
 
+#if 0
+  par->extract(parScope, "maxsteps", maxSteps);
+#endif
+  options.setArgs("CVODE MAX STEPS", std::to_string(maxSteps));
+
+#if 0
   par->extract(parScope, "maxorder", maxOrder);
+#endif
   options.setArgs("CVODE MAX TIMESTEPPER ORDER", std::to_string(maxOrder));
 
+#if 0
   par->extract(parScope, "integrator", integrator);
   const std::vector<std::string> validValues = {
     {"bdf"},
     {"adams"},
   };
   checkValidity(rank, validValues, integrator);
+#endif
   UPPER(integrator);
   options.setArgs("CVODE INTEGRATOR", integrator);
 
