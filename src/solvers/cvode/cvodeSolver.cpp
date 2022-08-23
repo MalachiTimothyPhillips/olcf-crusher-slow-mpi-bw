@@ -916,7 +916,7 @@ void cvodeSolver_t::printInfo(bool printVerboseInfo) const
     std::ostringstream ss;
     ss << "S" << std::setfill('0') << std::setw(scalarWidth) << minCvodeScalarId;
     if (maxCvodeScalarId > minCvodeScalarId) {
-      ss << "-" << std::setfill('0') << std::setw(scalarWidth) << maxCvodeScalarId;
+      ss << "-S" << std::setfill('0') << std::setw(scalarWidth) << maxCvodeScalarId;
     }
     scalars = ss.str();
   }
