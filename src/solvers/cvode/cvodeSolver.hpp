@@ -35,7 +35,7 @@ public:
   void setPack(userPack_t _userPack) { userPack = _userPack; }
   void setUnpack(userUnpack_t _userUnpack){ userUnpack = _userUnpack;}
   void setLocalPointSource(userLocalPointSource_t _userLocalPointSource){ userLocalPointSource = _userLocalPointSource;}
-  void printFinalStats() const;
+  void printInfo(bool printVerboseInfo) const;
 
   void setJacobianEvaluation() { jacEval = true; }
   void unsetJacobianEvaluation() { jacEval = false; }
@@ -74,6 +74,14 @@ private:
   mutable double tnekRS;
   mutable int tstep;
   mutable bool jacEval = false;
+
+  int minCvodeScalarId;
+  int maxCvodeScalarId;
+
+  mutable long int prevNsteps = 0;
+  mutable long int prevNrhs = 0;
+  mutable long int prevNli = 0;
+  mutable long int prevNni = 0;
 
   void defaultRHS(nrs_t *nrs, int tstep, dfloat time, dfloat t0, occa::memory o_y, occa::memory o_ydot);
   dlong LFieldOffset;

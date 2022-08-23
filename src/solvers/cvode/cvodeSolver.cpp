@@ -1,4 +1,5 @@
 #include "cvodeSolver.hpp"
+#include "inipp.hpp"
 #include "nrs.hpp"
 #include "nekInterfaceAdapter.hpp"
 #include "Urst.hpp"
@@ -117,8 +118,8 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   fieldOffsetScan = {0};
   fieldOffsetSum = 0;
 
-  dlong minCvodeScalarId = std::numeric_limits<dlong>::max();
-  dlong maxCvodeScalarId = -std::numeric_limits<dlong>::max();
+  this->minCvodeScalarId = std::numeric_limits<dlong>::max();
+  this->maxCvodeScalarId = -std::numeric_limits<dlong>::max();
 
   for (int is = 0; is < cds->NSfields; is++) {
     if (!cds->compute[is]) {
@@ -127,13 +128,13 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
     if (!cds->cvodeSolve[is]) {
       continue;
     }
-    minCvodeScalarId = std::min(minCvodeScalarId, is);
-    maxCvodeScalarId = std::max(maxCvodeScalarId, is);
+    this->minCvodeScalarId = std::min(minCvodeScalarId, is);
+    this->maxCvodeScalarId = std::max(maxCvodeScalarId, is);
   }
 
   // assumption: CVODE scalars are contiguous
   bool valid = true;
-  for (int is = minCvodeScalarId; is < maxCvodeScalarId; ++is) {
+  for (int is = this->minCvodeScalarId; is < this->maxCvodeScalarId; ++is) {
     valid &= cds->compute[is];
     valid &= cds->cvodeSolve[is];
   }
@@ -888,57 +889,68 @@ void cvodeSolver_t::solve(nrs_t *nrs, double t0, double t1, int tstep)
 #endif
 }
 
-void cvodeSolver_t::printFinalStats() const
+void cvodeSolver_t::printInfo(bool printVerboseInfo) const
 {
 #ifdef ENABLE_CVODE
   auto cvodeMem = this->cvodeMem;
 
-  long lenrw, leniw;
-  long lenrwLS, leniwLS;
-  long int nst, nfe, nsetups, nni, ncfn, netf;
-  long int nli, npe, nps, ncfl, nfeLS;
-  long int njtv;
-  int retval;
+  long int nsteps, nrhs, nni, nli;
+  int retval = 0;
 
-  retval = CVodeGetWorkSpace(cvodeMem, &lenrw, &leniw);
-  check_retval(&retval, "CVodeGetWorkSpace", 1);
-  retval = CVodeGetNumSteps(cvodeMem, &nst);
+  retval = CVodeGetNumSteps(cvodeMem, &nsteps);
   check_retval(&retval, "CVodeGetNumSteps", 1);
-  retval = CVodeGetNumRhsEvals(cvodeMem, &nfe);
+  retval = CVodeGetNumRhsEvals(cvodeMem, &nrhs);
   check_retval(&retval, "CVodeGetNumRhsEvals", 1);
-  retval = CVodeGetNumLinSolvSetups(cvodeMem, &nsetups);
-  check_retval(&retval, "CVodeGetNumLinSolvSetups", 1);
-  retval = CVodeGetNumErrTestFails(cvodeMem, &netf);
-  check_retval(&retval, "CVodeGetNumErrTestFails", 1);
   retval = CVodeGetNumNonlinSolvIters(cvodeMem, &nni);
   check_retval(&retval, "CVodeGetNumNonlinSolvIters", 1);
-  retval = CVodeGetNumNonlinSolvConvFails(cvodeMem, &ncfn);
-  check_retval(&retval, "CVodeGetNumNonlinSolvConvFails", 1);
 
-  retval = CVodeGetNumJtimesEvals(cvodeMem, &njtv);
-  check_retval(&retval, "CVodeGetNumJtimesEvals", 1);
-
-  retval = CVodeGetLinWorkSpace(cvodeMem, &lenrwLS, &leniwLS);
-  check_retval(&retval, "CVodeGetLinWorkSpace", 1);
   retval = CVodeGetNumLinIters(cvodeMem, &nli);
   check_retval(&retval, "CVodeGetNumLinIters", 1);
-  retval = CVodeGetNumPrecEvals(cvodeMem, &npe);
-  check_retval(&retval, "CVodeGetNumPrecEvals", 1);
-  retval = CVodeGetNumPrecSolves(cvodeMem, &nps);
-  check_retval(&retval, "CVodeGetNumPrecSolves", 1);
-  retval = CVodeGetNumLinConvFails(cvodeMem, &ncfl);
-  check_retval(&retval, "CVodeGetNumLinConvFails", 1);
-  retval = CVodeGetNumLinRhsEvals(cvodeMem, &nfeLS);
-  check_retval(&retval, "CVodeGetNumLinRhsEvals", 1);
 
-  if(platform->comm.mpiRank == 0){
-    printf("\nCVODE Statistics:\n");
-    printf("nst     = %5ld\n", nst);
-    printf("nni     = %5ld     nli     = %5ld     nli/nni = %5ld\n", nni, nli, nli / nni);
-    printf("nfe     = %5ld     nfeLS   = %5ld\n", nfe, nfeLS);
-    printf("netf    = %5ld     ncfn    = %5ld     ncfl    = %5ld\n", netf, ncfn, ncfl);
+  const auto scalarWidth = getDigitsRepresentation(NSCALAR_MAX - 1);
+
+  // TODO: should handle this more robustly without requiring a hard-coded value
+  constexpr auto lengthToColon = 11;
+  std::string scalars;
+  {
+    std::ostringstream ss;
+    ss << "S" << std::setfill('0') << std::setw(scalarWidth) << minCvodeScalarId;
+    if (maxCvodeScalarId > minCvodeScalarId) {
+      ss << "-" << std::setfill('0') << std::setw(scalarWidth) << maxCvodeScalarId;
+    }
+    scalars = ss.str();
+  }
+
+  const auto nliPerNni = (nni - prevNni) > 0 ? (dfloat)(nli - prevNli) / (nni - prevNni) : 0.0;
+
+  if (platform->comm.mpiRank == 0 && printVerboseInfo) {
+    std::ostringstream ss;
+    ss << "  " << scalars;
+    ss << std::setfill(' ') << std::setw(lengthToColon - ss.str().length()) << " ";
+
+    // pad remaining space, lengthToColon long, with spaces
+    printf("%s: nsteps %03ld  nRHS %03ld  nli/nni %.2e  nli %03ld\n",
+           ss.str().c_str(),
+           nsteps - prevNsteps,
+           nrhs - prevNrhs,
+           nliPerNni,
+           nli - prevNli);
+  }
+  else if (platform->comm.mpiRank == 0) {
+    std::ostringstream ss;
+    ss << "  " << scalars;
+    printf("%s: %ld %ld %.2e", ss.str().c_str(), nsteps - prevNsteps, nrhs - prevNrhs, nliPerNni);
+  }
+
+  // used at last printInfo call of step, so update metrics here
+  if (!printVerboseInfo) {
+    prevNsteps = nsteps;
+    prevNrhs = nrhs;
+    prevNli = nli;
+    prevNni = nni;
   }
 
 #endif
 }
+
 } // namespace cvode

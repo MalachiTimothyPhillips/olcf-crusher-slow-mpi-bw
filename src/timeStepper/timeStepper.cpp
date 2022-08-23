@@ -861,9 +861,10 @@ void printInfo(nrs_t *nrs, dfloat time, int tstep)
         printf("  MSH      : iter %03d  resNorm0 %.2e  resNorm %.2e\n",
                solver->Niter, solver->res0Norm, solver->resNorm);
       }
- 
+
+      bool cvodePrinted = false;
       for(int is = 0; is < nrs->Nscalar; is++) {
-        if (cds->compute[is]) {
+        if (cds->compute[is] && !cds->cvodeSolve[is]) {
           elliptic_t *solver = cds->solver[is];
           if (solver->solutionProjection) {
             const int prevVecs = solver->solutionProjection->getPrevNumVecsProjection();
@@ -883,6 +884,10 @@ void printInfo(nrs_t *nrs, dfloat time, int tstep)
               solver->Niter,
               solver->res0Norm,
               solver->resNorm);
+        }
+        else if (cds->cvodeSolve[is] && !cvodePrinted) {
+          nrs->cds->cvodeSolver->printInfo(true);
+          cvodePrinted = true;
         }
       }
     }
@@ -906,9 +911,17 @@ void printInfo(nrs_t *nrs, dfloat time, int tstep)
     }
     if(nrs->meshSolver)
       printf("  MSH: %d", nrs->meshSolver->Niter);
-      
-    for(int is = 0; is < nrs->Nscalar; is++)
-      if(cds->compute[is]) printf("  S: %d", cds->solver[is]->Niter);
+
+    bool cvodePrinted = false;
+    for (int is = 0; is < nrs->Nscalar; is++) {
+      if (cds->cvodeSolve[is] && !cvodePrinted) {
+        nrs->cds->cvodeSolver->printInfo(false);
+        cvodePrinted = true;
+      }
+      if (cds->compute[is] && !cds->cvodeSolve[is]) {
+        printf("  S: %d", cds->solver[is]->Niter);
+      }
+    }
 
     if (nrs->timeStepConverged)
       printf("  elapsedStep= %.2es  elapsedStepSum= %.5es", elapsedStep, elapsedStepSum);
