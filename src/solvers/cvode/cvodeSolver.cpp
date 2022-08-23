@@ -117,6 +117,34 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
   fieldOffsetScan = {0};
   fieldOffsetSum = 0;
 
+  dlong minCvodeScalarId = std::numeric_limits<dlong>::max();
+  dlong maxCvodeScalarId = -std::numeric_limits<dlong>::max();
+
+  for (int is = 0; is < cds->NSfields; is++) {
+    if (!cds->compute[is]) {
+      continue;
+    }
+    if (!cds->cvodeSolve[is]) {
+      continue;
+    }
+    minCvodeScalarId = std::min(minCvodeScalarId, is);
+    maxCvodeScalarId = std::max(maxCvodeScalarId, is);
+  }
+
+  // assumption: CVODE scalars are contiguous
+  bool valid = true;
+  for (int is = minCvodeScalarId; is < maxCvodeScalarId; ++is) {
+    valid &= cds->compute[is];
+    valid &= cds->cvodeSolve[is];
+  }
+
+  if (!valid) {
+    if (platform->comm.mpiRank == 0) {
+      std::cout << "ERROR: CVODE scalars must be contiguous" << std::endl;
+    }
+    ABORT(1);
+  }
+
   for (int is = 0; is < cds->NSfields; is++) {
     if (!cds->compute[is]){
       continue;
