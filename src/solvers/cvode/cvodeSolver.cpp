@@ -161,13 +161,12 @@ cvodeSolver_t::cvodeSolver_t(nrs_t* nrs)
     fieldOffsetSum += fieldOffset.back();
 
     Nscalar++;
-
-    // TODO: batch gather scatter operations as possible
-
-    if(is == 0 && nrs->cht) continue; // gather-scatter is handled directly
-
-    gatherScatterOperations.push_back(std::make_tuple(is, is+1, is == 0 ? cds->gshT : cds->gsh));
   }
+
+  gatherScatterOperations.push_back(
+      std::make_tuple(minCvodeScalarId == 0 && nrs->cht ? minCvodeScalarId + 1 : minCvodeScalarId,
+                      maxCvodeScalarId + 1,
+                      cds->gsh));
 
   o_scalarIds = platform->device.malloc(scalarIds.size() * sizeof(dlong), scalarIds.data());
   o_cvodeScalarIds = platform->device.malloc(cvodeScalarIds.size() * sizeof(dlong), cvodeScalarIds.data());
