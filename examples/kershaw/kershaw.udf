@@ -29,6 +29,16 @@ void UDF_Setup(nrs_t *nrs)
 
 void UDF_ExecuteStep(nrs_t *nrs, dfloat time, int tstep)
 {
+  if(1)
+  {
+    // obtain timings and bw measurements for pt-2-pt exchange using host/device buffers
+    mesh_t *mesh = nrs->meshV;
+    if(platform->comm.mpiRank == 0) printf("Benchmarking d->d gather-scatter handle.\n");
+    oogs_t *oogsh_device = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsPfloat, NULL, OOGS_DEVICEMPI);
+    if(platform->comm.mpiRank == 0) printf("Benchmarking h->h gather-scatter handle.\n");
+    oogs_t *oogsh_host = oogs::setup(mesh->ogs, 1, mesh->Nelements * mesh->Np, ogsPfloat, NULL, OOGS_HOSTMPI);
+  }
+
   mesh_t* mesh = nrs->meshV;
 
   for (int i = 0; i < mesh->Nlocal; i++) {
