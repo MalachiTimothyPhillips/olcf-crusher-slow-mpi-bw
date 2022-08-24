@@ -1,0 +1,437 @@
+
+Currently Loaded Modules:
+  1) craype-x86-trento                      10) tmux/3.2a
+  2) libfabric/1.15.0.0                     11) craype/2.7.15
+  3) craype-network-ofi                     12) cray-dsmml/0.2.2
+  4) perftools-base/22.05.0                 13) PrgEnv-gnu/8.3.3
+  5) xpmem/2.4.4-2.3_2.12__gff0e1d9.shasta  14) xalt/1.3.0
+  6) cray-pmi/6.1.2                         15) DefApps/default
+  7) gcc/11.2.0                             16) craype-accel-amd-gfx90a
+  8) openblas/0.3.17                        17) cray-mpich/8.1.16
+  9) cmake/3.23.2                           18) rocm/5.1.0
+
+ 
+
+
+
+======================= ROCm System Management Interface =======================
+================================= Concise Info =================================
+GPU  Temp   AvgPwr  SCLK    MCLK     Fan  Perf  PwrCap  VRAM%  GPU%  
+0    48.0c  89.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+1    41.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+2    36.0c  94.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+3    40.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+4    44.0c  94.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+5    45.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+6    34.0c  88.0W   800Mhz  1600Mhz  0%   auto  560.0W    0%   0%    
+7    42.0c  N/A     800Mhz  1600Mhz  0%   auto  0.0W      0%   0%    
+================================================================================
+============================= End of ROCm SMI Log ==============================
+
+
+======================= ROCm System Management Interface =======================
+================================ KFD Processes =================================
+No KFD PIDs currently running
+================================================================================
+============================= End of ROCm SMI Log ==============================
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+            166189     batch nekRS_ke  malachi  R       0:04      1 crusher128
+Mon 15 Aug 2022 01:06:08 PM EDT
+UTC time: Mon Aug 15 17:06:09 2022
+
+                 __    ____  _____
+   ____   ___   / /__ / __ \/ ___/
+  / __ \ / _ \ / //_// /_/ /\__ \ 
+ / / / //  __// ,<  / _, _/___/ / 
+/_/ /_/ \___//_/|_|/_/ |_|/____/  v22.1.0 (0cda5ab0)
+
+COPYRIGHT (c) 2019-2022 UCHICAGO ARGONNE, LLC
+
+MPI tasks: 8
+
+
+using NEKRS_HOME: /ccs/home/malachi/.local/nekrs-crusher-next-nbc-device-experiment
+using NEKRS_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/kershaw-perf-testing/kershaw/crusher/nbc-device/.cache
+using OCCA_CACHE_DIR: /gpfs/alpine/csc262/scratch/malachi/kershaw-perf-testing/kershaw/crusher/nbc-device/.cache/occa/
+
+reading par file ...
+Initializing device 
+active occa mode: HIP
+
+building udf ... 
+Consolidate compiler generated dependencies of target UDF
+[100%] Built target UDF
+done (0.413555s)
+skip building nekInterface (SIZE requires no update)
+loading nek ... 
+done
+loading udf kernels ... done (0.000199398s)
+loading kernels (this may take awhile) ...
+Ax: N=7 wordSize=64 GDOF/s=11.5301 GB/s=1101.51 GFLOPS/s=1910.43 bkMode=1 kernelVer=0
+Ax: N=7 wordSize=64 GDOF/s=11.5298 GB/s=1101.49 GFLOPS/s=1910.39 bkMode=1 kernelVer=0
+Ax: N=7 wordSize=32 GDOF/s=22.9743 GB/s=1097.41 GFLOPS/s=3806.63 bkMode=1 kernelVer=5
+fdm: N=9 wordSize=32 GDOF/s=34.4312 GB/s=623.446 GFLOPS/s=5714.92 kernelVer=3
+Ax: N=3 wordSize=64 GDOF/s=4.94735 GB/s=750.532 GFLOPS/s=738.805 bkMode=1 kernelVer=5
+Ax: N=3 wordSize=32 GDOF/s=8.5332 GB/s=647.259 GFLOPS/s=1274.29 bkMode=1 kernelVer=6
+fdm: N=5 wordSize=32 GDOF/s=34.0359 GB/s=823.397 GFLOPS/s=4293.43 kernelVer=2
+done (14.1465s)
+
+initializing linAlg ...
+wdotp: 1.360e-04s  (local: 1.316e-04s)
+
+ Reading /gpfs/alpine/csc262/scratch/malachi/kershaw-perf-testing/kershaw/crusher/nbc-device/kershaw.re2                                     
+ reading mesh 
+ reading boundary faces       9600 for ifield   1
+ done :: read .re2 file    0.16     sec
+
+Running parCon ... (tol=0.2)
+Running parRSB ...
+parRSB finished in 0.167784 s
+
+ reading mesh 
+ reading boundary faces       9600 for ifield   1
+ done :: read .re2 file    0.26     sec
+
+ setup mesh topology
+   Right-handed check complete for       64000 elements. OK.
+gs_setup: 236041 unique labels shared
+   pairwise times (avg, min, max): 8.91632e-05 8.67524e-05 9.06878e-05
+   crystal router                : 0.000370038 0.000369652 0.000370557
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 2.75687e+07 27568660 27568660
+   buffer bytes (avg, min, max): 961072 961072 961072
+   setupds time 5.4103E-01 seconds   0  8     8364041       64000
+ 
+ nElements   max/min/bal: 8000 8000 1.00
+ nMessages   max/min/avg: 7 7 7.00
+ msgSize     max/min/avg: 19881 1 8581.00
+ msgSizeSum  max/min/avg: 60067 60067 60067.00
+ 
+ max multiplicity            8
+ done :: setup mesh topology
+  
+ call usrdat
+ epsy=  0.29999999999999999      epsz=  0.29999999999999999     
+ done :: usrdat
+
+ generate geometry data
+ done :: generate geometry data
+  
+ call usrdat2
+ done :: usrdat2
+
+  1.1102E-16  1.1102E-16  1.1102E-16  1.1102E-16  1.1102E-16  1.1102E-16 xyz repair 1
+  5.5511E-17  5.5511E-17  5.5511E-17  1.1102E-16  1.1057E-16  1.1057E-16 xyz repair 2
+  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00 xyz repair 3
+  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00  0.0000E+00 xyz repair 4
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ regenerate geometry data           1
+ done :: regenerate geometry data           1
+  
+ verify mesh topology
+ -0.50000000000000000       0.50000000000000000       Xrange
+ -0.50000000000000000       0.50000000000000000       Yrange
+ -0.50000000000000000       0.50000000000000000       Zrange
+ done :: verify mesh topology
+  
+ mesh metrics:
+ GLL grid spacing min/max    : 4.81E-04 3.15E-02
+ scaled Jacobian  min/max/avg: 4.07E-01 1.00E+00 8.68E-01
+ aspect ratio     min/max/avg: 1.04E+00 1.63E+01 4.25E+00
+
+ call usrdat3
+ done :: usrdat3
+
+gridpoints unique/tot:      22188041     32768000
+dofs vel/pr:                22188041     21717639
+ nek setup done in    4.7058E+00 s
+
+import BCs from nek
+ set initial conditions
+ nekuic (1) for ifld            1
+ call nekuic for vel  
+ xyz min   -0.50000     -0.50000     -0.50000    
+ uvwpt min  -1.0000      0.81910E-06  0.58953E-06   0.0000       0.0000    
+ PS min      0.0000       0.0000       0.0000      0.99000E+22
+ xyz max    0.50000      0.50000      0.50000    
+ uvwpt max   1.0000       1.0000       1.0000       0.0000       0.0000    
+ PS max      0.0000       0.0000       0.0000     -0.99000E+22
+ done :: set initial conditions
+  
+calling nek_userchk ...
+
+generating t-mesh ...
+loading mesh from nek ... Nelements: 64000, NboundaryIDs: 1, NboundaryFaces: 9600 done (0.000535905s)
+N: 7, Nq: 8
+computing geometric factors ... J [1.75781e-07,5.64453e-06] done (0.660883s)
+meshParallelGatherScatterSetup N=7
+timing gs: 1.99e-04s 4.67e-04s 4.03e-04s 3.94e-04s 2.53e-04s 2.53e-04s 
+used config: pw+device (MPI min/max/avg: 4.45e-05s 5.24e-05s 4.92e-05s / avg bi-bw: 19.5GB/s/rank)
+min 86% of the local elements are internal
+timing gs: 5.72e-04s 1.40e-03s 1.05e-03s 1.00e-03s 6.99e-04s 6.96e-04s 
+used config: nbc+device (MPI min/max/avg: 7.36e-05s 8.25e-05s 7.93e-05s / avg bi-bw: 36.4GB/s/rank)
+copying solution from nek
+calling udf_setup ... done
+copying solution to nek
+================ ELLIPTIC SETUP VELOCITY ================
+bID 1 -> bcType zeroGradient
+timing gs: 5.73e-04s 1.44e-03s 1.04e-03s 1.00e-03s 7.00e-04s 6.95e-04s 
+used config: nbc+device (MPI min/max/avg: 7.50e-05s 8.22e-05s 7.90e-05s / avg bi-bw: 36.5GB/s/rank)
+timing gs: 1.01e-03s 1.46e-03s 1.48e-03s 1.44e-03s 1.14e-03s 1.13e-03s 
+used config: nbc+device (MPI min/max/avg: 7.77e-05s 8.33e-05s 8.03e-05s / avg bi-bw: 35.9GB/s/rank)
+building Jacobi preconditioner ... done (0.0150111s)
+done (0.330772s)
+================ ELLIPTIC SETUP PRESSURE ================
+timing gs: 1.99e-04s 4.83e-04s 4.04e-04s 3.95e-04s 2.53e-04s 2.53e-04s 
+used config: nbc+device (MPI min/max/avg: 5.18e-05s 5.56e-05s 5.37e-05s / avg bi-bw: 17.6GB/s/rank)
+timing gs: 4.05e-04s 5.30e-04s 6.11e-04s 6.05e-04s 4.58e-04s 4.57e-04s 
+used config: nbc+device (MPI min/max/avg: 4.86e-05s 5.70e-05s 5.41e-05s / avg bi-bw: 17.5GB/s/rank)
+building MG preconditioner ... 
+============= BUILDING pMG7 ==================
+timing gs: 1.15e-04s 4.15e-04s 2.88e-04s 2.88e-04s 1.54e-04s 1.54e-04s 
+used config: nbc+device (MPI min/max/avg: 4.25e-05s 4.72e-05s 4.47e-05s / avg bi-bw: 10.6GB/s/rank)
+timing gs: 2.20e-04s 3.91e-04s 3.59e-04s 3.63e-04s 2.64e-04s 2.64e-04s 
+used config: nbc+device (MPI min/max/avg: 4.20e-05s 4.70e-05s 4.45e-05s / avg bi-bw: 10.6GB/s/rank)
+timing gs: 1.45e-04s 4.54e-04s 3.05e-04s 2.93e-04s 1.89e-04s 1.89e-04s 
+used config: pw+device (MPI min/max/avg: 3.85e-05s 4.27e-05s 4.08e-05s / avg bi-bw: 15.0GB/s/rank)
+timing gs: 2.95e-04s 4.60e-04s 4.57e-04s 4.47e-04s 3.33e-04s 3.32e-04s 
+used config: nbc+device (MPI min/max/avg: 4.17e-05s 4.54e-05s 4.32e-05s / avg bi-bw: 14.2GB/s/rank)
+estimating maxEigenvalue ... 10.1431 done (0.0834635s)
+============= BUILDING pMG3 ==================
+computing geometric factors ... J [1.75781e-07,5.64453e-06] done (0.0578473s)
+meshParallelGatherScatterSetup N=3
+done (0.000965509s)
+timing gs: 3.10e-05s 2.18e-04s 1.34e-04s 1.34e-04s 1.01e-04s 1.06e-04s 
+used config: pw+device (MPI min/max/avg: 3.56e-05s 3.98e-05s 3.78e-05s / avg bi-bw: 2.3GB/s/rank)
+timing gs: 6.03e-05s 2.36e-04s 1.61e-04s 1.62e-04s 1.12e-04s 1.18e-04s 
+used config: pw+device (MPI min/max/avg: 3.41e-05s 4.14e-05s 3.79e-05s / avg bi-bw: 2.3GB/s/rank)
+timing gs: 4.32e-05s 2.23e-04s 1.38e-04s 1.36e-04s 9.56e-05s 9.85e-05s 
+used config: pw+device (MPI min/max/avg: 3.37e-05s 3.62e-05s 3.47e-05s / avg bi-bw: 4.4GB/s/rank)
+estimating maxEigenvalue ... 9.79621 done (0.0170273s)
+============= BUILDING COARSE pMG1 ==================
+computing geometric factors ... J [1.75781e-07,5.64453e-06] done (0.0142799s)
+meshParallelGatherScatterSetup N=1
+done (0.000182406s)
+timing gs: 2.39e-05s 1.35e-04s 1.11e-04s 1.11e-04s 7.69e-05s 7.74e-05s 
+used config: pw+device (MPI min/max/avg: 1.34e-05s 1.54e-05s 1.46e-05s / avg bi-bw: 0.7GB/s/rank)
+building full FEM matrix ... done.
+done (0.110408s)
+Setting up coarse solver ...
+
+ Num MPI tasks = 8
+
+ Num OpenMP threads = 1
+
+
+BoomerAMG SETUP PARAMETERS:
+
+ Max levels = 25
+ Num levels = 7
+
+ Strength Threshold = 0.250000
+ Interpolation Truncation Factor = 0.000000
+ Maximum Row Sum Threshold for Dependency Weakening = 0.900000
+
+ Coarsening Type = PMIS 
+ measures are determined locally
+
+
+ No global partition option chosen.
+
+ Interpolation = extended+i interpolation
+
+Operator Matrix Information:
+
+             nonzero            entries/row          row sums
+lev    rows  entries sparse   min  max     avg      min         max
+======================================================================
+  0   59319   881867  0.000     4   19    14.9  -5.960e-07   1.588e-01
+  1   21671   742613  0.002     5   82    34.3  -9.669e-04   1.767e-01
+  2    5788   267742  0.008     7  119    46.3  -8.368e-04   2.214e-01
+  3    1128    46660  0.037    11   91    41.4  -1.818e-03   3.239e-01
+  4     177     5369  0.171    13   91    30.3   6.816e-02   6.017e-01
+  5      24      344  0.597     7   24    14.3   1.164e-01   2.410e+00
+  6       2        2  0.500     1    1     1.0   2.587e-01   4.318e-01
+
+
+Interpolation Matrix Information:
+                    entries/row        min        max            row sums
+lev  rows x cols  min  max  avgW     weight      weight       min         max
+================================================================================
+  0 59319 x 21671   1    4   3.2  -1.322e-01   1.008e+00   3.973e-01   1.000e+00
+  1 21671 x 5788    1    4   3.8  -1.027e-01   1.012e+00   1.698e-01   1.006e+00
+  2  5788 x 1128    0    4   4.0  -9.454e-02   7.740e-01   0.000e+00   1.002e+00
+  3  1128 x 177     0    4   3.9  -4.751e-02   6.834e-01   0.000e+00   1.005e+00
+  4   177 x 24      0    4   3.3   3.425e-03   2.957e-01   0.000e+00   1.000e+00
+  5    24 x 2       0    1   0.1   1.841e-02   4.306e-02   0.000e+00   1.000e+00
+
+
+     Complexity:    grid = 1.485342
+                operator = 2.205091
+                memory = 2.470740
+
+
+
+
+BoomerAMG SOLVER PARAMETERS:
+
+  Maximum number of cycles:         1 
+  Stopping Tolerance:               0.000000e+00 
+  Cycle type (1 = V, 2 = W, etc.):  1
+
+  Relaxation Parameters:
+   Visiting Grid:                     down   up  coarse
+            Number of sweeps:            1    1     1 
+   Type 0=Jac, 3=hGS, 6=hSGS, 9=GE:     16   16     9 
+   Point types, partial sweeps (1=C, -1=F):
+                  Pre-CG relaxation (down):   0
+                   Post-CG relaxation (up):   0
+                             Coarsest grid:   0
+
+done (0.137352s)
+---------------------------------------------------------
+level|    Type    |                 |     Smoother      |
+     |            |                 |                   |
+---------------------------------------------------------
+   0 |    pMG     |   Matrix-free   | Chebyshev+Schwarz
+     |            |     Degree  7   |
+   1 |    pMG     |   Matrix-free   | Chebyshev+Schwarz
+     |            |     Degree  3   |
+   2 |    AMG     |   Matrix        | BOOMERAMG
+     |            |     Degree  1   |
+---------------------------------------------------------
+done (13.3357s)
+done (15.5483s)
+
+settings:
+
+key: ADVECTION,                                               value: TRUE
+key: ADVECTION TYPE,                                          value: CONVECTIVE
+key: AMG DROP TOLERANCE,                                      value: 5.960464e-07
+key: BUILD ONLY,                                              value: FALSE
+key: CASENAME,                                                value: kershaw
+key: CHECKPOINT OUTPUT MESH,                                  value: FALSE
+key: CI-MODE,                                                 value: 0
+key: CONSTANT FLOW RATE,                                      value: FALSE
+key: CUBATURE POLYNOMIAL DEGREE,                              value: 0
+key: DATA FILE,                                               value: /gpfs/alpine/csc262/scratch/malachi/kershaw-perf-testing/kershaw/crusher/nbc-device/.cache/udf/udf.okl
+key: DENSITY,                                                 value: 1.000000e+00
+key: DEVICE NUMBER,                                           value: 0
+key: ELEMENT MAP,                                             value: ISOPARAMETRIC
+key: ELEMENT TYPE,                                            value: 12
+key: ELLIPTIC INTEGRATION,                                    value: NODAL
+key: ENABLE FLOATCOMMHALF GS SUPPORT,                         value: FALSE
+key: FORMAT,                                                  value: 1.0
+key: GS OVERLAP,                                              value: TRUE
+key: MESH DIMENSION,                                          value: 3
+key: MESH FILE,                                               value: kershaw.re2
+key: MESH INTEGRATION ORDER,                                  value: 3
+key: MOVING MESH,                                             value: FALSE
+key: NEK USR FILE,                                            value: kershaw.usr
+key: NUMBER OF SCALARS,                                       value: 0
+key: NUMBER TIMESTEPS,                                        value: 0
+key: PLATFORM NUMBER,                                         value: 0
+key: POLYNOMIAL DEGREE,                                       value: 7
+key: PRESSURE BASIS,                                          value: NODAL
+key: PRESSURE COARSE SOLVER,                                  value: BOOMERAMG
+key: PRESSURE COARSE SOLVER LOCATION,                         value: CPU
+key: PRESSURE COARSE SOLVER PRECISION,                        value: FP32
+key: PRESSURE DISCRETIZATION,                                 value: CONTINUOUS
+key: PRESSURE INITIAL GUESS,                                  value: PREVIOUS
+key: PRESSURE KRYLOV SOLVER,                                  value: PGMRES+FLEXIBLE
+key: PRESSURE LINEAR SOLVER STOPPING CRITERION,               value: RELATIVE
+key: PRESSURE MAXIMUM ITERATIONS,                             value: 200
+key: PRESSURE MULTIGRID CHEBYSHEV DEGREE,                     value: 2
+key: PRESSURE MULTIGRID CHEBYSHEV MAX EIGENVALUE BOUND FACTOR,value: 1.1
+key: PRESSURE MULTIGRID CHEBYSHEV MIN EIGENVALUE BOUND FACTOR,value: 0.1
+key: PRESSURE MULTIGRID COARSE SOLVE,                         value: TRUE
+key: PRESSURE MULTIGRID DOWNWARD SMOOTHER,                    value: RAS
+key: PRESSURE MULTIGRID SEMFEM,                               value: FALSE
+key: PRESSURE MULTIGRID SMOOTHER,                             value: CHEBYSHEV+RAS
+key: PRESSURE MULTIGRID UPWARD SMOOTHER,                      value: RAS
+key: PRESSURE PARALMOND CYCLE,                                value: VCYCLE+MULTIPLICATIVE
+key: PRESSURE PGMRES RESTART,                                 value: 30
+key: PRESSURE PRECONDITIONER,                                 value: MULTIGRID
+key: PRESSURE SOLVER TOLERANCE,                               value: 1.000000e-08
+key: REGULARIZATION METHOD,                                   value: NONE
+key: RESTART FROM FILE,                                       value: 0
+key: SCALAR MAXIMUM ITERATIONS,                               value: 200
+key: SOLUTION OUTPUT CONTROL,                                 value: STEPS
+key: SOLUTION OUTPUT INTERVAL,                                value: 0.000000
+key: START TIME,                                              value: 0.000000e+00
+key: STRESSFORMULATION,                                       value: FALSE
+key: SUBCYCLING STEPS,                                        value: 0
+key: SUBCYCLING TIME ORDER,                                   value: 4
+key: SUBCYCLING TIME STAGE NUMBER,                            value: 4
+key: THREAD MODEL,                                            value: HIP
+key: TIME INTEGRATOR,                                         value: TOMBO1
+key: UDF FILE,                                                value: kershaw.udf
+key: UDF OKL FILE,                                            value: kershaw.oudf
+key: VARIABLE DT,                                             value: FALSE
+key: VELOCITY BASIS,                                          value: NODAL
+key: VELOCITY BLOCK SOLVER,                                   value: TRUE
+key: VELOCITY COEFF FIELD,                                    value: TRUE
+key: VELOCITY DISCRETIZATION,                                 value: CONTINUOUS
+key: VELOCITY KRYLOV SOLVER,                                  value: PCG
+key: VELOCITY MAXIMUM ITERATIONS,                             value: 200
+key: VELOCITY PRECONDITIONER,                                 value: JACOBI
+key: VELOCITY REGULARIZATION METHOD,                          value: NONE
+key: VERBOSE,                                                 value: FALSE
+key: VISCOSITY,                                               value: 1.000000e+00
+
+occa memory usage: 6.40133 GB
+initialization took 41.1226 s
+Benchmarking d->d gather-scatter handle.
+
+used config: pw+device (MPI min/max/avg: 4.15e-05s 4.68e-05s 4.39e-05s / avg bi-bw: 10.9GB/s/rank)
+Benchmarking h->h gather-scatter handle.
+
+used config: pw+hybrid (MPI min/max/avg: 2.33e-05s 2.59e-05s 2.47e-05s / avg bi-bw: 19.5GB/s/rank)
+
+running benchmarks
+
+BPS5
+..................................................
+repetitions: 50
+solve time: min: 0.552199s  avg: 0.553751s  max: 0.592319s
+iterations: 38
+throughput: 1.88831e+08 (DOF x iter)/s/rank
+throughput: 4.96922e+06 DOF/s/rank
+flops/rank: 4.01044e+11 
+
+BP5
+done (5.5e-06s)
+iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.
+repetitions: 25
+solve time: min: 0.485137s  avg: 0.485999s  max: 0.487046s
+iterations: 500
+throughput: 2.82807e+09 (DOF x iter)/s/rank
+flops/rank: 5.37142e+11 
+End

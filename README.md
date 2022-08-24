@@ -187,3 +187,5 @@ gs_setup: 236041 unique labels shared
 
 This provides information about the number of messages required, and the message size required. On the OLCF office hour, I was mistaken about how many words needed to be exchanged.
 The message size will be as large as ~20,000 words, in either double or single precision. The timings reported in the d->d gather-scatter and h->h gather scatter handle are for double precision words.
+
+Example output from a real job is found in `nekRS_kershaw-166189.out`.
