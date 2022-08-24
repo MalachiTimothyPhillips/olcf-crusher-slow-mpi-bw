@@ -1,3 +1,0 @@
-      real p_rot
-
-      common /casevars/ p_rot
