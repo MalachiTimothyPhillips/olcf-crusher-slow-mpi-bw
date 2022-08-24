@@ -116,7 +116,7 @@ echo "# actual run" >>$SFILE
 echo "date" >>$SFILE
 echo "srun -n $ntasks $bin --backend $backend --device-id 0 --setup $case" >>$SFILE
 
-sbatch $SFILE
-
-# clean-up
-rm -rf $SFILE $ROMIO_HINTS
+#sbatch $SFILE
+#
+## clean-up
+#rm -rf $SFILE $ROMIO_HINTS

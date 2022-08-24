@@ -1,100 +1,189 @@
-# nekRS
+# Instructions to replicate perceived "slow" MPI communication
 
------------------
-
-[![Build Status](https://travis-ci.com/Nek5000/nekRS.svg?branch=master)](https://travis-ci.com/Nek5000/nekRS)
-[![License](https://img.shields.io/badge/License-BSD%203--Clause-orange.svg)](https://opensource.org/licenses/BSD-3-Clause)
-
-**nekRS** is an open-source Navier Stokes solver based on the spectral element method targeting classical processors and accelerators like GPUs. The code started as an fork of [libParanumal](https://github.com/paranumal/libparanumal) in 2019. For API portable programming [OCCA](https://github.com/libocca/occa) is used.  
-
-Capabilities:
-
-* Incompressible and low Mach-number Navier-Stokes + scalar transport 
-* CG-SEM using curvilinear conformal hexaheadral elements 
-* Variable time step 2nd/3rd order semi-implicit time integration
-* MPI+X hybrid parallelism supporting CPU, CUDA, HIP, and OPENCL
-* Various boundary conditions
-* Conjugate fluid-solid heat transfer
-* LES and RANS turbulence models
-* Arbitrary-Lagrangian-Eulerian moving mesh
-* VisIt & Paraview support for data analysis and visualization
-* Interface to [Nek5000](https://github.com/Nek5000/Nek5000) 
-
-## Build Instructions
-
-Requirements:
-* Linux, Mac OS X (Microsoft Windows is not supported) 
-* C++14/C99 compatible compilers + GNU Fortran
-* MPI-3.1 or later
-* CMake version 3.13 (AMGx requires >=3.18) or later 
-
-Download the latest release available under
-
-```sh
-https://github.com/Nek5000/nekRS/archive/refs/tags/v22.1.tar.gz 
+## Cloning Directory
+```
+git clone --depth=1 git@github.com:MalachiTimothyPhillips/olcf-crusher-slow-mpi-bw.git
+cd olcf-crusher-slow-mpi-bw
 ```
 
-or clone our GitHub repository:
+## Setting modules
 
-```sh
-https://github.com/Nek5000/nekRS.git
+Modules/env variables have already been set in `set-crusher-env.sh`, which needs to be sourced:
 ```
-The `master` branch always points to the latest stable release while `next`
-provides an early preview of the next upcoming release (do not use in a production environment).
+source set-crusher-env.sh
+```
 
-#
-To build and install the code run:
+Please alter things like the account/installation directory as needed.
 
-```sh
+## Configuration
+Run configuration script. Necessary environment variables have already been altered above.
+```
 ./nrsconfig
-cmake --build ./build --target install -j8
 ```
-Please delete instead of overwriting your old build and install directory before updating. 
-Build settings can be customized by environment variables. 
-After installation you may want to adjust `$NEKRS_HOME/nekrs.conf` to your environment.
 
-## Setting the Enviroment
+## Compilation
 
-Assuming you run `bash` and your install directory is $HOME/.local/nekrs, 
-add the following line to your $HOME/.bash_profile:
-
-```sh
-export NEKRS_HOME=$HOME/.local/nekrs
-export PATH=$NEKRS_HOME/bin:$PATH
+This doesn't take too long, maybe 5-10 minutes?
 ```
-then type `source $HOME/.bash_profile` in the current terminal window. 
-
-## Run the Code
-
-We try hard not to break userland but the code is evolving quickly so things might change from one version to another without being backward compatible. Please consult `RELEASE.md` before using the code. 
-
-```sh
-cd $NEKRS_HOME/examples/turbPipePeriodic
-mpirun -np 2 nekrs --setup turbPipe.par
+cd build && make install -j 12
 ```
-For convenience we provide various launch scripts in the `bin` directory.
 
-## Documentation 
-For documentation, see our [readthedocs page](https://nekrs.readthedocs.io/en/latest/). For now it's just a dummy. We hope to improve documentation to make it more useable for new users. 
+## Setting up a case
 
-## Discussion Group
-Please visit [GitHub Discussions](https://github.com/Nek5000/nekRS/discussions). Here we help, find solutions, share ideas, and follow discussions.
+Navigate to GPFS to set up a case, e.g.:
+```
+cd $MEMBERWORK/csc262
+```
 
-## Contributing
-Our project is hosted on [GitHub](https://github.com/Nek5000/nekRS). To learn how to contribute, see `CONTRIBUTING.md`.
+Copy `kershaw` example from repo:
+```
+cp -r path/to/olcf-crusher-slow-mpi-bw/examples/kershaw .
+```
 
-## Reporting Bugs
-All bugs are reported and tracked through [Issues](https://github.com/Nek5000/nekRS/issues). If you are having trouble installing the code or getting your model to run properly, you should first vist our discussion group.
+*CAUTIONARY NOTE*: The full path to the case, e.g.:
+`/gpfs/alpine/scratch/malachi/csc262/kershaw/kershaw.re2`
+must be less than or equal to 132 characters!
+This is due to a nek5000 limitation that's currently used to read the mesh files.
+I know it's a pain...
 
-## License
-nekRS is released under the BSD 3-clause license (see `LICENSE` file). 
-All new contributions must be made under the BSD 3-clause license.
+Navigate to dir:
+```
+cd kershaw
+```
 
-## Acknowledgment
-This research was supported by the Exascale Computing Project (17-SC-20-SC), 
-a joint project of the U.S. Department of Energy's Office of Science and National Nuclear Security 
-Administration, responsible for delivering a capable exascale ecosystem, including software, 
-applications, and hardware technology, to support the nation's exascale computing imperative.
+Copy job configuration script
+```
+cp path/to/olcf-crusher-slow-mpi-bw/scripts/nrsqsub_crusher
+```
 
-## References
-* [NekRS, a GPU-Accelerated Spectral Element Navier-Stokes Solver](https://arxiv.org/abs/2104.05829) 
+Configure job to run on a single Crusher node for 00:30:00 minutes:
+```
+./nrsqsub_crusher kershaw 1 00:30:00
+```
+
+As output, you should see an s.bin file, as below:
+```
+#!/bin/bash
+#SBATCH -A CSC262
+#SBATCH -J nekRS_kershaw
+#SBATCH -o %x-%j.out
+#SBATCH -t 00:30:00
+#SBATCH -N 1
+#SBATCH -p batch
+#SBATCH --exclusive
+#SBATCH --ntasks-per-node=8
+#SBATCH --gpus-per-task=1
+#SBATCH --gpu-bind=closest
+#SBATCH --cpus-per-task=8
+module load PrgEnv-gnu
+module load craype-accel-amd-gfx90a
+module load cray-mpich
+module load rocm
+module unload cray-libsci
+module list
+rocm-smi
+rocm-smi --showpids
+# which nodes am I running on?
+squeue -u $USER
+export MPICH_GPU_SUPPORT_ENABLED=1
+export PE_MPICH_GTL_DIR_amd_gfx90a="-L/opt/cray/pe/mpich/8.1.16/gtl/lib"
+export PE_MPICH_GTL_LIBS_amd_gfx90a="-lmpi_gtl_hsa"
+ulimit -s unlimited
+export NEKRS_HOME=/ccs/home/<your-account-name>/.local/nekrs-crusher-slow-mpi
+export NEKRS_GPU_MPI=1
+export NVME_HOME=/mnt/bb/<your-account-name>/
+export ROMIO_HINTS=<path-to-the-current-dir>/.romio_hint
+# actual run
+date
+srun -n 8 /ccs/home/<your-account-name>/.local/nekrs-crusher-slow-mpi/bin/nekrs --backend HIP --device-id 0 --setup kershaw
+```
+
+You may also want to manually add in, e.g., prior to the `srun` command:
+```
+export MPICH_OFI_NIC_POLICY=NUMA
+```
+
+To launch the job, simply `sbatch s.bin`.
+
+After the job finishes, you should see output like the following at the bottom:
+
+```
+occa memory usage: 6.40133 GB
+initialization took 41.1226 s
+Benchmarking d->d gather-scatter handle.
+
+used config: pw+device (MPI min/max/avg: 4.15e-05s 4.68e-05s 4.39e-05s / avg bi-bw: 10.9GB/s/rank)
+Benchmarking h->h gather-scatter handle.
+
+used config: pw+hybrid (MPI min/max/avg: 2.33e-05s 2.59e-05s 2.47e-05s / avg bi-bw: 19.5GB/s/rank)
+Benchmarking d->d gather-scatter handle, using direct all-to-all exchange.
+
+running benchmarks
+
+BPS5
+..................................................
+repetitions: 50
+solve time: min: 0.552199s  avg: 0.553751s  max: 0.592319s
+iterations: 38
+throughput: 1.88831e+08 (DOF x iter)/s/rank
+throughput: 4.96922e+06 DOF/s/rank
+flops/rank: 4.01044e+11
+
+BP5
+done (5.5e-06s)
+iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.iteration limit of pressure reached!
+.
+repetitions: 25
+solve time: min: 0.485137s  avg: 0.485999s  max: 0.487046s
+iterations: 500
+throughput: 2.82807e+09 (DOF x iter)/s/rank
+flops/rank: 5.37142e+11
+End
+```
+
+The bijection bandwidths reported are for doing the point-to-point MPI communication with GPU buffers or host buffers.
+To query the message sizes, scroll up in the output to:
+
+```
+ setup mesh topology
+   Right-handed check complete for       64000 elements. OK.
+gs_setup: 236041 unique labels shared
+   pairwise times (avg, min, max): 8.91632e-05 8.67524e-05 9.06878e-05
+   crystal router                : 0.000370038 0.000369652 0.000370557
+   used all_to_all method: pairwise
+   handle bytes (avg, min, max): 2.75687e+07 27568660 27568660
+   buffer bytes (avg, min, max): 961072 961072 961072
+   setupds time 5.4103E-01 seconds   0  8     8364041       64000
+
+ nElements   max/min/bal: 8000 8000 1.00
+ nMessages   max/min/avg: 7 7 7.00
+ msgSize     max/min/avg: 19881 1 8581.00
+ msgSizeSum  max/min/avg: 60067 60067 60067.00
+```
+
+This provides information about the number of messages required, and the message size required. On the OLCF office hour, I was mistaken about how many words needed to be exchanged.
+The message size will be as large as ~20,000 words, in either double or single precision. The timings reported in the d->d gather-scatter and h->h gather scatter handle are for double precision words.
