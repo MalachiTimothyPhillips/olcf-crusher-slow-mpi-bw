@@ -189,3 +189,8 @@ This provides information about the number of messages required, and the message
 The message size will be as large as ~20,000 words, in either double or single precision. The timings reported in the d->d gather-scatter and h->h gather scatter handle are for double precision words.
 
 Example output from a real job is found in `nekRS_kershaw-166189.out`.
+
+## Source code for point-to-point communication
+
+Point-to-point communication is implemented for the "gather-scatter" operations common in nekRS. The source code is found in `3rd_party/gslib/ogs/src/oogs.cpp`.
+Please let me know if you have any questions regrading the source code -- I am happy to walk you through it!
